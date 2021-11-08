@@ -10,6 +10,7 @@ specifiers:
   eslint-config-prettier: 8.3.0
   eslint-plugin-svelte3: 3.2.1
   graphql: 16.0.1
+  graphql-compose: ^9.0.4
   graphql-helix: 1.9.1
   mdsvex: 0.9.8
   prettier: 2.4.1
@@ -30,6 +31,7 @@ devDependencies:
   eslint-config-prettier: 8.3.0_eslint@7.32.0
   eslint-plugin-svelte3: 3.2.1_eslint@7.32.0+svelte@3.44.1
   graphql: 16.0.1
+  graphql-compose: 9.0.4_graphql@16.0.1
   graphql-helix: 1.9.1_graphql@16.0.1
   mdsvex: 0.9.8_svelte@3.44.1
   prettier: 2.4.1
@@ -183,6 +185,10 @@ packages:
 
   /@types/node/16.11.6:
     resolution: {integrity: sha512-ua7PgUoeQFjmWPcoo9khiPum3Pd60k4/2ZGXt18sm2Slk0W0xZTqt5Y0Ny1NyBiN1EVQ/+FaF9NcY4Qe6rwk5w==}
+    dev: true
+
+  /@types/object-path/0.11.1:
+    resolution: {integrity: sha512-219LSCO9HPcoXcRTC6DbCs0FRhZgBnEMzf16RRqkT40WbkKx3mOeQuz3e2XqbfhOz/AHfbru0kzB1n1RCAsIIg==}
     dev: true
 
   /@types/pug/2.0.5:
@@ -984,10 +990,29 @@ packages:
     resolution: {integrity: sha512-qkIilPUYcNhJpd33n0GBXTB1MMPp14TxEsEs0pTrsSVucApsYzW5V+Q8Qxhik6KU3evy+qkAAowTByymK0avdg==}
     dev: true
 
+  /graphql-compose/9.0.4_graphql@16.0.1:
+    resolution: {integrity: sha512-Cvu+efr6qB6Q7XRoXvTShsFNptW9UWG6XW1fPBIa95BCyi/8lH7ZLVPJTy+vKTLhViJZ7uw/MoJ1FPkUGu+S4Q==}
+    peerDependencies:
+      graphql: ^14.2.0 || ^15.0.0 || ^16.0.0
+    dependencies:
+      '@types/object-path': 0.11.1
+      graphql: 16.0.1
+      graphql-type-json: 0.3.2_graphql@16.0.1
+      object-path: 0.11.8
+    dev: true
+
   /graphql-helix/1.9.1_graphql@16.0.1:
     resolution: {integrity: sha512-Of4iMFy+lesAF52RsgTlSUtgAlogWNQt8xp817fcgdJtGNO1bo4RPR4yXD5vZYHbw01Vm2fmaPOCUps5BJJSXw==}
     peerDependencies:
       graphql: ^15.3.0 || ^16.0.0
+    dependencies:
+      graphql: 16.0.1
+    dev: true
+
+  /graphql-type-json/0.3.2_graphql@16.0.1:
+    resolution: {integrity: sha512-J+vjof74oMlCWXSvt0DOf2APEdZOCdubEvGDUAlqH//VBYcOYsGgRW7Xzorr44LvkjiuvecWc8fChxuZZbChtg==}
+    peerDependencies:
+      graphql: '>=0.8.0'
     dependencies:
       graphql: 16.0.1
     dev: true
@@ -1214,6 +1239,11 @@ packages:
   /normalize-path/3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
     engines: {node: '>=0.10.0'}
+    dev: true
+
+  /object-path/0.11.8:
+    resolution: {integrity: sha512-YJjNZrlXJFM42wTBn6zgOJVar9KFJvzx6sTWDte8sWZF//cnjl0BxHNpfZx+ZffXX63A9q0b1zsFiBX4g4X5KA==}
+    engines: {node: '>= 10.12.0'}
     dev: true
 
   /once/1.4.0:

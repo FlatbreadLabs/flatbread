@@ -1,7 +1,7 @@
 {
 	"compilerOptions": {
 		"moduleResolution": "node",
-		"module": "es2020",
+		"module": "esnext",
 		"lib": ["es2020", "DOM"],
 		"target": "es2020",
 		/**
@@ -27,5 +27,5 @@
 			"$lib/*": ["src/lib/*"]
 		}
 	},
-	"include": ["src/**/*.d.ts", "src/**/*.js", "src/**/*.ts", "src/**/*.svelte", "graphql.ts"]
+	"include": ["src/**/*.d.ts", "src/**/*.js", "src/**/*.ts", "src/**/*.svelte"]
 }
