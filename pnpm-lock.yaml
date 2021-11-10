@@ -65,17 +65,21 @@ importers:
       '@oyu/source-filesystem': workspace:*
       '@oyu/transformer-markdown': workspace:*
       '@types/node': ^16.11.7
+      remark-github: ^11.2.1
       tsup: ^5.6.0
       typescript: ^4.4.4
+      vfile: ^5.2.0
     dependencies:
       '@oyu/config': link:../config
       '@oyu/source-filesystem': link:../source-filesystem
       '@oyu/transformer-markdown': link:../transformer-markdown
+      remark-github: 11.2.1
     devDependencies:
       '@oyu/core': link:../core
       '@types/node': 16.11.7
       tsup: 5.6.0_typescript@4.4.4
       typescript: 4.4.4
+      vfile: 5.2.0
 
   packages/source-filesystem:
     specifiers:
@@ -4469,6 +4473,16 @@ packages:
       mdast-util-gfm: 2.0.0
       micromark-extension-gfm: 2.0.0
       unified: 10.1.0
+    dev: false
+
+  /remark-github/11.2.1:
+    resolution: {integrity: sha512-NJzXTsA6DhIc1mf+xivJo7k/IotFt65C1ogTsWHTwM5D/HzfCaF3sUonx6OZEP+6lfgwqLxkOs8z7YsQd7FttA==}
+    dependencies:
+      '@types/mdast': 3.0.10
+      mdast-util-find-and-replace: 2.1.0
+      mdast-util-to-string: 3.1.0
+      unified: 10.1.0
+      unist-util-visit: 4.1.0
     dev: false
 
   /remark-html/15.0.0:

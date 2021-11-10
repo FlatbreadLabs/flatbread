@@ -1,12 +1,32 @@
 import getNodesFromDirectory from '@oyu/source-filesystem';
 import { nodeToJSON } from '@oyu/transformer-markdown';
+// import github from 'remark-github';
 
-const nodes = await getNodesFromDirectory('content/authors');
+import type { TransformerConfig } from '@oyu/transformer-markdown';
+import type { VFile } from 'vfile';
 
-async function convertNodesToJSON(nodes: any[]): Promise<Record<any, any>> {
+const nodes = await getNodesFromDirectory('content/posts');
+
+const defaultConfig: TransformerConfig = {
+  markdown: {
+    gfm: true,
+    externalLinks: true,
+    // remarkPlugins: [github],
+  },
+};
+
+/**
+ * Convert an iterable set of content to an array of objects
+ *
+ * @param nodes array of content files
+ * @returns array of JSON-transformed content files
+ */
+async function convertNodesToJSON(
+  nodes: Promise<VFile>[]
+): Promise<Record<any, any>> {
   let data = [];
   for (let node of nodes) {
-    data.push(await nodeToJSON(await node));
+    data.push(await nodeToJSON(await node, defaultConfig));
   }
   return data;
 }
