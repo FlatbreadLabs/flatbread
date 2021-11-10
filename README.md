@@ -1,10 +1,12 @@
 # おゆ (O yu) [♨️🚰]
 
-'Rehydrate' your relational markdown data and query it with [GraphQL](https://graphql.org/) inside [SvelteKit](https://kit.svelte.dev/). Inspired by [Gridsome](https://gridsome.org/) and [JungleJS](https://www.junglejs.org/)
+'Rehydrate' your relational markdown data and query it with [GraphQL](https://graphql.org/) inside [SvelteKit](https://kit.svelte.dev/) (and maybe more?). 
+
+Inspired by [Gridsome](https://gridsome.org/), [JungleJS](https://www.junglejs.org/), and [Gatsby](https://www.gatsbyjs.com/).
 
 ## Contributing
 
-🚧 This project is currently experimental and the API may change considerably before `v1.0`. Feel free to hop in the driver's seat and contribute some issues or PRs!
+🚧 This project is currently experimental, is not ready for production, and the API may change considerably before `v1.0`. Feel free to hop in and contribute some issues or PRs!
 
 Once you've installed dependencies with `pnpm install`, start a development server:
 
