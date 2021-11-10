@@ -19,7 +19,7 @@ export default async function getNodesFromDirectory(
   dir: string
 ): Promise<Promise<VFile>[]> {
   const slugs: string[] = await getSlugsFromDirectory(dir);
-  console.log(slugs);
+
   return slugs.map(
     async (slug: string): Promise<VFile> => await read(join(dir, slug))
   );
