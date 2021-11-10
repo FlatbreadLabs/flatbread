@@ -11,7 +11,7 @@
     "url": "git+https://github.com/tonyketcham/oyu.git",
     "directory": "packages/core"
   },
-  "author": "Tony Ketcham <ketcham.dev@gmail.com",
+  "author": "Tony Ketcham <ketcham.dev@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/tonyketcham/oyu/issues"
