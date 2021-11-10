@@ -1,6 +1,6 @@
 import matter from 'gray-matter';
 import slugify from '@sindresorhus/slugify';
-import { createProcessor } from './processor';
+import { createMarkdownProcessor } from './processor';
 import estimateTimeToRead from './utils/timeToRead';
 
 import type { VFile } from 'vfile';
@@ -14,7 +14,7 @@ export const nodeToJSON = async (
   node: VFile,
   config: TransformerConfig = {}
 ): Promise<OyuJsonNode> => {
-  const markdownProcessor = createProcessor();
+  const markdownProcessor = createMarkdownProcessor();
   const { data, content } = matter(String(node), config.grayMatter);
 
   const html = await markdownProcessor.process(content);
