@@ -1,6 +1,6 @@
 # おゆ (O yu) [♨️🚰]
 
-'Rehydrate' your relational markdown data and query it with [GraphQL](https://graphql.org/) inside [SvelteKit](https://kit.svelte.dev/) (and maybe more?). 
+'Rehydrate' your relational markdown data and query it with [GraphQL](https://graphql.org/) inside [SvelteKit](https://kit.svelte.dev/) and more. 
 
 Inspired by [Gridsome](https://gridsome.org/), [JungleJS](https://www.junglejs.org/), and [Gatsby](https://www.gatsbyjs.com/).
 
@@ -23,4 +23,4 @@ pnpm preview
 
 ## Sidenotes
 
-The transpiled TS files are being tracked in the repo to appease the Vite gods so I can develop quicker. As the project progresses, I'll likely yeet those outta here.
+The transpiled TS files in the [`playground`](https://github.com/tonyketcham/oyu/tree/main/playground) are being tracked in the repo to appease the Vite gods so I can develop quicker. As the project progresses, I'll likely yeet those outta here.
