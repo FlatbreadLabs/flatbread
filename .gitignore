@@ -1,3 +1,12 @@
+# packages & build files
 **/node_modules
 **/dist/**
+
+# temp files
+**.swp
+.vscode
+
+# logs
+yarn-error.log
 .pnpm-debug.log
+
