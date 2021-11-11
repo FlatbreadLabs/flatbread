@@ -7,13 +7,15 @@
   "scripts": {
     "build": "pnpm -r --parallel --filter !playground run build",
     "dev": "pnpm -r --parallel --filter !playground run dev",
-    "lint": "eslint \"**/*.{ts,vue,mjs}\"",
+    "lint": "prettier --check --plugin-search-dir=. .",
     "lint:fix": "nr lint -- --fix",
+    "lint:fix:prettier": "prettier --write --plugin-search-dir=. .",
     "play": "npm -C playground run dev",
     "play:build": "pnpm run build && npm -C playground run build",
     "size": "esmo scripts/size.ts",
     "release": "bumpp package.json packages/*/package.json --commit --push --tag",
-    "test": "jest"
+    "test": "jest",
+    "prepare": "husky install"
   },
   "repository": {
     "type": "git",
@@ -26,8 +28,8 @@
   },
   "homepage": "https://github.com/tonyketcham/oyu#readme",
   "dependencies": {
-    "@oyu/core": "workspace:*",
     "@oyu/config": "workspace:*",
+    "@oyu/core": "workspace:*",
     "@oyu/source-filesystem": "workspace:*",
     "@oyu/transformer-markdown": "workspace:*",
     "oyu": "workspace:*"
@@ -36,11 +38,12 @@
     "@types/jest": "^27.0.2",
     "@types/node": "^16.11.7",
     "bumpp": "^7.1.1",
-    "eslint": "^8.2.0",
     "jest": "^27.3.1",
+    "prettier": "2.4.1",
     "ts-jest": "^27.0.7",
     "tsconfig-paths-jest": "^0.0.1",
     "tsup": "^5.6.0",
-    "typescript": "^4.4.4"
+    "typescript": "^4.4.4",
+    "husky": "^7.0.0"
   }
 }

@@ -5,17 +5,17 @@ import adapter from '@sveltejs/adapter-static';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	extensions: ['.svelte', ...mdsvexExtensions],
+  extensions: ['.svelte', ...mdsvexExtensions],
 
-	// Consult https://github.com/sveltejs/svelte-preprocess
-	// for more information about preprocessors
-	preprocess: [preprocess(), mdsvex],
+  // Consult https://github.com/sveltejs/svelte-preprocess
+  // for more information about preprocessors
+  preprocess: [preprocess(), mdsvex],
 
-	kit: {
-		// hydrate the <div id="svelte"> element in src/app.html
-		target: '#svelte',
-		adapter: adapter()
-	}
+  kit: {
+    // hydrate the <div id="svelte"> element in src/app.html
+    target: '#svelte',
+    adapter: adapter(),
+  },
 };
 
 export default config;
