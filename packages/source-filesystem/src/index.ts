@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { join, extname } from 'path';
 import fs from 'fs/promises';
 import process from 'process';
 import { read } from 'to-vfile';
@@ -7,7 +7,14 @@ import type { VFile } from 'vfile';
 
 // Form slugs from the markdown names
 export async function getSlugsFromDirectory(dir: string): Promise<string[]> {
-  return await fs.readdir(join(process.cwd(), dir));
+  const extensions = [
+    '.md',
+    '.mdx',
+    '.svx',
+  ];
+ 
+  const files = await fs.readdir(join(process.cwd(), dir));
+  return files.filter(f => extensions.includes(extname(f).toLowerCase()));
 }
 
 /**
