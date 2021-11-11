@@ -18,7 +18,7 @@ export async function getValidNodesFilenames(
   extensions?: string[]
 ): Promise<string[]> {
   // If no extensions are provided, use the default ones
-  let validExtensions = extensions ?? ['.md', '.mdx', '.markdown'];
+  const validExtensions = extensions ?? ['.md', '.mdx', '.markdown'];
 
   const files = await fs.readdir(join(process.cwd(), dir));
   return files.filter((f) =>
