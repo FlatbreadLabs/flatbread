@@ -72,6 +72,11 @@ export interface GrayMatterConfig {
  */
 export interface MarkdownConfig {
   /**
+   * Files with these extensions will be parsed.
+   * Defaults to `['.md', '.markdown']`.
+   */
+  extensions?: string[];
+  /**
    * Github-flavored markdown.
    */
   gfm?: boolean;
