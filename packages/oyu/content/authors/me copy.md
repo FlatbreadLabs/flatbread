@@ -1,9 +1,9 @@
 ---
 name: Tony
-enjoys: 
-    - cats
-    - tea
-    - making this
+enjoys:
+  - cats
+  - tea
+  - making this
 date_joined: 2021-02-25T16:41:59.558Z
 skills:
   sitting: 204

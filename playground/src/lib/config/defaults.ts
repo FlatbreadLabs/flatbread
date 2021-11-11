@@ -1,20 +1,20 @@
 import type { OyuConfig } from './types';
 
 const defaultConfig: OyuConfig = {
-	identifier: {
-		method: 'slug'
-	},
-	content: [],
-	mdsvex: {
-		extensions: ['.svelte.md', '.md', '.svx'],
+  identifier: {
+    method: 'slug',
+  },
+  content: [],
+  mdsvex: {
+    extensions: ['.svelte.md', '.md', '.svx'],
 
-		smartypants: {
-			// dashes: 'oldschool'
-		},
+    smartypants: {
+      // dashes: 'oldschool'
+    },
 
-		remarkPlugins: [],
-		rehypePlugins: []
-	}
+    remarkPlugins: [],
+    rehypePlugins: [],
+  },
 };
 
 export default defaultConfig;
