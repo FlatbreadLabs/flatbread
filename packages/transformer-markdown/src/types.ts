@@ -73,7 +73,8 @@ export interface GrayMatterConfig {
 export interface MarkdownConfig {
   /**
    * Files with these extensions will be parsed.
-   * Defaults to `['.md', '.markdown']`.
+   *
+   * Defaults to `['.md', '.mdx', '.markdown']`.
    */
   extensions?: string[];
   /**
