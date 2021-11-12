@@ -1,3 +1,5 @@
+[![The thing builds](https://github.com/tonyketcham/oyu/actions/workflows/test.yml/badge.svg)](https://github.com/tonyketcham/oyu/actions/workflows/test.yml)
+
 # おゆ (O yu) [♨️🚰]
 
 'Rehydrate' your relational markdown data and query it with [GraphQL](https://graphql.org/) inside [SvelteKit](https://kit.svelte.dev/) and more.
