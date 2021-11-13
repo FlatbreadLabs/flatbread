@@ -13,10 +13,10 @@
     "url": "https://github.com/tonyketcham/oyu/issues"
   },
   "scripts": {
-    "graphql": "node ./plugin.js",
+    "dev:oyu": "node ./server/runner.js",
     "dev": "svelte-kit dev",
-    "check-env": "node -e 'console.log(process.env)' | grep npm",
     "build": "svelte-kit build",
+    "check-env": "node -e 'console.log(process.env)' | grep npm",
     "preview": "svelte-kit preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
