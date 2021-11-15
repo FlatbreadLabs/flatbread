@@ -2,17 +2,17 @@ import express from 'express';
 import {
   getGraphQLParameters,
   processRequest,
-  renderGraphiQL,
   sendResult,
-  shouldRenderGraphiQL,
+  renderGraphiQL,
 } from 'graphql-helix';
+import { altairExpress } from 'altair-express-middleware';
 import { schema } from './schema.js';
 
 const app = express();
 
 app.use(express.json());
 
-app.use('*', async (req, res) => {
+app.use('/graphql', async (req, res) => {
   const request = {
     body: req.body,
     headers: req.headers,
@@ -20,24 +20,52 @@ app.use('*', async (req, res) => {
     query: req.query,
   };
 
-  if (shouldRenderGraphiQL(request)) {
-    res.send(renderGraphiQL());
-  } else {
-    const { operationName, query, variables } = getGraphQLParameters(request);
+  const { operationName, query, variables } = getGraphQLParameters(request);
 
-    const result = await processRequest({
-      operationName,
-      query,
-      variables,
-      request,
-      schema,
-    });
+  const result = await processRequest({
+    operationName,
+    query,
+    variables,
+    request,
+    schema,
+  });
 
-    sendResult(result, res);
-  }
+  sendResult(result, res);
 });
 
-const port = process.env.PORT || 5050;
+const graphQLEditor = 'altair';
+const customGQLEditor = undefined;
+const defaultQuery = `query Song {
+  song {
+    firstVerse
+    secondVerse
+  }
+}`;
+
+const editorPick = (() => {
+  switch (graphQLEditor) {
+    case 'custom':
+      return customGQLEditor;
+    case 'altair':
+      return altairExpress({
+        endpointURL: '/graphql',
+        initialQuery: defaultQuery,
+      });
+    default:
+      return async (req, res) => {
+        res.send(
+          renderGraphiQL({
+            endpointURL: '/graphql',
+            defaultQuery: defaultQuery,
+          })
+        );
+      };
+  }
+})();
+
+app.use('/explore', editorPick);
+
+const port = process.env.PORT || 5555;
 
 app.listen(port, () => {
   const url = `http://localhost:${port}`;

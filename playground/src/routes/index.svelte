@@ -8,7 +8,7 @@
     const variables = {
       x: 10,
     };
-    const response = await fetch('/graphql', {
+    const response = await fetch('https://localhost:5555/', {
       body: JSON.stringify({ query, variables }),
       headers: {
         Authorization: 'Token ABC123',
