@@ -1,5 +1,6 @@
 import matter from 'gray-matter';
 import slugify from '@sindresorhus/slugify';
+import sanitizeHtml from 'sanitize-html';
 import { createMarkdownProcessor } from './processor';
 import estimateTimeToRead from './utils/timeToRead';
 
@@ -21,13 +22,19 @@ export const nodeToJSON = async (
   const markdownProcessor = createMarkdownProcessor(config.markdown);
   const { data, content } = matter(String(node), config.grayMatter);
 
-  const html = await markdownProcessor.process(content);
+  const html = content ? await markdownProcessor.process(content) : '';
+  const plaintext = content
+    ? sanitizeHtml(html, {
+        allowedAttributes: {},
+        allowedTags: [],
+      })
+    : '';
 
   return {
     __filename: node.basename,
     slug: slugify(node.stem ?? ''),
     ...data,
-    timeToRead: estimateTimeToRead(String(html), 230),
+    timeToRead: content ? estimateTimeToRead(plaintext, 230) : 0,
     content: String(html),
   };
 };
