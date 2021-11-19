@@ -1,40 +1,39 @@
 import matter from 'gray-matter';
 import slugify from '@sindresorhus/slugify';
-import sanitizeHtml from 'sanitize-html';
-import { createMarkdownProcessor } from './processor';
-import estimateTimeToRead from './utils/timeToRead';
 
-import type { TransformerConfig } from './types';
-import type { OyuJsonNode } from '@oyu/core';
+import type { MarkdownTransformerConfig } from './types';
+import type { EntryNode, Transformer } from '@oyu/core';
 import type { VFile } from 'vfile';
 
 export * from './types';
 
 /**
- * Transforms a markdown file (content node) to JSON.
+ * Transforms a markdown file (content node) to JSON containing any frontmatter data or content.
  * @param {VFile} file - A VFile object representing a content node
- * @param {TransformerConfig} config - A configuration object
+ * @param {MarkdownTransformerConfig} config - A configuration object
  */
-export const nodeToJSON = async (
-  node: VFile,
-  config: TransformerConfig = {}
-): Promise<OyuJsonNode> => {
-  const markdownProcessor = createMarkdownProcessor(config.markdown);
-  const { data, content } = matter(String(node), config.grayMatter);
-
-  const html = content ? await markdownProcessor.process(content) : '';
-  const plaintext = content
-    ? sanitizeHtml(html, {
-        allowedAttributes: {},
-        allowedTags: [],
-      })
-    : '';
+export const parse = async (
+  input: VFile,
+  config: MarkdownTransformerConfig
+): Promise<EntryNode> => {
+  const { data, content } = matter(String(input), config.grayMatter);
 
   return {
-    __filename: node.basename,
-    slug: slugify(node.stem ?? ''),
-    ...data,
-    timeToRead: content ? estimateTimeToRead(plaintext, 230) : 0,
-    content: String(html),
+    internals: {
+      __filename: input.basename,
+      path: input.path,
+    },
+    fields: {
+      slug: slugify(input.stem ?? ''),
+      ...data,
+      content: {
+        raw: content,
+      },
+    },
   };
 };
+
+// const useTransformer = (config): Transformer<VFile, MarkdownTransformerConfig> => {
+//   parse,
+// };
+// export default useTransformer;

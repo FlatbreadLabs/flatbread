@@ -5,3 +5,10 @@ export interface OyuJsonNode {
   timeToRead: number;
   content: string;
 }
+
+export interface OyuJsonTypeMap {
+  name: string;
+  fields: {
+    [key: string]: string | Record<string, any>;
+  };
+}

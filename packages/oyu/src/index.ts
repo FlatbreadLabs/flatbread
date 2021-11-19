@@ -5,7 +5,7 @@ import { nodeToJSON } from '@oyu/transformer-markdown';
 import type { TransformerConfig } from '@oyu/transformer-markdown';
 import type { VFile } from 'vfile';
 
-const nodes = await getNodesFromDirectory('content/books');
+const nodes = await getNodesFromDirectory('content/authors');
 
 const defaultConfig: TransformerConfig = {
   markdown: {

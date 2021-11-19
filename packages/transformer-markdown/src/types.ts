@@ -1,10 +1,10 @@
-import type { PluginTuple, Plugin, Processor } from 'unified';
-export { PluginTuple, Plugin, Processor };
+import type { PluggableList, PluginTuple, Plugin, Processor } from 'unified';
+export { PluggableList, PluginTuple, Plugin, Processor };
 
 /**
  * Markdown transformer configuration.
  */
-export interface TransformerConfig {
+export interface MarkdownTransformerConfig {
   /**
    * User-configurable options for the [gray-matter](https://www.npmjs.com/package/gray-matter) frontmatter parser.
    */
@@ -102,16 +102,9 @@ export interface MarkdownConfig {
   /**
    * Plugins to add to the [remark](https://github.com/remarkjs/remark) processor.
    */
-  remarkPlugins?: UnifiedTuple[];
+  remarkPlugins?: PluggableList;
   /**
    * Plugins to add to the [rehype](https://github.com/rehypejs/rehype) processor.
    */
-  rehypePlugins?: UnifiedTuple[];
+  rehypePlugins?: PluggableList;
 }
-
-/**
- * A [unified](https://github.com/unifiedjs/unified) plugin tuple is a tuple of a [unified](https://github.com/unifiedjs/unified) plugin and its settings, or just a plugin.
- *
- * @todo type this in a stricter way that's compatible with unified & the UX of registering plugins such that TypeScript will please calm down please
- */
-export type UnifiedTuple = Function | [Function, any];
