@@ -1,7 +1,7 @@
 import {
   createExcerpt,
   estimateTimeToRead,
-  transformContent,
+  transformContentToHTML,
 } from '../processors';
 
 import { GraphQLInt, GraphQLString } from 'graphql';
@@ -36,13 +36,16 @@ export const excerpt = {
       defaultValue: 200,
     },
   },
-  resolve: (
+  resolve: async (
     node: any,
     args: { length: number },
     config: MarkdownTransformerConfig
   ) => {
     if (!node.fields.content.html) {
-      node.fields.content.html = transformContent(node, config.markdown ?? {});
+      node.fields.content.html = await transformContentToHTML(
+        node.fields.content.raw,
+        config.markdown ?? {}
+      );
     }
 
     const plaintext = node.fields.content
@@ -58,11 +61,14 @@ export const excerpt = {
 /**
  * A GraphQL field for the content as HTML, if it exists.
  */
-export const content = {
+export const html = {
   type: GraphQLString,
-  resolve: (node: any, config: MarkdownTransformerConfig) => {
+  resolve: async (node: any, config: MarkdownTransformerConfig) => {
     if (!node.fields.content.html) {
-      node.fields.content.html = transformContent(node, config.markdown ?? {});
+      node.fields.content.html = await transformContentToHTML(
+        node.fields.content.raw,
+        config.markdown ?? {}
+      );
     }
     return node.fields.content.html;
   },

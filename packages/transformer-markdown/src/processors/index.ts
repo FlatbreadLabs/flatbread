@@ -1,5 +1,5 @@
 import createExcerpt from './excerpt';
 import estimateTimeToRead from './timeToRead';
-import transformContent from './content';
+import transformContentToHTML from './toHTML';
 
-export { createExcerpt, estimateTimeToRead, transformContent };
+export { createExcerpt, estimateTimeToRead, transformContentToHTML };
