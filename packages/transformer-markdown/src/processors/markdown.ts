@@ -8,7 +8,12 @@ import rehypeSanitize from 'rehype-sanitize';
 import external from 'remark-external-links';
 import gfm from 'remark-gfm';
 
-import type { MarkdownConfig, Processor, UnifiedTuple, Plugin } from './types';
+import type {
+  MarkdownConfig,
+  Processor,
+  PluggableList,
+  Plugin,
+} from '../types';
 import type { Options as ExternalLinksOptions } from 'remark-external-links';
 
 /**
@@ -18,13 +23,13 @@ import type { Options as ExternalLinksOptions } from 'remark-external-links';
  * @returns the processor
  */
 const applyPlugins = (
-  plugins: UnifiedTuple[],
+  plugins: PluggableList,
   processor: Processor
 ): Processor => {
   plugins.forEach((plugin) => {
     if (Array.isArray(plugin)) {
       if (plugin[1] && plugin[1]) processor.use(plugin[0] as Plugin, plugin[1]);
-      else processor.use(plugin[0] as Plugin);
+      else processor.use(plugin[0]);
     } else {
       processor.use(plugin as Plugin);
     }

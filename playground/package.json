@@ -25,6 +25,9 @@
     "transpile": "tsc --watch"
   },
   "devDependencies": {
+    "@oyu/config": "workspace:*",
+    "@oyu/transformer-markdown": "workspace:*",
+    "@oyu/source-filesystem": "workspace:*",
     "@sveltejs/adapter-node": "1.0.0-next.55",
     "@sveltejs/adapter-static": "1.0.0-next.21",
     "@sveltejs/kit": "1.0.0-next.195",
