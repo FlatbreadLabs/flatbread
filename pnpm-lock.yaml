@@ -54,12 +54,15 @@ importers:
       '@types/node': ^16.11.7
       cache-manager: ^3.6.0
       graphql-compose: ^9.0.4
+      graphql-compose-json: ^6.1.0
       lru-cache: ^6.0.0
       tsup: ^5.6.0
       typescript: ^4.4.4
+      vfile: ^5.2.0
     dependencies:
       cache-manager: 3.6.0
       graphql-compose: 9.0.4
+      graphql-compose-json: 6.1.0_graphql-compose@9.0.4
       lru-cache: 6.0.0
     devDependencies:
       '@types/cache-manager': 3.4.2
@@ -67,6 +70,7 @@ importers:
       '@types/node': 16.11.7
       tsup: 5.6.0_typescript@4.4.4
       typescript: 4.4.4
+      vfile: 5.2.0
 
   packages/oyu:
     specifiers:
@@ -76,7 +80,6 @@ importers:
       '@oyu/transformer-markdown': workspace:*
       '@types/node': ^16.11.7
       remark-github: ^11.2.1
-      sanitize-html: ^2.5.3
       tsup: ^5.6.0
       typescript: ^4.4.4
       vfile: ^5.2.0
@@ -85,7 +88,6 @@ importers:
       '@oyu/source-filesystem': link:../source-filesystem
       '@oyu/transformer-markdown': link:../transformer-markdown
       remark-github: 11.2.1
-      sanitize-html: 2.5.3
     devDependencies:
       '@oyu/core': link:../core
       '@types/node': 16.11.7
@@ -179,6 +181,9 @@ importers:
 
   playground:
     specifiers:
+      '@oyu/config': workspace:*
+      '@oyu/source-filesystem': workspace:*
+      '@oyu/transformer-markdown': workspace:*
       '@sveltejs/adapter-node': 1.0.0-next.55
       '@sveltejs/adapter-static': 1.0.0-next.21
       '@sveltejs/kit': 1.0.0-next.195
@@ -202,6 +207,9 @@ importers:
       typescript: 4.4.4
       vite-plugin-transform: ^1.1.3
     devDependencies:
+      '@oyu/config': link:../packages/config
+      '@oyu/source-filesystem': link:../packages/source-filesystem
+      '@oyu/transformer-markdown': link:../packages/transformer-markdown
       '@sveltejs/adapter-node': 1.0.0-next.55
       '@sveltejs/adapter-static': 1.0.0-next.21
       '@sveltejs/kit': 1.0.0-next.195_svelte@3.44.1
@@ -2884,6 +2892,14 @@ packages:
   /graceful-fs/4.2.8:
     resolution: {integrity: sha512-qkIilPUYcNhJpd33n0GBXTB1MMPp14TxEsEs0pTrsSVucApsYzW5V+Q8Qxhik6KU3evy+qkAAowTByymK0avdg==}
     dev: true
+
+  /graphql-compose-json/6.1.0_graphql-compose@9.0.4:
+    resolution: {integrity: sha512-hA1/jw5FNPWn/Ah4kHso+E9XBry8fvYIsJeeDho5P7+eRpvRoQciJeX9Aby1CR4MhFPtyOy+GaoHVMgtp6LM8Q==}
+    peerDependencies:
+      graphql-compose: ^7.0.4 || ^8.0.0
+    dependencies:
+      graphql-compose: 9.0.4
+    dev: false
 
   /graphql-compose/9.0.4:
     resolution: {integrity: sha512-Cvu+efr6qB6Q7XRoXvTShsFNptW9UWG6XW1fPBIa95BCyi/8lH7ZLVPJTy+vKTLhViJZ7uw/MoJ1FPkUGu+S4Q==}
