@@ -17,8 +17,8 @@ importers:
       prettier: 2.4.1
       ts-jest: ^27.0.7
       tsconfig-paths-jest: ^0.0.1
-      tsup: ^5.6.0
-      typescript: ^4.4.4
+      tsup: ^5.7.2
+      typescript: ^4.5.2
     dependencies:
       '@oyu/config': link:packages/config
       '@oyu/core': link:packages/core
@@ -32,10 +32,10 @@ importers:
       husky: 7.0.4
       jest: 27.3.1
       prettier: 2.4.1
-      ts-jest: 27.0.7_2c4ca6574207836d1023f54689cc81ac
+      ts-jest: 27.0.7_013ef332172517e974c4b270e59f55f5
       tsconfig-paths-jest: 0.0.1
-      tsup: 5.6.0_typescript@4.4.4
-      typescript: 4.4.4
+      tsup: 5.7.2_typescript@4.5.2
+      typescript: 4.5.2
 
   packages/config:
     specifiers:
@@ -5913,7 +5913,7 @@ packages:
       tslib: 2.3.1
     dev: true
 
-  /ts-jest/27.0.7_2c4ca6574207836d1023f54689cc81ac:
+  /ts-jest/27.0.7_013ef332172517e974c4b270e59f55f5:
     resolution: {integrity: sha512-O41shibMqzdafpuP+CkrOL7ykbmLh+FqQrXEmV9CydQ5JBk0Sj0uAEF5TNNe94fZWKm3yYvWa/IbyV4Yg1zK2Q==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
     hasBin: true
@@ -5940,7 +5940,7 @@ packages:
       lodash.memoize: 4.1.2
       make-error: 1.3.6
       semver: 7.3.5
-      typescript: 4.4.4
+      typescript: 4.5.2
       yargs-parser: 20.2.9
     dev: true
 
@@ -5983,6 +5983,34 @@ packages:
       sucrase: 3.20.3
       tree-kill: 1.2.2
       typescript: 4.4.4
+    transitivePeerDependencies:
+      - supports-color
+      - ts-node
+    dev: true
+
+  /tsup/5.7.2_typescript@4.5.2:
+    resolution: {integrity: sha512-YxryYjhB54h8YUNlN7Oze9PnqcuN++vwrFW6qtjC1ve9eQPvzCJw0rN0WPOuEQXburwo+gtDid9C4eQZ6x/Yog==}
+    hasBin: true
+    peerDependencies:
+      typescript: ^4.2.3
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+    dependencies:
+      cac: 6.7.11
+      chalk: 4.1.2
+      chokidar: 3.5.2
+      debug: 4.3.2
+      esbuild: 0.13.12
+      execa: 5.1.1
+      globby: 11.0.4
+      joycon: 3.0.1
+      postcss-load-config: 3.1.0
+      resolve-from: 5.0.0
+      rollup: 2.59.0
+      sucrase: 3.20.3
+      tree-kill: 1.2.2
+      typescript: 4.5.2
     transitivePeerDependencies:
       - supports-color
       - ts-node
@@ -6043,6 +6071,12 @@ packages:
 
   /typescript/4.4.4:
     resolution: {integrity: sha512-DqGhF5IKoBl8WNf8C1gu8q0xZSInh9j1kJJMqT3a94w1JzVaBU4EXOSMrz9yDqMT0xt3selp83fuFMQ0uzv6qA==}
+    engines: {node: '>=4.2.0'}
+    hasBin: true
+    dev: true
+
+  /typescript/4.5.2:
+    resolution: {integrity: sha512-5BlMof9H1yGt0P8/WF+wPNw6GfctgGjXp5hkblpyT+8rkASSmkUKMXrxR0Xg8ThVCi/JnHQiKXeBaEwCeQwMFw==}
     engines: {node: '>=4.2.0'}
     hasBin: true
     dev: true
