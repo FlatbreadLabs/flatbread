@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/source-filesystem",
-  "version": "0.1.1",
+  "version": "0.0.2",
   "description": "Convert .md files to in-memory JSON model",
   "repository": {
     "type": "git",

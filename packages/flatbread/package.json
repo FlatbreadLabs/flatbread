@@ -1,6 +1,6 @@
 {
   "name": "flatbread",
-  "version": "0.1.1",
+  "version": "0.0.2",
   "description": "An 'add hot water' solution to consuming relational, flat-file data with GraphQL🚰",
   "scripts": {
     "build": "tsup",
