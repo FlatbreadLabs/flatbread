@@ -1,3 +1,8 @@
+import { start } from './graphql/server.js';
+
+export default () => {
+  start();
+};
 // import getNodesFromDirectory from '@oyu/source-filesystem';
 // import { nodeToJSON } from '@oyu/transformer-markdown';
 // // import github from 'remark-github';

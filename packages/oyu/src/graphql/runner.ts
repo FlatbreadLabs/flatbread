@@ -2,11 +2,11 @@
  * Delay the start of the target process until the GraphQL server is ready.
  * Learned about this thanks to: https://stackoverflow.com/a/48050020/12368615
  */
-import { spawn } from 'child_process';
+import { fork, spawn } from 'child_process';
 
 console.log('Init runner.js');
 
-const gql = spawn('npm run oyu');
+const gql = fork('server/gql-server.js');
 let runningScripts = [gql];
 
 gql.on('message', (msg) => {

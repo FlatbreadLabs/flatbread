@@ -1,6 +1,6 @@
 {
   "name": "@oyu/transformer-markdown",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Convert .md files to in-memory JSON model",
   "repository": {
     "type": "git",
