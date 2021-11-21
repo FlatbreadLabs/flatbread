@@ -4,10 +4,18 @@ import colors from 'kleur';
 import { version } from '../../package.json';
 import { networkInterfaces, release } from 'os';
 
+import type { ConfigResult, OyuConfig } from '@oyu/config';
+
 const GRAPHQL_ENDPOINT = '/graphql';
 const EXPLORE_ENDPOINT = '/explore';
 
-async function getConfig() {
+/**
+ * Wrapper around grabbing the user config and killing
+ * the process if the config file is invalid.
+ *
+ * @returns user config promise
+ */
+async function getConfig(): Promise<ConfigResult<OyuConfig>> {
   const { loadConfig } = await import('@oyu/config');
 
   try {
@@ -19,10 +27,12 @@ async function getConfig() {
 }
 
 /**
- * @param {number} port
- * @param {boolean} https
+ * Launch the GraphQL explorer in a browser.
+ *
+ * @param {number} port the port the server is running on
+ * @param {boolean} https whether the server is running on https
  */
-async function launch(port: number, https: boolean) {
+async function launch(port: number, https: boolean): Promise<void> {
   const { exec } = await import('child_process');
   let cmd = 'open';
   if (process.platform == 'win32') {
@@ -61,6 +71,11 @@ prog
 
 prog.parse(process.argv, { unknown: (arg) => `Unknown option: ${arg}` });
 
+/**
+ * The welcome message for the user when starting the server.
+ *
+ * @param serverConfig server config object
+ */
 function welcome({
   port,
   https,
@@ -69,7 +84,7 @@ function welcome({
   open: boolean;
   https: boolean;
   port: number;
-}) {
+}): void {
   if (open) launch(port, https);
 
   console.log(colors.bold().yellow(`\n  おゆ (O yu) [♨️ 🚰] v${version}\n`));
