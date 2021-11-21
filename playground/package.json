@@ -13,9 +13,8 @@
     "url": "https://github.com/tonyketcham/oyu/issues"
   },
   "scripts": {
-    "oyu": "oyu start",
+    "dev": "oyu start -- svelte-kit dev",
     "oyu:help": "oyu start -h",
-    "dev": "svelte-kit dev",
     "build": "svelte-kit build",
     "check-env": "node -e 'console.log(process.env)' | grep npm",
     "preview": "svelte-kit preview",

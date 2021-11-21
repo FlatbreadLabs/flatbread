@@ -3,6 +3,7 @@ import sade from 'sade';
 import colors from 'kleur';
 import { version } from '../../package.json';
 import { networkInterfaces, release } from 'os';
+import orchestrateProcesses from './runner';
 
 import type { ConfigResult, OyuConfig } from '@oyu/config';
 
@@ -29,6 +30,8 @@ async function getConfig(): Promise<ConfigResult<OyuConfig>> {
 /**
  * Launch the GraphQL explorer in a browser.
  *
+ * Yoinked from [SvelteKit's CLI](https://github.com/sveltejs/kit/blob/2c133ff5b8798c885161ed57bfb45c88fc77f516/packages/kit/src/cli.js).
+ *
  * @param {number} port the port the server is running on
  * @param {boolean} https whether the server is running on https
  */
@@ -52,27 +55,30 @@ async function launch(port: number, https: boolean): Promise<void> {
 const prog = sade('oyu').version(version);
 
 prog
-  .command('start')
-  .describe('Start oyu with a GraphQL server')
-  // .option('-p, --port [port]', 'Port to listen on', '5555')
-  .option('-p, --port', 'Port to run the GraphQL server', 5050)
+  .command('start [corunner]', 'Start oyu with a GraphQL server')
+  .option('--, _', 'Pass options to the corunning script')
+  .option('-p, --port', 'Port to run the GraphQL server', 5057)
   .option('-H, --https', 'Use self-signed HTTPS certificate', false)
   .option('-o, --open', 'Open the explorer in a browser tab', false)
-  .action(async ({ port, https, open }) => {
+  .action(async (corunner, { _, port, https, open }) => {
     const config = await getConfig();
-
-    welcome({
-      port,
-      https,
-      open,
+    // Combine the corunning script & the options passed to it
+    const secondaryScript = `${corunner} ${_.join(' ')}`;
+    // Yeet it into the all seeing eye of the universe
+    orchestrateProcesses({
+      corunner: secondaryScript,
+      oyuPort: port,
     });
-    console.log(config);
+    // Say hi for good measure
+    welcome({ port, https, open });
   });
 
 prog.parse(process.argv, { unknown: (arg) => `Unknown option: ${arg}` });
 
 /**
  * The welcome message for the user when starting the server.
+ *
+ * Yoinked from [SvelteKit's CLI](https://github.com/sveltejs/kit/blob/2c133ff5b8798c885161ed57bfb45c88fc77f516/packages/kit/src/cli.js) with some modifications.
  *
  * @param serverConfig server config object
  */

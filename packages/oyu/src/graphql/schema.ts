@@ -49,7 +49,7 @@ export const schema = new GraphQLSchema({
                 new Promise((resolve) =>
                   setTimeout(
                     () => resolve("Next time won't you sing with me?"),
-                    5000
+                    500
                   )
                 ),
             },
