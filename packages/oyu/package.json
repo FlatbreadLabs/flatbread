@@ -1,6 +1,6 @@
 {
   "name": "oyu",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An 'add hot water' solution to consuming relational, flat-file data with GraphQL🚰",
   "scripts": {
     "build": "tsup",

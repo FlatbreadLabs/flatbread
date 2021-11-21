@@ -5,6 +5,7 @@
 import { fork, spawn } from 'child_process';
 import { basename, resolve } from 'path';
 import { findUpSync } from 'find-up';
+import colors from 'kleur';
 
 export interface OrchestraOptions {
   corunner: string;
@@ -43,7 +44,6 @@ export default function orchestrateProcesses({
       // Exit the parent process when the target process exits
       for (let script of runningScripts) {
         script.on('close', function (code) {
-          console.log('child process exited with code ' + code);
           process.exit();
         });
       }
@@ -52,7 +52,9 @@ export default function orchestrateProcesses({
 
   // End any remaining child processes when the parent process exits
   process.on('exit', function () {
-    console.log('killing', runningScripts.length, 'child processes');
+    console.log(
+      colors.bold().green("\nO yu is coolin' off now 🍵 bye bye! 🧙")
+    );
     runningScripts.forEach(function (child) {
       child.kill();
     });

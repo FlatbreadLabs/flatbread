@@ -15,7 +15,7 @@
   "scripts": {
     "dev": "oyu start -- svelte-kit dev",
     "oyu:help": "oyu start -h",
-    "build": "svelte-kit build",
+    "build": "oyu start -- svelte-kit build",
     "check-env": "node -e 'console.log(process.env)' | grep npm",
     "preview": "svelte-kit preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
