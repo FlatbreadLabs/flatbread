@@ -1,6 +1,6 @@
 import type { VFile } from 'vfile';
 
-// export interface OyuJsonNode {
+// export interface FlatbreadJsonNode {
 //   __filename?: string;
 //   slug: string;
 //   [key: string]: any;
@@ -8,7 +8,7 @@ import type { VFile } from 'vfile';
 //   content: string;
 // }
 
-// export interface OyuJsonTypeMap {
+// export interface FlatbreadJsonTypeMap {
 //   name: string;
 //   fields: {
 //     [key: string]: string | Record<string, any>;

@@ -1,11 +1,11 @@
-import type { Source, Transformer, Content } from '@oyu/core';
+import type { Source, Transformer, Content } from '@flatbread/core';
 
 /**
- * Oyu's configuration interface.
+ * Flatbread's configuration interface.
  *
  * @todo This needs to be typed more strictly.
  */
-export interface OyuConfig {
+export interface FlatbreadConfig {
   source: Source;
   transformer?: Transformer;
   content: Content;

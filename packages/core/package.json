@@ -1,20 +1,20 @@
 {
-  "name": "@oyu/core",
+  "name": "@flatbread/core",
   "version": "0.0.2",
-  "description": "Oyu's essential logic",
+  "description": "Flatbread's essential logic",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch src"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tonyketcham/oyu.git",
+    "url": "git+https://github.com/tonyketcham/flatbread.git",
     "directory": "packages/core"
   },
   "author": "Tony Ketcham <ketcham.dev@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tonyketcham/oyu/issues"
+    "url": "https://github.com/tonyketcham/flatbread/issues"
   },
   "exports": {
     ".": {

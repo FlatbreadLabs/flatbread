@@ -1,7 +1,7 @@
 import path from 'path';
 import url from 'url';
 
-import type { OyuConfig, ConfigResult } from './types';
+import type { FlatbreadConfig, ConfigResult } from './types';
 
 // Config handlers will go here
 export * from './types';
@@ -9,10 +9,10 @@ export * from './types';
 /**
  * Type-assisted config builder
  *
- * @param config oyu instance options
- * @returns oyu config
+ * @param config flatbread instance options
+ * @returns flatbread config
  */
-const defineConfig = (config: OyuConfig): OyuConfig => config;
+const defineConfig = (config: FlatbreadConfig): FlatbreadConfig => config;
 
 /**
  * Pulls the user config from an optionally specified filepath.
@@ -23,9 +23,9 @@ const defineConfig = (config: OyuConfig): OyuConfig => config;
  * @returns Promise that resolves to the user config object.
  */
 export async function loadConfig({ cwd = process.cwd() } = {}): Promise<
-  ConfigResult<OyuConfig>
+  ConfigResult<FlatbreadConfig>
 > {
-  const configFilePath = path.join(cwd, 'oyu.config.js');
+  const configFilePath = path.join(cwd, 'flatbread.config.js');
 
   const configModule = validateConfigHasExports(
     await import(url.pathToFileURL(configFilePath).href)
@@ -44,9 +44,9 @@ export async function loadConfig({ cwd = process.cwd() } = {}): Promise<
  * @param config user config
  * @returns user config
  */
-export function validateConfigHasExports<C extends { default: OyuConfig }>(
-  config: unknown
-): C {
+export function validateConfigHasExports<
+  C extends { default: FlatbreadConfig }
+>(config: unknown): C {
   const type = typeof config;
 
   if (type === 'undefined') {
@@ -71,18 +71,18 @@ export function validateConfigHasExports<C extends { default: OyuConfig }>(
  * @param config user config object
  * @returns user config object
  */
-export function validateConfigStructure<C extends OyuConfig>(
+export function validateConfigStructure<C extends FlatbreadConfig>(
   config: C
-): OyuConfig {
+): FlatbreadConfig {
   if (typeof config.source !== 'object') {
     throw new Error(
-      'Your Oyu config is missing a valid "source" property. Make sure to include an Oyu-compatible source plugin, such as @oyu/source-filesystem'
+      'Your Flatbread config is missing a valid "source" property. Make sure to include an Flatbread-compatible source plugin, such as @flatbread/source-filesystem'
     );
   }
 
   if (!Array.isArray(config.content)) {
     throw new Error(
-      'Your Oyu config is missing a valid "content" property. Make sure to include an Oyu-compatible source plugin, such as @oyu/source-filesystem'
+      'Your Flatbread config is missing a valid "content" property. Make sure to include an Flatbread-compatible source plugin, such as @flatbread/source-filesystem'
     );
   }
 

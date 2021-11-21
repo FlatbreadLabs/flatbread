@@ -1,7 +1,7 @@
 {
-  "name": "@oyu/config",
+  "name": "@flatbread/config",
   "version": "0.1.0",
-  "description": "Oyu's user config processing",
+  "description": "Flatbread's user config processing",
   "publishConfig": {
     "main": "dist/index.js",
     "typings": "dist/index.d.ts"
@@ -12,13 +12,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tonyketcham/oyu.git",
+    "url": "git+https://github.com/tonyketcham/flatbread.git",
     "directory": "packages/core"
   },
   "author": "Tony Ketcham <ketcham.dev@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tonyketcham/oyu/issues"
+    "url": "https://github.com/tonyketcham/flatbread/issues"
   },
   "exports": {
     ".": {
@@ -33,7 +33,7 @@
     "*.d.ts"
   ],
   "devDependencies": {
-    "@oyu/core": "workspace:*",
+    "@flatbread/core": "workspace:*",
     "@types/node": "^16.11.7",
     "tsup": "^5.6.0",
     "typescript": "^4.4.4"

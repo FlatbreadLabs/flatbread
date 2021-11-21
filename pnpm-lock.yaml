@@ -4,27 +4,27 @@ importers:
 
   .:
     specifiers:
-      '@oyu/config': workspace:*
-      '@oyu/core': workspace:*
-      '@oyu/source-filesystem': workspace:*
-      '@oyu/transformer-markdown': workspace:*
+      '@flatbread/config': workspace:*
+      '@flatbread/core': workspace:*
+      '@flatbread/source-filesystem': workspace:*
+      '@flatbread/transformer-markdown': workspace:*
       '@types/jest': ^27.0.2
       '@types/node': ^16.11.7
       bumpp: ^7.1.1
+      flatbread: workspace:*
       husky: ^7.0.0
       jest: ^27.3.1
-      oyu: workspace:*
       prettier: 2.4.1
       ts-jest: ^27.0.7
       tsconfig-paths-jest: ^0.0.1
       tsup: ^5.7.2
       typescript: ^4.5.2
     dependencies:
-      '@oyu/config': link:packages/config
-      '@oyu/core': link:packages/core
-      '@oyu/source-filesystem': link:packages/source-filesystem
-      '@oyu/transformer-markdown': link:packages/transformer-markdown
-      oyu: link:packages/oyu
+      '@flatbread/config': link:packages/config
+      '@flatbread/core': link:packages/core
+      '@flatbread/source-filesystem': link:packages/source-filesystem
+      '@flatbread/transformer-markdown': link:packages/transformer-markdown
+      flatbread: link:packages/flatbread
     devDependencies:
       '@types/jest': 27.0.2
       '@types/node': 16.11.7
@@ -39,12 +39,12 @@ importers:
 
   packages/config:
     specifiers:
-      '@oyu/core': workspace:*
+      '@flatbread/core': workspace:*
       '@types/node': ^16.11.7
       tsup: ^5.6.0
       typescript: ^4.4.4
     devDependencies:
-      '@oyu/core': link:../core
+      '@flatbread/core': link:../core
       '@types/node': 16.11.7
       tsup: 5.6.0_typescript@4.4.4
       typescript: 4.4.4
@@ -74,12 +74,12 @@ importers:
       typescript: 4.4.4
       vfile: 5.2.0
 
-  packages/oyu:
+  packages/flatbread:
     specifiers:
-      '@oyu/config': workspace:*
-      '@oyu/core': workspace:*
-      '@oyu/source-filesystem': workspace:*
-      '@oyu/transformer-markdown': workspace:*
+      '@flatbread/config': workspace:*
+      '@flatbread/core': workspace:*
+      '@flatbread/source-filesystem': workspace:*
+      '@flatbread/transformer-markdown': workspace:*
       '@types/cors': ^2.8.12
       '@types/express': ^4.17.13
       '@types/node': ^16.11.7
@@ -97,10 +97,10 @@ importers:
       typescript: ^4.4.4
       vfile: ^5.2.0
     dependencies:
-      '@oyu/config': link:../config
-      '@oyu/core': link:../core
-      '@oyu/source-filesystem': link:../source-filesystem
-      '@oyu/transformer-markdown': link:../transformer-markdown
+      '@flatbread/config': link:../config
+      '@flatbread/core': link:../core
+      '@flatbread/source-filesystem': link:../source-filesystem
+      '@flatbread/transformer-markdown': link:../transformer-markdown
       '@types/cors': 2.8.12
       altair-express-middleware: 4.1.0
       cors: 2.8.5
@@ -115,8 +115,8 @@ importers:
       '@types/express': 4.17.13
       '@types/node': 16.11.7
       '@types/sade': 1.7.3
-      tsup: 5.6.0_typescript@4.4.4
-      typescript: 4.4.4
+      tsup: 5.7.2_typescript@4.5.2
+      typescript: 4.5.2
       vfile: 5.2.0
 
   packages/source-filesystem:
@@ -140,7 +140,7 @@ importers:
 
   packages/transformer-markdown:
     specifiers:
-      '@oyu/core': workspace:^0.0.2
+      '@flatbread/core': workspace:^0.0.2
       '@sindresorhus/slugify': ^2.1.0
       '@types/node': ^16.11.7
       '@types/sanitize-html': ^2.5.0
@@ -196,7 +196,7 @@ importers:
       to-vfile: 7.2.2
       unified: 10.1.0
     devDependencies:
-      '@oyu/core': link:../core
+      '@flatbread/core': link:../core
       '@types/node': 16.11.7
       '@types/sanitize-html': 2.5.0
       tsup: 5.6.0_typescript@4.4.4
@@ -205,8 +205,8 @@ importers:
 
   playground:
     specifiers:
-      '@oyu/source-filesystem': workspace:*
-      '@oyu/transformer-markdown': workspace:*
+      '@flatbread/source-filesystem': workspace:*
+      '@flatbread/transformer-markdown': workspace:*
       '@sveltejs/adapter-node': 1.0.0-next.55
       '@sveltejs/adapter-static': 1.0.0-next.21
       '@sveltejs/kit': 1.0.0-next.195
@@ -215,9 +215,9 @@ importers:
       eslint: 7.32.0
       eslint-config-prettier: 8.3.0
       eslint-plugin-svelte3: 3.2.1
+      flatbread: workspace:*
       graphql: 16.0.1
       graphql-helix: 1.9.1
-      oyu: workspace:*
       prettier: 2.4.1
       prettier-plugin-svelte: 2.4.0
       svelte: 3.44.1
@@ -227,8 +227,8 @@ importers:
       typescript: 4.4.4
       vite-plugin-transform: ^1.1.3
     devDependencies:
-      '@oyu/source-filesystem': link:../packages/source-filesystem
-      '@oyu/transformer-markdown': link:../packages/transformer-markdown
+      '@flatbread/source-filesystem': link:../packages/source-filesystem
+      '@flatbread/transformer-markdown': link:../packages/transformer-markdown
       '@sveltejs/adapter-node': 1.0.0-next.55
       '@sveltejs/adapter-static': 1.0.0-next.21
       '@sveltejs/kit': 1.0.0-next.195_svelte@3.44.1
@@ -237,9 +237,9 @@ importers:
       eslint: 7.32.0
       eslint-config-prettier: 8.3.0_eslint@7.32.0
       eslint-plugin-svelte3: 3.2.1_eslint@7.32.0+svelte@3.44.1
+      flatbread: link:../packages/flatbread
       graphql: 16.0.1
       graphql-helix: 1.9.1_graphql@16.0.1
-      oyu: link:../packages/oyu
       prettier: 2.4.1
       prettier-plugin-svelte: 2.4.0_prettier@2.4.1+svelte@3.44.1
       svelte: 3.44.1

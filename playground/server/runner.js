@@ -6,11 +6,11 @@ import { spawn } from 'child_process';
 
 console.log('Init runner.js');
 
-const gql = spawn('npm run oyu');
+const gql = spawn('npm run flatbread');
 let runningScripts = [gql];
 
 gql.on('message', (msg) => {
-  if (msg === 'oyu-gql-ready') {
+  if (msg === 'flatbread-gql-ready') {
     // Start the target process (e.g. the dev server or the build script)
     const targetProcess = spawn('npm run dev', [], {
       shell: true,

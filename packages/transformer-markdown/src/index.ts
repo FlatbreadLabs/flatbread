@@ -3,7 +3,7 @@ import slugify from '@sindresorhus/slugify';
 import { html, excerpt, timeToRead } from './graphql/schema-helpers';
 
 import type { MarkdownTransformerConfig } from './types';
-import type { EntryNode, TransformerPlugin } from '@oyu/core';
+import type { EntryNode, TransformerPlugin } from '@flatbread/core';
 import type { VFile } from 'vfile';
 
 export * from './types';

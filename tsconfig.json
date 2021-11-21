@@ -10,11 +10,13 @@
     "resolveJsonModule": true,
     "skipDefaultLibCheck": true,
     "paths": {
-      "oyu": ["./packages/oyu/src/index.ts"],
-      "@oyu/core": ["./packages/core/src/index.ts"],
-      "@oyu/config": ["./packages/config/src/index.ts"],
-      "@oyu/source-filesystem": ["./packages/source-filesystem/src/index.ts"],
-      "@oyu/transformer-markdown": [
+      "flatbread": ["./packages/flatbread/src/index.ts"],
+      "@flatbread/core": ["./packages/core/src/index.ts"],
+      "@flatbread/config": ["./packages/config/src/index.ts"],
+      "@flatbread/source-filesystem": [
+        "./packages/source-filesystem/src/index.ts"
+      ],
+      "@flatbread/transformer-markdown": [
         "./packages/transformer-markdown/src/index.ts"
       ]
     }

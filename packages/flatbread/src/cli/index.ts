@@ -5,7 +5,7 @@ import { version } from '../../package.json';
 import { networkInterfaces, release } from 'os';
 import orchestrateProcesses from './runner';
 
-import type { ConfigResult, OyuConfig } from '@oyu/config';
+import type { ConfigResult, FlatbreadConfig } from '@flatbread/config';
 
 const GRAPHQL_ENDPOINT = '/graphql';
 const EXPLORE_ENDPOINT = '/explore';
@@ -16,8 +16,8 @@ const EXPLORE_ENDPOINT = '/explore';
  *
  * @returns user config promise
  */
-async function getConfig(): Promise<ConfigResult<OyuConfig>> {
-  const { loadConfig } = await import('@oyu/config');
+async function getConfig(): Promise<ConfigResult<FlatbreadConfig>> {
+  const { loadConfig } = await import('@flatbread/config');
 
   try {
     return await loadConfig();
@@ -52,10 +52,10 @@ async function launch(port: number, https: boolean): Promise<void> {
   );
 }
 
-const prog = sade('oyu').version(version);
+const prog = sade('flatbread').version(version);
 
 prog
-  .command('start [corunner]', 'Start oyu with a GraphQL server')
+  .command('start [corunner]', 'Start flatbread with a GraphQL server')
   .option('--, _', 'Pass options to the corunning script')
   .option('-p, --port', 'Port to run the GraphQL server', 5057)
   .option('-H, --https', 'Use self-signed HTTPS certificate', false)
@@ -67,7 +67,7 @@ prog
     // Yeet it into the all seeing eye of the universe
     orchestrateProcesses({
       corunner: secondaryScript,
-      oyuPort: port,
+      flatbreadPort: port,
     });
     // Say hi for good measure
     welcome({ port, https, open });
@@ -93,7 +93,7 @@ function welcome({
 }): void {
   if (open) launch(port, https);
 
-  console.log(colors.bold().yellow(`\n  おゆ (O yu) [♨️ 🚰] v${version}\n`));
+  console.log(colors.bold().yellow(`\n Flatbread 🥯 v${version}\n`));
 
   const protocol = https ? 'https:' : 'http:';
 

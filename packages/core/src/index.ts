@@ -1,9 +1,9 @@
-// import { OyuJsonNode } from './types';
+// import { FlatbreadJsonNode } from './types';
 
 // core logic will go here
 export * from './types';
 
-// const summarizeTypeShape = (nodes: OyuJsonNode[]): Record<string, any> => {
+// const summarizeTypeShape = (nodes: FlatbreadJsonNode[]): Record<string, any> => {
 //   const schema = nodes.reduce((acc, node) => {
 //     Object.keys(arr);
 //   }, {});

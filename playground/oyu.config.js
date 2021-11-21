@@ -1,6 +1,6 @@
-import defineConfig from '@oyu/config';
-import transformer from '@oyu/transformer-markdown';
-import filesystem from '@oyu/source-filesystem';
+import defineConfig from '@flatbread/config';
+import transformer from '@flatbread/transformer-markdown';
+import filesystem from '@flatbread/source-filesystem';
 
 const transformerConfig = {
   markdown: {

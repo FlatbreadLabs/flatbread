@@ -1,5 +1,5 @@
 {
-  "name": "@oyu/monorepo",
+  "name": "@flatbread/monorepo",
   "version": "0.0.2",
   "private": true,
   "description": "'Rehydrate' your relational markdown data and query it with [GraphQL](https://graphql.org/) inside [SvelteKit](https://kit.svelte.dev/). Inspired by [Gridsome](https://gridsome.org/) and [JungleJS](https://www.junglejs.org/)",
@@ -19,20 +19,20 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tonyketcham/oyu.git"
+    "url": "git+https://github.com/tonyketcham/flatbread.git"
   },
   "author": "Tony Ketcham <ketcham.dev@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tonyketcham/oyu/issues"
+    "url": "https://github.com/tonyketcham/flatbread/issues"
   },
-  "homepage": "https://github.com/tonyketcham/oyu#readme",
+  "homepage": "https://github.com/tonyketcham/flatbread#readme",
   "dependencies": {
-    "@oyu/config": "workspace:*",
-    "@oyu/core": "workspace:*",
-    "@oyu/source-filesystem": "workspace:*",
-    "@oyu/transformer-markdown": "workspace:*",
-    "oyu": "workspace:*"
+    "@flatbread/config": "workspace:*",
+    "@flatbread/core": "workspace:*",
+    "@flatbread/source-filesystem": "workspace:*",
+    "@flatbread/transformer-markdown": "workspace:*",
+    "flatbread": "workspace:*"
   },
   "devDependencies": {
     "@types/jest": "^27.0.2",

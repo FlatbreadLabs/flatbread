@@ -1,5 +1,5 @@
 {
-  "name": "oyu",
+  "name": "flatbread",
   "version": "0.1.1",
   "description": "An 'add hot water' solution to consuming relational, flat-file data with GraphQL🚰",
   "scripts": {
@@ -8,13 +8,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tonyketcham/oyu.git",
+    "url": "git+https://github.com/tonyketcham/flatbread.git",
     "directory": "packages/core"
   },
   "author": "Tony Ketcham <ketcham.dev@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tonyketcham/oyu/issues"
+    "url": "https://github.com/tonyketcham/flatbread/issues"
   },
   "exports": {
     ".": {
@@ -25,7 +25,7 @@
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "bin": {
-    "oyu": "./dist/cli/index.mjs"
+    "flatbread": "./dist/cli/index.mjs"
   },
   "files": [
     "bin",
@@ -33,10 +33,10 @@
     "*.d.ts"
   ],
   "dependencies": {
-    "@oyu/config": "workspace:*",
-    "@oyu/core": "workspace:*",
-    "@oyu/source-filesystem": "workspace:*",
-    "@oyu/transformer-markdown": "workspace:*",
+    "@flatbread/config": "workspace:*",
+    "@flatbread/core": "workspace:*",
+    "@flatbread/source-filesystem": "workspace:*",
+    "@flatbread/transformer-markdown": "workspace:*",
     "@types/cors": "^2.8.12",
     "altair-express-middleware": "^4.1.0",
     "cors": "^2.8.5",

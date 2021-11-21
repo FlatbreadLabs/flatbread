@@ -9,7 +9,7 @@ import colors from 'kleur';
 
 export interface OrchestraOptions {
   corunner: string;
-  oyuPort: number;
+  flatbreadPort: number;
 }
 
 /**
@@ -21,18 +21,18 @@ export interface OrchestraOptions {
  */
 export default function orchestrateProcesses({
   corunner,
-  oyuPort,
+  flatbreadPort,
 }: OrchestraOptions) {
   const pkgManager = detectPkgManager(process.cwd());
-  let serverModulePath = 'node_modules/oyu/dist/graphql/server.mjs';
+  let serverModulePath = 'node_modules/flatbread/dist/graphql/server.mjs';
 
   const gql = fork(resolve(process.cwd(), serverModulePath), [], {
-    env: { OYU_PORT: String(oyuPort) },
+    env: { OYU_PORT: String(flatbreadPort) },
   });
   let runningScripts = [gql];
 
   gql.on('message', (msg) => {
-    if (msg === 'oyu-gql-ready') {
+    if (msg === 'flatbread-gql-ready') {
       // Start the target process (e.g. the dev server or the build script)
       const targetProcess = spawn(pkgManager ?? 'npm run', [corunner], {
         shell: true,
@@ -53,7 +53,7 @@ export default function orchestrateProcesses({
   // End any remaining child processes when the parent process exits
   process.on('exit', function () {
     console.log(
-      colors.bold().green("\nO yu is coolin' off now 🍵 bye bye! 🧙")
+      colors.bold().green("\nFlatbread is coolin' off now 🍵 bye bye! 🧙")
     );
     runningScripts.forEach(function (child) {
       child.kill();

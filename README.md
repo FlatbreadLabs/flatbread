@@ -1,10 +1,12 @@
-[![The thing builds](https://github.com/tonyketcham/oyu/actions/workflows/test.yml/badge.svg)](https://github.com/tonyketcham/oyu/actions/workflows/test.yml)
+[![The thing builds](https://github.com/tonyketcham/flatbread/actions/workflows/test.yml/badge.svg)](https://github.com/tonyketcham/flatbread/actions/workflows/test.yml)
 
-# おゆ (O yu) [♨️🚰]
+# Flatbread 🥪
 
-'Rehydrate' your relational markdown data and query it with [GraphQL](https://graphql.org/) inside [SvelteKit](https://kit.svelte.dev/) and more.
+Eat your relational markdown data _and query it, too,_ with [GraphQL](https://graphql.org/) inside damn near any framework (statement awaiting peer-review).
 
-Inspired by [Gridsome](https://gridsome.org/), [JungleJS](https://www.junglejs.org/), and [Gatsby](https://www.gatsbyjs.com/).
+If it runs ES Modules + Node 14+, it's down to clown.
+
+Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://www.gatsbyjs.com/)) anything.
 
 ## ☀️ Contributing
 
@@ -27,7 +29,7 @@ Open another **terminal** tab.
 | ☝️ Keep the dev server running in your other tab |
 | ------------------------------------------------ |
 
-In the new tab, scope yourself into **oyu** or the specific package you wanna mess with.
+In the new tab, scope yourself into **flatbread** or the specific package you wanna mess with.
 
 ```bash
 cd packages/<package>
@@ -49,6 +51,8 @@ pnpm build
 
 ## 📓 Sidenotes
 
-The transpiled TS files in the [`playground`](https://github.com/tonyketcham/oyu/tree/main/playground) are being tracked in the repo to appease the Vite gods so I can develop quicker. As the project progresses, I'll likely yeet those outta here.
+The transpiled TS files in the [`playground`](https://github.com/tonyketcham/flatbread/tree/main/playground) are being tracked in the repo to appease the Vite gods so I can develop quicker. As the project progresses, I'll likely yeet those outta here.
 
 ![Alt](https://repobeats.axiom.co/api/embed/bc88afba30187e569d95f3edb95d487b8134720e.svg 'Repobeats analytics image')
+
+Huge shoutouts to [@antfu](https://github.com/antfu/) and [@sveltejs/kit](https://github.com/sveltejs/kit) for both having invaluable reference points to guide me through learning more advanced Node, Typescript, and monorepo design all in parallel during this project.

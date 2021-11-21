@@ -1,21 +1,21 @@
 {
-  "name": "@oyu/playground",
+  "name": "@flatbread/playground",
   "private": true,
   "version": "0.1.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tonyketcham/oyu.git",
+    "url": "git+https://github.com/tonyketcham/flatbread.git",
     "directory": "playground"
   },
   "author": "Tony Ketcham <ketcham.dev@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tonyketcham/oyu/issues"
+    "url": "https://github.com/tonyketcham/flatbread/issues"
   },
   "scripts": {
-    "dev": "oyu start -- svelte-kit dev",
-    "oyu:help": "oyu start -h",
-    "build": "oyu start -- svelte-kit build",
+    "dev": "flatbread start -- svelte-kit dev",
+    "flatbread:help": "flatbread start -h",
+    "build": "flatbread start -- svelte-kit build",
     "check-env": "node -e 'console.log(process.env)' | grep npm",
     "preview": "svelte-kit preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
@@ -25,9 +25,9 @@
     "transpile": "tsc --watch"
   },
   "devDependencies": {
-    "oyu": "workspace:*",
-    "@oyu/transformer-markdown": "workspace:*",
-    "@oyu/source-filesystem": "workspace:*",
+    "flatbread": "workspace:*",
+    "@flatbread/transformer-markdown": "workspace:*",
+    "@flatbread/source-filesystem": "workspace:*",
     "@sveltejs/adapter-node": "1.0.0-next.55",
     "@sveltejs/adapter-static": "1.0.0-next.21",
     "@sveltejs/kit": "1.0.0-next.195",

@@ -5,7 +5,7 @@ export const constructConfig = async () => {
 };
 const load = async () => {
   const configPath =
-    process.env.OYU_CONFIG_PATH || process.env.PWD + '/oyu.config.js';
+    process.env.OYU_CONFIG_PATH || process.env.PWD + '/flatbread.config.js';
   const config = fs.existsSync(configPath)
     ? await import(configPath)
     : { default: {} };

@@ -20,7 +20,7 @@ export type NodeIdentifier = {
 /**
  * The main config for declaring your content schema & mdsvex settings.
  */
-export interface OyuConfig {
+export interface FlatbreadConfig {
   identifier?: NodeIdentifier;
   content: ContentConfig[];
   // TODO: figure out how to better type this

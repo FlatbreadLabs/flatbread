@@ -1,6 +1,6 @@
-import type { OyuConfig } from './types';
+import type { FlatbreadConfig } from './types';
 
-const defaultConfig: OyuConfig = {
+const defaultConfig: FlatbreadConfig = {
   identifier: {
     method: 'slug',
   },
