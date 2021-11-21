@@ -1,4 +1,4 @@
-import type { Transformer } from '@oyu/core';
+import type { Source, Transformer, Content } from '@oyu/core';
 
 /**
  * Oyu's configuration interface.
@@ -6,7 +6,11 @@ import type { Transformer } from '@oyu/core';
  * @todo This needs to be typed more strictly.
  */
 export interface OyuConfig {
-  source: any;
-  transformer: Transformer;
-  content: [];
+  source: Source;
+  transformer?: Transformer;
+  content: Content;
+}
+export interface ConfigResult<O> {
+  filepath?: string;
+  config?: O;
 }

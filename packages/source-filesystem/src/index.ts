@@ -4,6 +4,7 @@ import process from 'process';
 import { read } from 'to-vfile';
 
 import type { VFile } from 'vfile';
+import { SourcePlugin } from '@oyu/core';
 
 /**
  * Get filenames from a directory of files that match
@@ -60,10 +61,10 @@ function getAllNodes(
 /**
  * Source filesystem plugin for fetching flat-file content nodes from directories on disk.
  *
- * @param config content types config
+ * @param sourceConfig content types config
  * @returns A function that returns functions which fetch lists of nodes
  */
-const source = (config?: Record<string, any>) => ({
+const source: SourcePlugin = (sourceConfig?: Record<string, any>) => ({
   fetchByType: (path: string) => getNodesFromDirectory(path),
   fetch: (allContentTypes: Record<string, any>[]) =>
     getAllNodes(allContentTypes),

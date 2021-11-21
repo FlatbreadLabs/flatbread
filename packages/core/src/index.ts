@@ -1,8 +1,7 @@
-import { OyuJsonNode } from './types';
+// import { OyuJsonNode } from './types';
 
 // core logic will go here
 export * from './types';
-export * from './interfaces/transformer';
 
 // const summarizeTypeShape = (nodes: OyuJsonNode[]): Record<string, any> => {
 //   const schema = nodes.reduce((acc, node) => {

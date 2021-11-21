@@ -3,7 +3,7 @@ import slugify from '@sindresorhus/slugify';
 import { html, excerpt, timeToRead } from './graphql/schema-helpers';
 
 import type { MarkdownTransformerConfig } from './types';
-import type { EntryNode, Transformer } from '@oyu/core';
+import type { EntryNode, TransformerPlugin } from '@oyu/core';
 import type { VFile } from 'vfile';
 
 export * from './types';
@@ -41,7 +41,7 @@ export const parse = (
  * @param config Markdown transformer configuration.
  * @returns Markdown parser, preknown GraphQL schema fragments, and an EntryNode inspector function.
  */
-const transformer: Transformer = (config: MarkdownTransformerConfig) => {
+const transformer: TransformerPlugin = (config: MarkdownTransformerConfig) => {
   return {
     parse: (input: VFile): EntryNode => parse(input, config),
     preknownSchemaFragments: () => ({ html, excerpt, timeToRead }),
