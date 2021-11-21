@@ -33,11 +33,13 @@ async function getValidNodesFilenames(
  * @param path The directory to read from
  * @returns An array of content nodes
  */
-async function getNodesFromDirectory(path: string): Promise<Promise<VFile>[]> {
+async function getNodesFromDirectory(path: string): Promise<VFile[]> {
   const slugs: string[] = await getValidNodesFilenames(path);
 
-  return slugs.map(
-    async (slug: string): Promise<VFile> => await read(join(path, slug))
+  return Promise.all(
+    slugs.map(
+      async (slug: string): Promise<VFile> => await read(join(path, slug))
+    )
   );
 }
 
