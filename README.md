@@ -12,14 +12,14 @@ Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://w
 
 🚧 This project is currently experimental, is not ready for production, and the API may change considerably before `v1.0`. Feel free to hop in and contribute some issues or PRs!
 
-Once you've installed dependencies with `pnpm install`, start a development server:
+Once you've installed dependencies with `pnpm i -w`, start a development server:
 
 ### **development server** 🎒
 
 This will run a dev server across packages in the monorepo
 
 ```bash
-pnpm dev
+pnpm dev -w
 ```
 
 ### **working on a package** ⚒️
@@ -29,7 +29,20 @@ Open another **terminal** tab.
 | ☝️ Keep the dev server running in your other tab |
 | ------------------------------------------------ |
 
-In the new tab, scope yourself into **flatbread** or the specific package you wanna mess with.
+#### Option 1: use the Playground as a demo project
+
+This allows you to work in the full context of a Flatbread instance as an end-user would, except you can tinker with the `packages` internals.
+
+```bash
+cd playground
+pnpm dev
+```
+
+This is a good option when you want to test without creating temporary clutter per-package that you wouldn't want to commit.
+
+#### Option 2: scope to a specific package
+
+In the new tab, scope yourself into the specific package you wanna mess with.
 
 ```bash
 cd packages/<package>
