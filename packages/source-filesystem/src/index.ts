@@ -4,7 +4,7 @@ import process from 'process';
 import { read } from 'to-vfile';
 
 import type { VFile } from 'vfile';
-import { SourcePlugin } from '@flatbread/core';
+import type { SourcePlugin } from '@flatbread/core';
 
 /**
  * Get filenames from a directory of files that match
