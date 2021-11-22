@@ -21,6 +21,14 @@ async function getConfig(): Promise<ConfigResult<FlatbreadConfig>> {
   try {
     return await loadConfig();
   } catch (err) {
+    // Provide a helpful error message if the config file is not found
+    console.error(
+      colors.red('\nFlatbread could not find a valid') +
+        colors.bold(' flatbread.config.js') +
+        colors.red(
+          ' file. Make sure you have one with the correct schema in your project root to use this!\n'
+        )
+    );
     console.error(err);
     process.exit(1);
   }
@@ -61,6 +69,7 @@ prog
   .option('-o, --open', 'Open the explorer in a browser tab', false)
   .action(async (corunner, { _, port, https, open }) => {
     const config = await getConfig();
+
     // Combine the corunning script & the options passed to it
     const secondaryScript = `${corunner} ${_.join(' ')}`;
     // Yeet it into the all seeing eye of the universe
