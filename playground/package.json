@@ -25,9 +25,9 @@
     "transpile": "tsc --watch"
   },
   "devDependencies": {
-    "flatbread": "workspace:*",
-    "@flatbread/transformer-markdown": "workspace:*",
-    "@flatbread/source-filesystem": "workspace:*",
+    "flatbread": "*",
+    "@flatbread/transformer-markdown": "*",
+    "@flatbread/source-filesystem": "*",
     "@sveltejs/adapter-node": "1.0.0-next.55",
     "@sveltejs/adapter-static": "1.0.0-next.21",
     "@sveltejs/kit": "1.0.0-next.195",

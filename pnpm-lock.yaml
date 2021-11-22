@@ -211,8 +211,8 @@ importers:
 
   playground:
     specifiers:
-      '@flatbread/source-filesystem': workspace:*
-      '@flatbread/transformer-markdown': workspace:*
+      '@flatbread/source-filesystem': '*'
+      '@flatbread/transformer-markdown': '*'
       '@sveltejs/adapter-node': 1.0.0-next.55
       '@sveltejs/adapter-static': 1.0.0-next.21
       '@sveltejs/kit': 1.0.0-next.195
@@ -221,7 +221,7 @@ importers:
       eslint: 7.32.0
       eslint-config-prettier: 8.3.0
       eslint-plugin-svelte3: 3.2.1
-      flatbread: workspace:*
+      flatbread: '*'
       graphql: 16.0.1
       graphql-helix: 1.9.1
       prettier: 2.4.1
