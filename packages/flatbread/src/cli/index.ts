@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import sade from 'sade';
 import colors from 'kleur';
 import { version } from '../../package.json';
