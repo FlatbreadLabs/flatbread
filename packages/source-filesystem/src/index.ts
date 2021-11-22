@@ -49,15 +49,26 @@ async function getNodesFromDirectory(path: string): Promise<VFile[]> {
  * @param paths array of directories to read from
  * @returns
  */
-function getAllNodes(
+async function getAllNodes(
   allContentTypes: Record<string, any>[]
-): Record<string, []> {
-  return Object.fromEntries(
-    allContentTypes.map((contentType) => [
-      contentType.typeName,
-      getNodesFromDirectory(contentType.path),
-    ])
+): Promise<Record<string, VFile[]>> {
+  const nodeEntries = await Promise.all(
+    allContentTypes.map(
+      async (contentType): Promise<Record<string, any>> =>
+        new Promise(async (res) =>
+          res([
+            contentType.typeName,
+            await getNodesFromDirectory(contentType.path),
+          ])
+        )
+    )
   );
+
+  const nodes = Object.fromEntries(
+    nodeEntries as Iterable<readonly [PropertyKey, any]>
+  );
+
+  return nodes;
 }
 
 /**

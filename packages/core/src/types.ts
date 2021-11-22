@@ -65,7 +65,7 @@ export type SourcePlugin = (sourceConfig?: Record<string, any>) => {
   fetchByType?: (path: string) => Promise<any[]>;
   fetch: (
     allContentTypes: Record<string, any>[]
-  ) => Record<string, Promise<any>[]>;
+  ) => Promise<Record<string, VFile[]>>;
 };
 
 /**
@@ -76,7 +76,7 @@ export interface Source {
   fetchByType?: (path: string) => Promise<any[]>;
   fetch: (
     allContentTypes: Record<string, any>[]
-  ) => Record<string, Promise<any>[]>;
+  ) => Promise<Record<string, VFile[]>>;
 }
 
 /**
