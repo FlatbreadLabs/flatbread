@@ -35,6 +35,11 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: 'pnpm'
 
+      - name: Set an escape hatch exclusive to this monorepo
+        id: escape_hatch
+        run: |
+          echo "FLATBREAD_CI=true" >> $GITHUB_ENV
+
       - run: pnpm i -w
 
       # - name: Lint

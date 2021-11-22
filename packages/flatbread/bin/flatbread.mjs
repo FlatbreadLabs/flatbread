@@ -1,12 +1,9 @@
 #!/usr/bin/env node
 import { resolve } from 'path';
 import { existsSync } from 'fs';
-import envCi from 'env-ci';
-
-const { isCi } = envCi();
 
 // In CI/CD, check if the file exists before importing it. This is to prevent some environments from throwing an error before the library is built.
-if (isCi) {
+if (process.env.FLATBREAD_CI) {
   const cliPath = resolve(
     process.cwd(),
     'node_modules',
