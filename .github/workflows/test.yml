@@ -35,7 +35,7 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: 'pnpm'
 
-      - run: pnpm install --frozen-lockfile --strict-peer-dependencies
+      - run: pnpm i -w
 
       # - name: Lint
       #   run: pnpm run lint
@@ -44,4 +44,4 @@ jobs:
       #   run: pnpm run test
 
       - name: Build
-        run: pnpm run build
+        run: pnpm build -w
