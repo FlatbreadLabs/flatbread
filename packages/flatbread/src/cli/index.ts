@@ -3,6 +3,7 @@ import colors from 'kleur';
 import { version } from '../../package.json';
 import { networkInterfaces, release } from 'os';
 import orchestrateProcesses from './runner';
+import generateSchema from '@flatbread/core';
 
 import type { ConfigResult, FlatbreadConfig } from '@flatbread/config';
 
@@ -69,6 +70,7 @@ prog
   .option('-o, --open', 'Open the explorer in a browser tab', false)
   .action(async (corunner, { _, port, https, open }) => {
     const config = await getConfig();
+    generateSchema(config);
 
     // Combine the corunning script & the options passed to it
     const secondaryScript = `${corunner} ${_.join(' ')}`;

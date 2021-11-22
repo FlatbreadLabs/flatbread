@@ -22,6 +22,9 @@ export default defineConfig({
     {
       path: 'content/authors',
       typeName: 'Author',
+      refs: {
+        friend: 'Author',
+      },
     },
   ],
 });
