@@ -46,18 +46,18 @@ export async function loadConfig({ cwd = process.cwd() } = {}): Promise<
  */
 export function validateConfigHasExports<
   C extends { default: FlatbreadConfig }
->(config: unknown): C {
+>(config: unknown | any): C {
   const type = typeof config;
 
   if (type === 'undefined') {
     throw new Error(
-      'Your config is missing default exports. Make sure to include "export default config;"'
+      'Your flatbread config is missing default exports. Make sure to include "export default config;"'
     );
   }
 
-  if (type !== 'object') {
+  if (config.default && typeof config.default !== 'object') {
     throw new Error(
-      `Unexpected config type "${type}", make sure your default export is an object.`
+      `Unexpected default export type "${typeof config.default}" in your flatbread config, make sure your default export is an object.`
     );
   }
 
