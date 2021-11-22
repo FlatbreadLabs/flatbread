@@ -6,6 +6,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "wipe": "npkill",
     "build": "pnpm -r --parallel --filter !playground run build",
     "dev": "pnpm -r --parallel --filter !playground run dev",
     "lint": "prettier --check --plugin-search-dir=. .",
@@ -41,13 +42,14 @@
     "bumpp": "^7.1.1",
     "esno": "^0.12.1",
     "export-size": "^0.5.1",
+    "husky": "^7.0.0",
     "jest": "^27.3.1",
     "kleur": "^4.1.4",
+    "npkill": "^0.8.2",
     "prettier": "2.4.1",
     "ts-jest": "^27.0.7",
     "tsconfig-paths-jest": "^0.0.1",
     "tsup": "^5.7.2",
-    "typescript": "^4.5.2",
-    "husky": "^7.0.0"
+    "typescript": "^4.5.2"
   }
 }
