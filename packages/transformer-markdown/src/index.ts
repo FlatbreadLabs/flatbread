@@ -22,7 +22,7 @@ export const parse = (
 
   return {
     internals: {
-      __filename: input.basename,
+      filename: input.basename,
       path: input.path,
     },
     fields: {
@@ -44,7 +44,7 @@ export const parse = (
 const transformer: TransformerPlugin = (config: MarkdownTransformerConfig) => {
   return {
     parse: (input: VFile): EntryNode => parse(input, config),
-    preknownSchemaFragments: () => ({ html, excerpt, timeToRead }),
+    preknownSchemaFragments: () => ({ content: { html, excerpt, timeToRead } }),
     inspect: (input: EntryNode) => String(input),
   };
 };
