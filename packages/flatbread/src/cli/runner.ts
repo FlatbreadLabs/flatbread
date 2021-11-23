@@ -26,8 +26,11 @@ export default function orchestrateProcesses({
   const pkgManager = detectPkgManager(process.cwd());
   let serverModulePath = 'node_modules/flatbread/dist/graphql/server.mjs';
 
+  process.cwd();
   const gql = fork(resolve(process.cwd(), serverModulePath), [], {
-    env: { OYU_PORT: String(flatbreadPort) },
+    env: {
+      OYU_PORT: String(flatbreadPort),
+    },
   });
   let runningScripts = [gql];
 

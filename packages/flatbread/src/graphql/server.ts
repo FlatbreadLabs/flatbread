@@ -1,80 +1,37 @@
+import { ApolloServer } from 'apollo-server-express';
+import { ApolloServerPluginDrainHttpServer } from 'apollo-server-core';
 import express from 'express';
-import cors from 'cors';
-import type { Request, Response } from 'express';
-import {
-  getGraphQLParameters,
-  processRequest,
-  sendResult,
-  renderGraphiQL,
-} from 'graphql-helix';
-import { altairExpress } from 'altair-express-middleware';
-import { schema } from './schema';
+import http from 'http';
+import generateSchema from '@flatbread/core';
+import { getConfig } from '../utils/getSchema';
+import { GraphQLSchema } from 'graphql';
 
-const app = express();
-
-app.use(express.json());
-app.use(cors());
-
-app.use('/graphql', async (req, res) => {
-  const request = {
-    body: req.body,
-    headers: req.headers,
-    method: req.method,
-    query: req.query,
-  };
-
-  const { operationName, query, variables } = getGraphQLParameters(request);
-
-  const result = await processRequest({
-    operationName,
-    query,
-    variables,
-    request,
-    schema,
-  });
-
-  sendResult(result, res);
-});
-
-const graphQLEditor = 'altair';
-// const customGQLEditor = undefined;
-const defaultQuery = `query Song {
-  song {
-    firstVerse
-    secondVerse
-  }
-}`;
-
-const editorPick = (() => {
-  switch (graphQLEditor) {
-    // case 'custom':
-    //   return customGQLEditor;
-    case 'altair':
-      return altairExpress({
-        endpointURL: '/graphql',
-        initialQuery: defaultQuery,
-      });
-    default:
-      return async (req: Request, res: Response) => {
-        res.send(
-          renderGraphiQL({
-            endpoint: '/graphql',
-            defaultQuery: defaultQuery,
-          })
-        );
-      };
-  }
-})();
-
-app.use('/explore', editorPick);
+const config = await getConfig();
+const schema = await generateSchema(config);
 
 const port = Number(process.env.OYU_PORT) || 5050;
 
-app.listen(port, () => {
+startApolloServer(schema, { port });
+
+async function startApolloServer(schema: GraphQLSchema, { port = 5050 } = {}) {
+  const app = express();
+  const httpServer = http.createServer(app);
+  const server = new ApolloServer({
+    schema,
+    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+  });
+  await server.start();
+  server.applyMiddleware({ app });
+  await new Promise<void>((resolve) => httpServer.listen({ port }, resolve));
+
+  communicateReadiness();
+}
+
+function communicateReadiness() {
   /**
    * If the process was spawned with an IPC channel, send a message to the parent process that the server is ready.
    * This allows the parent process to wait for the server to be ready before continuing, like when you want the GraphQL server to be ready before starting the build process.
    * @see https://nodejs.org/api/process.html#processsendmessage-sendhandle-options-callback
    */
   process.send && process.send('flatbread-gql-ready');
-});
+}

@@ -3,37 +3,8 @@ import colors from 'kleur';
 import { version } from '../../package.json';
 import { networkInterfaces, release } from 'os';
 import orchestrateProcesses from './runner';
-import generateSchema from '@flatbread/core';
-
-import type { ConfigResult, FlatbreadConfig } from '@flatbread/config';
 
 const GRAPHQL_ENDPOINT = '/graphql';
-const EXPLORE_ENDPOINT = '/explore';
-
-/**
- * Wrapper around grabbing the user config and killing
- * the process if the config file is invalid.
- *
- * @returns user config promise
- */
-async function getConfig(): Promise<ConfigResult<FlatbreadConfig>> {
-  const { loadConfig } = await import('@flatbread/config');
-
-  try {
-    return await loadConfig();
-  } catch (err) {
-    // Provide a helpful error message if the config file is not found
-    console.error(
-      colors.red('\nFlatbread could not find a valid') +
-        colors.bold(' flatbread.config.js') +
-        colors.red(
-          ' file. Make sure you have one with the correct schema in your project root to use this!\n'
-        )
-    );
-    console.error(err);
-    process.exit(1);
-  }
-}
 
 /**
  * Launch the GraphQL explorer in a browser.
@@ -56,7 +27,7 @@ async function launch(port: number, https: boolean): Promise<void> {
     }
   }
   exec(
-    `${cmd} ${https ? 'https' : 'http'}://localhost:${port + EXPLORE_ENDPOINT}`
+    `${cmd} ${https ? 'https' : 'http'}://localhost:${port + GRAPHQL_ENDPOINT}`
   );
 }
 
@@ -69,9 +40,6 @@ prog
   .option('-H, --https', 'Use self-signed HTTPS certificate', false)
   .option('-o, --open', 'Open the explorer in a browser tab', false)
   .action(async (corunner, { _, port, https, open }) => {
-    const config = await getConfig();
-    generateSchema(config);
-
     // Combine the corunning script & the options passed to it
     const secondaryScript = `${corunner} ${_.join(' ')}`;
     // Yeet it into the all seeing eye of the universe
@@ -114,13 +82,8 @@ function welcome({
 
       if (details.internal) {
         console.log(
-          `  ${colors.gray('graphql:  ')} ${protocol}//${colors.bold(
+          `  ${colors.gray('graphql:')} ${protocol}//${colors.bold(
             `localhost:${port + GRAPHQL_ENDPOINT}`
-          )}`
-        );
-        console.log(
-          `  ${colors.gray('explore:  ')} ${protocol}//${colors.bold(
-            `localhost:${port + EXPLORE_ENDPOINT}`
           )}`
         );
       } else {

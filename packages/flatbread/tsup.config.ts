@@ -5,7 +5,7 @@ export const tsup: Options = {
   sourcemap: true,
   clean: true,
   entryPoints: ['src/cli/index.ts', 'src/index.ts', 'src/graphql/server.ts'],
-  format: ['esm'],
+  format: ['esm', 'cjs'],
   target: 'esnext',
   dts: true,
 };
