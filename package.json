@@ -6,6 +6,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "wipe": "npkill",
     "build": "pnpm -r --parallel --filter !playground run build",
     "dev": "pnpm -r --parallel --filter !playground run dev",
