@@ -29,9 +29,6 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
 
   const preknownSchemaFragments = fetchPreknownSchemaFragments(config);
 
-  // Create map of references on each content node
-  // ...
-
   // Generate the schema
   const schemaComposer = new SchemaComposer();
 
@@ -57,13 +54,13 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
 
   const OrderTC = schemaComposer.createEnumTC(`enum Order { ASC DESC }`);
 
-  /**
-   * Add query by ID to each content type
-   */
   Object.entries(schemaArray).forEach(([type, schema]) => {
     const pluralType = plur(type, 2);
 
     schemaComposer.Query.addFields({
+      /**
+       * Add find by ID to each content type
+       */
       [type]: {
         type: schema,
         description: `Find ${pluralType} by their ID`,
@@ -74,6 +71,9 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
           return allContentNodesJSON[type].find((node) => node.id === args.id);
         },
       },
+      /**
+       * Add find 'many' to each content type
+       */
       ['all' + pluralType]: {
         type: [schema],
         description: `Return a set of ${pluralType}`,
@@ -117,6 +117,31 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
         },
       },
     });
+  });
+
+  // Create map of references on each content node
+  config.content.forEach(({ typeName, refs }) => {
+    const typeTC = schemaComposer.getOTC(typeName);
+
+    if (refs) {
+      Object.entries(refs).forEach(([refField, refType]) => {
+        const refTypeTC = schemaComposer.getOTC(refType);
+        typeTC.addFields({
+          [refField]: {
+            type: refTypeTC,
+            description: `${refType} related to ${typeName}`,
+
+            resolve: (parentNode) => {
+              const idToFind = parentNode[refField];
+
+              return allContentNodesJSON[refType as string].find(
+                (node) => node.id === idToFind
+              );
+            },
+          },
+        });
+      });
+    }
   });
 
   return schemaComposer.buildSchema();
