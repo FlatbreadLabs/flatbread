@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/core",
-  "version": "1.0.0-alpha.0",
+  "version": "1.0.0-alpha.1",
   "description": "Flatbread's essential logic",
   "scripts": {
     "build": "tsup",
@@ -33,7 +33,8 @@
     "graphql-compose": "^9.0.4",
     "graphql-compose-json": "6.2.0",
     "lodash-es": "^4.17.21",
-    "lru-cache": "^6.0.0"
+    "lru-cache": "^6.0.0",
+    "plur": "^5.0.0"
   },
   "devDependencies": {
     "@types/cache-manager": "^3.4.2",

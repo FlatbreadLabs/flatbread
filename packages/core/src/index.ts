@@ -2,7 +2,8 @@ import { ConfigResult, FlatbreadConfig } from 'flatbread';
 import { SchemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
 import { map } from './utils/map';
-import { defaultsDeep, merge } from 'lodash-es';
+import { defaultsDeep, merge, cloneDeep } from 'lodash-es';
+import plur from 'plur';
 
 export * from './types';
 
@@ -54,18 +55,65 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
     ])
   );
 
+  const OrderTC = schemaComposer.createEnumTC(`enum Order { ASC DESC }`);
+
   /**
    * Add query by ID to each content type
    */
   Object.entries(schemaArray).forEach(([type, schema]) => {
+    const pluralType = plur(type, 2);
+
     schemaComposer.Query.addFields({
       [type]: {
         type: schema,
+        description: `Find ${pluralType} by their ID`,
         args: {
           id: 'String',
         },
         resolve: (_: any, args: Record<string, any>) => {
           return allContentNodesJSON[type].find((node) => node.id === args.id);
+        },
+      },
+      ['all' + pluralType]: {
+        type: [schema],
+        description: `Return a set of ${pluralType}`,
+        args: {
+          limit: {
+            description: `The maximum number of ${pluralType} to return`,
+            type: 'Int',
+          },
+          order: {
+            description: `Which order to return ${pluralType} in`,
+            type: OrderTC,
+            defaultValue: 'ASC',
+          },
+          sortBy: {
+            description: `The field to sort ${pluralType} by`,
+            type: 'String',
+          },
+        },
+        resolve: (_: any, args: Record<string, any>) => {
+          const allNodes = cloneDeep(allContentNodesJSON[type]).sort(
+            (nodeA, nodeB) => {
+              const fieldA = nodeA[args.sortBy];
+              const fieldB = nodeB[args.sortBy];
+
+              if (fieldA < fieldB) {
+                return -1;
+              }
+              if (fieldA > fieldB) {
+                return 1;
+              }
+              // fields must be equal
+              return 0;
+            }
+          );
+
+          if (args.order === 'DESC') {
+            allNodes.reverse();
+          }
+
+          return allNodes.slice(0, args?.limit ?? undefined);
         },
       },
     });

@@ -68,6 +68,7 @@ importers:
       graphql-compose-json: 6.2.0
       lodash-es: ^4.17.21
       lru-cache: ^6.0.0
+      plur: ^5.0.0
       tsup: ^5.6.0
       typescript: ^4.4.4
       vfile: ^5.2.0
@@ -77,6 +78,7 @@ importers:
       graphql-compose-json: 6.2.0_graphql-compose@9.0.4
       lodash-es: 4.17.21
       lru-cache: 6.0.0
+      plur: 5.0.0
     devDependencies:
       '@types/cache-manager': 3.4.2
       '@types/lodash-es': 4.17.5
@@ -4081,6 +4083,11 @@ packages:
     engines: {node: '>= 0.10'}
     dev: false
 
+  /irregular-plurals/3.3.0:
+    resolution: {integrity: sha512-MVBLKUTangM3EfRPFROhmWQQKRDsrgI83J8GS3jXy+OwYqiR2/aoWndYQ5416jLE3uaGgLH7ncme3X9y09gZ3g==}
+    engines: {node: '>=8'}
+    dev: false
+
   /is-absolute-url/4.0.1:
     resolution: {integrity: sha512-/51/TKE88Lmm7Gc4/8btclNXWS+g50wXhYJq8HWIBAGUBnoAdRu1aXeh364t/O7wXDAcTJDP8PNuNKWUDWie+A==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
@@ -5844,6 +5851,13 @@ packages:
     dependencies:
       find-up: 4.1.0
     dev: true
+
+  /plur/5.0.0:
+    resolution: {integrity: sha512-ss4dt57ih2p5jIMA+oOsghldeHtpm7pvGgIB92dqLOCPy1CoHeC0FXBdevMUzXI8CsnCfl+ctIdATK0wNdz2Jw==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    dependencies:
+      irregular-plurals: 3.3.0
+    dev: false
 
   /postcss-load-config/3.1.0:
     resolution: {integrity: sha512-ipM8Ds01ZUophjDTQYSVP70slFSYg3T0/zyfII5vzhN6V57YSxMgG5syXuwi5VtS8wSf3iL30v0uBdoIVx4Q0g==}
