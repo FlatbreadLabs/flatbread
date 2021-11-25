@@ -20,7 +20,7 @@ pnpm i flatbread@alpha @flatbread/config@alpha @flatbread/source-filesystem@alph
 Automatically create a `flatbread.config.js` file:
 
 ```bash
-pnpx flatbread@alpha init
+pnpx flatbread init
 ```
 
 The following example assumes you're using the [`source-filesystem`](https://github.com/tonyketcham/flatbread/tree/main/packages/source-filesystem) + [`transformer-markdown`](https://github.com/tonyketcham/flatbread/tree/main/packages/source-filesystem) plugins with markdown files containing data you'd like to query with GraphQL.
