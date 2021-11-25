@@ -9,8 +9,10 @@ import { MarkdownTransformerConfig } from '../types';
 /**
  * A GraphQL field for the time to read the content, if it exists.
  */
-export const timeToRead = () => ({
+export const timeToRead = (config: MarkdownTransformerConfig) => () => ({
   type: () => 'Int',
+  description:
+    'How long (in minutes) it would take an average reader to read the main content.',
   args: {
     speed: {
       type: () => 'Int',
@@ -18,15 +20,31 @@ export const timeToRead = () => ({
       defaultValue: 230,
     },
   },
-  resolve: (node: any, args: { speed: number }) =>
-    estimateTimeToRead(node.fields.content, args.speed),
+  resolve: async (parentNode: any, args: { speed: number }) => {
+    if (!parentNode.html) {
+      parentNode.html = await transformContentToHTML(
+        parentNode.raw,
+        config.markdown ?? {}
+      );
+    }
+
+    const plaintext = parentNode
+      ? sanitizeHtml(parentNode.html, {
+          allowedAttributes: {},
+          allowedTags: [],
+        }).replace(/\r?\n|\r/g, ' ')
+      : '';
+
+    return estimateTimeToRead(plaintext, args.speed);
+  },
 });
 
 /**
  * A GraphQL field for an excerpt of the content, if it exists.
  */
-export const excerpt = () => ({
+export const excerpt = (config: MarkdownTransformerConfig) => () => ({
   type: 'String',
+  description: 'A plaintext excerpt taken from the main content',
   args: {
     length: {
       type: () => 'Int',
@@ -34,20 +52,16 @@ export const excerpt = () => ({
       defaultValue: 200,
     },
   },
-  resolve: async (
-    node: any,
-    args: { length: number },
-    config: MarkdownTransformerConfig
-  ) => {
-    if (!node.fields.content.html) {
-      node.fields.content.html = await transformContentToHTML(
-        node.fields.content.raw,
+  resolve: async (parentNode: any, args: { length: number }) => {
+    if (!parentNode.html) {
+      parentNode.html = await transformContentToHTML(
+        parentNode.raw,
         config.markdown ?? {}
       );
     }
 
-    const plaintext = node.fields.content
-      ? sanitizeHtml(node.fields.content.html, {
+    const plaintext = parentNode
+      ? sanitizeHtml(parentNode.html, {
           allowedAttributes: {},
           allowedTags: [],
         }).replace(/\r?\n|\r/g, ' ')
@@ -59,15 +73,16 @@ export const excerpt = () => ({
 /**
  * A GraphQL field for the content as HTML, if it exists.
  */
-export const html = () => ({
+export const html = (config: MarkdownTransformerConfig) => () => ({
   type: () => 'String',
-  resolve: async (node: any, config: MarkdownTransformerConfig) => {
-    if (!node.fields.content.html) {
-      node.fields.content.html = await transformContentToHTML(
-        node.fields.content.raw,
+  description: 'The content as HTML',
+  resolve: async (parentNode: any) => {
+    if (!parentNode.html) {
+      parentNode.html = await transformContentToHTML(
+        parentNode.raw,
         config.markdown ?? {}
       );
     }
-    return node.fields.content.html;
+    return parentNode.html;
   },
 });

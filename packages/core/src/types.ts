@@ -49,13 +49,7 @@ export interface Transformer {
 /**
  * A representation of the content of a flat file.
  */
-export interface EntryNode {
-  internals: {
-    path: string;
-    [key: string]: any;
-  };
-  fields: Record<string, any>;
-}
+export type EntryNode = Record<string, any>;
 
 /**
  * A `Source` plugin which contains methods on how to retrieve content nodes in

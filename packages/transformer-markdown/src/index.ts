@@ -21,16 +21,12 @@ export const parse = (
   const { data, content } = matter(String(input), config.grayMatter);
 
   return {
-    internals: {
-      filename: input.basename,
-      path: input.path,
-    },
-    fields: {
-      slug: slugify(input.stem ?? ''),
-      ...data,
-      content: {
-        raw: content,
-      },
+    filename: input.basename,
+    path: input.path,
+    slug: slugify(input.stem ?? ''),
+    ...data,
+    content: {
+      raw: content,
     },
   };
 };
@@ -44,7 +40,13 @@ export const parse = (
 const transformer: TransformerPlugin = (config: MarkdownTransformerConfig) => {
   return {
     parse: (input: VFile): EntryNode => parse(input, config),
-    preknownSchemaFragments: () => ({ content: { html, excerpt, timeToRead } }),
+    preknownSchemaFragments: () => ({
+      content: {
+        html: html(config),
+        excerpt: excerpt(config),
+        timeToRead: timeToRead(config),
+      },
+    }),
     inspect: (input: EntryNode) => String(input),
   };
 };
