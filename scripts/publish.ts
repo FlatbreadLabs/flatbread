@@ -19,9 +19,13 @@ console.log(dirs);
 const packages = await getPackagesManifest(dirs);
 
 for (const { dirName, name, version } of packages) {
-  execSync(command, {
-    stdio: 'inherit',
-    cwd: path.resolve(path.join('packages', dirName)),
-  });
+  try {
+    execSync(command, {
+      stdio: 'inherit',
+      cwd: path.resolve(path.join('packages', dirName)),
+    });
+  } catch (_) {
+    console.log(colors.red(`${name} ${version} failed to publish`));
+  }
   console.log(colors.bold().green(`Published ${name} v${version}`));
 }
