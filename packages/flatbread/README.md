@@ -66,6 +66,4 @@ pnpm build
 
 The transpiled TS files in the [`playground`](https://github.com/tonyketcham/flatbread/tree/main/playground) are being tracked in the repo to appease the Vite gods so I can develop quicker. As the project progresses, I'll likely yeet those outta here.
 
-![Alt](https://repobeats.axiom.co/api/embed/bc88afba30187e569d95f3edb95d487b8134720e.svg 'Repobeats analytics image')
-
 Huge shoutouts to [@antfu](https://github.com/antfu/) and [@sveltejs/kit](https://github.com/sveltejs/kit) for both having invaluable reference points to guide me through learning more advanced Node, Typescript, and monorepo design all in parallel during this project.

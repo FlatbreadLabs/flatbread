@@ -1,11 +1,28 @@
 <script context="module">
   export const load = async ({ fetch }) => {
     const query = `
-      query Song {
-        song {
-          firstVerse
+      query Post{
+        allPosts {
+          filename
+          id
+          authors {
+            name
+            id
+            friend {
+              name
+              date_joined
+            }
+          }
+          title
         }
-      }
+        allAuthors {
+          name
+          id
+          friend {
+            name
+          }
+        }
+      } 
 		`;
 
     try {
