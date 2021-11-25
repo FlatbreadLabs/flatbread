@@ -1,4 +1,4 @@
-import { ConfigResult, FlatbreadConfig } from 'flatbread';
+import { ConfigResult, EntryNode, FlatbreadConfig } from 'flatbread';
 import { SchemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
 import { map } from './utils/map';
@@ -126,20 +126,45 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
     if (refs) {
       Object.entries(refs).forEach(([refField, refType]) => {
         const refTypeTC = schemaComposer.getOTC(refType);
-        typeTC.addFields({
-          [refField]: {
-            type: refTypeTC,
-            description: `${refType} related to ${typeName}`,
 
-            resolve: (parentNode) => {
-              const idToFind = parentNode[refField];
+        // If the current content type has this valid reference field as declared in the config, we'll add a resolver for this reference
+        if (typeTC.hasField(refField)) {
+          const refMapsToMultipleNodes = typeTC.isFieldPlural(refField);
 
-              return allContentNodesJSON[refType as string].find(
-                (node) => node.id === idToFind
-              );
-            },
-          },
-        });
+          if (refMapsToMultipleNodes) {
+            // If the reference field has many nodes
+            typeTC.addFields({
+              [refField]: {
+                type: [refTypeTC],
+                description: `${refType} related to ${typeName}`,
+
+                resolve: (parentNode: EntryNode) => {
+                  const idsToFind = parentNode[refField];
+
+                  return allContentNodesJSON[refType as string].filter((node) =>
+                    idsToFind.includes(node.id)
+                  );
+                },
+              },
+            });
+          } else {
+            // If the reference field has a single node
+            typeTC.addFields({
+              [refField]: {
+                type: refTypeTC,
+                description: `${refType} related to ${typeName}`,
+
+                resolve: (parentNode: EntryNode) => {
+                  const idToFind = parentNode[refField];
+
+                  return allContentNodesJSON[refType as string].find(
+                    (node) => node.id === idToFind
+                  );
+                },
+              },
+            });
+          }
+        }
       });
     }
   });
