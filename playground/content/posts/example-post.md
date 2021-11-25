@@ -1,7 +1,9 @@
 ---
 id: sdfsdf-23423-sdfsd-23444-dfghf
 title: 'Example post of things'
-author: '2a3e'
+authors:
+  - 2a3e
+  - 40s3
 rating: 74
 ---
 

@@ -1,7 +1,7 @@
 {
   "name": "@flatbread/playground",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tonyketcham/flatbread.git",
@@ -13,6 +13,7 @@
     "url": "https://github.com/tonyketcham/flatbread/issues"
   },
   "scripts": {
+    "flat": "flatbread start",
     "dev": "flatbread start -- svelte-kit dev",
     "flatbread:help": "flatbread start -h",
     "build": "flatbread start -- svelte-kit build",

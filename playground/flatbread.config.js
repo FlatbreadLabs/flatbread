@@ -16,7 +16,7 @@ export default defineConfig({
       path: 'content/posts',
       typeName: 'Post',
       refs: {
-        author: 'Author',
+        authors: 'Author',
       },
     },
     {
