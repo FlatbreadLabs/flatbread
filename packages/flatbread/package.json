@@ -1,6 +1,6 @@
 {
   "name": "flatbread",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-alpha.6",
   "description": "Consume relational, flat-file data using GraphQL 🥯 inside damn near any framework.",
   "scripts": {
     "build": "tsup",

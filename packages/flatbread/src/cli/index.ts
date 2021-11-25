@@ -3,6 +3,7 @@ import colors from 'kleur';
 import { version } from '../../package.json';
 import { networkInterfaces, release } from 'os';
 import orchestrateProcesses from './runner';
+import initConfig from './initConfig';
 
 const GRAPHQL_ENDPOINT = '/graphql';
 
@@ -50,6 +51,10 @@ prog
     // Say hi for good measure
     welcome({ port, https, open });
   });
+
+prog
+  .command('init', 'Generate a flatbread.config.js file skeleton')
+  .action(initConfig);
 
 prog.parse(process.argv, { unknown: (arg) => `Unknown option: ${arg}` });
 
