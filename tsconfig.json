@@ -18,6 +18,9 @@
       ],
       "@flatbread/transformer-markdown": [
         "./packages/transformer-markdown/src/index.ts"
+      ],
+      "@flatbread/transformer-yaml": [
+        "./packages/transformer-yaml/src/index.ts"
       ]
     }
   },

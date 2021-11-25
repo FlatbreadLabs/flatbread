@@ -1,5 +1,6 @@
 import defineConfig from '@flatbread/config';
 import transformer from '@flatbread/transformer-markdown';
+// import transformer from '@flatbread/transformer-yaml';
 import filesystem from '@flatbread/source-filesystem';
 
 const transformerConfig = {
@@ -11,16 +12,19 @@ const transformerConfig = {
 export default defineConfig({
   source: filesystem(),
   transformer: transformer(transformerConfig),
+  // source: filesystem({ extensions: ['.yml', '.yaml'] }),
+  // transformer: transformer(),
+
   content: [
     {
-      path: 'content/posts',
+      path: 'content/markdown/posts',
       typeName: 'Post',
       refs: {
         authors: 'Author',
       },
     },
     {
-      path: 'content/authors',
+      path: 'content/markdown/authors',
       typeName: 'Author',
       refs: {
         friend: 'Author',

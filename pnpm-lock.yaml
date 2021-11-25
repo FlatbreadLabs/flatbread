@@ -166,7 +166,7 @@ importers:
 
   packages/transformer-markdown:
     specifiers:
-      '@flatbread/core': workspace:^0.0.2
+      '@flatbread/core': workspace:*
       '@sindresorhus/slugify': ^2.1.0
       '@types/node': ^16.11.7
       '@types/sanitize-html': ^2.5.0
@@ -229,10 +229,42 @@ importers:
       typescript: 4.4.4
       vfile: 5.2.0
 
+  packages/transformer-yaml:
+    specifiers:
+      '@flatbread/core': workspace:*
+      '@sindresorhus/slugify': ^2.1.0
+      '@types/js-yaml': ^4.0.5
+      '@types/node': ^16.11.7
+      graphql: 16.0.1
+      gray-matter: ^4.0.3
+      js-yaml: ^4.1.0
+      lodash-es: ^4.17.21
+      to-vfile: ^7.2.2
+      tsup: ^5.6.0
+      typescript: ^4.4.4
+      unified: ^10.1.0
+      vfile: ^5.2.0
+    dependencies:
+      '@sindresorhus/slugify': 2.1.0
+      graphql: 16.0.1
+      gray-matter: 4.0.3
+      js-yaml: 4.1.0
+      lodash-es: 4.17.21
+      to-vfile: 7.2.2
+      unified: 10.1.0
+    devDependencies:
+      '@flatbread/core': link:../core
+      '@types/js-yaml': 4.0.5
+      '@types/node': 16.11.7
+      tsup: 5.7.2_typescript@4.5.2
+      typescript: 4.5.2
+      vfile: 5.2.0
+
   playground:
     specifiers:
-      '@flatbread/source-filesystem': '*'
-      '@flatbread/transformer-markdown': '*'
+      '@flatbread/source-filesystem': workspace:*
+      '@flatbread/transformer-markdown': workspace:*
+      '@flatbread/transformer-yaml': workspace:*
       '@sveltejs/adapter-node': 1.0.0-next.55
       '@sveltejs/adapter-static': 1.0.0-next.21
       '@sveltejs/kit': 1.0.0-next.195
@@ -241,7 +273,7 @@ importers:
       eslint: 7.32.0
       eslint-config-prettier: 8.3.0
       eslint-plugin-svelte3: 3.2.1
-      flatbread: '*'
+      flatbread: workspace:*
       graphql: 16.0.1
       graphql-helix: 1.9.1
       prettier: 2.4.1
@@ -255,6 +287,7 @@ importers:
     devDependencies:
       '@flatbread/source-filesystem': link:../packages/source-filesystem
       '@flatbread/transformer-markdown': link:../packages/transformer-markdown
+      '@flatbread/transformer-yaml': link:../packages/transformer-yaml
       '@sveltejs/adapter-node': 1.0.0-next.55
       '@sveltejs/adapter-static': 1.0.0-next.21
       '@sveltejs/kit': 1.0.0-next.195_svelte@3.44.1
@@ -1336,6 +1369,10 @@ packages:
       pretty-format: 27.3.1
     dev: true
 
+  /@types/js-yaml/4.0.5:
+    resolution: {integrity: sha512-FhpRzf927MNQdRZP0J5DLIdTXhjLYzeUTmLAu69mnVksLH9CJY3IuSeEgbKUki7GQZm0WqDkGzyxju2EZGD2wA==}
+    dev: true
+
   /@types/json-schema/7.0.9:
     resolution: {integrity: sha512-qcUXuemtEu+E5wZSJHNxUXeCZhAfXKQ41D+duX+VYPde7xyEVZci+/oXKJL13tnRs9lR2pr4fod59GT6/X1/yQ==}
     dev: true
@@ -1975,6 +2012,10 @@ packages:
     resolution: {integrity: sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==}
     dependencies:
       sprintf-js: 1.0.3
+
+  /argparse/2.0.1:
+    resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
+    dev: false
 
   /array-back/3.1.0:
     resolution: {integrity: sha512-TkuxA4UCOvxuDK6NZYXCalszEzj+TLszyASooky+i742l9TqsOdYCMJJupxRic61hwquNtppB3hgcuq9SVSH1Q==}
@@ -4835,6 +4876,13 @@ packages:
     dependencies:
       argparse: 1.0.10
       esprima: 4.0.1
+
+  /js-yaml/4.1.0:
+    resolution: {integrity: sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==}
+    hasBin: true
+    dependencies:
+      argparse: 2.0.1
+    dev: false
 
   /jsdom/16.7.0:
     resolution: {integrity: sha512-u9Smc2G1USStM+s/x1ru5Sxrl6mPYCbByG1U/hUmqaVsm4tbNyS7CicOSRyuGQYZhTu0h84qkZZQ/I+dzizSVw==}
