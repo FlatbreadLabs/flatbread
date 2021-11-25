@@ -5,6 +5,7 @@ import { read } from 'to-vfile';
 
 import type { VFile } from 'vfile';
 import type { SourcePlugin } from '@flatbread/core';
+import type { sourceFilesystemConfig } from './types';
 
 /**
  * Get filenames from a directory of files that match
@@ -18,12 +19,17 @@ async function getValidNodesFilenames(
   path: string,
   extensions?: string[]
 ): Promise<string[]> {
-  // If no extensions are provided, use the default ones
-  const validExtensions = extensions ?? ['.md', '.mdx', '.markdown'];
+  /**
+   * Prepend a period to the extension if it doesn't have one.
+   * If no extensions are provided, use the default ones.
+   * */
+  const formatValidExtensions = extensions?.map((ext) =>
+    String(ext).charAt(0) === '.' ? ext : `.${ext}`
+  ) ?? ['.md', '.mdx', '.markdown'];
 
   const files = await fs.readdir(join(process.cwd(), path));
   return files.filter((f) =>
-    validExtensions.includes(extname(f).toLowerCase())
+    formatValidExtensions.includes(extname(f).toLowerCase())
   );
 }
 
@@ -33,8 +39,14 @@ async function getValidNodesFilenames(
  * @param path The directory to read from
  * @returns An array of content nodes
  */
-async function getNodesFromDirectory(path: string): Promise<VFile[]> {
-  const slugs: string[] = await getValidNodesFilenames(path);
+async function getNodesFromDirectory(
+  path: string,
+  config: sourceFilesystemConfig
+): Promise<VFile[]> {
+  const slugs: string[] = await getValidNodesFilenames(
+    path,
+    config?.extensions
+  );
 
   return Promise.all(
     slugs.map(
@@ -50,7 +62,8 @@ async function getNodesFromDirectory(path: string): Promise<VFile[]> {
  * @returns
  */
 async function getAllNodes(
-  allContentTypes: Record<string, any>[]
+  allContentTypes: Record<string, any>[],
+  config: sourceFilesystemConfig
 ): Promise<Record<string, VFile[]>> {
   const nodeEntries = await Promise.all(
     allContentTypes.map(
@@ -58,7 +71,7 @@ async function getAllNodes(
         new Promise(async (res) =>
           res([
             contentType.typeName,
-            await getNodesFromDirectory(contentType.path),
+            await getNodesFromDirectory(contentType.path, config),
           ])
         )
     )
@@ -77,10 +90,11 @@ async function getAllNodes(
  * @param sourceConfig content types config
  * @returns A function that returns functions which fetch lists of nodes
  */
-const source: SourcePlugin = (sourceConfig?: Record<string, any>) => ({
-  fetchByType: (path: string) => getNodesFromDirectory(path),
+const source: SourcePlugin = (sourceConfig?: sourceFilesystemConfig) => ({
+  fetchByType: (path: string) =>
+    getNodesFromDirectory(path, sourceConfig ?? {}),
   fetch: (allContentTypes: Record<string, any>[]) =>
-    getAllNodes(allContentTypes),
+    getAllNodes(allContentTypes, sourceConfig ?? {}),
 });
 
 export default source;
