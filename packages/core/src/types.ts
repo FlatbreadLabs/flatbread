@@ -27,7 +27,7 @@ export type TransformerPlugin = <Config>(config: Config) => {
    * @param config Options for the transformation
    */
   parse?: (input: VFile) => EntryNode;
-  preknownSchemaFragments: () => Record<string, any>;
+  preknownSchemaFragments?: () => Record<string, any>;
   inspect: (input: EntryNode) => string;
 };
 
