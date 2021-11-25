@@ -7,6 +7,7 @@
     "url": "git+https://github.com/tonyketcham/flatbread.git",
     "directory": "packages/source-filesystem"
   },
+  "homepage": "https://github.com/tonyketcham/flatbread/tree/main/packages/source-filesystem#readme",
   "author": "Tony Ketcham <ketcham.dev@gmail.com>",
   "license": "MIT",
   "bugs": {

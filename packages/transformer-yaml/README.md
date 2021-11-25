@@ -47,4 +47,4 @@ export default defineConfig({
 This transformer plugin currently does not accept any config options yet. It supports all valid yaml syntax flavors by default.
 
 Refer to your source plugin's documentation for the `content` property options.
-If you're using a CMS like NetlifyCMS, you'll want to pair this with the `[source-filesystem](https://github.com/tonyketcham/flatbread/blob/main/packages/source-filesystem/README.md)` plugin.
+If you're using a CMS like NetlifyCMS, you'll want to pair this with the [`source-filesystem`](https://github.com/tonyketcham/flatbread/blob/main/packages/source-filesystem/README.md) plugin.

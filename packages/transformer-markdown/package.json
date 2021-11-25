@@ -7,6 +7,7 @@
     "url": "git+https://github.com/tonyketcham/flatbread.git",
     "directory": "packages/transformer-markdown"
   },
+  "homepage": "https://github.com/tonyketcham/flatbread/tree/main/packages/transformer-markdown#readme",
   "author": "Tony Ketcham <ketcham.dev@gmail.com>",
   "license": "MIT",
   "bugs": {

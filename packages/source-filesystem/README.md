@@ -44,7 +44,7 @@ A filesystem source will also require a transformer in order to parse the files 
 
 #### content
 
-- Type: [`Content`](https://github.com/tonyketcham/oyu/blob/2e84eecebdce5457550bff6a1f7c4ac171064421/packages/core/src/types.ts#L87) _required_
+- Type: [`Content`](https://github.com/tonyketcham/flatbread/blob/main/packages/core/src/types.ts) _required_
 
 An array of content types - each of which will appear in GraphQL.
 
