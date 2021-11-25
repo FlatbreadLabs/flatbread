@@ -2,6 +2,7 @@ import { ConfigResult, FlatbreadConfig } from 'flatbread';
 import { SchemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
 import { map } from './utils/map';
+import { defaultsDeep, merge } from 'lodash-es';
 
 export * from './types';
 
@@ -34,25 +35,28 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
   const schemaComposer = new SchemaComposer();
 
   /**
-   * @todo add resolvers for each field
-   */
+   * For each content type, reduce the nodes therein to one singular node of combined types. This reduced node for each type then is fed into a GraphQL type composer to recursively generate a GraphQL schema.
+   *
+   * Reducing all the nodes forms a more accurate schema in the case of optional fields which may not exist in some content nodes.
+   *
+   * */
   const schemaArray = Object.fromEntries(
     Object.entries(allContentNodesJSON).map(([type, nodes]) => [
       type,
       composeWithJson(
         type,
-        Object.assign(
+        defaultsDeep(
           {},
-          ...nodes.map((node) => ({
-            ...node.internals,
-            ...node.fields,
-            ...preknownSchemaFragments,
-          }))
-        )
+          ...nodes.map((node) => merge({}, node, preknownSchemaFragments))
+        ),
+        { schemaComposer }
       ),
     ])
   );
 
+  /**
+   * Add query by ID to each content type
+   */
   Object.entries(schemaArray).forEach(([type, schema]) => {
     schemaComposer.Query.addFields({
       [type]: {
@@ -70,6 +74,13 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
   return schemaComposer.buildSchema();
 };
 
+/**
+ * If the config has a transformer which defines pre-known schema fragments,
+ * fetch them and return them as an object.
+ *
+ * @param config Flatbread config object
+ * @returns an object of pre-known schema fragments including resolvers.
+ */
 const fetchPreknownSchemaFragments = (
   config: FlatbreadConfig
 ): Record<string, any> | {} => {
