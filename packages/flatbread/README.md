@@ -99,27 +99,147 @@ Now hit your `package.json` and put the keys in the truck:
 
 The Flatbread CLI will capture any script you add in after the `--` and appropriately unite them to live in a land of fairies and wonder while they dance into the sunset as you query your brand spankin new GraphQL server however you'd like from within your app.
 
-### Run that shit 🏃‍♀️
+## Run that shit 🏃‍♀️
 
 ```bash
 pnpm run dev
 ```
 
-### Construct queries 👩‍🍳
+## Construct queries 👩‍🍳
 
 If everything goes well, you'll see a pretty `graphql` endpoint echoed out to your console by Flatbread. If you open that link in your browser, Apollo Studio will open for you to explore the schema Flatbread generated. Apollo Studio has some nice auto-prediction and gives you helpers in the schema explorer for building your queries.
 
 You can query that same endpoint in your app in any way you'd like. Flatbread doesn't care what framework you use.
 
-### Query within your app ❓❓
+## Query arguments
+
+The following arguments are listed in their order of operation.
+
+### `filter`
+
+Each collection in the GraphQL schema can be passed a `filter` argument to constrain your results, sifting for only what you want. Any leaf field should be able to be used in a filter.
+
+The syntax for `filter` is based on a subset of [MongoDB's query syntax](https://docs.mongodb.com/manual/reference/operator/query/).
+
+#### `filter` syntax
+
+A filter is composed of a nested object with a shape that matches the path to the value you want to compare on every entry in the given collection. The deepest nested level that does not have a JSON object as its value will be used to build the comparison where the `key` is the comparison operation and `value` is the value to compare every entry against.
+
+#### Example
+
+```js
+filter = { postMeta: { rating: { gt: 80 } } };
+
+entries = [
+  { id: 1, title: 'My pretzel collection', postMeta: { rating: 97 } },
+  { id: 2, title: 'Debugging the simulation', postMeta: { rating: 20 } },
+  {
+    id: 3,
+    title: 'Liquid Proust is a great tea vendor btw',
+    postMeta: { rating: 99 },
+  },
+  { id: 4, title: 'Sitting in a chair', postMeta: { rating: 74 } },
+];
+```
+
+The above filter would return entries with a rating greater than 80:
+
+```js
+result = [
+  { id: 1, title: 'My pretzel collection', postMeta: { rating: 97 } },
+  {
+    id: 3,
+    title: 'Liquid Proust is a great tea vendor btw',
+    postMeta: { rating: 99 },
+  },
+];
+```
+
+#### Supported `filter` operations
+
+- `eq` - equal
+  - This is like `filterValue === resultValue` in JavaScript
+- `ne` - not equal
+  - This is like `filterValue !== resultValue` in JavaScript
+- `in`
+  - This is like `filterValue.includes(resultValue)` in JavaScript
+  - Can only be passed an array of values which pass strict comparison
+- `nin`
+  - This is like `!filterValue.includes(resultValue)` in JavaScript
+  - Can only be passed an array of values which pass strict comparison
+- `lt`, `lte`, `gt`, `gte`
+  - This is like `<`, `<=`, `>`, `>=` respectively
+  - Can only be used with numbers, strings, and booleans
+- `exists`
+  - This is like `filterValue ? resultValue != undefined : resultValue == undefined`
+  - Accepts `true` or `false` as a value to compare against (`filterValue`)
+  - For checking against a property that could be both `null` or `undefined`
+- `strictlyExists`
+  - This is like `filterValue ? resultValue !== undefined : resultValue === undefined`
+  - Accepts `true` or `false` as a value to compare against (`filterValue`)
+  - Checking against a property for `undefined`
+- `regex`
+  - This is like new RegExp(filterValue).test(resultValue) in JavaScript
+- `wildcard`
+  - This is an abstraction on top of `regex` for loose string matching
+  - Case insensitive
+  - Uses [matcher](https://github.com/sindresorhus/matcher) and matcher's [API](https://github.com/sindresorhus/matcher#usage)
+
+Caveats:
+
+- Currently cannot infer date strings and then compare `Date` types in filters
+  - should work if you dynamically pass in a `Date` object from your client, though not extensively tested
+  - if you wanna take a shot at that, start a PR for [adding arg typeOf checks and subsequent unique comparator functions 🥪](https://github.com/tonyketcham/flatbread/blob/main/packages/core/src/utils/sift.ts)
+
+#### Combining multiple filters
+
+You can union multiple filters together by adding peer objects within your filter object to point to multiple paths.
+
+#### Example
+
+Using the `entries` from the previous example, let's combine multiple filters.
+
+```graphql
+query FilteredPosts {
+  allPosts(
+    filter: { title: { wildcard: "*tion" }, postMeta: { rating: { gt: 80 } } }
+  ) {
+    title
+  }
+}
+```
+
+Results in:
+
+```js
+result = [{ id: 1, title: 'My pretzel collection', postMeta: { rating: 97 } }];
+```
+
+### `sortBy`
+
+Sorts by the given field. Accepts a root-level field name. Defaults to not sortin' at all.
+
+### `order`
+
+The direction of sorting. Accepts `ASC` or `DESC`. Defaults to `ASC`.
+
+### `skip`
+
+Skips the specified number of entries. Accepts an integer.
+
+### `limit`
+
+Limits the number of returned entries to the specified amount. Accepts an integer.
+
+## Query within your app ❓❓
 
 [Check out the playground for an example](https://github.com/tonyketcham/flatbread/tree/main/playground) of using Flatbread with SvelteKit to safely shoot off GraphQL queries using a static (or node) adapter.
 
-## ☀️ Contributing
+# ☀️ Contributing
 
 Clone the entire monorepo! Once you've installed dependencies with `pnpm i -w`, start a development server:
 
-### **development server** 🎒
+## **development server** 🎒
 
 This will run a dev server across packages in the monorepo
 
@@ -127,14 +247,14 @@ This will run a dev server across packages in the monorepo
 pnpm dev -w
 ```
 
-### **working on a package** ⚒️
+## **working on a package** ⚒️
 
 Open another **terminal** tab.
 
 | ☝️ Keep the dev server running in your other tab |
 | ------------------------------------------------ |
 
-#### Option 1: use the Playground as a demo project
+### Option 1: use the Playground as a demo project
 
 This allows you to work in the full context of a Flatbread instance as an end-user would, except you can tinker with the `packages` internals.
 
@@ -145,7 +265,7 @@ pnpm dev
 
 This is a good option when you want to test without creating temporary clutter per-package that you wouldn't want to commit.
 
-#### Option 2: scope to a specific package
+### Option 2: scope to a specific package
 
 In the new tab, scope yourself into the specific package you wanna mess with.
 
@@ -159,7 +279,7 @@ Run the file containing where you invoke your function at the top level.
 node dist/index.mjs # ya need Node v14.18+
 ```
 
-### **build for production** 📦
+## **build for production** 📦
 
 This will use `tsup` to build each package linked in the monorepo unless opted out per-package.
 
@@ -167,7 +287,7 @@ This will use `tsup` to build each package linked in the monorepo unless opted o
 pnpm build
 ```
 
-## 📓 Sidenotes
+# 📓 Sidenotes
 
 The transpiled TS files in the [`playground`](https://github.com/tonyketcham/flatbread/tree/main/playground) are being tracked in the repo to appease the Vite gods so I can develop quicker. As the project progresses, I'll likely yeet those outta here.
 
