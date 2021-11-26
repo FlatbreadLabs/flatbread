@@ -165,11 +165,6 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
                     ) ?? [];
 
                   if (args.filter) {
-                    console.log('matches', JSON.stringify(matches, null, 2));
-                    console.log(
-                      'args.filter',
-                      JSON.stringify(matches.filter(sift(args.filter)), null, 2)
-                    );
                     matches = matches.filter(sift(args.filter));
                   }
                   return matches;

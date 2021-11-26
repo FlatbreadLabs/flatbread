@@ -59,30 +59,26 @@ importers:
 
   packages/core:
     specifiers:
-      '@types/cache-manager': ^3.4.2
       '@types/lodash-es': ^4.17.5
       '@types/lru-cache': ^5.1.1
       '@types/node': ^16.11.7
-      cache-manager: ^3.6.0
       graphql-compose: ^9.0.4
       graphql-compose-json: 6.2.0
       lodash-es: ^4.17.21
       lru-cache: ^6.0.0
+      matcher: ^5.0.0
       plur: ^5.0.0
-      sift: ^15.0.0
       tsup: ^5.6.0
       typescript: ^4.4.4
       vfile: ^5.2.0
     dependencies:
-      cache-manager: 3.6.0
       graphql-compose: 9.0.4
       graphql-compose-json: 6.2.0_graphql-compose@9.0.4
       lodash-es: 4.17.21
       lru-cache: 6.0.0
+      matcher: 5.0.0
       plur: 5.0.0
-      sift: 15.0.0
     devDependencies:
-      '@types/cache-manager': 3.4.2
       '@types/lodash-es': 4.17.5
       '@types/lru-cache': 5.1.1
       '@types/node': 16.11.7
@@ -1290,10 +1286,6 @@ packages:
       '@types/connect': 3.4.35
       '@types/node': 16.11.7
 
-  /@types/cache-manager/3.4.2:
-    resolution: {integrity: sha512-1IwA74t5ID4KWo0Kndal16MhiPSZgMe1fGc+MLT6j5r+Ab7jku36PFTl4PP6MiWw0BJscM9QpZEo00qixNQoRg==}
-    dev: true
-
   /@types/connect/3.4.35:
     resolution: {integrity: sha512-cdeYyv4KWoEgpBISTxWvqYsVy444DOqehiF3fM3ne10AmJ62RSyNkUnxMJXHQWRQQX2eR94m5y1IZyDwBjV9FQ==}
     dependencies:
@@ -2044,10 +2036,6 @@ packages:
       retry: 0.13.1
     dev: false
 
-  /async/3.2.0:
-    resolution: {integrity: sha512-TR2mEZFVOj2pLStYxLht7TyfuRzaydfpxr3k9RpHIzMgw7A64dzsdqCxH1WJyQdoe8T10nDXd9wnEigmiuHIZw==}
-    dev: false
-
   /asynckit/0.4.0:
     resolution: {integrity: sha1-x57Zf380y48robyXkLzDZkdLS3k=}
     dev: true
@@ -2282,14 +2270,6 @@ packages:
     resolution: {integrity: sha512-m4xrA2MKfid6uDV2j2+0mXrtPGxlvAW0y+7Gnn2P8WVMSG+4e4tcoYX++94ZPblPfpBccJ5e7HvKdghlX5yiDA==}
     engines: {node: '>=8'}
     dev: true
-
-  /cache-manager/3.6.0:
-    resolution: {integrity: sha512-D4GJZhyYgprYM30ZEPOn9kkdwdPUumX3ujbNbl7FYjcRViRvAgY53k6pO/82wNsm7c4aHVgXfR12/3huA47qnA==}
-    dependencies:
-      async: 3.2.0
-      lodash: 4.17.21
-      lru-cache: 6.0.0
-    dev: false
 
   /call-bind/1.0.2:
     resolution: {integrity: sha512-7O+FbCihrB5WGbFYesctwmTKae6rOiIzmz1icreWJ+0aA7LJfuqhEso2T9ncpcFtzMQtzXf2QGGueWJGTYsqrA==}
@@ -5065,6 +5045,7 @@ packages:
 
   /lodash/4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
+    dev: true
 
   /loglevel-plugin-prefix/0.8.4:
     resolution: {integrity: sha512-WpG9CcFAOjz/FtNht+QJeGpvVl/cdR6P0z6OcXSkr8wFJOsV2GRj2j10JLfjuA4aYkcKCNIEqRGCyTife9R8/g==}
@@ -5121,6 +5102,13 @@ packages:
 
   /markdown-table/3.0.1:
     resolution: {integrity: sha512-CBbaYXKSGnE1uLRpKA1SWgIRb2PQrpkllNWpZtZe6VojOJ4ysqiq7/2glYcmKsOYN09QgH/HEBX5hIshAeiK6A==}
+    dev: false
+
+  /matcher/5.0.0:
+    resolution: {integrity: sha512-s2EMBOWtXFc8dgqvoAzKJXxNHibcdJMV0gwqKUaw9E2JBJuGUK7DrNKrA6g/i+v72TT16+6sVm5mS3thaMLQUw==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    dependencies:
+      escape-string-regexp: 5.0.0
     dev: false
 
   /mdast-squeeze-paragraphs/5.2.0:
@@ -6466,10 +6454,6 @@ packages:
       call-bind: 1.0.2
       get-intrinsic: 1.1.1
       object-inspect: 1.11.0
-    dev: false
-
-  /sift/15.0.0:
-    resolution: {integrity: sha512-FrKLXaUad4IYEpIzs9BAaXXNwcRnzg2vPfPTDgPRrKncMhgx9wftFzJrIRh9SCxxz0zHgvSKULQRRGA9JQWcZQ==}
     dev: false
 
   /signal-exit/3.0.5:

@@ -1,3 +1,4 @@
+// This file is not yet used, but may be used in the future to improve performance.
 import LRU from 'lru-cache';
 import crypto from 'crypto';
 
