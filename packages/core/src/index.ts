@@ -159,10 +159,10 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
 
                 resolve: (parentNode: EntryNode, args: Record<string, any>) => {
                   const idsToFind = parentNode[refField];
-
-                  let matches = allContentNodesJSON[refType as string].filter(
-                    (node) => idsToFind.includes(node.id)
-                  );
+                  let matches =
+                    allContentNodesJSON[refType as string]?.filter((node) =>
+                      idsToFind?.includes(node.id)
+                    ) ?? [];
 
                   if (args.filter) {
                     console.log('matches', JSON.stringify(matches, null, 2));
