@@ -2,6 +2,7 @@ import { ConfigResult, EntryNode, FlatbreadConfig } from 'flatbread';
 import { SchemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
 import { map } from './utils/map';
+import sift from './utils/sift';
 import { defaultsDeep, merge, cloneDeep } from 'lodash-es';
 import plur from 'plur';
 
@@ -78,6 +79,10 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
         type: [schema],
         description: `Return a set of ${pluralType}`,
         args: {
+          skip: {
+            description: 'Skip the first `n` results',
+            type: 'Int',
+          },
           limit: {
             description: `The maximum number of ${pluralType} to return`,
             type: 'Int',
@@ -91,29 +96,37 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
             description: `The field to sort ${pluralType} by`,
             type: 'String',
           },
+          filter: {
+            description: `Filter ${pluralType} by a JSON object`,
+            type: 'JSON',
+          },
         },
         resolve: (_: any, args: Record<string, any>) => {
-          const allNodes = cloneDeep(allContentNodesJSON[type]).sort(
-            (nodeA, nodeB) => {
-              const fieldA = nodeA[args.sortBy];
-              const fieldB = nodeB[args.sortBy];
+          let allNodes = cloneDeep(allContentNodesJSON[type]);
 
-              if (fieldA < fieldB) {
-                return -1;
-              }
-              if (fieldA > fieldB) {
-                return 1;
-              }
-              // fields must be equal
-              return 0;
+          if (args.filter) {
+            allNodes = allNodes.filter(sift(args.filter));
+          }
+
+          allNodes.sort((nodeA, nodeB) => {
+            const fieldA = nodeA[args.sortBy];
+            const fieldB = nodeB[args.sortBy];
+
+            if (fieldA < fieldB) {
+              return -1;
             }
-          );
+            if (fieldA > fieldB) {
+              return 1;
+            }
+            // fields must be equal
+            return 0;
+          });
 
           if (args.order === 'DESC') {
             allNodes.reverse();
           }
 
-          return allNodes.slice(0, args?.limit ?? undefined);
+          return allNodes.slice(args?.skip ?? 0, args?.limit ?? undefined);
         },
       },
     });
@@ -137,13 +150,29 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
               [refField]: {
                 type: [refTypeTC],
                 description: `${refType} related to ${typeName}`,
+                args: {
+                  filter: {
+                    description: `Filter ${refField} by a JSON object`,
+                    type: 'JSON',
+                  },
+                },
 
-                resolve: (parentNode: EntryNode) => {
+                resolve: (parentNode: EntryNode, args: Record<string, any>) => {
                   const idsToFind = parentNode[refField];
 
-                  return allContentNodesJSON[refType as string].filter((node) =>
-                    idsToFind.includes(node.id)
+                  let matches = allContentNodesJSON[refType as string].filter(
+                    (node) => idsToFind.includes(node.id)
                   );
+
+                  if (args.filter) {
+                    console.log('matches', JSON.stringify(matches, null, 2));
+                    console.log(
+                      'args.filter',
+                      JSON.stringify(matches.filter(sift(args.filter)), null, 2)
+                    );
+                    matches = matches.filter(sift(args.filter));
+                  }
+                  return matches;
                 },
               },
             });

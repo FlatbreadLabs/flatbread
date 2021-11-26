@@ -35,7 +35,8 @@
     "graphql-compose-json": "6.2.0",
     "lodash-es": "^4.17.21",
     "lru-cache": "^6.0.0",
-    "plur": "^5.0.0"
+    "plur": "^5.0.0",
+    "sift": "^15.0.0"
   },
   "devDependencies": {
     "@types/cache-manager": "^3.4.2",
