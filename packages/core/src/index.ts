@@ -108,19 +108,21 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
             allNodes = allNodes.filter(sift(args.filter));
           }
 
-          allNodes.sort((nodeA, nodeB) => {
-            const fieldA = nodeA[args.sortBy];
-            const fieldB = nodeB[args.sortBy];
+          if (args.sortBy) {
+            allNodes.sort((nodeA, nodeB) => {
+              const fieldA = nodeA[args.sortBy];
+              const fieldB = nodeB[args.sortBy];
 
-            if (fieldA < fieldB) {
-              return -1;
-            }
-            if (fieldA > fieldB) {
-              return 1;
-            }
-            // fields must be equal
-            return 0;
-          });
+              if (fieldA < fieldB) {
+                return -1;
+              }
+              if (fieldA > fieldB) {
+                return 1;
+              }
+              // fields must be equal
+              return 0;
+            });
+          }
 
           if (args.order === 'DESC') {
             allNodes.reverse();
