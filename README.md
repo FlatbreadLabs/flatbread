@@ -14,7 +14,7 @@ Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://w
 
 ```bash
 # This is the most common setup - pick whichever plugins you want to use!
-pnpm i flatbread@alpha @flatbread/config@alpha @flatbread/source-filesystem@alpha @flatbread/transformer-markdown@alpha
+pnpm i flatbread@latest @flatbread/config@alpha @flatbread/source-filesystem@alpha @flatbread/transformer-markdown@alpha
 ```
 
 Automatically create a `flatbread.config.js` file:
