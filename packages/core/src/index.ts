@@ -1,5 +1,9 @@
 import { ConfigResult, EntryNode, FlatbreadConfig } from 'flatbread';
-import { SchemaComposer } from 'graphql-compose';
+import {
+  EnumTypeComposer,
+  ResolverResolveParams,
+  SchemaComposer,
+} from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
 import { map } from './utils/map';
 import sift from './utils/sift';
@@ -7,6 +11,10 @@ import { defaultsDeep, merge, cloneDeep } from 'lodash-es';
 import plur from 'plur';
 
 export * from './types';
+interface RootQueries {
+  maybeReturnsSingleItem: string[];
+  maybeReturnsList: string[];
+}
 
 /**
  * Generates a GraphQL schema from content nodes.
@@ -54,146 +62,174 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
   );
 
   const OrderTC = schemaComposer.createEnumTC(`enum Order { ASC DESC }`);
+  let queries: RootQueries = {
+    maybeReturnsSingleItem: [],
+    maybeReturnsList: [],
+  };
 
-  Object.entries(schemaArray).forEach(([type, schema]) => {
+  // Main builder loop - iterate through each content type and generate query resolvers + relationships for it
+  for (const [type, schema] of Object.entries(schemaArray)) {
     const pluralType = plur(type, 2);
+    const pluralTypeQueryName = 'all' + pluralType;
+
+    // console.log(schema.getField('id').type.getType().name);
+
+    schema.addResolver({
+      name: 'findById',
+      type: schema,
+      description: `Find a ${type} by its ID`,
+      args: {
+        id: 'String',
+      },
+      resolve: (rp: Record<string, any>) => {
+        return allContentNodesJSON[type].find((node) => node.id === rp.args.id);
+      },
+    });
+
+    schema.addResolver({
+      name: 'findMany',
+      type: [schema],
+      description: `Find ${pluralType} by their IDs`,
+      args: {
+        ids: {
+          type: '[String]',
+        },
+      },
+      resolve: (rp: Record<string, any>) => {
+        const idsToFind = rp.args.ids ?? [];
+        const matches =
+          allContentNodesJSON[type]?.filter((node) =>
+            idsToFind?.includes(node.id)
+          ) ?? [];
+        return matches;
+      },
+    });
+
+    schema.addResolver({
+      name: 'all',
+      type: [schema],
+      description: `Return a set of ${pluralType}`,
+      resolve: (rp: Record<string, any>) =>
+        cloneDeep(allContentNodesJSON[type]),
+    });
+
+    // args: {
+    //     skip: {
+    //       description: 'Skip the first `n` results',
+    //       type: 'Int',
+    //     },
+    //     limit: {
+    //       description: `The maximum number of ${pluralType} to return`,
+    //       type: 'Int',
+    //     },
+    //     order: {
+    //       description: `Which order to return ${pluralType} in`,
+    //       type: OrderTC,
+    //       defaultValue: 'ASC',
+    //     },
+    //     sortBy: {
+    //       description: `The field to sort ${pluralType} by`,
+    //       type: 'String',
+    //     },
+    //     filter: {
+    //       description: `Filter ${pluralType} by a JSON object`,
+    //       type: 'JSON',
+    //     },
+    //   },
+    //   resolve: (rp: Record<string, any>) => {
+    //     let allNodes = cloneDeep(allContentNodesJSON[type]);
+
+    //     if (rp.args.filter) {
+    //       allNodes = allNodes.filter(sift(rp.args.filter));
+    //     }
+
+    //     if (rp.args.sortBy) {
+    //       allNodes.sort((nodeA, nodeB) => {
+    //         const fieldA = nodeA[rp.args.sortBy];
+    //         const fieldB = nodeB[rp.args.sortBy];
+
+    //         if (fieldA < fieldB) {
+    //           return -1;
+    //         }
+    //         if (fieldA > fieldB) {
+    //           return 1;
+    //         }
+    //         // fields must be equal
+    //         return 0;
+    //       });
+    //     }
+
+    //     if (rp.args.order === 'DESC') {
+    //       allNodes.reverse();
+    //     }
+
+    //     return allNodes.slice(rp.args?.skip ?? 0, rp.args?.limit ?? undefined);
+    //   },
 
     schemaComposer.Query.addFields({
       /**
        * Add find by ID to each content type
        */
-      [type]: {
-        type: schema,
-        description: `Find ${pluralType} by their ID`,
-        args: {
-          id: 'String',
-        },
-        resolve: (_: any, args: Record<string, any>) => {
-          return allContentNodesJSON[type].find((node) => node.id === args.id);
-        },
-      },
+      [type]: schema.getResolver('findById'),
+
       /**
        * Add find 'many' to each content type
        */
-      ['all' + pluralType]: {
-        type: [schema],
-        description: `Return a set of ${pluralType}`,
-        args: {
-          skip: {
-            description: 'Skip the first `n` results',
-            type: 'Int',
-          },
-          limit: {
-            description: `The maximum number of ${pluralType} to return`,
-            type: 'Int',
-          },
-          order: {
-            description: `Which order to return ${pluralType} in`,
-            type: OrderTC,
-            defaultValue: 'ASC',
-          },
-          sortBy: {
-            description: `The field to sort ${pluralType} by`,
-            type: 'String',
-          },
-          filter: {
-            description: `Filter ${pluralType} by a JSON object`,
-            type: 'JSON',
-          },
-        },
-        resolve: (_: any, args: Record<string, any>) => {
-          let allNodes = cloneDeep(allContentNodesJSON[type]);
-
-          if (args.filter) {
-            allNodes = allNodes.filter(sift(args.filter));
+      [pluralTypeQueryName]: schema
+        .getResolver('all')
+        .wrap((newResolver) => {
+          newResolver.addArgs(generateArgsForAllQuery(pluralType, OrderTC));
+          return newResolver;
+        })
+        .wrapResolve(
+          (next) => (rp: ResolverResolveParams<unknown, any, any>) => {
+            rp.source = allContentNodesJSON[type];
+            return next(rp);
           }
-
-          if (args.sortBy) {
-            allNodes.sort((nodeA, nodeB) => {
-              const fieldA = nodeA[args.sortBy];
-              const fieldB = nodeB[args.sortBy];
-
-              if (fieldA < fieldB) {
-                return -1;
-              }
-              if (fieldA > fieldB) {
-                return 1;
-              }
-              // fields must be equal
-              return 0;
-            });
-          }
-
-          if (args.order === 'DESC') {
-            allNodes.reverse();
-          }
-
-          return allNodes.slice(args?.skip ?? 0, args?.limit ?? undefined);
-        },
-      },
+        )
+        .withMiddlewares([cascadingFilterMiddleware]),
     });
-  });
+
+    // Separate the queries by return type for later use when wrapping the query resolvers
+    queries.maybeReturnsSingleItem.push(type);
+    queries.maybeReturnsList.push(pluralTypeQueryName);
+  }
 
   // Create map of references on each content node
-  config.content.forEach(({ typeName, refs }) => {
+  for (const { typeName, refs } of config.content) {
     const typeTC = schemaComposer.getOTC(typeName);
 
-    if (refs) {
-      Object.entries(refs).forEach(([refField, refType]) => {
-        const refTypeTC = schemaComposer.getOTC(refType);
+    if (!refs) continue;
 
-        // If the current content type has this valid reference field as declared in the config, we'll add a resolver for this reference
-        if (typeTC.hasField(refField)) {
-          const refMapsToMultipleNodes = typeTC.isFieldPlural(refField);
+    Object.entries(refs).forEach(([refField, refType]) => {
+      const refTypeTC = schemaComposer.getOTC(refType);
 
-          if (refMapsToMultipleNodes) {
-            // If the reference field has many nodes
-            typeTC.addFields({
-              [refField]: {
-                type: [refTypeTC],
-                description: `${refType} related to ${typeName}`,
-                args: {
-                  filter: {
-                    description: `Filter ${refField} by a JSON object`,
-                    type: 'JSON',
-                  },
-                },
+      // If the current content type has this valid reference field as declared in the config, we'll add a resolver for this reference
+      if (!typeTC.hasField(refField)) return;
+      const refMapsToMultipleNodes = typeTC.isFieldPlural(refField);
 
-                resolve: (parentNode: EntryNode, args: Record<string, any>) => {
-                  const idsToFind = parentNode[refField];
-                  let matches =
-                    allContentNodesJSON[refType as string]?.filter((node) =>
-                      idsToFind?.includes(node.id)
-                    ) ?? [];
-
-                  if (args.filter) {
-                    matches = matches.filter(sift(args.filter));
-                  }
-                  return matches;
-                },
-              },
-            });
-          } else {
-            // If the reference field has a single node
-            typeTC.addFields({
-              [refField]: {
-                type: refTypeTC,
-                description: `${refType} related to ${typeName}`,
-
-                resolve: (parentNode: EntryNode) => {
-                  const idToFind = parentNode[refField];
-
-                  return allContentNodesJSON[refType as string].find(
-                    (node) => node.id === idToFind
-                  );
-                },
-              },
-            });
-          }
-        }
-      });
-    }
-  });
+      if (refMapsToMultipleNodes) {
+        // If the reference field has many nodes
+        typeTC.addRelation(refField, {
+          resolver: () => refTypeTC.getResolver('findMany'),
+          prepareArgs: {
+            ids: (source) => source[refField],
+          },
+          projection: { [refField]: true },
+        });
+      } else {
+        // If the reference field has a single node
+        typeTC.addRelation(refField, {
+          resolver: () => refTypeTC.getResolver('findById'),
+          prepareArgs: {
+            id: (source) => source[refField],
+          },
+          projection: { [refField]: true },
+        });
+      }
+      // console.log(typeTC.getResolver('findMany').toString());
+    });
+  }
 
   return schemaComposer.buildSchema();
 };
@@ -241,6 +277,73 @@ const optionallyTransformContentNodes = (
     return transformedContentNodes;
   }
   return allContentNodes;
+};
+
+const generateArgsForAllQuery = (
+  pluralType: string,
+  OrderTC: EnumTypeComposer<string>
+): Record<string, any> => {
+  return {
+    skip: {
+      description: 'Skip the first `n` results',
+      type: 'Int',
+    },
+    limit: {
+      description: `The maximum number of ${pluralType} to return`,
+      type: 'Int',
+    },
+    order: {
+      description: `Which order to return ${pluralType} in`,
+      type: OrderTC,
+      defaultValue: 'ASC',
+    },
+    sortBy: {
+      description: `The field to sort ${pluralType} by`,
+      type: 'String',
+    },
+    filter: {
+      description: `Filter ${pluralType} by a JSON object`,
+      type: 'JSON',
+    },
+  };
+};
+
+const cascadingFilterMiddleware = async (
+  resolve: (arg0: any, arg1: any, arg2: any, arg3: any) => any,
+  source: any,
+  args: any,
+  context: any,
+  info: any
+) => {
+  let result = await resolve(source, args, context, info);
+  const { skip, limit, order, sortBy, filter } = args;
+
+  console.log('RESULT', result);
+  if (filter) {
+    result = result.filter(sift(filter));
+  }
+
+  if (sortBy) {
+    result.sort((nodeA: { [x: string]: any }, nodeB: { [x: string]: any }) => {
+      const fieldA = nodeA[sortBy];
+      const fieldB = nodeB[sortBy];
+
+      if (fieldA < fieldB) {
+        return -1;
+      }
+      if (fieldA > fieldB) {
+        return 1;
+      }
+      // fields must be equal
+      return 0;
+    });
+  }
+
+  if (order === 'DESC') {
+    result.reverse();
+  }
+
+  return result.slice(skip ?? 0, limit ?? undefined);
 };
 
 export default generateSchema;
