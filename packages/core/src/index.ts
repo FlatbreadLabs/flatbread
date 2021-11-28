@@ -1,9 +1,5 @@
 import { ConfigResult, EntryNode, FlatbreadConfig } from 'flatbread';
-import {
-  EnumTypeComposer,
-  ResolverResolveParams,
-  SchemaComposer,
-} from 'graphql-compose';
+import { schemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
 import { map } from './utils/map';
 import sift from './utils/sift';
@@ -38,9 +34,6 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
 
   const preknownSchemaFragments = fetchPreknownSchemaFragments(config);
 
-  // Generate the schema
-  const schemaComposer = new SchemaComposer();
-
   /**
    * For each content type, reduce the nodes therein to one singular node of combined types. This reduced node for each type then is fed into a GraphQL type composer to recursively generate a GraphQL schema.
    *
@@ -61,7 +54,6 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
     ])
   );
 
-  const OrderTC = schemaComposer.createEnumTC(`enum Order { ASC DESC }`);
   let queries: RootQueries = {
     maybeReturnsSingleItem: [],
     maybeReturnsList: [],
@@ -72,24 +64,23 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
     const pluralType = plur(type, 2);
     const pluralTypeQueryName = 'all' + pluralType;
 
-    // console.log(schema.getField('id').type.getType().name);
-
     schema.addResolver({
       name: 'findById',
-      type: schema,
-      description: `Find a ${type} by its ID`,
+      type: () => schema,
+      description: `Find one ${type} by its ID`,
       args: {
         id: 'String',
       },
-      resolve: (rp: Record<string, any>) => {
-        return allContentNodesJSON[type].find((node) => node.id === rp.args.id);
-      },
+      resolve: (rp: Record<string, any>) =>
+        cloneDeep(allContentNodesJSON[type]).find(
+          (node: EntryNode) => node.id === rp.args.id
+        ),
     });
 
     schema.addResolver({
       name: 'findMany',
-      type: [schema],
-      description: `Find ${pluralType} by their IDs`,
+      type: () => [schema],
+      description: `Find many ${pluralType} by their IDs`,
       args: {
         ids: {
           type: '[String]',
@@ -98,7 +89,7 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
       resolve: (rp: Record<string, any>) => {
         const idsToFind = rp.args.ids ?? [];
         const matches =
-          allContentNodesJSON[type]?.filter((node) =>
+          cloneDeep(allContentNodesJSON[type])?.filter((node: EntryNode) =>
             idsToFind?.includes(node.id)
           ) ?? [];
         return matches;
@@ -107,87 +98,23 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
 
     schema.addResolver({
       name: 'all',
-      type: [schema],
+      args: generateArgsForAllQuery(pluralType),
+      type: () => [schema],
       description: `Return a set of ${pluralType}`,
-      resolve: (rp: Record<string, any>) =>
-        cloneDeep(allContentNodesJSON[type]),
+      resolve: (_: Record<string, any>) => cloneDeep(allContentNodesJSON[type]),
     });
-
-    // args: {
-    //     skip: {
-    //       description: 'Skip the first `n` results',
-    //       type: 'Int',
-    //     },
-    //     limit: {
-    //       description: `The maximum number of ${pluralType} to return`,
-    //       type: 'Int',
-    //     },
-    //     order: {
-    //       description: `Which order to return ${pluralType} in`,
-    //       type: OrderTC,
-    //       defaultValue: 'ASC',
-    //     },
-    //     sortBy: {
-    //       description: `The field to sort ${pluralType} by`,
-    //       type: 'String',
-    //     },
-    //     filter: {
-    //       description: `Filter ${pluralType} by a JSON object`,
-    //       type: 'JSON',
-    //     },
-    //   },
-    //   resolve: (rp: Record<string, any>) => {
-    //     let allNodes = cloneDeep(allContentNodesJSON[type]);
-
-    //     if (rp.args.filter) {
-    //       allNodes = allNodes.filter(sift(rp.args.filter));
-    //     }
-
-    //     if (rp.args.sortBy) {
-    //       allNodes.sort((nodeA, nodeB) => {
-    //         const fieldA = nodeA[rp.args.sortBy];
-    //         const fieldB = nodeB[rp.args.sortBy];
-
-    //         if (fieldA < fieldB) {
-    //           return -1;
-    //         }
-    //         if (fieldA > fieldB) {
-    //           return 1;
-    //         }
-    //         // fields must be equal
-    //         return 0;
-    //       });
-    //     }
-
-    //     if (rp.args.order === 'DESC') {
-    //       allNodes.reverse();
-    //     }
-
-    //     return allNodes.slice(rp.args?.skip ?? 0, rp.args?.limit ?? undefined);
-    //   },
 
     schemaComposer.Query.addFields({
       /**
        * Add find by ID to each content type
        */
       [type]: schema.getResolver('findById'),
-
       /**
        * Add find 'many' to each content type
        */
       [pluralTypeQueryName]: schema
         .getResolver('all')
-        .wrap((newResolver) => {
-          newResolver.addArgs(generateArgsForAllQuery(pluralType, OrderTC));
-          return newResolver;
-        })
-        .wrapResolve(
-          (next) => (rp: ResolverResolveParams<unknown, any, any>) => {
-            rp.source = allContentNodesJSON[type];
-            return next(rp);
-          }
-        )
-        .withMiddlewares([cascadingFilterMiddleware]),
+        .withMiddlewares([logResultOfResolver, cascadingFilterMiddleware]),
     });
 
     // Separate the queries by return type for later use when wrapping the query resolvers
@@ -211,6 +138,10 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
       if (refMapsToMultipleNodes) {
         // If the reference field has many nodes
         typeTC.addRelation(refField, {
+          description: `All ${plur(
+            String(refType),
+            2
+          )} that are referenced by this ${typeName}`,
           resolver: () => refTypeTC.getResolver('findMany'),
           prepareArgs: {
             ids: (source) => source[refField],
@@ -220,6 +151,7 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
       } else {
         // If the reference field has a single node
         typeTC.addRelation(refField, {
+          description: `The ${refType} referenced by this ${typeName}`,
           resolver: () => refTypeTC.getResolver('findById'),
           prepareArgs: {
             id: (source) => source[refField],
@@ -227,7 +159,6 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
           projection: { [refField]: true },
         });
       }
-      // console.log(typeTC.getResolver('findMany').toString());
     });
   }
 
@@ -279,10 +210,7 @@ const optionallyTransformContentNodes = (
   return allContentNodes;
 };
 
-const generateArgsForAllQuery = (
-  pluralType: string,
-  OrderTC: EnumTypeComposer<string>
-): Record<string, any> => {
+const generateArgsForAllQuery = (pluralType: string): Record<string, any> => {
   return {
     skip: {
       description: 'Skip the first `n` results',
@@ -294,7 +222,7 @@ const generateArgsForAllQuery = (
     },
     order: {
       description: `Which order to return ${pluralType} in`,
-      type: OrderTC,
+      type: `enum Order { ASC DESC }`,
       defaultValue: 'ASC',
     },
     sortBy: {
@@ -308,6 +236,18 @@ const generateArgsForAllQuery = (
   };
 };
 
+const logResultOfResolver = async (
+  resolve: (arg0: any, arg1: any, arg2: any, arg3: any) => any,
+  source: any,
+  args: any,
+  context: any,
+  info: any
+) => {
+  const result = await resolve(source, args, context, info);
+  console.log('result', result);
+  return result;
+};
+
 const cascadingFilterMiddleware = async (
   resolve: (arg0: any, arg1: any, arg2: any, arg3: any) => any,
   source: any,
@@ -318,7 +258,6 @@ const cascadingFilterMiddleware = async (
   let result = await resolve(source, args, context, info);
   const { skip, limit, order, sortBy, filter } = args;
 
-  console.log('RESULT', result);
   if (filter) {
     result = result.filter(sift(filter));
   }
