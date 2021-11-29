@@ -212,7 +212,7 @@ query FilteredPosts {
 Results in:
 
 ```js
-result = [{ id: 1, title: 'My pretzel collection', postMeta: { rating: 97 } }];
+result = [{ title: 'My pretzel collection' }];
 ```
 
 ### `sortBy`
