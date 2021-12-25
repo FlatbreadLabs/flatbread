@@ -62,7 +62,7 @@ importers:
       '@types/lodash-es': ^4.17.5
       '@types/lru-cache': ^5.1.1
       '@types/node': ^16.11.7
-      graphql-compose: ^9.0.4
+      graphql-compose: ^9.0.6
       graphql-compose-json: 6.2.0
       lodash-es: ^4.17.21
       lru-cache: ^6.0.0
@@ -72,8 +72,8 @@ importers:
       typescript: ^4.4.4
       vfile: ^5.2.0
     dependencies:
-      graphql-compose: 9.0.4
-      graphql-compose-json: 6.2.0_graphql-compose@9.0.4
+      graphql-compose: 9.0.6
+      graphql-compose-json: 6.2.0_graphql-compose@9.0.6
       lodash-es: 4.17.21
       lru-cache: 6.0.0
       matcher: 5.0.0
@@ -1420,10 +1420,6 @@ packages:
 
   /@types/node/16.11.7:
     resolution: {integrity: sha512-QB5D2sqfSjCmTuWcBWyJ+/44bcjO7VbjSbOE0ucoVbAsSNQc4Lt6QkgkVXkTDwkL4z/beecZNDvVX15D4P8Jbw==}
-
-  /@types/object-path/0.11.1:
-    resolution: {integrity: sha512-219LSCO9HPcoXcRTC6DbCs0FRhZgBnEMzf16RRqkT40WbkKx3mOeQuz3e2XqbfhOz/AHfbru0kzB1n1RCAsIIg==}
-    dev: false
 
   /@types/parse5/6.0.2:
     resolution: {integrity: sha512-+hQX+WyJAOne7Fh3zF5CxPemILIbuhNcqHHodzK9caYOLnC8pD5efmPleRnw0z++LfKUC/sVNMwk0Gap+B0baA==}
@@ -3693,22 +3689,20 @@ packages:
     resolution: {integrity: sha512-qkIilPUYcNhJpd33n0GBXTB1MMPp14TxEsEs0pTrsSVucApsYzW5V+Q8Qxhik6KU3evy+qkAAowTByymK0avdg==}
     dev: true
 
-  /graphql-compose-json/6.2.0_graphql-compose@9.0.4:
+  /graphql-compose-json/6.2.0_graphql-compose@9.0.6:
     resolution: {integrity: sha512-EfY6VPu6/Rah8xCEXa7WT1W/Hyd+wJZ08HFRDtEsZx3z/WRguDXDGi0kppGXWNQDc66PtEMfWvhDDsM/J8kiRQ==}
     peerDependencies:
       graphql-compose: ^7.0.4 || ^8.0.0 || ^9.0.0
     dependencies:
-      graphql-compose: 9.0.4
+      graphql-compose: 9.0.6
     dev: false
 
-  /graphql-compose/9.0.4:
-    resolution: {integrity: sha512-Cvu+efr6qB6Q7XRoXvTShsFNptW9UWG6XW1fPBIa95BCyi/8lH7ZLVPJTy+vKTLhViJZ7uw/MoJ1FPkUGu+S4Q==}
+  /graphql-compose/9.0.6:
+    resolution: {integrity: sha512-qnZeeodaFbf8J4F/NXlqAHKVthdUtej+evI7E/Z8rjxcmuXosiMxoZ9gBqbCarxq42XiusKqMUle0HdYiYoWwA==}
     peerDependencies:
       graphql: ^14.2.0 || ^15.0.0 || ^16.0.0
     dependencies:
-      '@types/object-path': 0.11.1
       graphql-type-json: 0.3.2
-      object-path: 0.11.8
     dev: false
 
   /graphql-helix/1.9.1_graphql@16.0.1:
@@ -5697,11 +5691,6 @@ packages:
   /object-keys/1.1.1:
     resolution: {integrity: sha512-NuAESUOUMrlIXOfHKzD6bpPu3tYt3xvjNdRIQ+FeT0lNb4K8WR70CaDxhuNguS2XG+GjkyMwOzsN5ZktImfhLA==}
     engines: {node: '>= 0.4'}
-    dev: false
-
-  /object-path/0.11.8:
-    resolution: {integrity: sha512-YJjNZrlXJFM42wTBn6zgOJVar9KFJvzx6sTWDte8sWZF//cnjl0BxHNpfZx+ZffXX63A9q0b1zsFiBX4g4X5KA==}
-    engines: {node: '>= 10.12.0'}
     dev: false
 
   /object.assign/4.1.2:
