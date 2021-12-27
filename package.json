@@ -18,6 +18,7 @@
     "publish:ci": "esmo scripts/publish.ts",
     "release": "esmo scripts/release.ts && git push --follow-tags",
     "test": "jest",
+    "dev:test": "jest --watch",
     "prepare": "husky install"
   },
   "repository": {
@@ -38,17 +39,17 @@
     "flatbread": "workspace:*"
   },
   "devDependencies": {
-    "@types/jest": "^27.0.2",
+    "@types/jest": "^27.0.3",
     "@types/node": "^16.11.7",
     "bumpp": "^7.1.1",
     "esno": "^0.12.1",
     "export-size": "^0.5.1",
     "husky": "^7.0.0",
-    "jest": "^27.3.1",
+    "jest": "^27.4.5",
     "kleur": "^4.1.4",
     "npkill": "^0.8.2",
     "prettier": "2.4.1",
-    "ts-jest": "^27.0.7",
+    "ts-jest": "^27.1.2",
     "tsconfig-paths-jest": "^0.0.1",
     "tsup": "^5.7.2",
     "typescript": "^4.5.2"
