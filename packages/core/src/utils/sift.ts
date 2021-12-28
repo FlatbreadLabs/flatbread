@@ -1,7 +1,7 @@
 import { EntryNode } from 'flatbread';
 import { get } from 'lodash-es';
-import deepEntries from './deepEntries';
-import reduceBooleans from './reduceBooleans';
+import deepEntries from './deepEntries.js';
+import reduceBooleans from './reduceBooleans.js';
 import { isMatch as isWildcardMatch } from 'matcher';
 
 /**

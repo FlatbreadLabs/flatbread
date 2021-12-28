@@ -17,8 +17,8 @@
     "play:build": "pnpm run build && npm -C playground run build",
     "publish:ci": "esmo scripts/publish.ts",
     "release": "esmo scripts/release.ts && git push --follow-tags",
-    "test": "jest",
-    "dev:test": "jest --watch",
+    "test": "ava",
+    "dev:test": "ava --watch",
     "prepare": "husky install"
   },
   "repository": {
@@ -39,18 +39,18 @@
     "flatbread": "workspace:*"
   },
   "devDependencies": {
-    "@types/jest": "^27.0.3",
+    "@ava/typescript": "^3.0.1",
     "@types/node": "^16.11.7",
+    "ava": "^3.15.0",
     "bumpp": "^7.1.1",
     "esno": "^0.12.1",
     "export-size": "^0.5.1",
     "husky": "^7.0.0",
-    "jest": "^27.4.5",
     "kleur": "^4.1.4",
     "npkill": "^0.8.2",
     "prettier": "2.4.1",
-    "ts-jest": "^27.1.2",
-    "tsconfig-paths-jest": "^0.0.1",
+    "ts-node": "^10.4.0",
+    "tsconfig-paths": "^3.12.0",
     "tsup": "^5.7.2",
     "typescript": "^4.5.4"
   }
