@@ -43,3 +43,29 @@ test('Union sift for nodes with id greater than 1 and nested object "child" havi
     [nodes[2]]
   );
 });
+
+const nodes2 = [
+  { id: 1, title: 'My pretzel collection', postMeta: { rating: 97 } },
+  { id: 2, title: 'Debugging the simulation', postMeta: { rating: 20 } },
+  {
+    id: 3,
+    title: 'Liquid Proust is a great tea vendor btw',
+    postMeta: { rating: 99 },
+  },
+  { id: 4, title: 'Sitting in a chair', postMeta: { rating: 74 } },
+];
+
+test('Sift by regex where title contains "pretzel"', (t) => {
+  t.deepEqual(nodes2.filter(sift({ title: { regex: /pretzel/i } })), [
+    nodes2[0],
+  ]);
+});
+
+test('Union sift for nodes with wildcard title matching "*tion", rating greater than 80', (t) => {
+  t.deepEqual(
+    nodes2.filter(
+      sift({ title: { wildcard: '*tion' }, postMeta: { rating: { gt: 80 } } })
+    ),
+    [nodes2[0]]
+  );
+});
