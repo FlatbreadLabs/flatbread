@@ -1,6 +1,7 @@
 # packages & build files
 **/node_modules
 **/dist/**
+.turbo
 
 # temp files
 **.swp

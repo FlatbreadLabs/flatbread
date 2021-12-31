@@ -8,8 +8,8 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "wipe": "npkill",
-    "build": "pnpm -r --parallel --filter !playground run build",
-    "dev": "pnpm -r --parallel --filter !playground run dev",
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
     "lint": "prettier --check --plugin-search-dir=. .",
     "lint:fix": "nr lint -- --fix",
     "lint:fix:prettier": "prettier --write --plugin-search-dir=. .",
@@ -51,6 +51,29 @@
     "ts-jest": "^27.0.7",
     "tsconfig-paths-jest": "^0.0.1",
     "tsup": "^5.7.2",
+    "turbo": "^1.0.23",
     "typescript": "^4.5.2"
+  },
+  "turbo": {
+    "baseBranch": "origin/main",
+    "pipeline": {
+      "build": {
+        "dependsOn": [
+          "^build"
+        ]
+      },
+      "test": {
+        "dependsOn": [
+          "^build"
+        ],
+        "outputs": []
+      },
+      "lint": {
+        "outputs": []
+      },
+      "dev": {
+        "cache": false
+      }
+    }
   }
 }
