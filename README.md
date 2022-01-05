@@ -167,6 +167,12 @@ result = [
 - `nin`
   - This is like `!filterValue.includes(resultValue)` in JavaScript
   - Can only be passed an array of values which pass strict comparison
+- `includes`
+  - This is like `resultValue.includes(filterValue)` in JavaScript
+  - Can only be passed a single value which passes strict comparison
+- `excludes`
+  - This is like `!resultValue.includes(filterValue)` in JavaScript
+  - Can only be passed a single value which passes strict comparison
 - `lt`, `lte`, `gt`, `gte`
   - This is like `<`, `<=`, `>`, `>=` respectively
   - Can only be used with numbers, strings, and booleans
