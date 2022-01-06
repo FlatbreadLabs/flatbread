@@ -13,4 +13,4 @@ rating: 74
 
 ### she is in fact
 
-2 apples tall
+**2 apples tall**

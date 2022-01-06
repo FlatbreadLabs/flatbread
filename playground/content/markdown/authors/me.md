@@ -1,6 +1,7 @@
 ---
 id: 2a3e
 name: Tony
+entity: Human
 enjoys:
   - cats
   - tea
@@ -13,5 +14,4 @@ skills:
   liquid_consumption: 100
   existence: simulation
   sports: -2
-  cat_pat: 1500
 ---
