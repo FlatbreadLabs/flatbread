@@ -1,5 +1,6 @@
 import sade from 'sade';
 import colors from 'kleur';
+import gradient from 'gradient-string';
 import { version } from '../../package.json';
 import { networkInterfaces, release } from 'os';
 import orchestrateProcesses from './runner';
@@ -76,7 +77,11 @@ function welcome({
 }): void {
   if (open) launch(port, https);
 
-  console.log(colors.bold().yellow(`\n Flatbread 🥯 v${version}\n`));
+  console.log(
+    colors.bold(
+      gradient.fruit('\n Flatbread 🥯') + gradient.vice(` v${version}\n`)
+    )
+  );
 
   const protocol = https ? 'https:' : 'http:';
 

@@ -9,7 +9,7 @@ import { GraphQLSchema } from 'graphql';
 const config = await getConfig();
 const schema = await generateSchema(config);
 
-const port = Number(process.env.OYU_PORT) || 5050;
+const port = Number(process.env.FLATBREAD_PORT) || 5050;
 
 startApolloServer(schema, { port });
 
