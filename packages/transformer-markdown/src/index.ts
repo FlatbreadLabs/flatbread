@@ -19,7 +19,6 @@ export const parse = (
   config: MarkdownTransformerConfig
 ): EntryNode => {
   const { data, content } = matter(String(input), config.grayMatter);
-
   return {
     filename: input.basename,
     path: input.path,
