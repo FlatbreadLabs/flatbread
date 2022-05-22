@@ -1,5 +1,9 @@
 import sift, { generateFilterSetManifest } from '../utils/sift';
-import { resolveMaybeThunk, SchemaComposer } from 'graphql-compose';
+import {
+  resolveMaybeThunk,
+  SchemaComposer,
+  ThunkComposer,
+} from 'graphql-compose';
 
 /**
  * Resolvers for query arguments.
@@ -55,8 +59,18 @@ export const resolveFilter = async (
   for (const filter of filterSetManifest) {
     for (const field of filter.path) {
       const objectTC = schemaComposer.getOTC(type);
-      const fieldTC = objectTC.hasField(field) && objectTC.getField(field);
-      const resolver = fieldTC && fieldTC?.resolve;
+      let fieldTC = objectTC.hasField(field) && objectTC.getField(field);
+
+      if (fieldTC instanceof ThunkComposer) {
+        fieldTC = fieldTC.getUnwrappedTC();
+      }
+      console.log(fieldTC);
+      // const resolver = fieldTC && fieldTC?.resolve;
+      // if (resolver) {
+      //   console.log(
+      //     resolver(nodes, filter.args, null, schemaComposer)
+      //   );
+      // }
       // console.log('FILTER RESOLVER', resolveMaybeThunk(resolver));
       // turn this into a function that accepts a type and allows us to change type scope, building out a tree of relations
     }
