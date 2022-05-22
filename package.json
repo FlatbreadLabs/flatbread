@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/monorepo",
-  "version": "1.0.0-alpha.8",
+  "version": "1.0.0-alpha.9",
   "private": true,
   "description": "Eat your relational markdown data and query it, too, with GraphQL inside damn near any framework (statement awaiting peer-review).",
   "main": "index.js",
