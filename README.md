@@ -8,7 +8,7 @@
 
 Eat your relational markdown data _and query it, too,_ with [GraphQL](https://graphql.org/) inside damn near any framework (statement awaiting peer-review).
 
-If it runs ES Modules + Node 14+, it's down to clown.
+If it runs ES Modules + Node 16+, it's down to clown.
 
 Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://www.gatsbyjs.com/)) anything, this project harnesses a plugin architecture to be easily customizable to fit your use cases.
 
