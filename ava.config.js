@@ -4,8 +4,5 @@ export default {
     js: true,
     ts: 'module',
   },
-  nonSemVerExperiments: {
-    configurableModuleFormat: true,
-  },
   nodeArguments: ['--loader=ts-node/esm'],
 };
