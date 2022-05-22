@@ -1,4 +1,4 @@
-name: Test
+name: Build
 
 on:
   - push
@@ -37,6 +37,3 @@ jobs:
 
       - name: Build
         run: pnpm build -w
-
-      - name: Test
-        run: pnpm run test -w
