@@ -1,7 +1,7 @@
 import { EntryNode } from 'flatbread';
 import { get } from 'lodash-es';
-import deepEntries from './deepEntries';
-import reduceBooleans from './reduceBooleans';
+import deepEntries from './deepEntries.js';
+import reduceBooleans from './reduceBooleans.js';
 import { isMatch as isWildcardMatch } from 'matcher';
 
 /**
@@ -12,14 +12,20 @@ import { isMatch as isWildcardMatch } from 'matcher';
  * @param filterArgs The filter object.
  * @returns A callable sift function.
  */
-const createFilterFunction = (filterArgs: Readonly<SiftArgs>) => {
+const createFilterFunction = (
+  filterArgs: Readonly<SiftArgs>,
+  filterSetManifest?: TargetAndComparator
+) => {
   return (node: EntryNode) => {
     // If there are no filter args, return the original array.
     if (!filterArgs) {
       return node;
     }
+
+    // If a filter set manifest is not given, generate one
     // Filter args transformed to logical expressions.
-    const filterSetManifest = seperateComparator(filterArgs);
+    filterSetManifest ??= generateFilterSetManifest(filterArgs);
+
     let evaluatedFilterSet: boolean[] = [];
 
     for (let { path, comparator } of filterSetManifest) {
@@ -36,7 +42,7 @@ const createFilterFunction = (filterArgs: Readonly<SiftArgs>) => {
 export default createFilterFunction;
 
 /**
- * Generate a comparison function that can be used to compare a value to a constant target.
+ * Generate a comparison function that can be used to compare a variable `a` (the field in each node) to a constant value `value` (target value in filter argument).
  *
  * @param comparator The comparator object that contains the operation and the target value.
  * @returns A function that can be used to compare a value to the target value.
@@ -62,6 +68,10 @@ function generateComparisonFunction(
       return (a: any) => value.includes(a);
     case 'nin':
       return (a: any) => !value.includes(a);
+    case 'includes':
+      return (a: any) => a.includes(value);
+    case 'excludes':
+      return (a: any) => !a.includes(value);
     case 'regex':
       return (a: any) => value.test(a);
     case 'wildcard':
@@ -81,7 +91,9 @@ function generateComparisonFunction(
  * @param filterArgs The filter argument object.
  * @returns
  */
-const seperateComparator = (filterArgs: SiftArgs): TargetAndComparator => {
+export const generateFilterSetManifest = (
+  filterArgs: SiftArgs
+): TargetAndComparator => {
   return deepEntries(filterArgs).map(([path, value]) => {
     const operation = path.pop();
 
@@ -105,7 +117,7 @@ type SiftArgs = Record<string, any>;
 /**
  * An array of target and comparator objects
  */
-type TargetAndComparator = { path: string[]; comparator: Comparator }[];
+export type TargetAndComparator = { path: string[]; comparator: Comparator }[];
 
 /**
  * Consists of a comparison operation label and the value to compare against.
@@ -128,6 +140,8 @@ type Comparator = {
  * 'gte' - Greater than or equal
  * 'in' - In
  * 'nin' - Not in
+ * 'includes' - Includes in array field
+ * 'excludes' - Excludes from array field
  * 'regex' - Regular expression
  * 'wildcard' - loose string matching
  * 'exists' - Exists (checks against `undefined | null`)
@@ -143,6 +157,8 @@ type ComparatorOperation =
   | 'gte'
   | 'in'
   | 'nin'
+  | 'includes'
+  | 'excludes'
   | 'regex'
   | 'wildcard'
   | 'exists'

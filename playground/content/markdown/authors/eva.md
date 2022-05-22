@@ -1,6 +1,7 @@
 ---
 id: 40s3
 name: Eva
+entity: Cat
 enjoys:
   - sitting
   - standing
@@ -15,5 +16,4 @@ skills:
   liquid_consumption: 10
   existence: funky
   sports: -200
-  cat_pat: 154000
 ---

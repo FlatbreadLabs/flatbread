@@ -2,6 +2,7 @@
   "name": "@flatbread/core",
   "version": "1.0.0-alpha.7",
   "description": "Flatbread's essential logic",
+  "type": "module",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch src"
@@ -19,19 +20,19 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
-  "main": "dist/index.mjs",
-  "module": "dist/index.mjs",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist",
     "*.d.ts"
   ],
   "dependencies": {
-    "graphql-compose": "^9.0.4",
+    "graphql-compose": "^9.0.6",
     "graphql-compose-json": "6.2.0",
     "lodash-es": "^4.17.21",
     "lru-cache": "^6.0.0",

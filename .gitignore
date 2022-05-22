@@ -1,12 +1,13 @@
 # packages & build files
 **/node_modules
 **/dist/**
+examples
 
 # temp files
 **.swp
 .vscode
+.DS_Store
 
 # logs
 yarn-error.log
 .pnpm-debug.log
-
