@@ -4,7 +4,7 @@
 
 <h1 align="center">Flatbread 🥪</h1>
 
-[![The thing builds](https://github.com/tonyketcham/flatbread/actions/workflows/test.yml/badge.svg)](https://github.com/tonyketcham/flatbread/actions/workflows/test.yml)
+[![Pipeline](https://github.com/tonyketcham/flatbread/actions/workflows/pipeline.yml/badge.svg)](https://github.com/tonyketcham/flatbread/actions/workflows/pipeline.yml)
 
 Eat your relational markdown data _and query it, too,_ with [GraphQL](https://graphql.org/) inside damn near any framework (statement awaiting peer-review).
 
