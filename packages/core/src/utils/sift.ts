@@ -23,10 +23,8 @@ const createFilterFunction = (
     }
 
     // If a filter set manifest is not given, generate one
-    if (!filterSetManifest) {
-      // Filter args transformed to logical expressions.
-      filterSetManifest = generateFilterSetManifest(filterArgs);
-    }
+    // Filter args transformed to logical expressions.
+    filterSetManifest ??= generateFilterSetManifest(filterArgs);
 
     let evaluatedFilterSet: boolean[] = [];
 
