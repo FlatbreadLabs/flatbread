@@ -29,7 +29,7 @@ export default function orchestrateProcesses({
   process.cwd();
   const gql = fork(resolve(process.cwd(), serverModulePath), [], {
     env: {
-      OYU_PORT: String(flatbreadPort),
+      FLATBREAD_PORT: String(flatbreadPort),
     },
   });
   let runningScripts = [gql];
@@ -56,7 +56,7 @@ export default function orchestrateProcesses({
   // End any remaining child processes when the parent process exits
   process.on('exit', function () {
     console.log(
-      colors.bold().green("\nFlatbread is coolin' off now 🍵 bye bye! 🧙")
+      colors.bold().green('\nFlatbread is done for now. Bye bye! 🥪')
     );
     runningScripts.forEach(function (child) {
       child.kill();

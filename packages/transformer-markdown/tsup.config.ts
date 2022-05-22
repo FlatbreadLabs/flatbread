@@ -5,7 +5,7 @@ export const tsup: Options = {
   sourcemap: true,
   clean: true,
   entryPoints: ['src/*'],
-  format: ['esm'],
+  format: ['esm', 'cjs'],
   target: 'esnext',
   dts: true,
 };

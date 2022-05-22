@@ -1,6 +1,10 @@
-[![The thing builds](https://github.com/tonyketcham/flatbread/actions/workflows/test.yml/badge.svg)](https://github.com/tonyketcham/flatbread/actions/workflows/test.yml)
+<p align="center">
+<img src="https://raw.githubusercontent.com/tonyketcham/flatbread/main/assets/flatbread%20logo%20v2%20x4%401-1728x1080%20centered%20header.png"/>
+</p>
 
-# Flatbread 🥪
+<h1 align="center">Flatbread 🥪</h1>
+
+[![The thing builds](https://github.com/tonyketcham/flatbread/actions/workflows/test.yml/badge.svg)](https://github.com/tonyketcham/flatbread/actions/workflows/test.yml)
 
 Eat your relational markdown data _and query it, too,_ with [GraphQL](https://graphql.org/) inside damn near any framework (statement awaiting peer-review).
 
@@ -218,7 +222,7 @@ query FilteredPosts {
 Results in:
 
 ```js
-result = [{ id: 1, title: 'My pretzel collection', postMeta: { rating: 97 } }];
+result = [{ title: 'My pretzel collection' }];
 ```
 
 ### `sortBy`
