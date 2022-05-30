@@ -29,6 +29,7 @@ export default function orchestrateProcesses({
   process.cwd();
   const gql = fork(resolve(process.cwd(), serverModulePath), [], {
     env: {
+      ...process.env,
       FLATBREAD_PORT: String(flatbreadPort),
     },
   });
