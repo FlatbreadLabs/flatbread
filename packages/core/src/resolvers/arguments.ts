@@ -16,15 +16,15 @@ const resolveQueryArgs = async (
 ) => {
   const { skip, limit, order, sortBy, filter } = args;
 
-  // console.group('filter middleware');
+  // console.group('resolveQueryArgs');
   // console.log('args', args);
   // console.log('type', type);
   // console.log('scoped result', nodes);
   // console.groupEnd();
 
   if (filter) {
-    // nodes = await resolveFilter(filter, nodes, type, schemaComposer);
-    nodes = nodes.filter(sift(filter));
+    nodes = await resolveFilter(filter, nodes, type, schemaComposer);
+    // nodes = nodes.filter(sift(filter));
   }
 
   if (sortBy) {
@@ -55,16 +55,56 @@ export const resolveFilter = async (
   // construct custom resolver of nodes to build temp list
   const filterSetManifest = generateFilterSetManifest(filter);
   console.log('filter manifest', filterSetManifest);
+  let currentNodesContext = nodes;
 
   for (const filter of filterSetManifest) {
-    for (const field of filter.path) {
-      const objectTC = schemaComposer.getOTC(type);
-      let fieldTC = objectTC.hasField(field) && objectTC.getField(field);
+    for (let i = 0; i < filter.path.length; i++) {
+      const field = filter.path[i];
 
-      if (fieldTC instanceof ThunkComposer) {
-        fieldTC = fieldTC.getUnwrappedTC();
+      // console.log('field', field);
+      // console.log('currentNodesContext', currentNodesContext);
+
+      const objectTC = schemaComposer.getOTC(type);
+      let fieldTC = objectTC.hasField(field) && objectTC.getFieldTC(field);
+
+      if (fieldTC) {
+        const fieldTypeName = fieldTC.getTypeName();
+
+        // Grab all the nodes on the content type for this field - these can seed the source of other resolvers deeper in the filter
+        const targetOTC = schemaComposer.getOTC(fieldTypeName);
+        const targetAllQuery = targetOTC.getResolver('all');
+        const queryArgsTC = targetAllQuery.getArgs();
+        const args = Object.fromEntries(
+          Object.entries(queryArgsTC).map(([key, value]) => {
+            return [key, value.defaultValue || null];
+          })
+        );
+
+        currentNodesContext = await targetAllQuery?.resolve({ args });
+      } else {
+        if (i === filter.path.length - 1) {
+          // If this is the last field in the filter, we'll run the sift here, for testing :-)
+          console.log(currentNodesContext);
+          console.log(
+            'authors?',
+            currentNodesContext.filter(
+              sift({
+                [field]: {
+                  [filter.comparator.operation]: filter.comparator.value,
+                },
+              })
+            )
+          );
+        }
       }
-      console.log(fieldTC);
+      // console.log('resolveMaybeThunk');
+
+      // console.log(fieldTC._gqcResolvers());
+
+      // if (fieldTC instanceof ThunkComposer) {
+      //   fieldTC = fieldTC.getUnwrappedTC();
+      // }
+
       // const resolver = fieldTC && fieldTC?.resolve;
       // if (resolver) {
       //   console.log(
