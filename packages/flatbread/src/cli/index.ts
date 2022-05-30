@@ -79,7 +79,7 @@ function welcome({
 
   console.log(
     colors.bold(
-      gradient.fruit('\n Flatbread 🥯') + gradient.vice(` v${version}\n`)
+      gradient.fruit('\n  Flatbread 🥯') + gradient.vice(` v${version}\n`)
     )
   );
 
