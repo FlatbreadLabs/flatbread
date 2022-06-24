@@ -1,6 +1,7 @@
 import sift, { generateFilterSetManifest } from '../utils/sift';
 import {
   resolveMaybeThunk,
+  Resolver,
   SchemaComposer,
   ThunkComposer,
 } from 'graphql-compose';
@@ -65,7 +66,15 @@ export const resolveFilter = async (
       // console.log('currentNodesContext', currentNodesContext);
 
       const objectTC = schemaComposer.getOTC(type);
-      let fieldTC = objectTC.hasField(field) && objectTC.getFieldTC(field);
+      const relations = objectTC.getRelations();
+
+      if (!objectTC.hasField(field)) {
+        console.error(`${type} has no field ${field}`);
+        continue;
+      }
+
+      let fieldTC = objectTC.getFieldTC(field);
+      console.log('field', objectTC.getField(field));
 
       if (fieldTC) {
         const fieldTypeName = fieldTC.getTypeName();
@@ -81,20 +90,26 @@ export const resolveFilter = async (
         );
 
         currentNodesContext = await targetAllQuery?.resolve({ args });
+
+        // If the field is a relation, we need to connect the relation
+        if (relations[field]) {
+          console.log('relation', JSON.parse(JSON.stringify(relations[field])));
+          const resolver = relations[field];
+        }
       } else {
         if (i === filter.path.length - 1) {
           // If this is the last field in the filter, we'll run the sift here, for testing :-)
-          console.log(currentNodesContext);
-          console.log(
-            'authors?',
-            currentNodesContext.filter(
-              sift({
-                [field]: {
-                  [filter.comparator.operation]: filter.comparator.value,
-                },
-              })
-            )
-          );
+          // console.log(currentNodesContext);
+          // console.log(
+          //   'authors?',
+          //   currentNodesContext.filter(
+          //     sift({
+          //       [field]: {
+          //         [filter.comparator.operation]: filter.comparator.value,
+          //       },
+          //     })
+          //   )
+          // );
         }
       }
       // console.log('resolveMaybeThunk');

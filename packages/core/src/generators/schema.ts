@@ -152,6 +152,11 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
             ids: (source) => source[refField],
           },
           projection: { [refField]: true },
+          extensions: {
+            isReferece: true,
+            isPlural: true,
+          },
+          directives: [{ name: 'proxy', args: { from: refField } }],
         });
       } else {
         // If the reference field has a single node
@@ -162,6 +167,11 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
             id: (source) => source[refField],
           },
           projection: { [refField]: true },
+          extensions: {
+            isReferece: true,
+            isPlural: false,
+          },
+          directives: [{ name: 'proxy', args: { from: refField } }],
         });
       }
     });
