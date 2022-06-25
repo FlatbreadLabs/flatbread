@@ -1,6 +1,6 @@
 import preprocess from 'svelte-preprocess';
 // import preprocess from 'svelte-preprocess';
-import adapter from '@sveltejs/adapter-static';
+import adapter from '@sveltejs/adapter-auto';
 import { resolve } from 'path';
 // import adapter from '@sveltejs/adapter-node';
 
@@ -26,30 +26,6 @@ const config = {
           ),
         },
       },
-      // define: {
-      //   __OYU_GQL_HOST__: ['http://localhost:1738'],
-      // },
-      // plugins: [
-      //   (function startingPlugin() {
-      //     return {
-      //       name: 'starty',
-      //       buildStart() {
-      //         process.env.HELLOOO = 'world';
-      //         console.log('hello world');
-      //         // do something with this list
-      //       },
-      //     };
-      //   })(),
-      //   (function endingPlugin() {
-      //     return {
-      //       name: 'endy',
-      //       buildStart() {
-      //         console.log(process.env.HELLOOO + ' is ending');
-      //         // do something with this list
-      //       },
-      //     };
-      //   })(),
-      // ],
     },
   },
 
