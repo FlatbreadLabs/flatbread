@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/source-filesystem",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "Filesystem source for Flatbread",
   "repository": {
     "type": "git",
