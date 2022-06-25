@@ -4,7 +4,7 @@
  * @param obj The object to resolve.
  * @returns The true type of the object, or `undefined` if it can't be resolved.
  */
-export default function typeOf(obj?: any) {
+export default function typeOf<T>(obj?: T) {
   if (obj == null) {
     return (obj + '').toLowerCase();
   } // implicit toString() conversion

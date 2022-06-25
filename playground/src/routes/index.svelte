@@ -3,19 +3,20 @@
     const query = `
       query Post {
         allPosts (sortBy: "title", order: DESC) {
-          filename
-          slug
+          _collection
+          _filename
+          _slug
           id
           title
           rating
-          content {
+          _content {
             raw
             html
             excerpt
             timeToRead
           }
           authors {
-            slug
+            _slug
             id
             name
             entity
@@ -84,9 +85,7 @@
 
 <div class="grid grid-cols-2 divide-x-2 divide-black">
   <Pane label="JSON Output">
-    <pre
-      class="overflow-auto p-3"
-      style="height: calc(100vh - 3.5rem);">
+    <pre class="overflow-auto p-3" style="height: calc(100vh - 3.5rem);">
       <code class="text-sm">
         {JSON.stringify(data, null, 2)}
       </code>
@@ -104,7 +103,7 @@
             Rating: {post.rating}
           </li>
         </ul>
-        <div>{@html post.content.html}</div>
+        <div>{@html post._content.html}</div>
       </article>
     {/each}
   </Pane>

@@ -39,16 +39,16 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
   const preknownSchemaFragments = fetchPreknownSchemaFragments(config);
 
   /**
-   * For each content type, reduce the nodes therein to one singular node of combined types. This reduced node for each type then is fed into a GraphQL type composer to recursively generate a GraphQL schema.
+   * For each content collection, reduce the nodes therein to one singular node containing the set of all fields in the collection. This reduced node for each collection then is fed into a GraphQL collection composer to recursively generate a GraphQL schema.
    *
    * Reducing all the nodes forms a more accurate schema in the case of optional fields which may not exist in some content nodes.
    *
    * */
   const schemaArray = Object.fromEntries(
-    Object.entries(allContentNodesJSON).map(([type, nodes]) => [
-      type,
+    Object.entries(allContentNodesJSON).map(([collection, nodes]) => [
+      collection,
       composeWithJson(
-        type,
+        collection,
         defaultsDeep(
           {},
           ...nodes.map((node) => merge({}, node, preknownSchemaFragments))
@@ -70,6 +70,22 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
   for (const [type, schema] of Object.entries(schemaArray)) {
     const pluralType = plur(type, 2);
     const pluralTypeQueryName = 'all' + pluralType;
+
+    //
+    /// Global meta fields
+    //
+
+    schema.addFields({
+      _collection: {
+        type: 'String',
+        description: 'The collection name',
+        resolve: () => type,
+      },
+    });
+
+    //
+    /// Query resolvers
+    //
 
     schema.addResolver({
       name: 'findById',
@@ -128,8 +144,8 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
   }
 
   // Create map of references on each content node
-  for (const { typeName, refs } of config.content) {
-    const typeTC = schemaComposer.getOTC(typeName);
+  for (const { collection, refs } of config.content) {
+    const typeTC = schemaComposer.getOTC(collection);
 
     if (!refs) continue;
 
@@ -146,7 +162,7 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
           description: `All ${plur(
             String(refType),
             2
-          )} that are referenced by this ${typeName}`,
+          )} that are referenced by this ${collection}`,
           resolver: () => refTypeTC.getResolver('findMany'),
           prepareArgs: {
             ids: (source) => source[refField],
@@ -156,7 +172,7 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
       } else {
         // If the reference field has a single node
         typeTC.addRelation(refField, {
-          description: `The ${refType} referenced by this ${typeName}`,
+          description: `The ${refType} referenced by this ${collection}`,
           resolver: () => refTypeTC.getResolver('findById'),
           prepareArgs: {
             id: (source) => source[refField],
