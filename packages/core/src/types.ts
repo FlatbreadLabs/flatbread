@@ -79,6 +79,6 @@ export interface Source {
  * This is paired with a `Source` (and, *optionally*, a `Transformer`) plugin.
  */
 export type Content = {
-  typeName: string;
+  collection: string;
   [key: string]: any;
 }[];

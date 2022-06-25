@@ -3,19 +3,20 @@
     const query = `
       query Post {
         allPosts (sortBy: "title", order: DESC) {
-          filename
-          slug
+          _collection
+          _filename
+          _slug
           id
           title
           rating
-          content {
+          _content {
             raw
             html
             excerpt
             timeToRead
           }
           authors {
-            slug
+            _slug
             id
             name
             entity
@@ -104,7 +105,7 @@
             Rating: {post.rating}
           </li>
         </ul>
-        <div>{@html post.content.html}</div>
+        <div>{@html post._content.html}</div>
       </article>
     {/each}
   </Pane>

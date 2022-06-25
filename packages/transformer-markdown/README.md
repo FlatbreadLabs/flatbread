@@ -33,14 +33,14 @@ export default defineConfig({
   content: [
     {
       path: 'content/posts',
-      typeName: 'Post',
+      collection: 'Post',
       refs: {
         authors: 'Author',
       },
     },
     {
       path: 'content/authors',
-      typeName: 'Author',
+      collection: 'Author',
       refs: {
         friend: 'Author',
       },
@@ -49,7 +49,7 @@ export default defineConfig({
 });
 ```
 
-Refer to your source plugin's documentation for the `content` property options.
+Refer to your source plugin's documentation for the relevant `content` Flatbread config option.
 
 ## 🧰 Options
 

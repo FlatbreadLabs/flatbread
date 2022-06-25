@@ -70,7 +70,7 @@ async function getAllNodes(
       async (contentType): Promise<Record<string, any>> =>
         new Promise(async (res) =>
           res([
-            contentType.typeName,
+            contentType.collection,
             await getNodesFromDirectory(contentType.path, config),
           ])
         )

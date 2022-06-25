@@ -7,7 +7,7 @@ import type { VFile } from 'vfile';
 /**
  * Transforms a yaml file (content node) to JSON.
  *
- * @param {VFile} file - A VFile object representing a content node.
+ * @param {VFile} input - A VFile object representing a content node.
  */
 export const parse = (input: VFile): EntryNode => {
   const doc = yaml.load(String(input), {
@@ -18,9 +18,9 @@ export const parse = (input: VFile): EntryNode => {
 
   if (typeof doc === 'object') {
     return {
-      filename: input.basename,
-      path: input.path,
-      slug: slugify(input.stem ?? ''),
+      _filename: input.basename,
+      _path: input.path,
+      _slug: slugify(input.stem ?? ''),
       ...doc,
     };
   }

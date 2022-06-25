@@ -32,7 +32,7 @@ export default defineConfig({
   content: [
     {
       path: 'content/posts',
-      typeName: 'Post',
+      collection: 'Post',
     },
   ],
 });
@@ -48,7 +48,7 @@ A filesystem source will also require a transformer in order to parse the files 
 
 An array of content types - each of which will appear in GraphQL.
 
-#### typeName
+#### collection
 
 - Type: `string`
 - Default: `'FileNode'`
@@ -65,7 +65,7 @@ Where to look for files of the current content type.
 
 - Type: `object`
 
-Define fields that will have a reference to another node. The referenced `typeName` is expected to exist within an element of the `content` array.
+Define fields that will have a reference to another node. The referenced `collection` is expected to exist within an element of the `content` array.
 
 ```js
 export default defineConfig({
@@ -74,14 +74,14 @@ export default defineConfig({
   content: [
     {
       path: 'content/posts',
-      typeName: 'Post',
+      collection: 'Post',
       refs: {
         author: 'Author',
       },
     },
     {
       path: 'content/authors',
-      typeName: 'Author',
+      collection: 'Author',
     },
   ],
 });

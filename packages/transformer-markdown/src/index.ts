@@ -11,7 +11,7 @@ export * from './types';
 /**
  * Transforms a markdown file (content node) to JSON containing any frontmatter data or content.
  *
- * @param {VFile} file - A VFile object representing a content node.
+ * @param {VFile} input - A VFile object representing a content node.
  * @param {MarkdownTransformerConfig} config - A configuration object.
  */
 export const parse = (
@@ -20,11 +20,11 @@ export const parse = (
 ): EntryNode => {
   const { data, content } = matter(String(input), config.grayMatter);
   return {
-    filename: input.basename,
-    path: input.path,
-    slug: slugify(input.stem ?? ''),
+    _filename: input.basename,
+    _path: input.path,
+    _slug: slugify(input.stem ?? ''),
     ...data,
-    content: {
+    _content: {
       raw: content,
     },
   };
@@ -40,7 +40,7 @@ const transformer: TransformerPlugin = (config: MarkdownTransformerConfig) => {
   return {
     parse: (input: VFile): EntryNode => parse(input, config),
     preknownSchemaFragments: () => ({
-      content: {
+      _content: {
         html: html(config),
         excerpt: excerpt(config),
         timeToRead: timeToRead(config),

@@ -31,14 +31,14 @@ export default defineConfig({
   content: [
     {
       path: 'content/markdown/posts',
-      typeName: 'Post',
+      collection: 'Post',
       refs: {
         authors: 'Author',
       },
     },
     {
       path: 'content/markdown/authors',
-      typeName: 'Author',
+      collection: 'Author',
       refs: {
         friend: 'Author',
       },

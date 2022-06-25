@@ -69,14 +69,14 @@ export default defineConfig({
   content: [
     {
       path: 'content/posts',
-      typeName: 'Post',
+      collection: 'Post',
       refs: {
         authors: 'Author',
       },
     },
     {
       path: 'content/authors',
-      typeName: 'Author',
+      collection: 'Author',
       refs: {
         friend: 'Author',
       },
