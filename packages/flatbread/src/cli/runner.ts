@@ -10,6 +10,7 @@ import colors from 'kleur';
 export interface OrchestraOptions {
   corunner: string;
   flatbreadPort: number;
+  packageManager: string | null;
 }
 
 /**
@@ -22,8 +23,9 @@ export interface OrchestraOptions {
 export default function orchestrateProcesses({
   corunner,
   flatbreadPort,
+  packageManager = null,
 }: OrchestraOptions) {
-  const pkgManager = detectPkgManager(process.cwd());
+  const pkgManager = packageManager || detectPkgManager(process.cwd());
   let serverModulePath = 'node_modules/flatbread/dist/graphql/server.mjs';
 
   process.cwd();

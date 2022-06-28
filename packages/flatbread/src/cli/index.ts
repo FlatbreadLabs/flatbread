@@ -39,15 +39,20 @@ prog
   .command('start [corunner]', 'Start flatbread with a GraphQL server')
   .option('--, _', 'Pass options to the corunning script')
   .option('-p, --port', 'Port to run the GraphQL server', 5057)
-  .option('-H, --https', 'Use self-signed HTTPS certificate', false)
+  .option('-H, --https', 'Use self-signed HTTPS certificate', true)
   .option('-o, --open', 'Open the explorer in a browser tab', false)
-  .action(async (corunner, { _, port, https, open }) => {
+  .option(
+    '-X, --exec',
+    'The runner to execute the corunning script with. Defaults to your package manager (i.e. npm, pnpm, yarn)'
+  )
+  .action(async (corunner, { _, port, https, open, exec }) => {
     // Combine the corunning script & the options passed to it
     const secondaryScript = `${corunner} ${_.join(' ')}`;
     // Yeet it into the all seeing eye of the universe
     orchestrateProcesses({
       corunner: secondaryScript,
       flatbreadPort: port,
+      packageManager: exec,
     });
     // Say hi for good measure
     welcome({ port, https, open });
