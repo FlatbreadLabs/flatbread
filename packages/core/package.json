@@ -30,16 +30,15 @@
     "dist",
     "*.d.ts"
   ],
-  "dependencies": {
+  "devDependencies": {
+    "@flatbread/config": "workspace:^1.0.0-alpha.4",
     "graphql": "16.0.1",
     "graphql-compose": "9.0.8",
     "graphql-compose-json": "6.2.0",
     "lodash-es": "4.17.21",
     "lru-cache": "^6.0.0",
     "matcher": "^5.0.0",
-    "plur": "5.1.0"
-  },
-  "devDependencies": {
+    "plur": "5.1.0",
     "@types/lodash-es": "4.17.6",
     "@types/lru-cache": "^5.1.1",
     "@types/node": "^16.11.42",

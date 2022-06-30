@@ -33,12 +33,10 @@
   "engines": {
     "node": "^14.13.1 || >=16.0.0"
   },
-  "dependencies": {
+  "devDependencies": {
     "lodash-es": "^4.17.21",
     "to-vfile": "^7.2.3",
-    "unified": "^10.1.2"
-  },
-  "devDependencies": {
+    "unified": "^10.1.2",
     "@flatbread/core": "workspace:^1.0.0-alpha.11",
     "@types/node": "^16.11.42",
     "tsup": "^6.1.2",

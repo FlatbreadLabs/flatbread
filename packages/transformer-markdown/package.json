@@ -33,7 +33,7 @@
   "engines": {
     "node": "^14.13.1 || >=16.0.0"
   },
-  "dependencies": {
+  "devDependencies": {
     "@sindresorhus/slugify": "^2.1.0",
     "graphql": "16.0.1",
     "gray-matter": "^4.0.3",
@@ -57,9 +57,7 @@
     "remark-stringify": "^10.0.2",
     "sanitize-html": "^2.7.0",
     "to-vfile": "^7.2.3",
-    "unified": "^10.1.2"
-  },
-  "devDependencies": {
+    "unified": "^10.1.2",
     "@flatbread/core": "workspace:^1.0.0-alpha.11",
     "@types/node": "^16.11.42",
     "@types/sanitize-html": "^2.6.2",
