@@ -19,7 +19,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v2.0.1
         with:
-          version: 6.32.4
+          version: 7.3.0
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
@@ -36,7 +36,7 @@ jobs:
       - run: pnpm i -w
 
       - name: Build
-        run: pnpm build -w
+        run: pnpm -w build
 
   lint:
     runs-on: ${{ matrix.os }}
@@ -53,7 +53,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v2.0.1
         with:
-          version: 6.32.4
+          version: 7.3.0
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
@@ -70,7 +70,7 @@ jobs:
       - run: pnpm i -w
 
       - name: Lint
-        run: pnpm lint -w
+        run: pnpm -w lint
 
   test:
     runs-on: ${{ matrix.os }}
@@ -87,7 +87,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v2.0.1
         with:
-          version: 6.32.4
+          version: 7.3.0
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
@@ -104,7 +104,7 @@ jobs:
       - run: pnpm i -w
 
       - name: Build
-        run: pnpm build -w
+        run: pnpm -w build
 
       - name: Test
-        run: pnpm run test -w
+        run: pnpm -w test
