@@ -8,7 +8,7 @@
 
 Eat your relational markdown data _and query it, too,_ with [GraphQL](https://graphql.org/) inside damn near any framework (statement awaiting peer-review).
 
-If it runs ES Modules + Node 14+, it's down to clown.
+If it runs ES Modules + Node 16+, it's down to clown.
 
 Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://www.gatsbyjs.com/)) anything, this project harnesses a plugin architecture to be easily customizable to fit your use cases.
 
@@ -282,7 +282,7 @@ cd packages/<package>
 Run the file containing where you invoke your function at the top level.
 
 ```bash
-node dist/index.mjs # ya need Node v14.18+
+node dist/index.mjs # ya need Node v16+
 ```
 
 ## **build for production** 📦
