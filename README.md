@@ -27,7 +27,7 @@ pnpm i flatbread@latest
 Automatically create a `flatbread.config.js` file:
 
 ```bash
-pnpx flatbread init
+npx flatbread init
 ```
 
 > If you're lookin for different use cases, take a peek through the various [`packages`](https://github.com/tonyketcham/flatbread/tree/main/packages) to see if any of those plugins fit your needs. You can find the relevant usage API contained therein.
