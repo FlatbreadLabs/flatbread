@@ -9,6 +9,7 @@
     "preinstall": "npx only-allow pnpm",
     "wipe": "npkill",
     "build": "pnpm -r --parallel --filter !playground run build",
+    "build:ci": "pnpm -r --filter !playground run build",
     "dev": "pnpm -r --parallel --filter !playground run dev",
     "lint": "prettier --check --plugin-search-dir=. .",
     "lint:fix": "pnpm lint:fix:prettier",
