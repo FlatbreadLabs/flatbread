@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/core",
-  "version": "1.0.0-alpha.10",
+  "version": "1.0.0-alpha.11",
   "description": "Flatbread's essential logic",
   "type": "module",
   "scripts": {
