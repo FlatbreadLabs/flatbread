@@ -35,14 +35,14 @@
   },
   "dependencies": {
     "lodash-es": "^4.17.21",
-    "to-vfile": "^7.2.2",
-    "unified": "^10.1.0"
+    "to-vfile": "^7.2.3",
+    "unified": "^10.1.2"
   },
   "devDependencies": {
-    "@flatbread/core": "workspace:^1.0.0-alpha.10",
-    "@types/node": "^16.11.7",
-    "tsup": "^5.6.0",
-    "typescript": "^4.4.4",
-    "vfile": "^5.2.0"
+    "@flatbread/core": "workspace:^1.0.0-alpha.11",
+    "@types/node": "^16.11.42",
+    "tsup": "^5.12.9",
+    "typescript": "^4.7.4",
+    "vfile": "^5.3.4"
   }
 }
