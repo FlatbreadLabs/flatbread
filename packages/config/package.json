@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/config",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "description": "Flatbread's user config processing",
   "publishConfig": {
     "main": "dist/index.js",
