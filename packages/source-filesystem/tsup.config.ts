@@ -8,4 +8,5 @@ export const tsup: Options = {
   format: ['esm', 'cjs'],
   target: 'esnext',
   dts: true,
+  shims: true,
 };
