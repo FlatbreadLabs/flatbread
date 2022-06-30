@@ -16,7 +16,7 @@ Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://w
 
 🚧 This project is currently experimental, and the API may change considerably before `v1.0`. Feel free to hop in and contribute some issues or PRs!
 
-To use the most common setup for markdown files sourced from the filesystem, Flatbread interally ships with + exposes the [`source-filesystem`](https://github.com/tonyketcham/flatbread/tree/main/packages/source-filesystem) + [`transformer-markdown`](https://github.com/tonyketcham/flatbread/tree/main/packages/source-filesystem) plugins.
+To use the most common setup for markdown files sourced from the filesystem, Flatbread interally ships with + exposes the [`source-filesystem`](https://github.com/tonyketcham/flatbread/tree/main/packages/source-filesystem) + [`transformer-markdown`](https://github.com/tonyketcham/flatbread/tree/main/packages/transformer-markdown) plugins.
 
 The following example takes you through the default flatbread setup.
 
