@@ -13,7 +13,7 @@ export default async function getPackagesManifest(
 
   const pkgs = await Promise.all(
     dirs.map(async (dir) => ({
-      ...(await import(join('../packages', dir, pkgManifest))),
+      ...(await import(join(process.cwd() + '/packages', dir, pkgManifest))),
       dirName: dir,
     }))
   );

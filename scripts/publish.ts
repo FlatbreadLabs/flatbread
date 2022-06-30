@@ -5,11 +5,11 @@ import { version } from '../package.json';
 import fs from 'fs/promises';
 import getPackagesManifest from './utils/packageManifest';
 
-execSync('npm run build', { stdio: 'inherit' });
+execSync('pnpm run build', { stdio: 'inherit' });
 
 let command = 'npm publish --access public';
 
-if (version.includes('alpha')) command += ' --tag alpha';
+// if (version.includes('alpha')) command += ' --tag alpha';
 if (version.includes('beta')) command += ' --tag beta';
 
 const dirs = await fs.readdir('packages');
