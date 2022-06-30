@@ -14,9 +14,7 @@ const initConfig = () => {
   } else {
     fs.writeFileSync(
       configPath,
-      `import defineConfig from '@flatbread/config';
-import transformer from '@flatbread/transformer-markdown';
-import filesystem from '@flatbread/source-filesystem';
+      `import { defineConfig, markdownTransformer, filesystem } from 'flatbread';
 
 const transformerConfig = {
   markdown: {
@@ -26,7 +24,7 @@ const transformerConfig = {
 };
 export default defineConfig({
   source: filesystem(),
-  transformer: transformer(transformerConfig),
+  transformer: markdownTransformer(transformerConfig),
 
   content: [
     {
