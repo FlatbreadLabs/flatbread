@@ -17,9 +17,10 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2.0.1
+        uses: pnpm/action-setup@v2.2.2
         with:
-          version: 7.3.0
+          version: ^7.3.0
+          run_install: false
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
@@ -33,7 +34,7 @@ jobs:
         run: |
           echo "FLATBREAD_CI=true" >> $GITHUB_ENV
 
-      - run: pnpm i -w
+      - run: pnpm i
 
       - name: Build
         run: pnpm build
@@ -51,9 +52,10 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2.0.1
+        uses: pnpm/action-setup@v2.2.2
         with:
-          version: 7.3.0
+          version: ^7.3.0
+          run_install: false
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
@@ -67,10 +69,10 @@ jobs:
         run: |
           echo "FLATBREAD_CI=true" >> $GITHUB_ENV
 
-      - run: pnpm i -w
+      - run: pnpm i
 
       - name: Lint
-        run: pnpm -w lint
+        run: pnpm lint
 
   test:
     runs-on: ${{ matrix.os }}
@@ -85,9 +87,10 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2.0.1
+        uses: pnpm/action-setup@v2.2.2
         with:
-          version: 7.3.0
+          version: ^7.3.0
+          run_install: false
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
@@ -101,10 +104,10 @@ jobs:
         run: |
           echo "FLATBREAD_CI=true" >> $GITHUB_ENV
 
-      - run: pnpm i -w
+      - run: pnpm i
 
       - name: Build
-        run: pnpm -w build
+        run: pnpm build
 
       - name: Test
-        run: pnpm -w test
+        run: pnpm test
