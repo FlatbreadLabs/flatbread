@@ -12,7 +12,8 @@ export * from './types';
  * @param config flatbread instance options
  * @returns flatbread config
  */
-const defineConfig = (config: FlatbreadConfig): FlatbreadConfig => config;
+export const defineConfig = (config: FlatbreadConfig): FlatbreadConfig =>
+  config;
 
 /**
  * Pulls the user config from an optionally specified filepath.

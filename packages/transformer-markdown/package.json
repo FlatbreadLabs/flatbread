@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/transformer-markdown",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "Convert .md files to in-memory JSON model",
   "repository": {
     "type": "git",
@@ -60,7 +60,7 @@
     "unified": "^10.1.0"
   },
   "devDependencies": {
-    "@flatbread/core": "workspace:*",
+    "@flatbread/core": "workspace:^1.0.0-alpha.10",
     "@types/node": "^16.11.7",
     "@types/sanitize-html": "^2.5.0",
     "tsup": "^5.6.0",

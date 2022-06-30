@@ -8,7 +8,7 @@
 
 Eat your relational markdown data _and query it, too,_ with [GraphQL](https://graphql.org/) inside damn near any framework (statement awaiting peer-review).
 
-If it runs ES Modules + Node 14+, it's down to clown.
+If it runs ES Modules + Node 16+, it's down to clown.
 
 Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://www.gatsbyjs.com/)) anything, this project harnesses a plugin architecture to be easily customizable to fit your use cases.
 
@@ -16,9 +16,12 @@ Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://w
 
 🚧 This project is currently experimental, and the API may change considerably before `v1.0`. Feel free to hop in and contribute some issues or PRs!
 
+To use the most common setup for markdown files sourced from the filesystem, Flatbread interally ships with + exposes the [`source-filesystem`](https://github.com/tonyketcham/flatbread/tree/main/packages/source-filesystem) + [`transformer-markdown`](https://github.com/tonyketcham/flatbread/tree/main/packages/source-filesystem) plugins.
+
+The following example takes you through the default flatbread setup.
+
 ```bash
-# This is the most common setup - pick whichever plugins you want to use!
-pnpm i flatbread@latest @flatbread/config@latest @flatbread/source-filesystem@latest @flatbread/transformer-markdown@latest
+pnpm i flatbread@latest
 ```
 
 Automatically create a `flatbread.config.js` file:
@@ -26,8 +29,6 @@ Automatically create a `flatbread.config.js` file:
 ```bash
 pnpx flatbread init
 ```
-
-The following example assumes you're using the [`source-filesystem`](https://github.com/tonyketcham/flatbread/tree/main/packages/source-filesystem) + [`transformer-markdown`](https://github.com/tonyketcham/flatbread/tree/main/packages/source-filesystem) plugins with markdown files containing data you'd like to query with GraphQL.
 
 > If you're lookin for different use cases, take a peek through the various [`packages`](https://github.com/tonyketcham/flatbread/tree/main/packages) to see if any of those plugins fit your needs. You can find the relevant usage API contained therein.
 
@@ -49,10 +50,7 @@ package.json
 In reference to that structure, set up a `flatbread.config.js` in the root of your project:
 
 ```js
-import defineConfig from '@flatbread/config';
-import transformer from '@flatbread/transformer-markdown';
-// import transformer from '@flatbread/transformer-yaml';
-import filesystem from '@flatbread/source-filesystem';
+import { defineConfig, markdownTransformer, filesystem } from 'flatbread';
 
 const transformerConfig = {
   markdown: {
@@ -62,9 +60,7 @@ const transformerConfig = {
 };
 export default defineConfig({
   source: filesystem(),
-  transformer: transformer(transformerConfig),
-  // source: filesystem({ extensions: ['.yml', '.yaml'] }),
-  // transformer: transformer(),
+  transformer: markdownTransformer(transformerConfig),
 
   content: [
     {
@@ -286,7 +282,7 @@ cd packages/<package>
 Run the file containing where you invoke your function at the top level.
 
 ```bash
-node dist/index.mjs # ya need Node v14.18+
+node dist/index.mjs # ya need Node v16+
 ```
 
 ## **build for production** 📦

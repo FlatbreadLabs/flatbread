@@ -1,7 +1,5 @@
-import defineConfig from '@flatbread/config';
-import transformer from '@flatbread/transformer-markdown';
 // import transformer from '@flatbread/transformer-yaml';
-import filesystem from '@flatbread/source-filesystem';
+import { defineConfig, markdownTransforer, filesystem } from 'flatbread';
 
 const transformerConfig = {
   markdown: {
@@ -11,7 +9,7 @@ const transformerConfig = {
 };
 export default defineConfig({
   source: filesystem(),
-  transformer: transformer(transformerConfig),
+  transformer: markdownTransforer(transformerConfig),
   // source: filesystem({ extensions: ['.yml', '.yaml'] }),
   // transformer: transformer(),
 

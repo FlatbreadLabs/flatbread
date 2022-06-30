@@ -34,7 +34,6 @@ export const parse = (input: VFile): EntryNode => {
 /**
  * Converts markdown files to meaningful data.
  *
- * @param config Markdown transformer configuration.
  * @returns Markdown parser, preknown GraphQL schema fragments, and an EntryNode inspector function.
  */
 const transformer: TransformerPlugin = () => {

@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/source-filesystem",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "description": "Filesystem source for Flatbread",
   "repository": {
     "type": "git",
@@ -39,7 +39,7 @@
     "unified": "^10.1.0"
   },
   "devDependencies": {
-    "@flatbread/core": "workspace:*",
+    "@flatbread/core": "workspace:^1.0.0-alpha.10",
     "@types/node": "^16.11.7",
     "tsup": "^5.6.0",
     "typescript": "^4.4.4",
