@@ -36,7 +36,7 @@ jobs:
       - run: pnpm i -w
 
       - name: Build
-        run: pnpm -w build
+        run: pnpm build
 
   lint:
     runs-on: ${{ matrix.os }}

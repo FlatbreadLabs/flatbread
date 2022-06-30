@@ -21,7 +21,7 @@ importers:
       prettier: 2.4.1
       ts-node: ^10.8.1
       tsconfig-paths: ^3.14.1
-      tsup: ^5.12.9
+      tsup: ^6.1.2
       typescript: ^4.7.4
     dependencies:
       '@flatbread/config': link:packages/config
@@ -42,19 +42,19 @@ importers:
       prettier: 2.4.1
       ts-node: 10.8.1_572ewalfkz76l4wczrwi7uyo64
       tsconfig-paths: 3.14.1
-      tsup: 5.12.9_mu66ohdiwyrigyorzidgf4bsdu
+      tsup: 6.1.2_mu66ohdiwyrigyorzidgf4bsdu
       typescript: 4.7.4
 
   packages/config:
     specifiers:
       '@flatbread/core': workspace:^1.0.0-alpha.11
       '@types/node': ^16.11.42
-      tsup: ^5.12.9
+      tsup: ^6.1.2
       typescript: ^4.7.4
     devDependencies:
       '@flatbread/core': link:../core
       '@types/node': 16.11.42
-      tsup: 5.12.9_typescript@4.7.4
+      tsup: 6.1.2_typescript@4.7.4
       typescript: 4.7.4
 
   packages/core:
@@ -69,7 +69,7 @@ importers:
       lru-cache: ^6.0.0
       matcher: ^5.0.0
       plur: 5.1.0
-      tsup: ^5.12.9
+      tsup: ^6.1.2
       typescript: ^4.7.4
       vfile: ^5.3.4
     dependencies:
@@ -84,7 +84,7 @@ importers:
       '@types/lodash-es': 4.17.6
       '@types/lru-cache': 5.1.1
       '@types/node': 16.11.42
-      tsup: 5.12.9_typescript@4.7.4
+      tsup: 6.1.2_typescript@4.7.4
       typescript: 4.7.4
       vfile: 5.3.4
 
@@ -113,7 +113,7 @@ importers:
       remark-github: ^11.2.3
       sade: ^1.8.1
       serialize-javascript: ^6.0.0
-      tsup: ^5.12.9
+      tsup: ^6.1.2
       typescript: ^4.7.4
       vfile: ^5.3.4
     dependencies:
@@ -141,7 +141,7 @@ importers:
       '@types/node': 16.11.42
       '@types/sade': 1.7.4
       '@types/serialize-javascript': 5.0.2
-      tsup: 5.12.9_typescript@4.7.4
+      tsup: 6.1.2_typescript@4.7.4
       typescript: 4.7.4
       vfile: 5.3.4
 
@@ -151,7 +151,7 @@ importers:
       '@types/node': ^16.11.42
       lodash-es: ^4.17.21
       to-vfile: ^7.2.3
-      tsup: ^5.12.9
+      tsup: ^6.1.2
       typescript: ^4.7.4
       unified: ^10.1.2
       vfile: ^5.3.4
@@ -162,7 +162,7 @@ importers:
     devDependencies:
       '@flatbread/core': link:../core
       '@types/node': 16.11.42
-      tsup: 5.12.9_typescript@4.7.4
+      tsup: 6.1.2_typescript@4.7.4
       typescript: 4.7.4
       vfile: 5.3.4
 
@@ -194,7 +194,7 @@ importers:
       remark-stringify: ^10.0.2
       sanitize-html: ^2.7.0
       to-vfile: ^7.2.3
-      tsup: ^5.12.9
+      tsup: ^6.1.2
       typescript: ^4.7.4
       unified: ^10.1.2
       vfile: ^5.3.4
@@ -227,7 +227,7 @@ importers:
       '@flatbread/core': link:../core
       '@types/node': 16.11.42
       '@types/sanitize-html': 2.6.2
-      tsup: 5.12.9_typescript@4.7.4
+      tsup: 6.1.2_typescript@4.7.4
       typescript: 4.7.4
       vfile: 5.3.4
 
@@ -242,7 +242,7 @@ importers:
       js-yaml: ^4.1.0
       lodash-es: ^4.17.21
       to-vfile: ^7.2.3
-      tsup: ^5.12.9
+      tsup: ^6.1.2
       typescript: ^4.7.4
       unified: ^10.1.2
       vfile: ^5.3.4
@@ -258,7 +258,7 @@ importers:
       '@flatbread/core': link:../core
       '@types/js-yaml': 4.0.5
       '@types/node': 16.11.42
-      tsup: 5.12.9_typescript@4.7.4
+      tsup: 6.1.2_typescript@4.7.4
       typescript: 4.7.4
       vfile: 5.3.4
 
@@ -5872,8 +5872,9 @@ packages:
     resolution: {integrity: sha512-d6xOpEDfsi2CZVlPQzGeux8XMwLT9hssAsaPYExaQMuYskwb+x1x7J371tWlbBdWHroy99KnVB6qIkUbs5X3UQ==}
     dev: false
 
-  /tsup/5.12.9_mu66ohdiwyrigyorzidgf4bsdu:
-    resolution: {integrity: sha512-dUpuouWZYe40lLufo64qEhDpIDsWhRbr2expv5dHEMjwqeKJS2aXA/FPqs1dxO4T6mBojo7rvo3jP9NNzaKyDg==}
+  /tsup/6.1.2_mu66ohdiwyrigyorzidgf4bsdu:
+    resolution: {integrity: sha512-Hw4hKDHaAQkm2eVavlArEOrAPA93bziRDamdfwaNs0vXQdUUFfItvUWY0L/F6oQQMVh6GvjQq1+HpDXw8UKtPA==}
+    engines: {node: '>=14'}
     hasBin: true
     peerDependencies:
       '@swc/core': ^1
@@ -5907,8 +5908,9 @@ packages:
       - ts-node
     dev: true
 
-  /tsup/5.12.9_typescript@4.7.4:
-    resolution: {integrity: sha512-dUpuouWZYe40lLufo64qEhDpIDsWhRbr2expv5dHEMjwqeKJS2aXA/FPqs1dxO4T6mBojo7rvo3jP9NNzaKyDg==}
+  /tsup/6.1.2_typescript@4.7.4:
+    resolution: {integrity: sha512-Hw4hKDHaAQkm2eVavlArEOrAPA93bziRDamdfwaNs0vXQdUUFfItvUWY0L/F6oQQMVh6GvjQq1+HpDXw8UKtPA==}
+    engines: {node: '>=14'}
     hasBin: true
     peerDependencies:
       '@swc/core': ^1
