@@ -2,7 +2,6 @@
   "name": "@flatbread/core",
   "version": "1.0.0-alpha.11",
   "description": "Flatbread's essential logic",
-  "type": "module",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch src"
@@ -20,8 +19,8 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     }
   },
   "main": "dist/index.js",
