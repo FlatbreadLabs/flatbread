@@ -22,8 +22,7 @@
       "@flatbread/transformer-yaml": [
         "./packages/transformer-yaml/src/index.ts"
       ]
-    },
-    "allowJs": true
+    }
   },
   "exclude": ["**/dist/**", "**/node_modules/**"]
 }
