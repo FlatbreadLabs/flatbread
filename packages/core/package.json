@@ -32,7 +32,6 @@
     "*.d.ts"
   ],
   "devDependencies": {
-    "@flatbread/config": "workspace:^1.0.0-alpha.4",
     "graphql": "16.0.1",
     "graphql-compose": "9.0.8",
     "graphql-compose-json": "6.2.0",
