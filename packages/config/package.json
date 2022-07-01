@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/config",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-alpha.6",
   "description": "Flatbread's user config processing",
   "type": "module",
   "publishConfig": {
@@ -36,7 +36,7 @@
     "*.d.ts"
   ],
   "devDependencies": {
-    "@flatbread/core": "workspace:^1.0.0-alpha.12",
+    "@flatbread/core": "workspace:^1.0.0-alpha.13",
     "@types/node": "^16.11.42",
     "tsup": "^6.1.2",
     "typescript": "^4.7.4"
