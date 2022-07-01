@@ -1,5 +1,5 @@
 import colors from 'kleur';
-import type { ConfigResult, FlatbreadConfig } from 'flatbread';
+import type { ConfigResult, FlatbreadConfig } from '../';
 
 /**
  * Wrapper around grabbing the user config and killing

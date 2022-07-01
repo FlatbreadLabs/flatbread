@@ -10,14 +10,14 @@ if (process.env.FLATBREAD_CI) {
     'flatbread',
     'dist',
     'cli',
-    'index.mjs'
+    'index.js'
   );
 
   if (existsSync(cliPath)) {
-    import('../dist/cli/index.mjs');
+    import('../dist/cli/index.js');
   } else {
     console.log("Flatbread's CLI is not available");
   }
 } else {
-  import('../dist/cli/index.mjs');
+  import('../dist/cli/index.js');
 }

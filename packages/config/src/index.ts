@@ -1,10 +1,6 @@
+import { ConfigResult, FlatbreadConfig } from '@flatbread/core';
 import path from 'path';
 import url from 'url';
-
-import type { FlatbreadConfig, ConfigResult } from './types';
-
-// Config handlers will go here
-export * from './types';
 
 /**
  * Type-assisted config builder

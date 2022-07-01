@@ -1,7 +1,8 @@
 {
   "name": "@flatbread/transformer-markdown",
-  "version": "1.0.0-alpha.3",
+  "version": "1.0.0-alpha.6",
   "description": "Convert .md files to in-memory JSON model",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tonyketcham/flatbread.git",
@@ -15,12 +16,12 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
   "main": "dist/index.js",
-  "module": "dist/index.mjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist",
@@ -38,33 +39,33 @@
     "graphql": "16.0.1",
     "gray-matter": "^4.0.3",
     "lodash-es": "^4.17.21",
-    "rehype-raw": "^6.1.0",
-    "rehype-sanitize": "^5.0.0",
-    "rehype-stringify": "^9.0.2",
-    "remark": "^14.0.1",
+    "rehype-raw": "^6.1.1",
+    "rehype-sanitize": "^5.0.1",
+    "rehype-stringify": "^9.0.3",
+    "remark": "^14.0.2",
     "remark-autolink-headings": "^7.0.1",
     "remark-external-links": "^9.0.1",
     "remark-fix-guillemets": "^1.1.1",
     "remark-footnotes": "^4.0.1",
     "remark-frontmatter": "^4.0.1",
     "remark-gfm": "^3.0.1",
-    "remark-html": "^15.0.0",
-    "remark-parse": "^10.0.0",
+    "remark-html": "^15.0.1",
+    "remark-parse": "^10.0.1",
     "remark-parse-yaml": "^0.0.3",
-    "remark-rehype": "^10.0.1",
+    "remark-rehype": "^10.1.0",
     "remark-slug": "^7.0.1",
     "remark-squeeze-paragraphs": "^5.0.1",
-    "remark-stringify": "^10.0.1",
-    "sanitize-html": "^2.5.3",
-    "to-vfile": "^7.2.2",
-    "unified": "^10.1.0"
+    "remark-stringify": "^10.0.2",
+    "sanitize-html": "^2.7.0",
+    "to-vfile": "^7.2.3",
+    "unified": "^10.1.2"
   },
   "devDependencies": {
-    "@flatbread/core": "workspace:^1.0.0-alpha.10",
-    "@types/node": "^16.11.7",
-    "@types/sanitize-html": "^2.5.0",
-    "tsup": "^5.6.0",
-    "typescript": "^4.4.4",
-    "vfile": "^5.2.0"
+    "@flatbread/core": "workspace:*",
+    "@types/node": "^16.11.42",
+    "@types/sanitize-html": "^2.6.2",
+    "tsup": "^6.1.2",
+    "typescript": "^4.7.4",
+    "vfile": "^5.3.4"
   }
 }

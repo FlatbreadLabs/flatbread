@@ -1,4 +1,4 @@
-import { ConfigResult, EntryNode, FlatbreadConfig } from 'flatbread';
+import { EntryNode, FlatbreadConfig, ConfigResult } from '../types';
 import { schemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
 import { defaultsDeep, merge, cloneDeep } from 'lodash-es';

@@ -1,4 +1,4 @@
-import { EntryNode } from 'flatbread';
+import { EntryNode } from '../types';
 import { get } from 'lodash-es';
 import deepEntries from './deepEntries.js';
 import reduceBooleans from './reduceBooleans.js';

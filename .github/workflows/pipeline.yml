@@ -14,15 +14,16 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2.0.1
+        uses: pnpm/action-setup@v2.2.2
         with:
-          version: 6.32.4
+          version: ^7.3.0
+          run_install: false
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://registry.npmjs.org/
@@ -33,10 +34,10 @@ jobs:
         run: |
           echo "FLATBREAD_CI=true" >> $GITHUB_ENV
 
-      - run: pnpm i -w
+      - run: pnpm i
 
       - name: Build
-        run: pnpm build -w
+        run: pnpm build
 
   lint:
     runs-on: ${{ matrix.os }}
@@ -48,15 +49,16 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2.0.1
+        uses: pnpm/action-setup@v2.2.2
         with:
-          version: 6.32.4
+          version: ^7.3.0
+          run_install: false
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://registry.npmjs.org/
@@ -67,12 +69,50 @@ jobs:
         run: |
           echo "FLATBREAD_CI=true" >> $GITHUB_ENV
 
-      - run: pnpm i -w
+      - run: pnpm i
 
       - name: Lint
-        run: pnpm lint -w
+        run: pnpm lint
 
   test:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+        os: [ubuntu-latest]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2.2.2
+        with:
+          version: ^7.3.0
+          run_install: false
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: https://registry.npmjs.org/
+          cache: 'pnpm'
+
+      - name: Set an escape hatch exclusive to this monorepo
+        id: escape_hatch
+        run: |
+          echo "FLATBREAD_CI=true" >> $GITHUB_ENV
+
+      - run: pnpm i
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+
+  integration-build:
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -82,15 +122,16 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2.0.1
+        uses: pnpm/action-setup@v2.2.2
         with:
-          version: 6.32.4
+          version: ^7.3.0
+          run_install: false
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://registry.npmjs.org/
@@ -101,10 +142,7 @@ jobs:
         run: |
           echo "FLATBREAD_CI=true" >> $GITHUB_ENV
 
-      - run: pnpm i -w
+      - run: pnpm i
 
-      - name: Build
-        run: pnpm build -w
-
-      - name: Test
-        run: pnpm run test -w
+      - name: Build Integration
+        run: pnpm play:build

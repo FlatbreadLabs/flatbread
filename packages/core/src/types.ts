@@ -16,6 +16,21 @@ import type { VFile } from 'vfile';
 // }
 
 /**
+ * Flatbread's configuration interface.
+ *
+ * @todo This needs to be typed more strictly.
+ */
+export interface FlatbreadConfig {
+  source: Source;
+  transformer?: Transformer;
+  content: Content;
+}
+export interface ConfigResult<O> {
+  filepath?: string;
+  config?: O;
+}
+
+/**
  * Converts input to meaningful data.
  * To be used as a helper layer on top of a source that is not directly usable.
  * For example, a markdown file.

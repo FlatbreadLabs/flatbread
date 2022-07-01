@@ -1,7 +1,8 @@
 {
   "name": "@flatbread/source-filesystem",
-  "version": "1.0.0-alpha.4",
+  "version": "1.0.0-alpha.7",
   "description": "Filesystem source for Flatbread",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tonyketcham/flatbread.git",
@@ -15,12 +16,12 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
-  "main": "dist/index.mjs",
-  "module": "dist/index.mjs",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist",
@@ -35,14 +36,14 @@
   },
   "dependencies": {
     "lodash-es": "^4.17.21",
-    "to-vfile": "^7.2.2",
-    "unified": "^10.1.0"
+    "to-vfile": "^7.2.3",
+    "unified": "^10.1.2"
   },
   "devDependencies": {
-    "@flatbread/core": "workspace:^1.0.0-alpha.10",
-    "@types/node": "^16.11.7",
-    "tsup": "^5.6.0",
-    "typescript": "^4.4.4",
-    "vfile": "^5.2.0"
+    "@flatbread/core": "workspace:*",
+    "@types/node": "^16.11.42",
+    "tsup": "^6.1.2",
+    "typescript": "^4.7.4",
+    "vfile": "^5.3.4"
   }
 }
