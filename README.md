@@ -243,14 +243,14 @@ Limits the number of returned entries to the specified amount. Accepts an intege
 
 # ☀️ Contributing
 
-Clone the entire monorepo! Once you've installed dependencies with `pnpm i -w`, start a development server:
+Clone the entire monorepo! Once you've installed dependencies with `pnpm -w i`, start a development server:
 
 ## **development server** 🎒
 
 This will run a dev server across packages in the monorepo
 
 ```bash
-pnpm dev -w
+pnpm -w dev
 ```
 
 ## **working on a package** ⚒️
