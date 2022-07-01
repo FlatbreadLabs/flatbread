@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/config",
-  "version": "1.0.0-alpha.4",
+  "version": "1.0.0-alpha.5",
   "description": "Flatbread's user config processing",
   "publishConfig": {
     "main": "dist/index.js",
@@ -35,7 +35,7 @@
     "*.d.ts"
   ],
   "devDependencies": {
-    "@flatbread/core": "workspace:^1.0.0-alpha.11",
+    "@flatbread/core": "workspace:^1.0.0-alpha.12",
     "@types/node": "^16.11.42",
     "tsup": "^6.1.2",
     "typescript": "^4.7.4"

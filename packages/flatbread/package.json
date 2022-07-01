@@ -1,6 +1,6 @@
 {
   "name": "flatbread",
-  "version": "1.0.0-alpha.16",
+  "version": "1.0.0-alpha.17",
   "description": "Consume relational, flat-file data using GraphQL 🥯 inside damn near any framework.",
   "scripts": {
     "build": "tsup",
@@ -33,10 +33,10 @@
     "*.d.ts"
   ],
   "devDependencies": {
-    "@flatbread/config": "workspace:^1.0.0-alpha.4",
-    "@flatbread/core": "workspace:^1.0.0-alpha.11",
-    "@flatbread/source-filesystem": "workspace:^1.0.0-alpha.4",
-    "@flatbread/transformer-markdown": "workspace:^1.0.0-alpha.3",
+    "@flatbread/config": "workspace:^1.0.0-alpha.5",
+    "@flatbread/core": "workspace:^1.0.0-alpha.12",
+    "@flatbread/source-filesystem": "workspace:^1.0.0-alpha.5",
+    "@flatbread/transformer-markdown": "workspace:^1.0.0-alpha.4",
     "@types/cors": "^2.8.12",
     "apollo-server-core": "^3.9.0",
     "apollo-server-express": "^3.9.0",
