@@ -80,7 +80,7 @@ jobs:
     strategy:
       matrix:
         node-version: [16.x]
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest]
       fail-fast: false
 
     steps:
@@ -111,3 +111,38 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+  integration-build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2.2.2
+        with:
+          version: ^7.3.0
+          run_install: false
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: https://registry.npmjs.org/
+          cache: 'pnpm'
+
+      - name: Set an escape hatch exclusive to this monorepo
+        id: escape_hatch
+        run: |
+          echo "FLATBREAD_CI=true" >> $GITHUB_ENV
+
+      - run: pnpm i
+
+      - name: Build Integration
+        run: pnpm play:build

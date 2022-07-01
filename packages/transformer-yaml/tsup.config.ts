@@ -9,4 +9,5 @@ export const tsup: Options = {
   target: 'esnext',
   dts: true,
   shims: true,
+  treeshake: true,
 };

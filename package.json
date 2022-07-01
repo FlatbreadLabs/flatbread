@@ -16,7 +16,7 @@
     "lint:fix": "pnpm lint:fix:prettier",
     "lint:fix:prettier": "prettier --write --plugin-search-dir=. .",
     "play": "npm -C playground dev",
-    "play:build": "pnpm build && npm -C playground build",
+    "play:build": "pnpm build && cd playground && pnpm build",
     "prepublish:ci": "pnpm -r update",
     "publish:ci": "esmo scripts/publish.ts",
     "release": "esmo scripts/release.ts && git push --follow-tags",

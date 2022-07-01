@@ -26,7 +26,7 @@ export default function orchestrateProcesses({
   packageManager = null,
 }: OrchestraOptions) {
   const pkgManager = packageManager || detectPkgManager(process.cwd());
-  let serverModulePath = 'node_modules/flatbread/dist/graphql/server.mjs';
+  let serverModulePath = 'node_modules/flatbread/dist/graphql/server.js';
 
   process.cwd();
   const gql = fork(resolve(process.cwd(), serverModulePath), [], {

@@ -2,6 +2,7 @@
   "name": "@flatbread/config",
   "version": "1.0.0-alpha.5",
   "description": "Flatbread's user config processing",
+  "type": "module",
   "publishConfig": {
     "main": "dist/index.js",
     "typings": "dist/index.d.ts"
@@ -23,12 +24,12 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
-  "main": "dist/index.mjs",
-  "module": "dist/index.mjs",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist",
