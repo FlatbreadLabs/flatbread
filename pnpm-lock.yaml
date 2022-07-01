@@ -49,7 +49,7 @@ importers:
 
   packages/config:
     specifiers:
-      '@flatbread/core': workspace:^1.0.0-alpha.13
+      '@flatbread/core': workspace:*
       '@types/node': ^16.11.42
       tsup: ^6.1.2
       typescript: ^4.7.4
@@ -92,10 +92,10 @@ importers:
 
   packages/flatbread:
     specifiers:
-      '@flatbread/config': workspace:^1.0.0-alpha.6
-      '@flatbread/core': workspace:^1.0.0-alpha.13
-      '@flatbread/source-filesystem': workspace:^1.0.0-alpha.6
-      '@flatbread/transformer-markdown': workspace:^1.0.0-alpha.5
+      '@flatbread/config': workspace:*
+      '@flatbread/core': workspace:*
+      '@flatbread/source-filesystem': workspace:*
+      '@flatbread/transformer-markdown': workspace:*
       '@types/cors': ^2.8.12
       '@types/express': ^4.17.13
       '@types/gradient-string': ^1.1.2
@@ -149,7 +149,7 @@ importers:
 
   packages/source-filesystem:
     specifiers:
-      '@flatbread/core': workspace:^1.0.0-alpha.13
+      '@flatbread/core': workspace:*
       '@types/node': ^16.11.42
       lodash-es: ^4.17.21
       to-vfile: ^7.2.3
@@ -170,7 +170,7 @@ importers:
 
   packages/transformer-markdown:
     specifiers:
-      '@flatbread/core': workspace:^1.0.0-alpha.13
+      '@flatbread/core': workspace:*
       '@sindresorhus/slugify': ^2.1.0
       '@types/node': ^16.11.42
       '@types/sanitize-html': ^2.6.2
@@ -235,7 +235,7 @@ importers:
 
   packages/transformer-yaml:
     specifiers:
-      '@flatbread/core': workspace:^1.0.0-alpha.13
+      '@flatbread/core': workspace:*
       '@sindresorhus/slugify': ^2.1.0
       '@types/js-yaml': ^4.0.5
       '@types/node': ^16.11.42
