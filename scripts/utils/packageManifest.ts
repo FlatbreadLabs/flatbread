@@ -17,7 +17,7 @@ export default async function getPackagesManifest(
       dirName: dir,
     }))
   );
-  console.log(pkgs);
+
   return pkgs.filter(
     (pkg) => !(pkg.default.private && pkg.default.private === true)
   );

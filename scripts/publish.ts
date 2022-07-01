@@ -10,7 +10,10 @@ execSync('pnpm run build', { stdio: 'inherit' });
 let command = 'pnpm publish --access public';
 if (version.includes('beta')) command += ' --tag beta';
 
-const dirs = await fs.readdir('packages');
+const dirents = await fs.readdir('packages', { withFileTypes: true });
+const dirs = dirents
+  .filter((dirent) => dirent.isDirectory())
+  .map((dirent) => dirent.name);
 
 console.log(dirs);
 
