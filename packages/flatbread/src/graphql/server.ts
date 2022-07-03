@@ -25,7 +25,7 @@ async function startApolloServer(schema: GraphQLSchema, { port = 5050 } = {}) {
       maxSize: Math.pow(2, 20) * 100,
     }),
     plugins: [
-      // Apollo Server will drain your HTTP server when you call the stop() method (which is also called for you when the SIGTERM and SIGINT signals are received
+      // Apollo Server will drain your HTTP server when you call the stop() method (which is also called for you when the SIGTERM and SIGINT signals are received)
       // @see https://www.apollographql.com/docs/apollo-server/api/plugin/drain-http-server/
       ApolloServerPluginDrainHttpServer({ httpServer }),
     ],
