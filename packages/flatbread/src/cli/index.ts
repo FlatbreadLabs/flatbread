@@ -39,7 +39,7 @@ prog
   .command('start [corunner]', 'Start flatbread with a GraphQL server')
   .option('--, _', 'Pass options to the corunning script')
   .option('-p, --port', 'Port to run the GraphQL server', 5057)
-  .option('-H, --https', 'Use self-signed HTTPS certificate', true)
+  .option('-H, --https', 'Use self-signed HTTPS certificate', false)
   .option('-o, --open', 'Open the explorer in a browser tab', false)
   .option(
     '-X, --exec',

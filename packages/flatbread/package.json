@@ -34,6 +34,7 @@
     "*.d.ts"
   ],
   "dependencies": {
+    "@apollo/utils.keyvaluecache": "^1.0.1",
     "@flatbread/config": "workspace:*",
     "@flatbread/core": "workspace:*",
     "@flatbread/source-filesystem": "workspace:*",

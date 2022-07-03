@@ -1,5 +1,6 @@
 import { ApolloServer } from 'apollo-server-express';
 import { ApolloServerPluginDrainHttpServer } from 'apollo-server-core';
+import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache';
 import express from 'express';
 import http from 'http';
 import generateSchema from '@flatbread/core';
@@ -18,7 +19,16 @@ async function startApolloServer(schema: GraphQLSchema, { port = 5050 } = {}) {
   const httpServer = http.createServer(app);
   const server = new ApolloServer({
     schema,
-    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+    // Prevents an unbounded cache from growing infinitely and causing memory issues.
+    cache: new InMemoryLRUCache({
+      // ~100MiB
+      maxSize: Math.pow(2, 20) * 100,
+    }),
+    plugins: [
+      // Apollo Server will drain your HTTP server when you call the stop() method (which is also called for you when the SIGTERM and SIGINT signals are received
+      // @see https://www.apollographql.com/docs/apollo-server/api/plugin/drain-http-server/
+      ApolloServerPluginDrainHttpServer({ httpServer }),
+    ],
   });
   await server.start();
   server.applyMiddleware({ app });

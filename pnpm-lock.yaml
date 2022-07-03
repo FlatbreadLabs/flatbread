@@ -92,6 +92,7 @@ importers:
 
   packages/flatbread:
     specifiers:
+      '@apollo/utils.keyvaluecache': ^1.0.1
       '@flatbread/config': workspace:*
       '@flatbread/core': workspace:*
       '@flatbread/source-filesystem': workspace:*
@@ -119,6 +120,7 @@ importers:
       typescript: ^4.7.4
       vfile: ^5.3.4
     dependencies:
+      '@apollo/utils.keyvaluecache': 1.0.1
       '@flatbread/config': link:../config
       '@flatbread/core': link:../core
       '@flatbread/source-filesystem': link:../source-filesystem
