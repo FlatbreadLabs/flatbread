@@ -4,7 +4,17 @@
 
 <h1 align="center">Flatbread 🥪</h1>
 
-[![Pipeline](https://github.com/tonyketcham/flatbread/actions/workflows/pipeline.yml/badge.svg)](https://github.com/tonyketcham/flatbread/actions/workflows/pipeline.yml)
+<p align="center">
+  <a href="https://github.com/tonyketcham/flatbread/actions/workflows/pipeline.yml">
+    <img src="https://github.com/tonyketcham/flatbread/actions/workflows/pipeline.yml/badge.svg" alt="pipeline status"/>
+  </a>
+  <a href="https://join.slack.com/t/flatbreadworkspace/shared_invite/zt-1bvnhr38j-oHFun85aGfaNp9qwizOORw">
+    <img src="https://img.shields.io/static/v1?label=Slack&message=Flatbread&color=ECB22E&logo=slack" alt="Join the Flatbread slack" />
+  </a>
+  <a href="https://www.npmjs.com/package/flatbread">
+    <img src="https://img.shields.io/npm/v/flatbread?color=%23ed225d" alt="NPM version">
+  </a>
+</p>
 
 Eat your relational markdown data _and query it, too,_ with [GraphQL](https://graphql.org/) inside damn near any framework (statement awaiting peer-review).
 
@@ -242,6 +252,10 @@ Limits the number of returned entries to the specified amount. Accepts an intege
 [Check out the playground for an example](https://github.com/tonyketcham/flatbread/tree/main/playground) of using Flatbread with SvelteKit to safely shoot off GraphQL queries using a static (or node) adapter.
 
 # ☀️ Contributing
+
+You're encouraged to [join our Slack](https://join.slack.com/t/flatbreadworkspace/shared_invite/zt-1bvnhr38j-oHFun85aGfaNp9qwizOORw) and ask questions! Let us know if anything is unclear - if so, that just means we need to improve our docs 😁 We can help set you off on the right foot so you don't feel like you're flying blind.
+
+## **init**
 
 Clone the entire monorepo! Once you've installed dependencies with `pnpm -w i`, start a development server:
 
