@@ -1,5 +1,10 @@
 // import transformer from '@flatbread/transformer-yaml';
-import { defineConfig, markdownTransforer, filesystem } from 'flatbread';
+import {
+  defineConfig,
+  markdownTransformer,
+  yamlTransformer,
+  filesystem,
+} from 'flatbread';
 
 const transformerConfig = {
   markdown: {
@@ -9,7 +14,10 @@ const transformerConfig = {
 };
 export default defineConfig({
   source: filesystem(),
-  transformer: markdownTransforer(transformerConfig),
+  transformer: {
+    '*.{markdown,md,mdx}': markdownTransformer(transformerConfig),
+    '*.{yaml,yml}': yamlTransformer(),
+  },
   // source: filesystem({ extensions: ['.yml', '.yaml'] }),
   // transformer: transformer(),
 
@@ -26,6 +34,13 @@ export default defineConfig({
       collection: 'Author',
       refs: {
         friend: 'Author',
+      },
+    },
+    {
+      path: 'content/yaml/authors',
+      collection: 'YamlAuthor',
+      refs: {
+        friend: 'YamlAuthor',
       },
     },
   ],

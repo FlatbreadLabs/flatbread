@@ -22,7 +22,7 @@ import type { VFile } from 'vfile';
  */
 export interface FlatbreadConfig {
   source: Source;
-  transformer?: Transformer;
+  transformer?: Transformer | { [key: string]: Transformer };
   content: Content;
 }
 export interface ConfigResult<O> {

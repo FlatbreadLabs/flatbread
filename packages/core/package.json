@@ -38,6 +38,7 @@
     "lodash-es": "4.17.21",
     "lru-cache": "^6.0.0",
     "matcher": "^5.0.0",
+    "minimatch": "^5.1.0",
     "plur": "5.1.0"
   },
   "devDependencies": {

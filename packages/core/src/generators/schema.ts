@@ -10,6 +10,8 @@ import {
   generateArgsForSingleItemQuery,
 } from '../generators/arguments.js';
 import resolveQueryArgs from '../resolvers/arguments.js';
+import minimatch from 'minimatch';
+import type { Transformer } from '../types';
 
 interface RootQueries {
   maybeReturnsSingleItem: string[];
@@ -196,11 +198,19 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
 const fetchPreknownSchemaFragments = (
   config: FlatbreadConfig
 ): Record<string, any> | {} => {
-  if (config.transformer && config.transformer.preknownSchemaFragments) {
-    return config.transformer.preknownSchemaFragments();
-  }
-  return {};
+  return getTransformers(config)
+    .map(([_, transformer]) => transformer)
+    .filter((t) => t.preknownSchemaFragments)
+    .reduce((all, next) => merge(all, next.preknownSchemaFragments()), {});
 };
+
+function getTransformers(config: FlatbreadConfig): [string, Transformer][] {
+  if (!config.transformer) return [];
+  if (config.transformer?.parse) {
+    return [['**', config.transformer as Transformer]];
+  }
+  return Object.entries(config.transformer as { [key: string]: Transformer });
+}
 
 /**
  * Transforms the content nodes to the expected JSON format. If no transformer is defined, the content nodes are returned as is.
@@ -212,8 +222,9 @@ const optionallyTransformContentNodes = (
   allContentNodes: Record<string, any[]>,
   config: FlatbreadConfig
 ): Record<string, any[]> => {
-  if (config.transformer && config.transformer.parse) {
-    const parse = config.transformer.parse;
+  if (config.transformer) {
+    const transformers = getTransformers(config);
+    // const globs = Object.entries(transformers);
 
     /**
      * Map through each content type,
@@ -222,11 +233,17 @@ const optionallyTransformContentNodes = (
      *
      * @todo if this becomes a performance bottleneck, consider overloading the source plugin API to accept a transform function so we can avoid mapping through the content nodes twice
      * */
-    const transformedContentNodes = map(allContentNodes, (node: any) =>
-      parse(node)
-    );
-    return transformedContentNodes;
+
+    return map(allContentNodes, (node: any) => {
+      const [_, transformer] =
+        transformers.find(([glob]) => minimatch(node.basename, glob)) ?? [];
+      if (!transformer?.parse) {
+        throw new Error(`no transformer found for ${node.path}`);
+      }
+      return transformer.parse(node);
+    });
   }
+
   return allContentNodes;
 };
 
