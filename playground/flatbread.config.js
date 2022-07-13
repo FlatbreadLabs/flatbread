@@ -1,11 +1,24 @@
 // import transformer from '@flatbread/transformer-yaml';
-import { defineConfig, markdownTransforer, filesystem } from 'flatbread';
+import {
+  defineConfig,
+  markdownTransforer,
+  filesystem,
+  createScalar,
+} from 'flatbread';
 
 const transformerConfig = {
   markdown: {
     gfm: true,
     externalLinks: true,
   },
+};
+
+const flatbreadImage = {
+  type: createScalar(`type FlatbreadImage { src: String alt: String }`),
+  resolve: async (source) => ({
+    alt: 'a nice description',
+    src: source,
+  }),
 };
 
 export default defineConfig({
@@ -33,6 +46,10 @@ export default defineConfig({
       path: 'content/markdown/deeply-nested',
       collection: 'OverrideTest',
       overrides: [
+        {
+          field: 'image',
+          ...flatbreadImage,
+        },
         {
           field: 'deeply.nested',
           type: 'String',
