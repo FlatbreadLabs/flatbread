@@ -10,6 +10,7 @@ import {
   generateArgsForSingleItemQuery,
 } from '../generators/arguments.js';
 import resolveQueryArgs from '../resolvers/arguments.js';
+import { getFieldOverrides } from '../utils/field-overrides';
 
 interface RootQueries {
   maybeReturnsSingleItem: string[];
@@ -51,6 +52,7 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
         collection,
         defaultsDeep(
           {},
+          getFieldOverrides(collection, config),
           ...nodes.map((node) => merge({}, node, preknownSchemaFragments))
         ),
         { schemaComposer }

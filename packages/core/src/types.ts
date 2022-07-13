@@ -88,6 +88,12 @@ export interface Source {
   ) => Promise<Record<string, VFile[]>>;
 }
 
+export interface Override {
+  field: string;
+  type: string;
+  resolve: <T, U, Z>(source: T, parent: U) => Z;
+}
+
 /**
  * An array of content descriptions which can be used to retrieve content nodes.
  *
@@ -95,5 +101,6 @@ export interface Source {
  */
 export type Content = {
   collection: string;
+  overrides?: Override[];
   [key: string]: any;
 }[];
