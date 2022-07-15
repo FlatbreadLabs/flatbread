@@ -3,7 +3,7 @@ import { read } from 'to-vfile';
 import type { SourcePlugin } from '@flatbread/core';
 import type { VFile } from 'vfile';
 import type { FileNode, sourceFilesystemConfig } from './types';
-import gatherFileNodes from './utils/getValidNodesFilenames';
+import gatherFileNodes from './utils/gatherFileNodes';
 
 /**
  * Get nodes (files) from the directory

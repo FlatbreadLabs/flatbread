@@ -1,5 +1,5 @@
 import test from 'ava';
-import gatherFileNodes from '../getValidNodesFilenames.js';
+import gatherFileNodes from '../gatherFileNodes.js';
 import { readDirectory } from './mocks.js';
 
 const dirStructure = {
