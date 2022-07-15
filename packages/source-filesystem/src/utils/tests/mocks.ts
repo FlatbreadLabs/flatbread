@@ -1,3 +1,5 @@
+import type { FileNode } from '../../types';
+
 export function readDirectory(dirStructure: any) {
   return async (path: string) => {
     const relativePath = path.replace(process.cwd(), '').replace(/^\//, '');
@@ -12,7 +14,7 @@ export function readDirectory(dirStructure: any) {
         path: `${relativePath}/${file}`,
         name: file,
         data: {},
-      }));
+      })) as unknown as FileNode[];
     }
 
     if (typeof node === 'boolean') {
@@ -27,6 +29,6 @@ export function readDirectory(dirStructure: any) {
         name,
         data: {},
       };
-    });
+    }) as unknown as FileNode[];
   };
 }

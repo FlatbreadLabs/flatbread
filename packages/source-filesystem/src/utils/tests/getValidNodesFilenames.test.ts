@@ -1,5 +1,5 @@
 import test from 'ava';
-import getValidNodesFilenames from '../getValidNodesFilenames.js';
+import gatherFileNodes from '../getValidNodesFilenames.js';
 import { readDirectory } from './mocks.js';
 
 const dirStructure = {
@@ -15,94 +15,59 @@ const dirStructure = {
 };
 
 const opts = {
+  extensions: ['.md'],
   readDirectory: readDirectory(dirStructure),
 };
 
 test('basic flat folder', async (t) => {
-  const result = await getValidNodesFilenames('.', ['.md'], opts as any);
+  const result = await gatherFileNodes('.', opts);
   t.snapshot(result);
 });
 
 test('basic case', async (t) => {
-  const result = await getValidNodesFilenames(
-    'deeply/nested',
-    ['.md'],
-    opts as any
-  );
+  const result = await gatherFileNodes('deeply/nested', opts);
   t.snapshot(result);
 
-  const result2 = await getValidNodesFilenames(
-    './deeply/nested',
-    ['.md'],
-    opts as any
-  );
+  const result2 = await gatherFileNodes('./deeply/nested', opts);
   t.snapshot(result2);
 });
 
 test('double level recursion', async (t) => {
-  const result = await getValidNodesFilenames(
-    'deeply/**/*.md',
-    ['.md'],
-    opts as any
-  );
+  const result = await gatherFileNodes('deeply/**/*.md', opts);
   t.snapshot(result);
 });
 
 test('double level recursion named', async (t) => {
-  const result = await getValidNodesFilenames(
-    'deeply/[a]/[b].md',
-    ['.md'],
-    opts as any
-  );
+  const result = await gatherFileNodes('deeply/[a]/[b].md', opts);
   t.snapshot(result);
 });
 
 test('single level recursion', async (t) => {
-  const result = await getValidNodesFilenames('./*.md', ['.md'], opts as any);
+  const result = await gatherFileNodes('./*.md', opts as any);
   t.snapshot(result);
 });
 
 test('double level recursion named without parent directory', async (t) => {
-  const result = await getValidNodesFilenames(
-    './[genre]/[title].md',
-    ['.md'],
-    opts as any
-  );
+  const result = await gatherFileNodes('./[genre]/[title].md', opts);
   t.snapshot(result);
 });
 
 test('single level named', async (t) => {
-  const result = await getValidNodesFilenames(
-    './[title].md',
-    ['.md'],
-    opts as any
-  );
+  const result = await gatherFileNodes('./[title].md', opts);
   t.snapshot(result);
 });
 
 test('double level first named', async (t) => {
-  const result = await getValidNodesFilenames(
-    './[genre]/*.md',
-    ['.md'],
-    opts as any
-  );
+  const result = await gatherFileNodes('./[genre]/*.md', opts);
   t.snapshot(result);
 });
 
 test('double level second named', async (t) => {
-  const result = await getValidNodesFilenames(
-    './**/[title].md',
-    ['.md'],
-    opts as any
-  );
+  const result = await gatherFileNodes('./**/[title].md', opts);
   t.snapshot(result);
 });
 
 test('triple level', async (t) => {
-  const result = await getValidNodesFilenames(
-    './[random]/[name]/[title].md',
-    ['.md'],
-    opts as any
-  );
+  const result = await gatherFileNodes('./[random]/[name]/[title].md', opts);
   t.snapshot(result);
 });

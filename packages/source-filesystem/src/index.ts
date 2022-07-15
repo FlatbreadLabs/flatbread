@@ -2,10 +2,8 @@ import { read } from 'to-vfile';
 
 import type { SourcePlugin } from '@flatbread/core';
 import type { VFile } from 'vfile';
-import type { sourceFilesystemConfig } from './types';
-import getValidNodesFilenames, {
-  FileNode,
-} from './utils/getValidNodesFilenames';
+import type { FileNode, sourceFilesystemConfig } from './types';
+import gatherFileNodes from './utils/getValidNodesFilenames';
 
 /**
  * Get nodes (files) from the directory
@@ -15,12 +13,10 @@ import getValidNodesFilenames, {
  */
 async function getNodesFromDirectory(
   path: string,
-  config: sourceFilesystemConfig
+  config: sourceFilesystemConfig = {}
 ): Promise<VFile[]> {
-  const nodes: FileNode[] = await getValidNodesFilenames(
-    path,
-    config?.extensions
-  );
+  const { extensions } = config;
+  const nodes: FileNode[] = await gatherFileNodes(path, { extensions });
 
   return Promise.all(
     nodes.map(async (node: FileNode): Promise<VFile> => {

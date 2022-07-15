@@ -60,6 +60,8 @@ The name for this content type that will appear in GraphQL.
 - Type: `string` _required_
 
 Where to look for files of the current content type.
+- you can use `**` or `*` to match all files or folders 
+- you can capture the file or folder names to store them as data on the resulting nodes `[category]` `[title].md`
 
 #### refs
 
