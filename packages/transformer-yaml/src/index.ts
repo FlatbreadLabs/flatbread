@@ -21,6 +21,7 @@ export const parse = (input: VFile): EntryNode => {
       _filename: input.basename,
       _path: input.path,
       _slug: slugify(input.stem ?? ''),
+      ...input.data,
       ...doc,
     };
   }
