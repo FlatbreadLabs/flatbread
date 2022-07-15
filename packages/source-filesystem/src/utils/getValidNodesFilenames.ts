@@ -94,7 +94,7 @@ export default async function gatherFileNodes(
     });
   }
 
-  // throw away any node that doesn't match our extension whitelist
+  // throw away any node that doesn't match our extension allowlist
   return nodes.filter((n) =>
     formatValidExtensions.includes(extname(n.path).toLowerCase())
   );
