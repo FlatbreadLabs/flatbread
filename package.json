@@ -21,7 +21,7 @@
     "publish:ci": "esmo scripts/publish.ts",
     "release": "esmo scripts/release.ts && git push --follow-tags",
     "test": "ava",
-    "dev:test": "ava --watch",
+    "dev:test": "ava --watch --verbose",
     "prepare": "husky install"
   },
   "repository": {
