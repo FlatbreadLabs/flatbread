@@ -1,9 +1,14 @@
 import sift, { generateFilterSetManifest } from '../utils/sift';
-import {
-  resolveMaybeThunk,
-  SchemaComposer,
-  ThunkComposer,
-} from 'graphql-compose';
+import { ContentNode, FlatbreadConfig } from 'flatbread';
+import { initServerlessFlatbreadProvider } from '../serverless/provider';
+
+interface ResolveQueryArgsOptions {
+  type: {
+    name: string;
+    pluralName: string;
+    pluralQueryName: string;
+  };
+}
 
 /**
  * Resolvers for query arguments.
@@ -11,20 +16,18 @@ import {
 const resolveQueryArgs = async (
   nodes: any[],
   args: any,
-  type: string,
-  schemaComposer: SchemaComposer
+  config: FlatbreadConfig,
+  options: ResolveQueryArgsOptions
 ) => {
   const { skip, limit, order, sortBy, filter } = args;
 
-  // console.group('filter middleware');
-  // console.log('args', args);
-  // console.log('type', type);
-  // console.log('scoped result', nodes);
-  // console.groupEnd();
-
   if (filter) {
-    // nodes = await resolveFilter(filter, nodes, type, schemaComposer);
-    nodes = nodes.filter(sift(filter));
+    // Turn the filter into a GraphQL subquery that returns an array of matching content node IDs.
+    const listOfNodeIDsToFilter = await resolveFilter(filter, config, options);
+
+    nodes = listOfNodeIDsToFilter.map((desiredNodeId) =>
+      nodes.find((node) => node.id === desiredNodeId)
+    );
   }
 
   if (sortBy) {
@@ -44,39 +47,58 @@ const resolveQueryArgs = async (
  * Immutably filters and returns a new array.
  *
  * @param filter the filter argument
- * @param nodes the array of nodes to filter
  */
 export const resolveFilter = async (
   filter: Record<string, any>,
-  nodes: any[],
-  type: string,
-  schemaComposer: SchemaComposer
-) => {
+  config: FlatbreadConfig,
+  options: ResolveQueryArgsOptions
+): Promise<(string | number)[]> => {
   // construct custom resolver of nodes to build temp list
   const filterSetManifest = generateFilterSetManifest(filter);
-  console.log('filter manifest', filterSetManifest);
+
+  // Run Flatbread as a function to execute a subquery
+  const flatbread = await initServerlessFlatbreadProvider(config);
+
+  let filterToQuery = [];
 
   for (const filter of filterSetManifest) {
-    for (const field of filter.path) {
-      const objectTC = schemaComposer.getOTC(type);
-      let fieldTC = objectTC.hasField(field) && objectTC.getField(field);
+    let graphQLFieldAccessor = '';
 
-      if (fieldTC instanceof ThunkComposer) {
-        fieldTC = fieldTC.getUnwrappedTC();
+    for (let i = 0; i < filter.path.length; i++) {
+      const field = filter.path[i];
+      const lastField = filter.path.length - 1;
+
+      if (i === lastField && filter.path.length === 1) {
+        graphQLFieldAccessor += `${field}`;
+      } else if (i !== lastField) {
+        graphQLFieldAccessor += `${field} {`;
+      } else {
+        graphQLFieldAccessor += `${field} ${[lastField]
+          .map(() => '}')
+          .join('')}`;
       }
-      console.log(fieldTC);
-      // const resolver = fieldTC && fieldTC?.resolve;
-      // if (resolver) {
-      //   console.log(
-      //     resolver(nodes, filter.args, null, schemaComposer)
-      //   );
-      // }
-      // console.log('FILTER RESOLVER', resolveMaybeThunk(resolver));
-      // turn this into a function that accepts a type and allows us to change type scope, building out a tree of relations
     }
+
+    filterToQuery.push(graphQLFieldAccessor);
   }
 
-  return nodes.filter(sift(filter));
+  // TODO: replace id field with user-defined/fallback identifier field
+  const queryString = `
+    query ${options.type.pluralQueryName}_FilterSubquery {
+      ${options.type.pluralQueryName} {
+        id
+        ${filterToQuery.join('\n')}
+      }
+    }
+  `;
+
+  const { data } = await flatbread({
+    source: queryString,
+  });
+
+  const result = data?.[options.type.pluralQueryName] as ContentNode[];
+
+  return result.filter(sift(filter)).map((node) => node.id);
 };
 
 /**

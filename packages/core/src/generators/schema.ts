@@ -109,7 +109,13 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
           cloneDeep(allContentNodesJSON[type])?.filter((node: EntryNode) =>
             idsToFind?.includes(node.id)
           ) ?? [];
-        return resolveQueryArgs(matches, rp.args, type, schemaComposer);
+        return resolveQueryArgs(matches, rp.args, config, {
+          type: {
+            name: type,
+            pluralName: pluralType,
+            pluralQueryName: pluralTypeQueryName,
+          },
+        });
       },
     });
 
@@ -120,7 +126,13 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
       description: `Return a set of ${pluralType}`,
       resolve: (rp: Record<string, any>) => {
         const nodes = cloneDeep(allContentNodesJSON[type]);
-        return resolveQueryArgs(nodes, rp.args, type, schemaComposer);
+        return resolveQueryArgs(nodes, rp.args, config, {
+          type: {
+            name: type,
+            pluralName: pluralType,
+            pluralQueryName: pluralTypeQueryName,
+          },
+        });
       },
     });
 
