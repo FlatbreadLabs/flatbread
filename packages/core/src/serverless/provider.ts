@@ -1,6 +1,6 @@
 import { graphql, GraphQLArgs } from 'graphql';
 import generateSchema from '../generators/schema';
-import { FlatbreadConfig } from 'flatbread';
+import { FlatbreadConfig } from '../types';
 
 /**
  * Generates a GraphQL schema and returns a query function that can be used to execute a GraphQL query.
