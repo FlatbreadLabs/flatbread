@@ -67,7 +67,6 @@ export default async function gatherFileNodes(
   let nodes = await readDirectory(join(process.cwd(), pathPrefix));
   const leaf = segments.pop();
 
-  
   /**
    * For each directory segment
    * 1. step into the next level of each directory node
@@ -94,7 +93,6 @@ export default async function gatherFileNodes(
       return node;
     });
   }
-
 
   // throw away any node that doesn't match our extension whitelist
   return nodes.filter((n) =>

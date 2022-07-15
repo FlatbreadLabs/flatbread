@@ -1,4 +1,4 @@
-import type{ Dirent } from "node:fs";
+import type { Dirent } from 'node:fs';
 
 /**
  * Config options for the source-filesystem plugin
@@ -20,5 +20,5 @@ export interface FileNode extends Dirent {
 
 export interface GatherFileNodesOptions {
   extensions?: string[];
-  readDirectory?: (path: string) => Promise<FileNode[]>
+  readDirectory?: (path: string) => Promise<FileNode[]>;
 }
