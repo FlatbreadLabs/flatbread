@@ -42,9 +42,7 @@ const resolveQueryArgs = async (
 };
 
 /**
- * Deeply resolve a filter argument into a set of nodes with relations and not-yet resolved fields.
- *
- * Immutably filters and returns a new array.
+ * Deeply resolves a filter argument as a subquery, and returns a set of content node IDs that satisfy the filter.
  *
  * @param filter the filter argument
  */
@@ -53,7 +51,9 @@ export const resolveFilter = async (
   config: FlatbreadConfig,
   options: ResolveQueryArgsOptions
 ): Promise<(string | number)[]> => {
-  // construct custom resolver of nodes to build temp list
+  // Seperate the filter into its parts:
+  //  - the path leading to the field we want to compare
+  //  - the comparator expression.
   const filterSetManifest = generateFilterSetManifest(filter);
 
   // Run Flatbread as a function to execute a subquery
@@ -68,6 +68,7 @@ export const resolveFilter = async (
       const field = filter.path[i];
       const lastField = filter.path.length - 1;
 
+      // Build a partial GraphQL query's field shape
       if (i === lastField && filter.path.length === 1) {
         graphQLFieldAccessor += `${field}`;
       } else if (i !== lastField) {
