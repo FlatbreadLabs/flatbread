@@ -1,4 +1,9 @@
-import { ConfigResult, FlatbreadConfig } from '@flatbread/core';
+import {
+  ConfigResult,
+  FlatbreadConfig,
+  LoadedFlatbreadConfig,
+  Transformer,
+} from '@flatbread/core';
 import path from 'path';
 import url from 'url';
 
@@ -8,8 +13,9 @@ import url from 'url';
  * @param config flatbread instance options
  * @returns flatbread config
  */
-export const defineConfig = (config: FlatbreadConfig): FlatbreadConfig =>
-  config;
+export const defineConfig = (
+  config: LoadedFlatbreadConfig
+): LoadedFlatbreadConfig => config;
 
 /**
  * Pulls the user config from an optionally specified filepath.
@@ -20,14 +26,16 @@ export const defineConfig = (config: FlatbreadConfig): FlatbreadConfig =>
  * @returns Promise that resolves to the user config object.
  */
 export async function loadConfig({ cwd = process.cwd() } = {}): Promise<
-  ConfigResult<FlatbreadConfig>
+  ConfigResult<LoadedFlatbreadConfig>
 > {
   const configFilePath = path.join(cwd, 'flatbread.config.js');
 
   const configModule = validateConfigHasExports(
     await import(url.pathToFileURL(configFilePath).href)
   );
-  const config = validateConfigStructure(configModule.default);
+  const rawConfig = validateConfigStructure(configModule.default);
+
+  const config = initializeConfig(rawConfig);
 
   return {
     filepath: configFilePath,
@@ -42,7 +50,7 @@ export async function loadConfig({ cwd = process.cwd() } = {}): Promise<
  * @returns user config
  */
 export function validateConfigHasExports<
-  C extends { default: FlatbreadConfig }
+  C extends { default: LoadedFlatbreadConfig }
 >(config: unknown | any): C {
   const type = typeof config;
 
@@ -77,12 +85,31 @@ export function validateConfigStructure<C extends FlatbreadConfig>(
     );
   }
 
+  if (!config.transformer) {
+    throw new Error(
+      `Your Flatbread config is missing a valid "transformer" property. Make sure to include a Flatbread-compatible transformer, such as @flatbread/transformer-markdown`
+    );
+  }
+
   if (!Array.isArray(config.content)) {
     throw new Error(
       'Your Flatbread config is missing a valid "content" property. Make sure to include an Flatbread-compatible source plugin, such as @flatbread/source-filesystem'
     );
   }
 
+  return config;
+}
+
+export function initializeConfig(config: any): LoadedFlatbreadConfig {
+  config.transformer = Array.isArray(config.transformer)
+    ? config.transformer
+    : [config.transformer];
+
+  config.loaded = {
+    extensions: config.transformer
+      .map((transformer: Transformer) => transformer.extensions || [])
+      .flat(),
+  };
   return config;
 }
 

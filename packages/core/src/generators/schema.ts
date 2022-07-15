@@ -1,17 +1,21 @@
-import { EntryNode, FlatbreadConfig, ConfigResult } from '../types';
 import { schemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
-import { defaultsDeep, merge, cloneDeep } from 'lodash-es';
+import { cloneDeep, defaultsDeep, merge } from 'lodash-es';
 import plur from 'plur';
-import { map } from '../utils/map';
+import { VFile } from 'vfile';
 import {
   generateArgsForAllItemQuery,
   generateArgsForManyItemQuery,
   generateArgsForSingleItemQuery,
 } from '../generators/arguments.js';
 import resolveQueryArgs from '../resolvers/arguments.js';
-import minimatch from 'minimatch';
-import type { Transformer } from '../types';
+import {
+  ConfigResult,
+  EntryNode,
+  LoadedFlatbreadConfig,
+  Transformer,
+} from '../types';
+import { map } from '../utils/map';
 
 interface RootQueries {
   maybeReturnsSingleItem: string[];
@@ -23,11 +27,16 @@ interface RootQueries {
  *
  * @param configResult the result of the config file processing
  */
-const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
+const generateSchema = async (
+  configResult: ConfigResult<LoadedFlatbreadConfig>
+) => {
   const { config } = configResult;
   if (!config) {
     throw new Error('Config is not defined');
   }
+
+  // Invoke initialize function if it exists and provide loaded config
+  config.source.initialize?.(config);
 
   // Invoke the content source resolver to retrieve the content nodes
   const allContentNodes = await config.source.fetch(config.content);
@@ -196,20 +205,22 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
  * @returns an object of pre-known schema fragments including resolvers.
  */
 const fetchPreknownSchemaFragments = (
-  config: FlatbreadConfig
+  config: LoadedFlatbreadConfig
 ): Record<string, any> | {} => {
-  return getTransformers(config)
-    .map(([_, transformer]) => transformer)
-    .filter((t) => t.preknownSchemaFragments)
-    .reduce((all, next) => merge(all, next.preknownSchemaFragments()), {});
+  return config.transformer.reduce(
+    (all, next) => merge(all, next.preknownSchemaFragments?.() || {}),
+    {}
+  );
 };
 
-function getTransformers(config: FlatbreadConfig): [string, Transformer][] {
-  if (!config.transformer) return [];
-  if (config.transformer?.parse) {
-    return [['**', config.transformer as Transformer]];
-  }
-  return Object.entries(config.transformer as { [key: string]: Transformer });
+function getTransformerExtensionMap(transformer: Transformer[]) {
+  const transformerMap = new Map();
+  transformer.forEach((t) => {
+    t.extensions.forEach((extension) => {
+      transformerMap.set(extension, t);
+    });
+  });
+  return transformerMap;
 }
 
 /**
@@ -220,10 +231,10 @@ function getTransformers(config: FlatbreadConfig): [string, Transformer][] {
  */
 const optionallyTransformContentNodes = (
   allContentNodes: Record<string, any[]>,
-  config: FlatbreadConfig
+  config: LoadedFlatbreadConfig
 ): Record<string, any[]> => {
   if (config.transformer) {
-    const transformers = getTransformers(config);
+    const transformerMap = getTransformerExtensionMap(config.transformer);
     // const globs = Object.entries(transformers);
 
     /**
@@ -234,9 +245,8 @@ const optionallyTransformContentNodes = (
      * @todo if this becomes a performance bottleneck, consider overloading the source plugin API to accept a transform function so we can avoid mapping through the content nodes twice
      * */
 
-    return map(allContentNodes, (node: any) => {
-      const [_, transformer] =
-        transformers.find(([glob]) => minimatch(node.basename, glob)) ?? [];
+    return map(allContentNodes, (node: VFile) => {
+      const transformer = transformerMap.get(node.extname);
       if (!transformer?.parse) {
         throw new Error(`no transformer found for ${node.path}`);
       }

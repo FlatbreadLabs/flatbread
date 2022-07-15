@@ -1,4 +1,3 @@
-// import transformer from '@flatbread/transformer-yaml';
 import {
   defineConfig,
   markdownTransformer,
@@ -14,13 +13,7 @@ const transformerConfig = {
 };
 export default defineConfig({
   source: filesystem(),
-  transformer: {
-    '*.{markdown,md,mdx}': markdownTransformer(transformerConfig),
-    '*.{yaml,yml}': yamlTransformer(),
-  },
-  // source: filesystem({ extensions: ['.yml', '.yaml'] }),
-  // transformer: transformer(),
-
+  transformer: [markdownTransformer(transformerConfig), yamlTransformer()],
   content: [
     {
       path: 'content/markdown/posts',

@@ -2,10 +2,14 @@ import { join, extname } from 'path';
 import fs from 'fs/promises';
 import process from 'process';
 import { read } from 'to-vfile';
+import { defaultsDeep } from 'lodash-es';
 
 import type { VFile } from 'vfile';
-import type { SourcePlugin } from '@flatbread/core';
-import type { sourceFilesystemConfig } from './types';
+import type { LoadedFlatbreadConfig, SourcePlugin } from '@flatbread/core';
+import type {
+  InitializedSourceFilesystemConfig,
+  sourceFilesystemConfig,
+} from './types';
 
 /**
  * Get filenames from a directory of files that match
@@ -17,7 +21,7 @@ import type { sourceFilesystemConfig } from './types';
  */
 async function getValidNodesFilenames(
   path: string,
-  extensions?: string[]
+  extensions: string[]
 ): Promise<string[]> {
   /**
    * Prepend a period to the extension if it doesn't have one.
@@ -25,7 +29,7 @@ async function getValidNodesFilenames(
    * */
   const formatValidExtensions = extensions?.map((ext) =>
     String(ext).charAt(0) === '.' ? ext : `.${ext}`
-  ) ?? ['.md', '.mdx', '.markdown'];
+  );
 
   const files = await fs.readdir(join(process.cwd(), path));
   return files.filter((f) =>
@@ -41,12 +45,9 @@ async function getValidNodesFilenames(
  */
 async function getNodesFromDirectory(
   path: string,
-  config: sourceFilesystemConfig
+  config: InitializedSourceFilesystemConfig
 ): Promise<VFile[]> {
-  const slugs: string[] = await getValidNodesFilenames(
-    path,
-    config?.extensions
-  );
+  const slugs: string[] = await getValidNodesFilenames(path, config.extensions);
 
   return Promise.all(
     slugs.map(
@@ -63,7 +64,7 @@ async function getNodesFromDirectory(
  */
 async function getAllNodes(
   allContentTypes: Record<string, any>[],
-  config: sourceFilesystemConfig
+  config: InitializedSourceFilesystemConfig
 ): Promise<Record<string, VFile[]>> {
   const nodeEntries = await Promise.all(
     allContentTypes.map(
@@ -90,11 +91,18 @@ async function getAllNodes(
  * @param sourceConfig content types config
  * @returns A function that returns functions which fetch lists of nodes
  */
-const source: SourcePlugin = (sourceConfig?: sourceFilesystemConfig) => ({
-  fetchByType: (path: string) =>
-    getNodesFromDirectory(path, sourceConfig ?? {}),
-  fetch: (allContentTypes: Record<string, any>[]) =>
-    getAllNodes(allContentTypes, sourceConfig ?? {}),
-});
+const source: SourcePlugin = (sourceConfig?: sourceFilesystemConfig) => {
+  let config: InitializedSourceFilesystemConfig;
+
+  return {
+    initialize: (flatbreadConfig: LoadedFlatbreadConfig) => {
+      const { extensions } = flatbreadConfig.loaded;
+      config = defaultsDeep(sourceConfig ?? {}, { extensions });
+    },
+    fetchByType: (path: string) => getNodesFromDirectory(path, config),
+    fetch: (allContentTypes: Record<string, any>[]) =>
+      getAllNodes(allContentTypes, config),
+  };
+};
 
 export default source;
