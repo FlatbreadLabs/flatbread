@@ -7,7 +7,9 @@ import type { ConfigResult, LoadedFlatbreadConfig } from '../';
  *
  * @returns user config promise
  */
-export async function getConfig(): Promise<ConfigResult<LoadedFlatbreadConfig>> {
+export async function getConfig(): Promise<
+  ConfigResult<LoadedFlatbreadConfig>
+> {
   const { loadConfig } = await import('@flatbread/config');
 
   try {
