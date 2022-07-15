@@ -36,6 +36,20 @@ export default defineConfig({
       },
     },
     {
+      path: 'content/markdown/posts/[category]/[slug].md',
+      collection: 'PostCategory',
+      refs: {
+        authors: 'Author',
+      },
+    },
+    {
+      path: 'content/markdown/posts/**/*.md',
+      collection: 'PostCategoryBlob',
+      refs: {
+        authors: 'Author',
+      },
+    },
+    {
       path: 'content/markdown/authors',
       collection: 'Author',
       refs: {
