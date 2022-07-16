@@ -15,7 +15,7 @@
     "lint": "prettier --check --plugin-search-dir=. . && eslint packages/**/src",
     "lint:fix": "pnpm lint:fix:prettier && pnpm lint:fix:eslint",
     "lint:fix:prettier": "pretty-quick --staged",
-    "lint:fix:eslint": "eslint packages/**/src --fix && eslint playground/**/src --fix",
+    "lint:fix:eslint": "eslint packages/**/src --fix && eslint playground/src --fix",
     "play": "cd playground && pnpm dev",
     "play:build": "pnpm build && cd playground && pnpm build",
     "prepublish:ci": "pnpm -r update",

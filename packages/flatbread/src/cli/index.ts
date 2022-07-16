@@ -6,7 +6,7 @@ import { networkInterfaces, release } from 'os';
 import orchestrateProcesses from './runner';
 import initConfig from './initConfig';
 
-const GRAPHQL_ENDPOINT = '/graphql';
+const GRAPHQL_ENDPOINT = `/graphql`;
 
 /**
  * Launch the GraphQL explorer in a browser.
@@ -17,37 +17,37 @@ const GRAPHQL_ENDPOINT = '/graphql';
  * @param {boolean} https whether the server is running on https
  */
 async function launch(port: number, https: boolean): Promise<void> {
-  const { exec } = await import('child_process');
-  let cmd = 'open';
-  if (process.platform == 'win32') {
-    cmd = 'start';
-  } else if (process.platform == 'linux') {
+  const { exec } = await import(`child_process`);
+  let cmd = `open`;
+  if (process.platform == `win32`) {
+    cmd = `start`;
+  } else if (process.platform == `linux`) {
     if (/microsoft/i.test(release())) {
-      cmd = 'cmd.exe /c start';
+      cmd = `cmd.exe /c start`;
     } else {
-      cmd = 'xdg-open';
+      cmd = `xdg-open`;
     }
   }
   exec(
-    `${cmd} ${https ? 'https' : 'http'}://localhost:${port + GRAPHQL_ENDPOINT}`
+    `${cmd} ${https ? `https` : `http`}://localhost:${port + GRAPHQL_ENDPOINT}`
   );
 }
 
-const prog = sade('flatbread').version(version);
+const prog = sade(`flatbread`).version(version);
 
 prog
-  .command('start [corunner]', 'Start flatbread with a GraphQL server')
-  .option('--, _', 'Pass options to the corunning script')
-  .option('-p, --port', 'Port to run the GraphQL server', 5057)
-  .option('-H, --https', 'Use self-signed HTTPS certificate', false)
-  .option('-o, --open', 'Open the explorer in a browser tab', false)
+  .command(`start [corunner]`, `Start flatbread with a GraphQL server`)
+  .option(`--, _`, `Pass options to the corunning script`)
+  .option(`-p, --port`, `Port to run the GraphQL server`, 5057)
+  .option(`-H, --https`, `Use self-signed HTTPS certificate`, false)
+  .option(`-o, --open`, `Open the explorer in a browser tab`, false)
   .option(
-    '-X, --exec',
-    'The runner to execute the corunning script with. Defaults to your package manager (i.e. npm, pnpm, yarn)'
+    `-X, --exec`,
+    `The runner to execute the corunning script with. Defaults to your package manager (i.e. npm, pnpm, yarn)`
   )
   .action(async (corunner, { _, port, https, open, exec }) => {
     // Combine the corunning script & the options passed to it
-    const secondaryScript = `${corunner} ${_.join(' ')}`;
+    const secondaryScript = `${corunner} ${_.join(` `)}`;
     // Yeet it into the all seeing eye of the universe
     orchestrateProcesses({
       corunner: secondaryScript,
@@ -59,7 +59,7 @@ prog
   });
 
 prog
-  .command('init', 'Generate a flatbread.config.js file skeleton')
+  .command(`init`, `Generate a flatbread.config.js file skeleton`)
   .action(initConfig);
 
 prog.parse(process.argv, { unknown: (arg) => `Unknown option: ${arg}` });
@@ -84,28 +84,28 @@ function welcome({
 
   console.log(
     colors.bold(
-      gradient.fruit('\n Flatbread 🥯') + gradient.vice(` v${version}\n`)
+      gradient.fruit(`\n Flatbread 🥯`) + gradient.vice(` v${version}\n`)
     )
   );
 
-  const protocol = https ? 'https:' : 'http:';
+  const protocol = https ? `https:` : `http:`;
 
   Object.values(networkInterfaces()).forEach((interfaces) => {
     if (!interfaces) return;
     interfaces.forEach((details) => {
-      if (details.family !== 'IPv4') return;
+      if (details.family !== `IPv4`) return;
 
       if (details.internal) {
         console.log(
-          `  ${colors.gray('graphql:')} ${protocol}//${colors.bold(
+          `  ${colors.gray(`graphql:`)} ${protocol}//${colors.bold(
             `localhost:${port + GRAPHQL_ENDPOINT}`
           )}`
         );
       } else {
-        if (details.mac === '00:00:00:00:00:00') return;
+        if (details.mac === `00:00:00:00:00:00`) return;
       }
     });
   });
 
-  console.log('\n');
+  console.log(`\n`);
 }

@@ -7,6 +7,6 @@ export default async function transformContentToHTML(
   markdownConfig: MarkdownConfig
 ): Promise<string> {
   const markdownProcessor = createMarkdownProcessor(markdownConfig);
-  const html = content ? String(await markdownProcessor.process(content)) : '';
+  const html = content ? String(await markdownProcessor.process(content)) : ``;
   return html;
 }

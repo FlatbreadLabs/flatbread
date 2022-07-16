@@ -24,7 +24,7 @@ interface RootQueries {
 const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
   const { config } = configResult;
   if (!config) {
-    throw new Error('Config is not defined');
+    throw new Error(`Config is not defined`);
   }
 
   // Invoke the content source resolver to retrieve the content nodes
@@ -61,7 +61,7 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
   /**
    * @todo potentially able to remove this
    **/
-  let queries: RootQueries = {
+  const queries: RootQueries = {
     maybeReturnsSingleItem: [],
     maybeReturnsList: [],
   };
@@ -69,7 +69,7 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
   // Main builder loop - iterate through each content type and generate query resolvers + relationships for it
   for (const [type, schema] of Object.entries(schemaArray)) {
     const pluralType = plur(type, 2);
-    const pluralTypeQueryName = 'all' + pluralType;
+    const pluralTypeQueryName = `all` + pluralType;
 
     //
     /// Global meta fields
@@ -77,8 +77,8 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
 
     schema.addFields({
       _collection: {
-        type: 'String',
-        description: 'The collection name',
+        type: `String`,
+        description: `The collection name`,
         resolve: () => type,
       },
     });
@@ -88,7 +88,7 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
     //
 
     schema.addResolver({
-      name: 'findById',
+      name: `findById`,
       type: () => schema,
       description: `Find one ${type} by its ID`,
       args: generateArgsForSingleItemQuery(),
@@ -99,7 +99,7 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
     });
 
     schema.addResolver({
-      name: 'findMany',
+      name: `findMany`,
       type: () => [schema],
       description: `Find many ${pluralType} by their IDs`,
       args: generateArgsForManyItemQuery(pluralType),
@@ -114,7 +114,7 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
     });
 
     schema.addResolver({
-      name: 'all',
+      name: `all`,
       args: generateArgsForAllItemQuery(pluralType),
       type: () => [schema],
       description: `Return a set of ${pluralType}`,
@@ -128,11 +128,11 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
       /**
        * Add find by ID to each content type
        */
-      [type]: schema.getResolver('findById'),
+      [type]: schema.getResolver(`findById`),
       /**
        * Add find 'many' to each content type
        */
-      [pluralTypeQueryName]: schema.getResolver('all'),
+      [pluralTypeQueryName]: schema.getResolver(`all`),
     });
 
     /**
@@ -163,7 +163,7 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
             String(refType),
             2
           )} that are referenced by this ${collection}`,
-          resolver: () => refTypeTC.getResolver('findMany'),
+          resolver: () => refTypeTC.getResolver(`findMany`),
           prepareArgs: {
             ids: (source) => source[refField],
           },
@@ -173,7 +173,7 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
         // If the reference field has a single node
         typeTC.addRelation(refField, {
           description: `The ${refType} referenced by this ${collection}`,
-          resolver: () => refTypeTC.getResolver('findById'),
+          resolver: () => refTypeTC.getResolver(`findById`),
           prepareArgs: {
             id: (source) => source[refField],
           },
@@ -195,7 +195,7 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
  */
 const fetchPreknownSchemaFragments = (
   config: FlatbreadConfig
-): Record<string, any> | {} => {
+): Record<string, any> => {
   if (config.transformer && config.transformer.preknownSchemaFragments) {
     return config.transformer.preknownSchemaFragments();
   }

@@ -56,8 +56,8 @@ export function createMarkdownProcessor(
   }
   if (options.externalLinks) {
     const externalLinksConfig = {
-      target: options?.externalLinksTarget ?? '_blank',
-      rel: options?.externalLinksRel ?? ['nofollow', 'noopener', 'noreferrer'],
+      target: options?.externalLinksTarget ?? `_blank`,
+      rel: options?.externalLinksRel ?? [`nofollow`, `noopener`, `noreferrer`],
     };
     toMDAST.use(external, externalLinksConfig as ExternalLinksOptions);
   }

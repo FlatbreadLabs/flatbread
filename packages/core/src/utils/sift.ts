@@ -26,9 +26,9 @@ const createFilterFunction = (
     // Filter args transformed to logical expressions.
     filterSetManifest ??= generateFilterSetManifest(filterArgs);
 
-    let evaluatedFilterSet: boolean[] = [];
+    const evaluatedFilterSet: boolean[] = [];
 
-    for (let { path, comparator } of filterSetManifest) {
+    for (const { path, comparator } of filterSetManifest) {
       // Retrieve the value of interest from the node.
       const needle = get(node, path, undefined);
       // Compare the value of interest to the target value, and store the result of the evaluated expression.
@@ -36,7 +36,7 @@ const createFilterFunction = (
     }
 
     // Combine the filter set results with the union operation.
-    return reduceBooleans(evaluatedFilterSet, 'and');
+    return reduceBooleans(evaluatedFilterSet, `and`);
   };
 };
 export default createFilterFunction;
@@ -52,36 +52,36 @@ function generateComparisonFunction(
 ): CompareValueAgainstConstant {
   const { operation, value } = comparator;
   switch (operation) {
-    case 'eq':
-      return (a: any) => a === value;
-    case 'ne':
-      return (a: any) => a !== value;
-    case 'lt':
-      return (a: any) => a < value;
-    case 'lte':
-      return (a: any) => a <= value;
-    case 'gt':
-      return (a: any) => a > value;
-    case 'gte':
-      return (a: any) => a >= value;
-    case 'in':
-      return (a: any) => value.includes(a);
-    case 'nin':
-      return (a: any) => !value.includes(a);
-    case 'includes':
-      return (a: any) => a.includes(value);
-    case 'excludes':
-      return (a: any) => !a.includes(value);
-    case 'regex':
-      return (a: any) => value.test(a);
-    case 'wildcard':
-      return (a: any) => isWildcardMatch(a, value);
-    case 'exists':
-      return (a: any) => (value ? a != undefined : a == undefined);
-    case 'strictlyExists':
-      return (a: any) => (value ? a !== undefined : a === undefined);
-    default:
-      throw new Error(`Unsupported operation: ${operation}`);
+  case `eq`:
+    return (a: any) => a === value;
+  case `ne`:
+    return (a: any) => a !== value;
+  case `lt`:
+    return (a: any) => a < value;
+  case `lte`:
+    return (a: any) => a <= value;
+  case `gt`:
+    return (a: any) => a > value;
+  case `gte`:
+    return (a: any) => a >= value;
+  case `in`:
+    return (a: any) => value.includes(a);
+  case `nin`:
+    return (a: any) => !value.includes(a);
+  case `includes`:
+    return (a: any) => a.includes(value);
+  case `excludes`:
+    return (a: any) => !a.includes(value);
+  case `regex`:
+    return (a: any) => value.test(a);
+  case `wildcard`:
+    return (a: any) => isWildcardMatch(a, value);
+  case `exists`:
+    return (a: any) => (value ? a != undefined : a == undefined);
+  case `strictlyExists`:
+    return (a: any) => (value ? a !== undefined : a === undefined);
+  default:
+    throw new Error(`Unsupported operation: ${operation}`);
   }
 }
 
@@ -149,20 +149,20 @@ type Comparator = {
  * ```
  */
 type ComparatorOperation =
-  | 'eq'
-  | 'ne'
-  | 'lt'
-  | 'lte'
-  | 'gt'
-  | 'gte'
-  | 'in'
-  | 'nin'
-  | 'includes'
-  | 'excludes'
-  | 'regex'
-  | 'wildcard'
-  | 'exists'
-  | 'strictlyExists';
+  | `eq`
+  | `ne`
+  | `lt`
+  | `lte`
+  | `gt`
+  | `gte`
+  | `in`
+  | `nin`
+  | `includes`
+  | `excludes`
+  | `regex`
+  | `wildcard`
+  | `exists`
+  | `strictlyExists`;
 
 /**
  * Compare a value to a constant target value.

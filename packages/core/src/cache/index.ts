@@ -24,5 +24,5 @@ export function createCacheKey(
   // This should include serialized node contents to ensure that we don't hit old cache entries
   const key = `${nodeType}:${uid}:${attribute}`;
 
-  return crypto.createHash('md5').update(key).digest('hex');
+  return crypto.createHash(`md5`).update(key).digest(`hex`);
 }

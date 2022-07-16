@@ -7,11 +7,11 @@
  */
 const reduceBooleans = (
   array: Required<boolean[]>,
-  unionType: Required<'and' | 'or'>
+  unionType: Required<`and` | `or`>
 ): boolean => {
-  if (unionType === 'and') {
+  if (unionType === `and`) {
     return array.reduce((acc, curr) => acc && curr, true);
-  } else if (unionType === 'or') {
+  } else if (unionType === `or`) {
     return array.reduce((acc, curr) => acc || curr, false);
   }
   throw new Error(

@@ -6,7 +6,7 @@
 export const generateArgsForAllItemQuery = (pluralType: string) => ({
   ...skip(),
   ...limit(pluralType),
-  ...order(pluralType, 'ASC'),
+  ...order(pluralType, `ASC`),
   ...sortBy(pluralType),
   ...filter(pluralType),
 });
@@ -18,11 +18,11 @@ export const generateArgsForAllItemQuery = (pluralType: string) => ({
  */
 export const generateArgsForManyItemQuery = (pluralType: string) => ({
   ids: {
-    type: '[String]',
+    type: `[String]`,
   },
   ...skip(),
   ...limit(pluralType),
-  ...order(pluralType, 'ASC'),
+  ...order(pluralType, `ASC`),
   ...sortBy(pluralType),
 });
 
@@ -32,7 +32,7 @@ export const generateArgsForManyItemQuery = (pluralType: string) => ({
  */
 export const generateArgsForSingleItemQuery = () => ({
   id: {
-    type: 'String',
+    type: `String`,
   },
 });
 
@@ -41,8 +41,8 @@ export const generateArgsForSingleItemQuery = () => ({
  */
 export const skip = () => ({
   skip: {
-    description: 'Skip the first `n` results',
-    type: 'Int',
+    description: `Skip the first \`n\` results`,
+    type: `Int`,
   },
 });
 
@@ -54,7 +54,7 @@ export const skip = () => ({
 export const limit = (pluralType: string) => ({
   limit: {
     description: `The maximum number of ${pluralType} to return`,
-    type: 'Int',
+    type: `Int`,
   },
 });
 
@@ -66,7 +66,7 @@ export const limit = (pluralType: string) => ({
  */
 export const order = (
   pluralType: string,
-  defaultValue: 'ASC' | 'DESC' = 'ASC'
+  defaultValue: `ASC` | `DESC` = `ASC`
 ) => ({
   order: {
     description: `Which order to return ${pluralType} in`,
@@ -83,7 +83,7 @@ export const order = (
 export const sortBy = (pluralType: string) => ({
   sortBy: {
     description: `The field to sort ${pluralType} by`,
-    type: 'String',
+    type: `String`,
   },
 });
 
@@ -95,6 +95,6 @@ export const sortBy = (pluralType: string) => ({
 export const filter = (pluralType: string) => ({
   filter: {
     description: `Filter ${pluralType} by a JSON object`,
-    type: 'JSON',
+    type: `JSON`,
   },
 });

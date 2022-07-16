@@ -16,11 +16,11 @@ export const parse = (input: VFile): EntryNode => {
       console.log(console.warn(warning.toString())),
   });
 
-  if (typeof doc === 'object') {
+  if (typeof doc === `object`) {
     return {
       _filename: input.basename,
       _path: input.path,
-      _slug: slugify(input.stem ?? ''),
+      _slug: slugify(input.stem ?? ``),
       ...input.data,
       ...doc,
     };

@@ -6,12 +6,12 @@
  */
 export default function typeOf<T>(obj?: T) {
   if (obj == null) {
-    return (obj + '').toLowerCase();
+    return (obj + ``).toLowerCase();
   } // implicit toString() conversion
 
-  var deepType = Object.prototype.toString.call(obj).slice(8, -1).toLowerCase();
-  if (deepType === 'generatorfunction') {
-    return 'function';
+  const deepType = Object.prototype.toString.call(obj).slice(8, -1).toLowerCase();
+  if (deepType === `generatorfunction`) {
+    return `function`;
   }
 
   // Prevent overspecificity (for example, [object HTMLDivElement], etc).
@@ -22,7 +22,7 @@ export default function typeOf<T>(obj?: T) {
     /^(array|bigint|date|error|function|generator|regexp|symbol)$/
   )
     ? deepType
-    : typeof obj === 'object' || typeof obj === 'function'
-    ? 'object'
-    : typeof obj;
+    : typeof obj === `object` || typeof obj === `function`
+      ? `object`
+      : typeof obj;
 }

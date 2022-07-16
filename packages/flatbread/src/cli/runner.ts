@@ -26,7 +26,7 @@ export default function orchestrateProcesses({
   packageManager = null,
 }: OrchestraOptions) {
   const pkgManager = packageManager || detectPkgManager(process.cwd());
-  let serverModulePath = 'node_modules/flatbread/dist/graphql/server.js';
+  const serverModulePath = `node_modules/flatbread/dist/graphql/server.js`;
 
   process.cwd();
   const gql = fork(resolve(process.cwd(), serverModulePath), [], {
@@ -34,21 +34,21 @@ export default function orchestrateProcesses({
       FLATBREAD_PORT: String(flatbreadPort),
     },
   });
-  let runningScripts = [gql];
+  const runningScripts = [gql];
 
-  gql.on('message', (msg) => {
-    if (msg === 'flatbread-gql-ready') {
+  gql.on(`message`, (msg) => {
+    if (msg === `flatbread-gql-ready`) {
       // Start the target process (e.g. the dev server or the build script)
-      const targetProcess = spawn(pkgManager ?? 'npm run', [corunner], {
+      const targetProcess = spawn(pkgManager ?? `npm run`, [corunner], {
         shell: true,
-        stdio: 'inherit',
+        stdio: `inherit`,
       });
       // targetProcess.stdout.pipe(process.stdout);
       runningScripts.push(targetProcess);
 
       // Exit the parent process when the target process exits
-      for (let script of runningScripts) {
-        script.on('close', function (code) {
+      for (const script of runningScripts) {
+        script.on(`close`, function (code) {
           process.exit();
         });
       }
@@ -56,9 +56,9 @@ export default function orchestrateProcesses({
   });
 
   // End any remaining child processes when the parent process exits
-  process.on('exit', function () {
+  process.on(`exit`, function () {
     console.log(
-      colors.bold().green('\nFlatbread is done for now. Bye bye! 🥪')
+      colors.bold().green(`\nFlatbread is done for now. Bye bye! 🥪`)
     );
     runningScripts.forEach(function (child) {
       child.kill();
@@ -71,9 +71,9 @@ export default function orchestrateProcesses({
  * with that respective package manager.
  */
 const lockToRunner: Record<string, string> = {
-  'pnpm-lock.yaml': 'pnpm',
-  'yarn.lock': 'yarn',
-  'package-lock.json': 'npm run',
+  'pnpm-lock.yaml': `pnpm`,
+  'yarn.lock': `yarn`,
+  'package-lock.json': `npm run`,
 };
 
 /**

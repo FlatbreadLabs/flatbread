@@ -43,5 +43,5 @@ function communicateReadiness() {
    * This allows the parent process to wait for the server to be ready before continuing, like when you want the GraphQL server to be ready before starting the build process.
    * @see https://nodejs.org/api/process.html#processsendmessage-sendhandle-options-callback
    */
-  process.send && process.send('flatbread-gql-ready');
+  process.send && process.send(`flatbread-gql-ready`);
 }

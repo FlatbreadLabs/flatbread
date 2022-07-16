@@ -10,13 +10,13 @@ import { MarkdownTransformerConfig } from '../types';
  * A GraphQL field for the time to read the content, if it exists.
  */
 export const timeToRead = (config: MarkdownTransformerConfig) => () => ({
-  type: () => 'Int',
+  type: () => `Int`,
   description:
-    'How long (in minutes) it would take an average reader to read the main content.',
+    `How long (in minutes) it would take an average reader to read the main content.`,
   args: {
     speed: {
-      type: () => 'Int',
-      description: 'The reading speed in words per minute',
+      type: () => `Int`,
+      description: `The reading speed in words per minute`,
       defaultValue: 230,
     },
   },
@@ -30,10 +30,10 @@ export const timeToRead = (config: MarkdownTransformerConfig) => () => ({
 
     const plaintext = parentNode
       ? sanitizeHtml(parentNode.html, {
-          allowedAttributes: {},
-          allowedTags: [],
-        }).replace(/\r?\n|\r/g, ' ')
-      : '';
+        allowedAttributes: {},
+        allowedTags: [],
+      }).replace(/\r?\n|\r/g, ` `)
+      : ``;
 
     return estimateTimeToRead(plaintext, args.speed);
   },
@@ -43,12 +43,12 @@ export const timeToRead = (config: MarkdownTransformerConfig) => () => ({
  * A GraphQL field for an excerpt of the content, if it exists.
  */
 export const excerpt = (config: MarkdownTransformerConfig) => () => ({
-  type: 'String',
-  description: 'A plaintext excerpt taken from the main content',
+  type: `String`,
+  description: `A plaintext excerpt taken from the main content`,
   args: {
     length: {
-      type: () => 'Int',
-      description: 'The length of the excerpt in words',
+      type: () => `Int`,
+      description: `The length of the excerpt in words`,
       defaultValue: 200,
     },
   },
@@ -62,10 +62,10 @@ export const excerpt = (config: MarkdownTransformerConfig) => () => ({
 
     const plaintext = parentNode
       ? sanitizeHtml(parentNode.html, {
-          allowedAttributes: {},
-          allowedTags: [],
-        }).replace(/\r?\n|\r/g, ' ')
-      : '';
+        allowedAttributes: {},
+        allowedTags: [],
+      }).replace(/\r?\n|\r/g, ` `)
+      : ``;
     return createExcerpt(plaintext, args.length);
   },
 });
@@ -74,8 +74,8 @@ export const excerpt = (config: MarkdownTransformerConfig) => () => ({
  * A GraphQL field for the content as HTML, if it exists.
  */
 export const html = (config: MarkdownTransformerConfig) => () => ({
-  type: () => 'String',
-  description: 'The content as HTML',
+  type: () => `String`,
+  description: `The content as HTML`,
   resolve: async (parentNode: any) => {
     if (!parentNode.html) {
       parentNode.html = await transformContentToHTML(

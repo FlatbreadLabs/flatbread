@@ -8,17 +8,17 @@ import type { ConfigResult, FlatbreadConfig } from '../';
  * @returns user config promise
  */
 export async function getConfig(): Promise<ConfigResult<FlatbreadConfig>> {
-  const { loadConfig } = await import('@flatbread/config');
+  const { loadConfig } = await import(`@flatbread/config`);
 
   try {
     return await loadConfig();
   } catch (err) {
     // Provide a helpful error message if the config file is not found
     console.error(
-      colors.red('\nFlatbread could not find a valid') +
-        colors.bold(' flatbread.config.js') +
+      colors.red(`\nFlatbread could not find a valid`) +
+        colors.bold(` flatbread.config.js`) +
         colors.red(
-          ' file. Make sure you have one with the correct schema in your project root to use this!\n'
+          ` file. Make sure you have one with the correct schema in your project root to use this!\n`
         )
     );
     console.error(err);

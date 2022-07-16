@@ -22,7 +22,7 @@ export const parse = (
   return {
     _filename: input.basename,
     _path: input.path,
-    _slug: slugify(input.stem ?? ''),
+    _slug: slugify(input.stem ?? ``),
     ...input.data,
     ...data,
     _content: {

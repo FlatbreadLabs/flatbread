@@ -31,7 +31,7 @@ const resolveQueryArgs = async (
     resolveSortBy(sortBy, nodes);
   }
 
-  if (order === 'DESC') {
+  if (order === `DESC`) {
     nodes.reverse();
   }
 
@@ -54,7 +54,7 @@ export const resolveFilter = async (
 ) => {
   // construct custom resolver of nodes to build temp list
   const filterSetManifest = generateFilterSetManifest(filter);
-  console.log('filter manifest', filterSetManifest);
+  console.log(`filter manifest`, filterSetManifest);
 
   for (const filter of filterSetManifest) {
     for (const field of filter.path) {

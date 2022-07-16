@@ -6,7 +6,7 @@ import { resolve } from 'path';
  * Initialize the Flatbread config file
  */
 const initConfig = () => {
-  const configFileName = 'flatbread.config.js';
+  const configFileName = `flatbread.config.js`;
   const configPath = resolve(process.cwd(), configFileName);
   if (fs.existsSync(configPath)) {
     console.log(colors.red(`${configFileName} already exists`));
@@ -53,8 +53,8 @@ export default defineConfig({
       )
     );
     console.log(
-      colors.bold("Don't forget to replace your dev/build scripts with:"),
-      colors.dim('\n\n"flatbread start -- <your-current-script-here>"\n')
+      colors.bold(`Don't forget to replace your dev/build scripts with:`),
+      colors.dim(`\n\n"flatbread start -- <your-current-script-here>"\n`)
     );
   }
 };
