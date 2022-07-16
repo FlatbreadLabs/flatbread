@@ -1,6 +1,6 @@
 import test from 'ava';
 import filesystem from '@flatbread/source-filesystem';
-import  markdownTransforer from '@flatbread/transformer-markdown';
+import markdownTransforer from '@flatbread/transformer-markdown';
 import initFlatbread from '../main';
 
 test('basic query', async (t) => {

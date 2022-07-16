@@ -1,6 +1,6 @@
 import test from 'ava';
-import gatherFileNodes from '../gatherFileNodes.js';
-import { readDirectory } from './mocks.js';
+import gatherFileNodes from '../gatherFileNodes';
+import { readDirectory } from './mocks';
 
 const dirStructure = {
   Comedy: ['Nine Lives of Tomas Katz, The.md', 'Road to Wellville, The.md'],

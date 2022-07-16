@@ -8,8 +8,8 @@ import {
   generateArgsForAllItemQuery,
   generateArgsForManyItemQuery,
   generateArgsForSingleItemQuery,
-} from '../generators/arguments.js';
-import resolveQueryArgs from '../resolvers/arguments.js';
+} from '../generators/arguments';
+import resolveQueryArgs from '../resolvers/arguments';
 
 interface RootQueries {
   maybeReturnsSingleItem: string[];

@@ -1,5 +1,5 @@
 import test from 'ava';
-import sift from '../sift.js';
+import sift from '../sift';
 
 const nodes = [
   { id: 1, name: 'foo', child: { id: 2, name: 'bar', age: 44 } },

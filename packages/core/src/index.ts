@@ -1,4 +1,4 @@
-import generateSchema from './generators/schema.js';
+export { default as generateSchema } from './generators/schema';
 
 export * from './types';
-export default generateSchema;
+export { default } from './main';
