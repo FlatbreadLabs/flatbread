@@ -1,6 +1,7 @@
 import test from 'ava';
-import { filesystem, markdownTransforer } from 'flatbread';
-import initFlatbread from '../main.js';
+import filesystem from '@flatbread/source-filesystem';
+import  markdownTransforer from '@flatbread/transformer-markdown';
+import initFlatbread from '../main';
 
 test('basic query', async (t) => {
   console.log(process.cwd());
