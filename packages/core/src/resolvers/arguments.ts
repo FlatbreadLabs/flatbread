@@ -66,15 +66,15 @@ export const resolveFilter = async (
 
     for (let i = 0; i < filter.path.length; i++) {
       const field = filter.path[i];
-      const lastField = filter.path.length - 1;
+      const lastFieldIndex = filter.path.length - 1;
 
       // Build a partial GraphQL query's field shape
-      if (i === lastField && filter.path.length === 1) {
+      if (i === lastFieldIndex && filter.path.length === 1) {
         graphQLFieldAccessor += `${field}`;
-      } else if (i !== lastField) {
+      } else if (i !== lastFieldIndex) {
         graphQLFieldAccessor += `${field} {`;
       } else {
-        graphQLFieldAccessor += `${field} ${[lastField]
+        graphQLFieldAccessor += `${field} ${[lastFieldIndex]
           .map(() => '}')
           .join('')}`;
       }
