@@ -11,6 +11,7 @@ import {
 } from '../generators/arguments';
 import resolveQueryArgs from '../resolvers/arguments';
 import { cacheSchema } from '../cache/cache';
+
 interface RootQueries {
   maybeReturnsSingleItem: string[];
   maybeReturnsList: string[];
