@@ -1,9 +1,8 @@
 ---
-name: Tony
+name: Another User
+id: 435r
 enjoys:
-  - cats
-  - tea
-  - making this
+  - apples
 date_joined: 2021-02-25T16:41:59.558Z
 skills:
   sitting: 204
