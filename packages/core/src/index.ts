@@ -1,4 +1,4 @@
-export { default as generateSchema } from './generators/schema';
+export { generateSchema } from './generators/schema';
 
 export * from './types';
-export { default } from './main';
+export { FlatbreadProvider } from './providers/base';

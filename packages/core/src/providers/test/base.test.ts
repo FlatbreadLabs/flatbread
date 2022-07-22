@@ -1,11 +1,11 @@
 import test from 'ava';
 import filesystem from '@flatbread/source-filesystem';
 import markdownTransforer from '@flatbread/transformer-markdown';
-import initFlatbread from '../main';
+import { FlatbreadProvider } from '../base';
 
 test('basic query', async (t) => {
   console.log(process.cwd());
-  const flatbread = await initFlatbread({
+  const flatbread = new FlatbreadProvider({
     source: filesystem(),
     transformer: markdownTransforer({
       markdown: {
@@ -25,7 +25,7 @@ test('basic query', async (t) => {
     ],
   });
 
-  const result = await flatbread({
+  const result = await flatbread.query({
     source: `
     query AllAuthors {
       allAuthors {
