@@ -1,14 +1,26 @@
+import crypto from 'crypto';
 import { GraphQLSchema } from 'graphql';
+import LRU from 'lru-cache';
+import { ContentNode } from '../types';
 
 interface FlatbreadCache {
   schema: GraphQLSchema | null;
+  content: LRU<HashedKey, ContentNode>;
 }
+
+/**
+ * Used with the Flatbread cache.
+ */
+export type HashedKey = string;
 
 /**
  * A general cache for computationally heavy operations in Flatbread.
  */
 export const cache: FlatbreadCache = {
   schema: null,
+  content: new LRU({
+    max: 10_000,
+  }),
 };
 
 /**
@@ -16,4 +28,22 @@ export const cache: FlatbreadCache = {
  */
 export function cacheSchema(schema: GraphQLSchema) {
   cache.schema = schema;
+}
+
+/**
+ * Returns a hashed cache key for use with the Flatbread content cache.
+ *
+ * @param collection type of content
+ * @param id unique identifier of content
+ * @param field GraphQL field
+ */
+export function createContentCacheKey(
+  collection: string,
+  id: string,
+  field: string
+): HashedKey {
+  // This should include serialized node contents to ensure that we don't hit old cache entries
+  const key = `${collection}:${id}:${field}`;
+
+  return crypto.createHash('md5').update(key).digest('hex');
 }
