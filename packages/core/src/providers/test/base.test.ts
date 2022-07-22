@@ -3,8 +3,8 @@ import filesystem from '@flatbread/source-filesystem';
 import markdownTransforer from '@flatbread/transformer-markdown';
 import { FlatbreadProvider } from '../base';
 
-test('basic query', async (t) => {
-  const flatbread = new FlatbreadProvider({
+function basicProject() {
+  return new FlatbreadProvider({
     source: filesystem(),
     transformer: markdownTransforer({
       markdown: {
@@ -23,6 +23,10 @@ test('basic query', async (t) => {
       },
     ],
   });
+}
+
+test('basic query', async (t) => {
+  const flatbread = basicProject();
 
   const result = await flatbread.query({
     source: `
@@ -39,25 +43,7 @@ test('basic query', async (t) => {
 });
 
 test('relational filter query', async (t) => {
-  const flatbread = new FlatbreadProvider({
-    source: filesystem(),
-    transformer: markdownTransforer({
-      markdown: {
-        gfm: true,
-        externalLinks: true,
-      },
-    }),
-
-    content: [
-      {
-        path: 'packages/flatbread/content/authors',
-        collection: 'Author',
-        refs: {
-          friend: 'Author',
-        },
-      },
-    ],
-  });
+  const flatbread = basicProject();
 
   const result = await flatbread.query({
     source: `
