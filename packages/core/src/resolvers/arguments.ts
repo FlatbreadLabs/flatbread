@@ -1,6 +1,6 @@
 import sift, { generateFilterSetManifest } from '../utils/sift';
 import { ContentNode, FlatbreadConfig } from 'flatbread';
-import { initServerlessFlatbreadProvider } from '../serverless/provider';
+import { createFlatbread } from '../serverless/provider';
 
 interface ResolveQueryArgsOptions {
   type: {
@@ -57,7 +57,7 @@ export const resolveFilter = async (
   const filterSetManifest = generateFilterSetManifest(filter);
 
   // Run Flatbread as a function to execute a subquery
-  const flatbread = await initServerlessFlatbreadProvider(config);
+  const flatbread = await createFlatbread(config);
 
   let filterToQuery = [];
 

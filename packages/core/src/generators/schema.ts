@@ -10,6 +10,7 @@ import {
   generateArgsForSingleItemQuery,
 } from '../generators/arguments.js';
 import resolveQueryArgs from '../resolvers/arguments.js';
+import { cache, cacheSchema } from '../cache/cache';
 
 interface RootQueries {
   maybeReturnsSingleItem: string[];
@@ -195,7 +196,11 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
     });
   }
 
-  return schemaComposer.buildSchema();
+  const schema = schemaComposer.buildSchema();
+
+  cacheSchema(schema);
+
+  return schema;
 };
 
 /**
