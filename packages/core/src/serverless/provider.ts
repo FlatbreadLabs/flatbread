@@ -1,6 +1,6 @@
 import { graphql, GraphQLArgs } from 'graphql';
 import { cache } from '../cache/cache';
-import generateSchema from '../generators/schema';
+import { generateSchema } from '../generators/schema';
 import { FlatbreadConfig } from '../types';
 
 /**

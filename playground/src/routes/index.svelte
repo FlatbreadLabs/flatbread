@@ -1,13 +1,15 @@
 <script context="module">
   export const load = async ({ fetch }) => {
     const query = `
-      query Post {
-        allPosts (sortBy: "title", order: DESC) {
+      query PostCategory {
+        allPostCategories (sortBy: "title", order: DESC) {
           _collection
           _filename
           _slug
           id
           title
+          category
+          slug
           rating
           _content {
             raw
@@ -79,7 +81,7 @@
   if (error) console.error(error);
 
   function joinAuthors(authors) {
-    return authors.map((author) => author.name).join(', ');
+    return authors?.map((author) => author.name).join(', ');
   }
 </script>
 
@@ -94,7 +96,7 @@
     </pre>
   </Pane>
   <Pane label="Frontend">
-    {#each data.allPosts as post, _ (post.id)}
+    {#each data.allPostCategories as post, _ (post.id)}
       <article class="m-3 border border-opacity-20 bg-gray-50 p-3">
         <h3 class="text-xl font-medium">{post.title}</h3>
         <ul>

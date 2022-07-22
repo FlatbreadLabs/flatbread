@@ -8,10 +8,9 @@ import {
   generateArgsForAllItemQuery,
   generateArgsForManyItemQuery,
   generateArgsForSingleItemQuery,
-} from '../generators/arguments.js';
-import resolveQueryArgs from '../resolvers/arguments.js';
-import { cache, cacheSchema } from '../cache/cache';
-
+} from '../generators/arguments';
+import resolveQueryArgs from '../resolvers/arguments';
+import { cacheSchema } from '../cache/cache';
 interface RootQueries {
   maybeReturnsSingleItem: string[];
   maybeReturnsList: string[];
@@ -22,7 +21,9 @@ interface RootQueries {
  *
  * @param configResult the result of the config file processing
  */
-const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
+export async function generateSchema(
+  configResult: ConfigResult<FlatbreadConfig>
+) {
   const { config } = configResult;
   if (!config) {
     throw new Error('Config is not defined');
@@ -201,7 +202,7 @@ const generateSchema = async (configResult: ConfigResult<FlatbreadConfig>) => {
   cacheSchema(schema);
 
   return schema;
-};
+}
 
 /**
  * If the config has a transformer which defines pre-known schema fragments,
@@ -246,5 +247,3 @@ const optionallyTransformContentNodes = (
   }
   return allContentNodes;
 };
-
-export default generateSchema;
