@@ -1,5 +1,5 @@
 import test from 'ava';
-import typeOf from '../typeOf.js';
+import typeOf from '../typeOf';
 
 test('Nullish types return specific type', (t) => {
   t.is(typeOf(null), 'null');
