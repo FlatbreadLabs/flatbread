@@ -40,6 +40,9 @@ export const parse = (
 const transformer: TransformerPlugin = (
   config: MarkdownTransformerConfig = {}
 ) => {
+  const extensions = (config.extensions || ['.md']).map((ext: string) =>
+    ext.startsWith('.') ? ext : `.${ext}`
+  );
   return {
     parse: (input: VFile): EntryNode => parse(input, config),
     preknownSchemaFragments: () => ({
@@ -50,7 +53,7 @@ const transformer: TransformerPlugin = (
       },
     }),
     inspect: (input: EntryNode) => String(input),
-    extensions: ['.md', '.mdx', '.markdown'],
+    extensions,
   };
 };
 
