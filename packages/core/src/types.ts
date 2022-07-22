@@ -88,6 +88,9 @@ export interface Source {
   ) => Promise<Record<string, VFile[]>>;
 }
 
+/**
+ * An override can be used to declare a custom resolve for a field in content
+ */
 export interface Override {
   field: string;
   type: string;

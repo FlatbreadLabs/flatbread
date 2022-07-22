@@ -10,7 +10,7 @@ import {
   generateArgsForSingleItemQuery,
 } from '../generators/arguments.js';
 import resolveQueryArgs from '../resolvers/arguments.js';
-import { getFieldOverrides } from '../utils/field-overrides';
+import { getFieldOverrides } from '../utils/fieldOverrides';
 
 interface RootQueries {
   maybeReturnsSingleItem: string[];

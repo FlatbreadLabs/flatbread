@@ -1,8 +1,16 @@
 import { FlatbreadConfig, Override } from 'flatbread';
 import { get, set } from 'lodash-es';
 
+/**
+ * Get an object containing functions nested in an object structure
+ * aligning to the listed overrides in the config
+ *
+ * @param collection the collection string referenced in the config
+ * @param config the flatbread config object
+ * @returns an object in the shape of the json schema
+ */
 export function getFieldOverrides(collection: string, config: FlatbreadConfig) {
-  let content = config.content.find(
+  const content = config.content.find(
     (content) => content.collection === collection
   );
   if (!content?.overrides) return {};
@@ -26,6 +34,4 @@ export function getFieldOverrides(collection: string, config: FlatbreadConfig) {
     }));
     return fields;
   }, {});
-
-  return {};
 }

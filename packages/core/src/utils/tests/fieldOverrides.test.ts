@@ -1,5 +1,5 @@
 import test from 'ava';
-import { getFieldOverrides } from '../field-overrides.js';
+import { getFieldOverrides } from '../fieldOverrides.js';
 
 function getProps(overrides: any[]): [string, any] {
   return ['t', { content: [{ collection: 't', overrides }] }];

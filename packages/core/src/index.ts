@@ -1,9 +1,5 @@
-import { schemaComposer } from 'graphql-compose';
 import generateSchema from './generators/schema.js';
-
+export { default as createScalar } from './scalars/createScalar';
 export * from './types';
-export default generateSchema;
 
-export function createScalar(str: string) {
-  return schemaComposer.createObjectTC(str);
-}
+export default generateSchema;
