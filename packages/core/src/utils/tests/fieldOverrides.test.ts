@@ -72,3 +72,20 @@ test('basic object array override', (t) => {
   t.snapshot(result);
   t.deepEqual(result.basic[0].obj().resolve({ obj: 'test' }), true);
 });
+
+test('override with custom type', (t) => {
+  const result = getFieldOverrides(
+    ...getProps([
+      {
+        field: 'basic',
+        type: `type FlatbreadImage { src: String alt: String }`,
+        resolve: (source: string) => {
+          t.is(source, 'test');
+          return true;
+        },
+      },
+    ])
+  );
+  t.snapshot(result);
+  t.deepEqual(result.basic().resolve({ basic: 'test' }), true);
+});

@@ -1,10 +1,5 @@
 // import transformer from '@flatbread/transformer-yaml';
-import {
-  defineConfig,
-  markdownTransforer,
-  filesystem,
-  createScalar,
-} from 'flatbread';
+import { defineConfig, markdownTransforer, filesystem } from 'flatbread';
 
 const transformerConfig = {
   markdown: {
@@ -13,13 +8,18 @@ const transformerConfig = {
   },
 };
 
-const flatbreadImage = {
-  type: createScalar(`type FlatbreadImage { src: String alt: String }`),
-  resolve: async (source) => ({
-    alt: 'a nice description',
-    src: source,
-  }),
-};
+function flatbreadImage(field, opts) {
+  return {
+    field,
+    type: `type FlatbreadImage { src: String alt: String }`,
+    resolve(source) {
+      return {
+        alt: 'a nice description',
+        src: source,
+      };
+    },
+  };
+}
 
 export default defineConfig({
   source: filesystem(),
@@ -61,14 +61,13 @@ export default defineConfig({
       collection: 'OverrideTest',
       overrides: [
         {
-          field: 'image',
-          ...flatbreadImage,
-        },
-        {
           field: 'deeply.nested',
           type: 'String',
           resolve: (source) => String(source).toUpperCase(),
         },
+        flatbreadImage('image'),
+        flatbreadImage('image2'),
+
         {
           field: 'array[]',
           type: 'String',
