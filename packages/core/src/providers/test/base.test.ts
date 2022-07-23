@@ -16,7 +16,7 @@ test('basic query', async (t) => {
 
     content: [
       {
-        path: 'packages/flatbread/content/authors',
+        path: 'content/markdown/authors',
         collection: 'Author',
         refs: {
           friend: 'Author',

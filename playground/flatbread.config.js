@@ -29,35 +29,35 @@ export default defineConfig({
 
   content: [
     {
-      path: 'content/markdown/posts',
+      path: '../content/markdown/posts',
       collection: 'Post',
       refs: {
         authors: 'Author',
       },
     },
     {
-      path: 'content/markdown/posts/[category]/[slug].md',
+      path: '../content/markdown/posts/[category]/[slug].md',
       collection: 'PostCategory',
       refs: {
         authors: 'Author',
       },
     },
     {
-      path: 'content/markdown/posts/**/*.md',
+      path: '../content/markdown/posts/**/*.md',
       collection: 'PostCategoryBlob',
       refs: {
         authors: 'Author',
       },
     },
     {
-      path: 'content/markdown/authors',
+      path: '../content/markdown/authors',
       collection: 'Author',
       refs: {
         friend: 'Author',
       },
     },
     {
-      path: 'content/markdown/deeply-nested',
+      path: '../content/markdown/deeply-nested',
       collection: 'OverrideTest',
       overrides: [
         {
