@@ -1,12 +1,12 @@
-import { Queue, generateComponentAttributes } from 'svimg/dist/process';
+import { Queue, generateComponentAttributes } from 'svimg/dist/process.js';
 
 const SVIMG_TYPE = `
 type Svimg {
   srcset: String
-  srcsetwebp: String;
-  srcsetavif: String;
-  placeholder: String;
-  aspectratio: Float;
+  srcsetwebp: String
+  srcsetavif: String
+  placeholder: String
+  aspectratio: Float
 }`;
 
 const queue = new Queue();
@@ -36,7 +36,7 @@ export function createSvImgField(field: string, config: Omit<Config, 'src'>) {
   return {
     field,
     type: SVIMG_TYPE,
-    resole: (src: string) =>
+    resolve: (src: string) =>
       generateComponentAttributes({ queue, ...config, src }),
   };
 }
