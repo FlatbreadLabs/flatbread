@@ -1,5 +1,6 @@
 // import transformer from '@flatbread/transformer-yaml';
 import { defineConfig, markdownTransforer, filesystem } from 'flatbread';
+import { createSvImgField } from '@flatbread/resolver-svimg';
 
 const transformerConfig = {
   markdown: {
@@ -7,19 +8,6 @@ const transformerConfig = {
     externalLinks: true,
   },
 };
-
-function flatbreadImage(field, opts) {
-  return {
-    field,
-    type: `type FlatbreadImage { src: String alt: String }`,
-    resolve(source) {
-      return {
-        alt: 'a nice description',
-        src: source,
-      };
-    },
-  };
-}
 
 export default defineConfig({
   source: filesystem(),
@@ -60,14 +48,12 @@ export default defineConfig({
       path: 'content/markdown/deeply-nested',
       collection: 'OverrideTest',
       overrides: [
+        createSvImgField('image'),
         {
           field: 'deeply.nested',
           type: 'String',
           resolve: (source) => String(source).toUpperCase(),
         },
-        flatbreadImage('image'),
-        flatbreadImage('image2'),
-
         {
           field: 'array[]',
           type: 'String',

@@ -1,4 +1,4 @@
-import { GraphQLFieldConfig } from 'graphql';
+import { GraphQLFieldConfig, GraphQLInputType } from 'graphql';
 import type { VFile } from 'vfile';
 
 // export interface FlatbreadJsonNode {
@@ -92,14 +92,18 @@ export interface Source {
 /**
  * An override can be used to declare a custom resolve for a field in content
  */
-export interface Override<Source, Context>
-  extends GraphQLFieldConfig<Source, Context> {
+
+interface OverrideCustom<Source, Context> {
   field: string;
+  type: GraphQLInputType | string;
   resolve: <Data, Result, Arguments>(
     data: Data,
     extended: { source: Source; context: Context; args: Arguments }
-  ) => Result;
+  ) => any;
 }
+
+export type Override<Source, Context> = GraphQLFieldConfig<Source, Context> &
+  OverrideCustom<Source, Context>;
 
 /**
  * An array of content descriptions which can be used to retrieve content nodes.

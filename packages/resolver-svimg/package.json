@@ -1,5 +1,5 @@
 {
-  "name": "@flatbread/resolver-yaml",
+  "name": "@flatbread/resolver-svimg",
   "version": "1.0.0-alpha.6",
   "description": "use svimg as a flatbread field resolver",
   "type": "module",

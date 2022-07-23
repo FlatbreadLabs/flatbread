@@ -1,14 +1,13 @@
-import { createScalar } from 'flatbread';
-import { Queue, generateComponentAttributes } from 'svimg/dist/process.es';
+import { Queue, generateComponentAttributes } from 'svimg/dist/process';
 
-const SVIMG_TYPE = createScalar(`
+const SVIMG_TYPE = `
 type Svimg {
   srcset: String
   srcsetwebp: String;
   srcsetavif: String;
   placeholder: String;
   aspectratio: Float;
-}`);
+}`;
 
 const queue = new Queue();
 
@@ -27,8 +26,15 @@ interface Config {
   skipPlaceholder?: boolean;
 }
 
-export default function createSvimgResolver(config: Omit<Config, 'src'>) {
+/**
+ *
+ * @param field the field to override
+ * @param config
+ * @returns
+ */
+export function createSvImgField(field: string, config: Omit<Config, 'src'>) {
   return {
+    field,
     type: SVIMG_TYPE,
     resole: (src: string) =>
       generateComponentAttributes({ queue, ...config, src }),
