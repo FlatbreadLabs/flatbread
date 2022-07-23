@@ -266,7 +266,7 @@ importers:
       autoprefixer: 10.4.7
       eslint: 7.32.0
       eslint-config-prettier: 8.3.0
-      eslint-plugin-svelte3: 3.2.1
+      eslint-plugin-svelte3: 3.4.1
       flatbread: workspace:*
       graphql: 16.0.1
       graphql-helix: 1.9.1
@@ -288,7 +288,7 @@ importers:
       autoprefixer: 10.4.7_postcss@8.4.14
       eslint: 7.32.0
       eslint-config-prettier: 8.3.0_eslint@7.32.0
-      eslint-plugin-svelte3: 3.2.1_k4rvtr32uzrs6rwp57u73ssa6q
+      eslint-plugin-svelte3: 3.4.1_k4rvtr32uzrs6rwp57u73ssa6q
       flatbread: link:../packages/flatbread
       graphql: 16.0.1
       graphql-helix: 1.9.1_graphql@16.0.1
@@ -3606,8 +3606,8 @@ packages:
       eslint: 7.32.0
     dev: true
 
-  /eslint-plugin-svelte3/3.2.1_k4rvtr32uzrs6rwp57u73ssa6q:
-    resolution: {integrity: sha512-YoBR9mLoKCjGghJ/gvpnFZKaMEu/VRcuxpSRS8KuozuEo7CdBH7bmBHa6FmMm0i4kJnOyx+PVsaptz96K6H/4Q==}
+  /eslint-plugin-svelte3/3.4.1_k4rvtr32uzrs6rwp57u73ssa6q:
+    resolution: {integrity: sha512-7p59WG8qV8L6wLdl4d/c3mdjkgVglQCdv5XOTk/iNPBKXuuV+Q0eFP5Wa6iJd/G2M1qR3BkLPEzaANOqKAZczw==}
     engines: {node: '>=10'}
     peerDependencies:
       eslint: '>=6.0.0'
