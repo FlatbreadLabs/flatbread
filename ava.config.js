@@ -4,5 +4,8 @@ export default {
     js: true,
     ts: 'module',
   },
-  nodeArguments: ['--loader=ts-node/esm'],
+  nodeArguments: [
+    '--loader=ts-node/esm',
+    '--experimental-specifier-resolution=node',
+  ],
 };

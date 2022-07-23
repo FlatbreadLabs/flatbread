@@ -58,7 +58,7 @@ export interface Transformer {
    * @param input Node to transform
    */
   parse?: (input: VFile) => EntryNode;
-  preknownSchemaFragments: () => Record<string, any>;
+  preknownSchemaFragments?: () => Record<string, any>;
   inspect: (input: EntryNode) => string;
 }
 

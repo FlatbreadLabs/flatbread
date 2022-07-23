@@ -1,4 +1,4 @@
-import generateSchema from './generators/schema.js';
-export * from './types';
+export { generateSchema } from './generators/schema';
 
-export default generateSchema;
+export * from './types';
+export { FlatbreadProvider } from './providers/base';
