@@ -16,6 +16,7 @@ import {
   Transformer,
 } from '../types';
 import { map } from '../utils/map';
+import { getFieldOverrides } from '../utils/fieldOverrides';
 
 interface RootQueries {
   maybeReturnsSingleItem: string[];
@@ -27,9 +28,9 @@ interface RootQueries {
  *
  * @param configResult the result of the config file processing
  */
-const generateSchema = async (
+export async function generateSchema(
   configResult: ConfigResult<LoadedFlatbreadConfig>
-) => {
+) {
   const { config } = configResult;
   if (!config) {
     throw new Error('Config is not defined');
@@ -62,6 +63,7 @@ const generateSchema = async (
         collection,
         defaultsDeep(
           {},
+          getFieldOverrides(collection, config),
           ...nodes.map((node) => merge({}, node, preknownSchemaFragments))
         ),
         { schemaComposer }
@@ -195,7 +197,7 @@ const generateSchema = async (
   }
 
   return schemaComposer.buildSchema();
-};
+}
 
 /**
  * If the config has a transformer which defines pre-known schema fragments,
@@ -256,5 +258,3 @@ const optionallyTransformContentNodes = (
 
   return allContentNodes;
 };
-
-export default generateSchema;
