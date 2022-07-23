@@ -2,8 +2,8 @@
  * Delay the start of the target process until the GraphQL server is ready.
  * Learned about this thanks to: https://stackoverflow.com/a/48050020/12368615
  */
-import { fork, spawn } from 'child_process';
-import { basename, resolve } from 'path';
+import { fork, spawn } from 'node:child_process';
+import { basename, resolve } from 'node:path';
 import { findUpSync } from 'find-up';
 import colors from 'kleur';
 
@@ -48,7 +48,7 @@ export default function orchestrateProcesses({
 
       // Exit the parent process when the target process exits
       for (let script of runningScripts) {
-        script.on('close', function (code) {
+        script.on('close', () => {
           process.exit();
         });
       }
@@ -56,11 +56,11 @@ export default function orchestrateProcesses({
   });
 
   // End any remaining child processes when the parent process exits
-  process.on('exit', function () {
+  process.on('exit', () => {
     console.log(
       colors.bold().green('\nFlatbread is done for now. Bye bye! 🥪')
     );
-    runningScripts.forEach(function (child) {
+    runningScripts.forEach((child) => {
       child.kill();
     });
   });

@@ -25,7 +25,7 @@
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.js"
     }
   },
   "main": "dist/index.js",
@@ -35,6 +35,9 @@
     "dist",
     "*.d.ts"
   ],
+  "dependencies": {
+    "cosmiconfig": "7.0.1"
+  },
   "devDependencies": {
     "@flatbread/core": "workspace:*",
     "@types/node": "16.11.45",
