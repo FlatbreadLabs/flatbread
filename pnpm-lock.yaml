@@ -265,7 +265,7 @@ importers:
       '@typescript-eslint/parser': 4.33.0
       autoprefixer: 10.4.7
       eslint: 7.32.0
-      eslint-config-prettier: 8.3.0
+      eslint-config-prettier: 8.5.0
       eslint-plugin-svelte3: 3.4.1
       flatbread: workspace:*
       graphql: 16.5.0
@@ -287,7 +287,7 @@ importers:
       '@typescript-eslint/parser': 4.33.0_hxadhbs2xogijvk7vq4t2azzbu
       autoprefixer: 10.4.7_postcss@8.4.14
       eslint: 7.32.0
-      eslint-config-prettier: 8.3.0_eslint@7.32.0
+      eslint-config-prettier: 8.5.0_eslint@7.32.0
       eslint-plugin-svelte3: 3.4.1_k4rvtr32uzrs6rwp57u73ssa6q
       flatbread: link:../packages/flatbread
       graphql: 16.5.0
@@ -3598,8 +3598,8 @@ packages:
       source-map: 0.6.1
     dev: true
 
-  /eslint-config-prettier/8.3.0_eslint@7.32.0:
-    resolution: {integrity: sha512-BgZuLUSeKzvlL/VUjx/Yb787VQ26RU3gGjA3iiFvdsp/2bMfVIWUVP7tjxtjS0e+HP409cPlPvNkQloz8C91ew==}
+  /eslint-config-prettier/8.5.0_eslint@7.32.0:
+    resolution: {integrity: sha512-obmWKLUNCnhtQRKc+tmnYuQl0pFU1ibYJQ5BGhTVB08bHe9wC8qUeG7c08dj9XX+AuPj1YSGSQIHl1pnDHZR0Q==}
     hasBin: true
     peerDependencies:
       eslint: '>=7.0.0'
