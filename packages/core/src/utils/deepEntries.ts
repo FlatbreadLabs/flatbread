@@ -1,4 +1,4 @@
-import typeOf from './typeOf.js';
+import typeOf from './typeOf';
 
 /**
  * Recursively transforms a nested object into a multidimensional array of length-2, where the first item is an array of keys leading to the value and the second item is the value found at the end of the path.

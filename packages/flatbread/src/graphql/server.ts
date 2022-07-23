@@ -3,7 +3,7 @@ import { ApolloServerPluginDrainHttpServer } from 'apollo-server-core';
 import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache';
 import express from 'express';
 import http from 'http';
-import generateSchema from '@flatbread/core';
+import { generateSchema } from '@flatbread/core';
 import { getConfig } from '../utils/getSchema';
 import { GraphQLSchema } from 'graphql';
 
