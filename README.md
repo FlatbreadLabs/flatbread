@@ -252,6 +252,7 @@ Limits the number of returned entries to the specified amount. Accepts an intege
 [Check out the playground for an example](https://github.com/tonyketcham/flatbread/tree/main/playground) of using Flatbread with SvelteKit to safely shoot off GraphQL queries using a static (or node) adapter.
 
 ## Field Overrides
+
 field overrides allow you to define custom types or transforms for specific data based on what field it is in in the content
 
 ### Example
@@ -276,19 +277,20 @@ field overrides allow you to define custom types or transforms for specific data
 ```
 
 ### Supported syntax for field
+
 - basic nested objects
 
   `nested.object`
+
 - a basic array (will map array values)
 
   `an.array[]`
+
 - a nested object inside an array (will also map array)
 
   `an.array[]with.object`
 
 for more information in Overrides, they adhere to the GraphQLFieldConfig outlined here https://graphql-compose.github.io/docs/basics/what-is-resolver.html
-
-
 
 # ☀️ Contributing
 
