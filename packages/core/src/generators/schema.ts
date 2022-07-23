@@ -10,6 +10,7 @@ import {
   generateArgsForSingleItemQuery,
 } from '../generators/arguments';
 import resolveQueryArgs from '../resolvers/arguments';
+import { getFieldOverrides } from '../utils/fieldOverrides';
 
 interface RootQueries {
   maybeReturnsSingleItem: string[];
@@ -53,6 +54,7 @@ export async function generateSchema(
         collection,
         defaultsDeep(
           {},
+          getFieldOverrides(collection, config),
           ...nodes.map((node) => merge({}, node, preknownSchemaFragments))
         ),
         { schemaComposer }
