@@ -23,6 +23,13 @@
             name
             entity
             enjoys
+            image {
+              srcset
+              srcsetwebp
+              srcsetavif
+              placeholder
+              aspectratio
+            }
             friend {
               name
               date_joined
@@ -74,7 +81,12 @@
 </script>
 
 <script>
+  import { browser } from '$app/env';
   import Pane from './../lib/components/Pane.svelte';
+
+  if (browser) {
+    import('svimg/dist/s-image');
+  }
 
   export let data = {};
   export let error = null;
@@ -87,9 +99,7 @@
 
 <div class="grid grid-cols-2 divide-x-2 divide-black">
   <Pane label="JSON Output">
-    <pre
-      class="overflow-auto p-3"
-      style="height: calc(100vh - 3.5rem);">
+    <pre class="overflow-auto p-3" style="height: calc(100vh - 3.5rem);">
       <code class="text-sm">
         {JSON.stringify(data, null, 2)}
       </code>
@@ -101,7 +111,16 @@
         <h3 class="text-xl font-medium">{post.title}</h3>
         <ul>
           <li class="text-xs font-semibold text-gray-500">
-            By: {joinAuthors(post.authors)}
+            <div class="flex">
+              {#each post.authors as author}
+                <div>
+                  <div class="h-12 w-12">
+                    <s-image {...author.image} />
+                  </div>
+                  {author.name}
+                </div>
+              {/each}
+            </div>
           </li>
           <li class="text-xs font-semibold text-gray-500">
             Rating: {post.rating}

@@ -36,7 +36,9 @@ export function createSvImgField(field: string, config: Omit<Config, 'src'>) {
   return {
     field,
     type: SVIMG_TYPE,
-    resolve: (src: string) =>
-      generateComponentAttributes({ queue, ...config, src }),
+    resolve(src: string) {
+      if (!src) return null;
+      return generateComponentAttributes({ queue, ...config, src });
+    },
   };
 }

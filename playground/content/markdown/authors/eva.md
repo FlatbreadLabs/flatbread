@@ -9,6 +9,7 @@ enjoys:
   - sleepy time
   - attention
 friend: 2a3e
+image: eva.svg
 date_joined: 2002-02-25T16:41:59.558Z
 skills:
   sitting: 100000

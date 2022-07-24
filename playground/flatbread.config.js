@@ -43,12 +43,18 @@ export default defineConfig({
       refs: {
         friend: 'Author',
       },
+      overrides: [
+        createSvImgField('image', {
+          inputDir: 'static/authorImages',
+          outputDir: 'static/g',
+          publicPath: '/g',
+        }),
+      ],
     },
     {
       path: 'content/markdown/deeply-nested',
       collection: 'OverrideTest',
       overrides: [
-        createSvImgField('image'),
         {
           field: 'deeply.nested',
           type: 'String',

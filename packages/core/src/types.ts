@@ -1,4 +1,5 @@
-import { GraphQLFieldConfig, GraphQLInputType } from 'graphql';
+import { GraphQLFieldConfigArgumentMap, GraphQLInputType } from 'graphql';
+import { Maybe } from 'graphql/jsutils/Maybe';
 import type { VFile } from 'vfile';
 
 // export interface FlatbreadJsonNode {
@@ -92,18 +93,17 @@ export interface Source {
 /**
  * An override can be used to declare a custom resolve for a field in content
  */
-
-interface OverrideCustom<Source, Context> {
+// derived from GraphQLFieldConfig<Source, Context>
+export interface Override {
   field: string;
   type: GraphQLInputType | string;
-  resolve: <Data, Result, Arguments>(
-    data: Data,
-    extended: { source: Source; context: Context; args: Arguments }
+  args?: GraphQLFieldConfigArgumentMap;
+  description?: Maybe<string>;
+  resolve: (
+    data: any,
+    extended: { source: any; context: any; args: any }
   ) => any;
 }
-
-export type Override<Source, Context> = GraphQLFieldConfig<Source, Context> &
-  OverrideCustom<Source, Context>;
 
 /**
  * An array of content descriptions which can be used to retrieve content nodes.
@@ -112,6 +112,6 @@ export type Override<Source, Context> = GraphQLFieldConfig<Source, Context> &
  */
 export type Content = {
   collection: string;
-  overrides?: Override<any, any>[];
+  overrides?: Override[];
   [key: string]: any;
 }[];
