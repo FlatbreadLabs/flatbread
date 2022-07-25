@@ -14,8 +14,10 @@ Valid config filenames:
 
 - `flatbread.config.js`
 - `flatbread.config.mjs`
-- `.flatbreadrc.js`
-- `.flatbreadrc.mjs`
+- `flatbread.config.cjs`
+- `flatbread.config.ts`
+- `flatbread.config.mts`
+- `flatbread.config.cts`
 
 ## 👩‍🍳 Typical Usage
 

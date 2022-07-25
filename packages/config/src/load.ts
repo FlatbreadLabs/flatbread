@@ -8,16 +8,20 @@ import {
   validateConfigStructure,
 } from './validate';
 
-type ConfigFileExtension = 'js' | 'ts' | 'mjs' | 'mts';
+type ConfigFileExtension = 'js' | 'mjs' | 'cjs' | 'ts' | 'mts' | 'cts';
 type ConfigFileName = `flatbread.config.${ConfigFileExtension}`;
 
 export const FLATBREAD_CONFIG_FILE_NAMES: ConfigFileName[] = [
   'flatbread.config.js',
-  'flatbread.config.ts',
   'flatbread.config.mjs',
+  'flatbread.config.cjs',
+
+  'flatbread.config.ts',
+  'flatbread.config.mts',
+  'flatbread.config.cts',
 ];
 
-const FLATBREAD_CONFIG_FILE_REGEX = /flatbread\.config\.m?[jt]s$/;
+const FLATBREAD_CONFIG_FILE_REGEX = /flatbread\.config\.[mc]?[jt]s$/;
 
 const VALID_CONFIG_NAMES_MESSAGE = `Valid config filenames are:
   ${FLATBREAD_CONFIG_FILE_NAMES.join('\n')}
