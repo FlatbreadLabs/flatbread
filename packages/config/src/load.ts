@@ -54,7 +54,7 @@ async function loadConfigFromBundledFile(
   try {
     const configModule = await import(fileUrl);
     validateConfigHasDefaultExport(configModule);
-    
+
     return configModule.default;
   } finally {
     await fs.unlink(fileNameTmp);

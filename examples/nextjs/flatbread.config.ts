@@ -1,4 +1,8 @@
-import { markdownTransformer, filesystem, type FlatbreadConfig } from 'flatbread';
+import {
+  markdownTransformer,
+  filesystem,
+  type FlatbreadConfig,
+} from 'flatbread';
 
 const transformerConfig = {
   markdown: {
