@@ -1,5 +1,6 @@
 import type { ConfigResult, FlatbreadConfig } from '@flatbread/core';
 import { build } from 'esbuild';
+import colors from 'kleur';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -23,8 +24,9 @@ export const FLATBREAD_CONFIG_FILE_NAMES: ConfigFileName[] = [
 
 const FLATBREAD_CONFIG_FILE_REGEX = /flatbread\.config\.[mc]?[jt]s$/;
 
-const VALID_CONFIG_NAMES_MESSAGE = `Valid config filenames are:
-  ${FLATBREAD_CONFIG_FILE_NAMES.join('\n')}
+const VALID_CONFIG_NAMES_MESSAGE = `Valid config filenames are:\n\t${colors.green(
+  FLATBREAD_CONFIG_FILE_NAMES.join('\n\t')
+)}
 `;
 
 /**
@@ -84,19 +86,27 @@ export async function loadConfig({ cwd = process.cwd() } = {}): Promise<
   ) as ConfigFileName[];
 
   if (matchingFiles.length > 1) {
-    throw new Error(
-      `Multiple config files found. Please declare only one! 😅
+    console.error(
+      colors.red(
+        `
+        Multiple config files found (${colors.gray(matchingFiles.join(', '))}).
         
-        (found ${matchingFiles.join(', ')}).
-        
-        ${VALID_CONFIG_NAMES_MESSAGE}
-      `
+        Please declare ${colors.bold('only')} one! 😅\n
+        `
+      ) + VALID_CONFIG_NAMES_MESSAGE
     );
+    process.exit(1);
   } else if (matchingFiles.length === 1) {
     // Grab the config file name declared in the user's project root
     configFileName = matchingFiles[0];
   } else {
-    throw new Error(`No config file found. Please declare one! 😅`);
+    console.error(
+      colors.red(
+        `No config file found. Please declare one! 😅\n
+      `
+      ) + VALID_CONFIG_NAMES_MESSAGE
+    );
+    process.exit(1);
   }
 
   const configFilePath = path.join(cwd, configFileName);
