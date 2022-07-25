@@ -3,3 +3,4 @@ packages:
   - packages/*
   - '!**/test/**'
   - '!**/__tests__/**'
+  - examples/*

@@ -29,8 +29,10 @@ export default function orchestrateProcesses({
   let serverModulePath = 'node_modules/flatbread/dist/graphql/server.js';
 
   process.cwd();
-  const gql = fork(resolve(process.cwd(), serverModulePath), [], {
+  const gql = fork(resolve(process.cwd(), serverModulePath), [''], {
     env: {
+      ...process.env,
+      NODE_OPTIONS: '--experimental-vm-modules',
       FLATBREAD_PORT: String(flatbreadPort),
     },
   });
