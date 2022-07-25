@@ -1,5 +1,9 @@
-// import transformer from '@flatbread/transformer-yaml';
-import { defineConfig, markdownTransforer, filesystem } from 'flatbread';
+import {
+  defineConfig,
+  markdownTransformer,
+  yamlTransformer,
+  filesystem,
+} from 'flatbread';
 
 const transformerConfig = {
   markdown: {
@@ -8,7 +12,7 @@ const transformerConfig = {
   },
 };
 
-function flatbreadImage(field, opts) {
+function flatbreadImage(field) {
   return {
     field,
     type: `type FlatbreadImage { src: String alt: String }`,
@@ -23,10 +27,7 @@ function flatbreadImage(field, opts) {
 
 export default defineConfig({
   source: filesystem(),
-  transformer: markdownTransforer(transformerConfig),
-  // source: filesystem({ extensions: ['.yml', '.yaml'] }),
-  // transformer: transformer(),
-
+  transformer: [markdownTransformer(transformerConfig), yamlTransformer()],
   content: [
     {
       path: 'content/markdown/posts',
@@ -54,6 +55,13 @@ export default defineConfig({
       collection: 'Author',
       refs: {
         friend: 'Author',
+      },
+    },
+    {
+      path: 'content/yaml/authors',
+      collection: 'YamlAuthor',
+      refs: {
+        friend: 'YamlAuthor',
       },
     },
     {
