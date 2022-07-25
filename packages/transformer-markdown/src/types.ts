@@ -14,7 +14,7 @@ export interface MarkdownTransformerConfig {
    */
   markdown?: MarkdownConfig;
   /**
-   * specify custom file extensions for files default is ['.md']
+   * Specify file extensions to transform. Defaults to `['.md']`
    */
   extensions?: string[];
 }
