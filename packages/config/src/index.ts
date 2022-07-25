@@ -1,8 +1,8 @@
 import {
   ConfigResult,
   FlatbreadConfig,
+  initializeConfig,
   LoadedFlatbreadConfig,
-  Transformer,
 } from '@flatbread/core';
 import path from 'path';
 import url from 'url';
@@ -13,9 +13,11 @@ import url from 'url';
  * @param config flatbread instance options
  * @returns flatbread config
  */
-export const defineConfig = (
+export default function defineConfig(
   config: LoadedFlatbreadConfig
-): LoadedFlatbreadConfig => config;
+): LoadedFlatbreadConfig {
+  return config;
+}
 
 /**
  * Pulls the user config from an optionally specified filepath.
@@ -99,18 +101,3 @@ export function validateConfigStructure<C extends FlatbreadConfig>(
 
   return config;
 }
-
-export function initializeConfig(config: any): LoadedFlatbreadConfig {
-  config.transformer = Array.isArray(config.transformer)
-    ? config.transformer
-    : [config.transformer];
-
-  config.loaded = {
-    extensions: config.transformer
-      .map((transformer: Transformer) => transformer.extensions || [])
-      .flat(),
-  };
-  return config;
-}
-
-export default defineConfig;
