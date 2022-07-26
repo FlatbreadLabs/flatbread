@@ -1,6 +1,10 @@
-// import transformer from '@flatbread/transformer-yaml';
-import { defineConfig, markdownTransforer, filesystem } from 'flatbread';
 import { createSvImgField } from '@flatbread/resolver-svimg';
+import {
+  defineConfig,
+  markdownTransformer,
+  yamlTransformer,
+  filesystem,
+} from 'flatbread';
 
 const transformerConfig = {
   markdown: {
@@ -11,10 +15,7 @@ const transformerConfig = {
 
 export default defineConfig({
   source: filesystem(),
-  transformer: markdownTransforer(transformerConfig),
-  // source: filesystem({ extensions: ['.yml', '.yaml'] }),
-  // transformer: transformer(),
-
+  transformer: [markdownTransformer(transformerConfig), yamlTransformer()],
   content: [
     {
       path: 'content/markdown/posts',
@@ -50,6 +51,13 @@ export default defineConfig({
           publicPath: '/g',
         }),
       ],
+    },
+    {
+      path: 'content/yaml/authors',
+      collection: 'YamlAuthor',
+      refs: {
+        friend: 'YamlAuthor',
+      },
     },
     {
       path: 'content/markdown/deeply-nested',

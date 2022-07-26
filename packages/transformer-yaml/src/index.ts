@@ -41,6 +41,7 @@ const transformer: TransformerPlugin = () => {
   return {
     parse: (input: VFile): EntryNode => parse(input),
     inspect: (input: EntryNode) => String(input),
+    extensions: ['.yaml', '.yml'],
   };
 };
 
