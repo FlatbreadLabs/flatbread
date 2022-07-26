@@ -3,7 +3,7 @@ import {
   defineConfig,
   markdownTransformer,
   yamlTransformer,
-  filesystem,
+  sourceFilesystem,
 } from 'flatbread';
 
 const transformerConfig = {
@@ -14,7 +14,7 @@ const transformerConfig = {
 };
 
 export default defineConfig({
-  source: filesystem(),
+  source: sourceFilesystem(),
   transformer: [markdownTransformer(transformerConfig), yamlTransformer()],
   content: [
     {
