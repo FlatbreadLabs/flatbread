@@ -21,7 +21,7 @@ import transformer from '@flatbread/transformer-markdown';
 import filesystem from '@flatbread/source-filesystem';
 
 export default defineConfig({
-  source: filesystem({ extensions: ['.yml', '.yaml'] }),
+  source: filesystem(),
   transformer: transformer(),
   content: [
     {

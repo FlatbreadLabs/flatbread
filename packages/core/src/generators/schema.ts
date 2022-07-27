@@ -1,15 +1,21 @@
-import { EntryNode, FlatbreadConfig, ConfigResult } from '../types';
 import { schemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
-import { defaultsDeep, merge, cloneDeep } from 'lodash-es';
+import { cloneDeep, defaultsDeep, merge } from 'lodash-es';
 import plur from 'plur';
-import { map } from '../utils/map';
+import { VFile } from 'vfile';
 import {
   generateArgsForAllItemQuery,
   generateArgsForManyItemQuery,
   generateArgsForSingleItemQuery,
-} from '../generators/arguments';
-import resolveQueryArgs from '../resolvers/arguments';
+} from '../generators/arguments.js';
+import resolveQueryArgs from '../resolvers/arguments.js';
+import {
+  ConfigResult,
+  EntryNode,
+  LoadedFlatbreadConfig,
+  Transformer,
+} from '../types';
+import { map } from '../utils/map';
 import { getFieldOverrides } from '../utils/fieldOverrides';
 
 interface RootQueries {
@@ -23,12 +29,15 @@ interface RootQueries {
  * @param configResult the result of the config file processing
  */
 export async function generateSchema(
-  configResult: ConfigResult<FlatbreadConfig>
+  configResult: ConfigResult<LoadedFlatbreadConfig>
 ) {
   const { config } = configResult;
   if (!config) {
     throw new Error('Config is not defined');
   }
+
+  // Invoke initialize function if it exists and provide loaded config
+  config.source.initialize?.(config);
 
   // Invoke the content source resolver to retrieve the content nodes
   const allContentNodes = await config.source.fetch(config.content);
@@ -198,13 +207,23 @@ export async function generateSchema(
  * @returns an object of pre-known schema fragments including resolvers.
  */
 const fetchPreknownSchemaFragments = (
-  config: FlatbreadConfig
+  config: LoadedFlatbreadConfig
 ): Record<string, any> | {} => {
-  if (config.transformer && config.transformer.preknownSchemaFragments) {
-    return config.transformer.preknownSchemaFragments();
-  }
-  return {};
+  return config.transformer.reduce(
+    (all, next) => merge(all, next.preknownSchemaFragments?.() || {}),
+    {}
+  );
 };
+
+function getTransformerExtensionMap(transformer: Transformer[]) {
+  const transformerMap = new Map();
+  transformer.forEach((t) => {
+    t.extensions.forEach((extension) => {
+      transformerMap.set(extension, t);
+    });
+  });
+  return transformerMap;
+}
 
 /**
  * Transforms the content nodes to the expected JSON format. If no transformer is defined, the content nodes are returned as is.
@@ -214,10 +233,11 @@ const fetchPreknownSchemaFragments = (
  */
 const optionallyTransformContentNodes = (
   allContentNodes: Record<string, any[]>,
-  config: FlatbreadConfig
+  config: LoadedFlatbreadConfig
 ): Record<string, any[]> => {
-  if (config.transformer && config.transformer.parse) {
-    const parse = config.transformer.parse;
+  if (config.transformer) {
+    const transformerMap = getTransformerExtensionMap(config.transformer);
+    // const globs = Object.entries(transformers);
 
     /**
      * Map through each content type,
@@ -226,10 +246,15 @@ const optionallyTransformContentNodes = (
      *
      * @todo if this becomes a performance bottleneck, consider overloading the source plugin API to accept a transform function so we can avoid mapping through the content nodes twice
      * */
-    const transformedContentNodes = map(allContentNodes, (node: any) =>
-      parse(node)
-    );
-    return transformedContentNodes;
+
+    return map(allContentNodes, (node: VFile) => {
+      const transformer = transformerMap.get(node.extname);
+      if (!transformer?.parse) {
+        throw new Error(`no transformer found for ${node.path}`);
+      }
+      return transformer.parse(node);
+    });
   }
+
   return allContentNodes;
 };

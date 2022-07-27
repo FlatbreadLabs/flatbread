@@ -24,29 +24,23 @@ import type { VFile } from 'vfile';
  */
 export interface FlatbreadConfig {
   source: Source;
-  transformer?: Transformer;
+  transformer?: Transformer | Transformer[];
   content: Content;
 }
+
+export interface LoadedFlatbreadConfig {
+  source: Source;
+  transformer: Transformer[];
+  content: Content;
+  loaded: {
+    extensions: string[];
+  };
+}
+
 export interface ConfigResult<O> {
   filepath?: string;
   config?: O;
 }
-
-/**
- * Converts input to meaningful data.
- * To be used as a helper layer on top of a source that is not directly usable.
- * For example, a markdown file.
- */
-export type TransformerPlugin = <Config>(config: Config) => {
-  /**
-   * Parse a given source file into its contained data fields and an unnormalized representation of the content.
-   * @param input Node to transform
-   * @param config Options for the transformation
-   */
-  parse?: (input: VFile) => EntryNode;
-  preknownSchemaFragments?: () => Record<string, any>;
-  inspect: (input: EntryNode) => string;
-};
 
 /**
  * Converts input to meaningful data.
@@ -61,7 +55,10 @@ export interface Transformer {
   parse?: (input: VFile) => EntryNode;
   preknownSchemaFragments?: () => Record<string, any>;
   inspect: (input: EntryNode) => string;
+  extensions: string[];
 }
+
+export type TransformerPlugin = <Config>(config?: Config) => Transformer;
 
 /**
  * A representation of the content of a flat file.
@@ -69,26 +66,18 @@ export interface Transformer {
 export type EntryNode = Record<string, any>;
 
 /**
- * A `Source` plugin which contains methods on how to retrieve content nodes in
- * their raw (if coupled with a `Transformer` plugin) or processed form.
- */
-export type SourcePlugin = (sourceConfig?: Record<string, any>) => {
-  fetchByType?: (path: string) => Promise<any[]>;
-  fetch: (
-    allContentTypes: Record<string, any>[]
-  ) => Promise<Record<string, VFile[]>>;
-};
-
-/**
  * The result of an invoked `Source` plugin which contains methods on how to retrieve content nodes in
  * their raw (if coupled with a `Transformer` plugin) or processed form.
  */
 export interface Source {
+  initialize?: (flatbreadConfig: LoadedFlatbreadConfig) => void;
   fetchByType?: (path: string) => Promise<any[]>;
   fetch: (
     allContentTypes: Record<string, any>[]
   ) => Promise<Record<string, VFile[]>>;
 }
+
+export type SourcePlugin = (sourceConfig?: Record<string, any>) => Source;
 
 /**
  * An override can be used to declare a custom resolve for a field in content

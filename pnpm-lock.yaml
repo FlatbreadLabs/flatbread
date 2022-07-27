@@ -99,6 +99,7 @@ importers:
       '@flatbread/core': workspace:*
       '@flatbread/source-filesystem': workspace:*
       '@flatbread/transformer-markdown': workspace:*
+      '@flatbread/transformer-yaml': workspace:*
       '@types/cors': 2.8.12
       '@types/express': 4.17.13
       '@types/gradient-string': 1.1.2
@@ -127,6 +128,7 @@ importers:
       '@flatbread/core': link:../core
       '@flatbread/source-filesystem': link:../source-filesystem
       '@flatbread/transformer-markdown': link:../transformer-markdown
+      '@flatbread/transformer-yaml': link:../transformer-yaml
       apollo-server-core: 3.10.0_graphql@16.5.0
       apollo-server-express: 3.10.0_g7snex6epo2tsaz6yhvyva23iq
       cors: 2.8.5
@@ -171,6 +173,7 @@ importers:
   packages/source-filesystem:
     specifiers:
       '@flatbread/core': workspace:*
+      '@types/lodash-es': 4.17.6
       '@types/node': 16.11.45
       lodash-es: ^4.17.21
       to-vfile: ^7.2.3
@@ -184,6 +187,7 @@ importers:
       unified: 10.1.2
     devDependencies:
       '@flatbread/core': link:../core
+      '@types/lodash-es': 4.17.6
       '@types/node': 16.11.45
       tsup: 6.1.3_typescript@4.7.4
       typescript: 4.7.4
@@ -304,7 +308,7 @@ importers:
     devDependencies:
       '@flatbread/transformer-yaml': link:../packages/transformer-yaml
       '@sveltejs/adapter-auto': 1.0.0-next.63
-      '@sveltejs/kit': 1.0.0-next.392_svelte@3.49.0+vite@3.0.0
+      '@sveltejs/kit': 1.0.0-next.394_svelte@3.49.0+vite@3.0.0
       '@typescript-eslint/eslint-plugin': 4.33.0_3ekaj7j3owlolnuhj3ykrb7u7i
       '@typescript-eslint/parser': 4.33.0_hxadhbs2xogijvk7vq4t2azzbu
       autoprefixer: 10.4.7_postcss@8.4.14
@@ -1449,8 +1453,8 @@ packages:
       - supports-color
     dev: true
 
-  /@sveltejs/kit/1.0.0-next.392_svelte@3.49.0+vite@3.0.0:
-    resolution: {integrity: sha512-od4rDJ/Soq0I7mda7sTbAnNKERHSDEGNa7QBpLA859xgBkwC1JnEIymYOh9dm+hMyHhB0bUoRoaur0qxKLqOOw==}
+  /@sveltejs/kit/1.0.0-next.394_svelte@3.49.0+vite@3.0.0:
+    resolution: {integrity: sha512-YfRNSKdbvihHFvmQodaMlChcyf9dfU36FwK8WYQF5jqEmiRajLBb/ooU6RqPA0Z6j5okJHDSYBwxW8TP+nc+gg==}
     engines: {node: '>=16.9'}
     hasBin: true
     peerDependencies:
