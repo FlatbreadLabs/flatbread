@@ -14,11 +14,11 @@
   },
   "scripts": {
     "flat": "flatbread start",
-    "dev": "flatbread start -- svelte-kit dev",
+    "dev": "flatbread start -- vite dev",
     "flatbread:help": "flatbread start -h",
-    "build": "flatbread start -- svelte-kit build",
+    "build": "flatbread start -- vite build",
     "check-env": "node -e 'console.log(process.env)' | grep npm",
-    "preview": "svelte-kit preview",
+    "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "prettier --ignore-path .gitignore --check --plugin-search-dir=. . && eslint --ignore-path .gitignore .",
@@ -49,5 +49,8 @@
     "typescript": "4.7.4",
     "vite-plugin-transform": "1.1.3"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "vite": "^3.0.3"
+  }
 }
