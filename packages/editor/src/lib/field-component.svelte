@@ -10,7 +10,7 @@
 
 {#if !field.hidden}
 	<svelte:component
-		this={fieldComponents[field.component] ?? fieldComponents['string']}
+		this={fieldComponents[field.component] ?? fieldComponents['raw']}
 		{field}
 		{...$$restProps}
 	/>

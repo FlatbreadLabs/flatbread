@@ -1,7 +1,7 @@
-import { get } from 'svelte/store';
-import wretch from 'wretch';
 import { getStores } from '$app/stores';
 import { capitalize } from 'lodash-es';
+import { get } from 'svelte/store';
+import wretch from 'wretch';
 
 const api = wretch().url('http://localhost:5057/graphql');
 
@@ -88,18 +88,29 @@ export async function getGqlTypes() {
 	return new Map(types.map((t) => [t.name, transformSchema(t)]));
 }
 
-function getCollectionQuery(collectionName: string, gqlTypes, depth = Infinity, visited = {}) {
+interface GetCollectionQueryArgs {
+	visits: number;
+	visited: Record<string, number>;
+	depth: number;
+	preventCycles: boolean;
+}
+
+function getCollectionQuery(
+	collectionName: string,
+	gqlTypes,
+	{ visits = 2, depth = Infinity, visited = {} }: GetCollectionQueryArgs
+) {
 	const collection = gqlTypes.get(collectionName);
 
 	return collection.fields
 		.map((field) => {
 			if (field.type.kind === 'SCALAR' || field.type.ofType?.kind === 'SCALAR') return field.name;
-			const kind = field.type.kind === 'LIST' ? field.type.ofType.name : field.type.name;
+			const kind: string = field.type.kind === 'LIST' ? field.type.ofType.name : field.type.name;
 			depth--;
 			if (depth < 0) return '';
-			if (visited[kind]) return '';
-			visited[kind] = true;
-			return `${field.name} { ${getCollectionQuery(kind, gqlTypes, depth, visited)} }`;
+			if (visited[kind] > visits) return '';
+			visited[kind] = (visited[kind] ?? 0) + 1;
+			return `${field.name} { ${getCollectionQuery(kind, gqlTypes, { depth, visited, visits })} }`;
 		})
 		.join(' ');
 }
@@ -123,7 +134,7 @@ interface QueryCollectionArgs {
 export async function queryCollection(args: QueryCollectionArgs, gqlTypes) {
 	const query = `{
     ${args.query}${getFilter(args.filter)} {
-      ${getCollectionQuery(args.collection, gqlTypes, args.depth)}
+      ${getCollectionQuery(args.collection, gqlTypes, { depth: args.depth })}
     }
   }
   `;
@@ -174,7 +185,6 @@ export function transformSchema(schema) {
 
 	const referenceField =
 		['name', 'title'].find((fieldName) => fields.find((field) => field.name === fieldName)) ?? 'id';
-
 
 	const result = {
 		...schema,

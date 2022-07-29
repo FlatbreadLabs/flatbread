@@ -7,18 +7,30 @@ schema:
   name: Author
   kind: OBJECT
   fields:
-    - {label: Name, name: name, disabled: false, component: string}
-    - {label: collection, name: _collection, description: The collection name, disabled: true, component: string}
-    - {label: filename, name: _filename, disabled: true, component: string}
-    - {label: path, name: _path, disabled: true, component: string}
-    - {label: slug, name: _slug, disabled: true, component: string}
-    - {label: Date joined, name: date_joined, disabled: false, component: date}
-    - {label: Entity, name: entity, disabled: false, component: string}
-    - {label: Id, name: id, disabled: true, component: string}
-    - {label: content, name: _content, disabled: true, component: object}
-    - {label: Enjoys, name: enjoys, disabled: false, component: list}
-    - {label: Friend, name: friend, description: The Author referenced by this Author, disabled: false, component: object}
-    - {label: Skills, name: skills, disabled: false, component: object}
+    - { label: Name, name: name, disabled: false, component: string }
+    - {
+        label: collection,
+        name: _collection,
+        description: The collection name,
+        disabled: true,
+        component: string
+      }
+    - { label: filename, name: _filename, hidden: true, disabled: true, component: string }
+    - { label: path, name: _path, disabled: true, component: string }
+    - { label: slug, name: _slug, disabled: true, component: string }
+    - { label: Date joined, name: date_joined, disabled: false, component: date }
+    - { label: Entity, name: entity, disabled: false, component: string }
+    - { label: Id, name: id, disabled: true, component: string }
+    - { label: content, hidden: true, name: _content, disabled: true, component: object }
+    - { label: Enjoys, name: enjoys, disabled: false, component: list }
+    - {
+        label: Friend,
+        name: friend,
+        description: The Author referenced by this Author,
+        disabled: false,
+        component: object
+      }
+    - { label: Skills, name: skills, disabled: false, component: object }
   referenceField: name
 meta:
   hash: AzBMdh85EQBjJKyBC4yODtR8loA=

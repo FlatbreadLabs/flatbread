@@ -32,8 +32,8 @@
 	import FieldComponent from '$lib/field-component.svelte';
 	import { get } from 'lodash-es';
 
-	export let querySchema;
-	export let record;
+	export let querySchema: any;
+	export let record: any;
 </script>
 
 <main class="container">

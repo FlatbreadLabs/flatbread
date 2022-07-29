@@ -18,7 +18,6 @@
 	const gqlCollection = gqlTypes.get(field.type.ofType?.name ?? field.type.name);
 
 	let collection = gqlCollection;
-	console.log({ field, collection, fieldComponents})
 </script>
 
 {#if !inList}<h5>{field.label}</h5>
@@ -26,7 +25,15 @@
 {/if}
 {#each collection.fields as field}
 	{#if !field.hidden}
-		<svelte:component this={fieldComponents[field.component] ?? fieldComponents['raw']} {field} value={value?.[field.name]} />
+		{#if field.component === 'object' && value?.[field.name]}
+			<svelte:self {field} value={value?.[field.name]} />
+		{:else}
+			<svelte:component
+				this={fieldComponents[field.component] ?? fieldComponents['raw']}
+				{field}
+				value={value?.[field.name]}
+			/>
+		{/if}
 	{/if}
 {/each}
 {#if !inList}

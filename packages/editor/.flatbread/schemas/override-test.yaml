@@ -7,19 +7,25 @@ schema:
   name: OverrideTest
   kind: OBJECT
   fields:
-    - {label: Title, name: title, disabled: false, component: string}
-    - {label: collection, name: _collection, description: The collection name, disabled: true, component: string}
-    - {label: filename, name: _filename, disabled: true, component: string}
-    - {label: path, name: _path, disabled: true, component: string}
-    - {label: slug, name: _slug, disabled: true, component: string}
-    - {label: Id, name: id, disabled: true, component: string}
-    - {label: content, name: _content, disabled: true, component: object}
-    - {label: Array, name: array, disabled: false, component: list}
-    - {label: Array2, name: array2, disabled: false, component: list}
-    - {label: Array3, name: array3, disabled: false, component: list}
-    - {label: Deeply, name: deeply, disabled: false, component: object}
-    - {label: Image, name: image, disabled: false, component: object}
-    - {label: Image2, name: image2, disabled: false, component: object}
+    - { label: Title, name: title, disabled: false, component: string }
+    - {
+        label: collection,
+        name: _collection,
+        description: The collection name,
+        disabled: true,
+        component: string
+      }
+    - { label: filename, name: _filename, disabled: true, component: string }
+    - { label: path, name: _path, disabled: true, component: string }
+    - { label: slug, name: _slug, disabled: true, component: string }
+    - { label: Id, name: id, disabled: true, component: string }
+    - { label: content, name: _content, disabled: true, component: object }
+    - { label: Array, name: array, disabled: false, component: list }
+    - { label: Array2, name: array2, disabled: false, component: list }
+    - { label: Array3, name: array3, disabled: false, component: list }
+    - { label: Deeply, name: deeply, disabled: false, component: object }
+    - { label: Image, name: image, disabled: false, component: object }
+    - { label: Image2, name: image2, disabled: false, component: object }
   referenceField: title
 meta:
   hash: AzBMdh85EQBjJKyBC4yODtR8loA=
