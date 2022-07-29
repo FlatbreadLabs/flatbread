@@ -1,0 +1,20 @@
+<script lang="ts">
+	import { getSession } from '$lib/api';
+
+	const { gqlTypes, queryTypes } = getSession();
+</script>
+
+<main class="container">
+	<h1>Welcome to Leaven</h1>
+	<ul>
+		{#each Array.from(queryTypes.values()) as collection}
+			<a sveltekit:prefetch href="/collection/{collection.name}">
+				<details>
+					<summary>
+						{collection.label}
+					</summary>
+				</details>
+			</a>
+		{/each}
+	</ul>
+</main>

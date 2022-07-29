@@ -1,0 +1,21 @@
+label: Posts
+name: allPosts
+description: Return a set of Posts
+disabled: false
+component: list
+schema:
+  name: Post
+  kind: OBJECT
+  fields:
+    - {label: Title, name: title, disabled: false, component: string}
+    - {label: collection, name: _collection, description: The collection name, disabled: true, component: string}
+    - {label: filename, name: _filename, disabled: true, component: string}
+    - {label: path, name: _path, disabled: true, component: string}
+    - {label: slug, name: _slug, disabled: true, component: string}
+    - {label: Id, name: id, disabled: true, component: string}
+    - {label: Rating, name: rating, disabled: false, component: float}
+    - {label: content, name: _content, disabled: true, component: object}
+    - {label: Authors, name: authors, description: All Authors that are referenced by this Post, disabled: false, component: list}
+  referenceField: title
+meta:
+  hash: AzBMdh85EQBjJKyBC4yODtR8loA=
