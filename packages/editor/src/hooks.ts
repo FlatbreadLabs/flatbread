@@ -1,5 +1,6 @@
-import { getGqlTypes, getNameFromLabel } from '$lib/api';
-import Config from './lib/config';
+import { getGqlTypes } from '$lib/api';
+import { getNameFromLabel } from '$lib/schema';
+import type { GqlQueryCollection, GqlSchema } from '$lib/types';
 
 /** @type {import('@sveltejs/kit').GetSession} */
 export function getSession(event) {
@@ -23,10 +24,11 @@ export async function handle({ event, resolve }) {
 	const { gqlTypes, queryListFields } = await getGqlTypes();
 
 	const queryTypesList = queryListFields
-		.map((field) => {
-			field.schema = gqlTypes.get(field.type.ofType.name);
-			field.label = getNameFromLabel(field.name);
-			return [field.name, field];
+		.map<[string, GqlQueryCollection]>((field) => {
+			const newField = field as GqlQueryCollection;
+			newField.schema = gqlTypes.get(newField?.type?.ofType?.name as string) as GqlSchema;
+			newField.label = getNameFromLabel(newField.name);
+			return [field.name, newField];
 		})
 		.sort((a, b) => a[1].schema.pluralName.localeCompare(b[1].schema.pluralName));
 

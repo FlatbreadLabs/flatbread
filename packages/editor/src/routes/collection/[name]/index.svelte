@@ -50,6 +50,7 @@
 		</tr>
 		{#each results as row}
 			<tr
+				class="record"
 				role="menuitem"
 				on:click={() => location.assign(`/collection/${querySchema.name}/${row.id}`)}
 			>
@@ -64,4 +65,9 @@
 </main>
 
 <style lang="scss">
+	.record {
+		:global(*) {
+			cursor: pointer;
+		}
+	}
 </style>

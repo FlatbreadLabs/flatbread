@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { getComponentType, sanitizeGlobImport } from '$lib/api';
+	import { sanitizeGlobImport } from '$lib/api';
+	import { getComponentType } from '$lib/schema';
 
 	const fieldComponents = Object.fromEntries(
 		Object.entries(import.meta.glob('./*.svelte', { eager: true })).map(sanitizeGlobImport)

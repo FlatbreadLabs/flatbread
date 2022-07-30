@@ -1,4 +1,4 @@
-interface GqlType {
+export interface GqlType {
 	kind: string;
 	name: string;
 }
@@ -11,6 +11,7 @@ export interface GqlField {
 
 export interface GqlSchema {
 	name: string;
+	pluralName: string;
 	description?: string;
 	kind: string;
 	fields: GqlField[];
@@ -24,4 +25,9 @@ export interface Field {
 	disabled?: boolean;
 	component: string;
 	collection?: string;
+}
+
+export interface GqlQueryCollection extends GqlField {
+	schema: GqlSchema;
+	label?: string;
 }

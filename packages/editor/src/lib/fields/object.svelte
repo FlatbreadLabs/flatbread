@@ -21,6 +21,9 @@
 	const gqlCollection = gqlTypes.get(field.type.ofType?.name ?? field.type.name);
 
 	let collection = gqlCollection;
+
+	const editableFields = collection.fields.filter((f) => !f.disabled);
+	const disabledFields = collection.fields.filter((f) => f.disabled);
 </script>
 
 <!-- <div class="divider" /> -->
@@ -31,7 +34,7 @@
 		</h4>
 		{#if !inList && field.description}<small>{field.description}</small>{/if}
 		<div class="content">
-			{#each collection.fields as field}
+			{#each editableFields as field}
 				{#if !field.hidden}
 					{#if field.component === 'object'}
 						<svelte:self {field} value={value?.[field.name]} />
@@ -44,9 +47,37 @@
 					{/if}
 				{/if}
 			{/each}
-			{#if !inList}
-				<!-- <div class="divider" /> -->
+			{#if disabledFields.length > 0}
+				<details>
+					<summary>Show disabled fields</summary>
+					<div>
+						{#each disabledFields as field}
+							{#if field.component === 'object'}
+								<svelte:self {field} value={value?.[field.name]} />
+							{:else}
+								<svelte:component
+									this={fieldComponents[field.component] ?? fieldComponents['raw']}
+									{field}
+									value={value?.[field.name]}
+								/>
+							{/if}
+						{/each}
+					</div>
+				</details>
 			{/if}
 		</div>
 	</div>
 {/if}
+
+<style lang="scss">
+	details {
+		:last-child {
+			display: none;
+		}
+	}
+	details[open] {
+		:last-child {
+			display: block;
+		}
+	}
+</style>
