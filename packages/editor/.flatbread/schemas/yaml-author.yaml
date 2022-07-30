@@ -1,35 +1,53 @@
-label: Authors (Yaml)
-name: allYamlAuthors
-description: Return a set of YamlAuthors
-disabled: false
-component: list
-schema:
-  name: YamlAuthor
-  kind: OBJECT
-  fields:
-    - { label: Name, name: name, disabled: false, component: string }
-    - {
-        label: collection,
-        name: _collection,
-        description: The collection name,
-        disabled: true,
-        component: string
-      }
-    - { label: filename, name: _filename, disabled: true, component: string }
-    - { label: path, name: _path, disabled: true, component: string }
-    - { label: slug, name: _slug, disabled: true, component: string }
-    - { label: Date joined, name: date_joined, disabled: false, component: date }
-    - { label: Id, name: id, disabled: true, component: string }
-    - { label: content, name: _content, disabled: true, component: object }
-    - { label: Enjoys, name: enjoys, disabled: false, component: list }
-    - {
-        label: Friend,
-        name: friend,
-        description: The YamlAuthor referenced by this YamlAuthor,
-        disabled: false,
-        component: object
-      }
-    - { label: Skills, name: skills, disabled: false, component: object }
-  referenceField: name
+name: YamlAuthor
+kind: OBJECT
+fields:
+  - label: Name
+    name: name
+    component: string
+  - label: Date joined
+    name: date_joined
+    component: date
+  - label: Enjoys
+    name: enjoys
+    component: list
+  - label: Friend
+    name: friend
+    description: The YamlAuthor referenced by this YamlAuthor
+    component: object
+    collection: YamlAuthor
+  - label: Skills
+    name: skills
+    component: object
+    collection: YamlAuthor_Skills
+  - label: Collection
+    name: _collection
+    description: The collection name
+    disabled: true
+    component: string
+  - label: Filename
+    name: _filename
+    disabled: true
+    component: string
+  - label: Path
+    name: _path
+    disabled: true
+    component: string
+  - label: Slug
+    name: _slug
+    disabled: true
+    component: string
+  - label: Id
+    name: id
+    disabled: true
+    component: string
+  - label: Content
+    name: _content
+    disabled: true
+    component: object
+    collection: YamlAuthor__content
+component: object
+label: Yaml Author
+pluralName: Authors (Yaml)
+referenceField: name
 meta:
-  hash: AzBMdh85EQBjJKyBC4yODtR8loA=
+  hash: g0Rr4CZt9guOrAgv0PrNOnIhjdg=

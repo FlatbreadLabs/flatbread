@@ -1,4 +1,4 @@
-import { getGqlTypes } from '$lib/api';
+import { getGqlTypes, getNameFromLabel } from '$lib/api';
 import Config from './lib/config';
 
 /** @type {import('@sveltejs/kit').GetSession} */
@@ -14,22 +14,23 @@ export async function handle({ event, resolve }) {
 		return new Response('custom response');
 	}
 
-	const gqlTypes = await getGqlTypes();
-	const queryTypes = new Map(
-		await Promise.all(
-			gqlTypes
-				.get('Query')
-				.fields.filter((field) => field.type.kind === 'LIST')
-				.map(async (field) => {
-					field.schema = gqlTypes.get(field.type.ofType.name);
-					field.label = field.name
-						.replace(/^all/, '')
-						.replace(/([A-Z])/g, ' $1')
-						.trim();
-					return [field.name, await Config.get(field.name, field)];
-				})
-		).then((collections) => collections.sort((a, b) => a[1].label.localeCompare(b[1].label)))
-	);
+	// TODO: figure out how to expose config for sub objects like Author_Skills
+	// maybe merge these types into the parent type under sub types?
+	// maybe transform all __schema.types into their own schema instead of targeting type Query
+
+	// transform gqlTypes first, then attach schemas
+
+	const { gqlTypes, queryListFields } = await getGqlTypes();
+
+	const queryTypesList = queryListFields
+		.map((field) => {
+			field.schema = gqlTypes.get(field.type.ofType.name);
+			field.label = getNameFromLabel(field.name);
+			return [field.name, field];
+		})
+		.sort((a, b) => a[1].schema.pluralName.localeCompare(b[1].schema.pluralName));
+
+	const queryTypes = new Map(queryTypesList);
 
 	gqlTypes.set('Query', queryTypes);
 

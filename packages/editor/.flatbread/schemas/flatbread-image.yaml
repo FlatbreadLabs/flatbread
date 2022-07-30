@@ -1,0 +1,14 @@
+name: FlatbreadImage
+kind: OBJECT
+fields:
+  - label: Alt
+    name: alt
+    component: string
+  - label: Src
+    name: src
+    component: string
+component: object
+label: Flatbread Image
+referenceField: id
+meta:
+  hash: EpGAkm9XU4WWm8xiJts2g8EEFLw=

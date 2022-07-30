@@ -2,7 +2,6 @@
 	import { getSession } from '$lib/api';
 
 	const { gqlTypes, queryTypes } = getSession();
-
 </script>
 
 <main class="container">

@@ -1,0 +1,23 @@
+name: Author_Skills
+kind: OBJECT
+fields:
+  - label: Breathing
+    name: breathing
+    component: float
+  - label: Existence
+    name: existence
+    component: string
+  - label: Liquid consumption
+    name: liquid_consumption
+    component: float
+  - label: Sitting
+    name: sitting
+    component: float
+  - label: Sports
+    name: sports
+    component: float
+component: object
+label: Author_ Skills
+referenceField: id
+meta:
+  hash: Le/pUcMNDHHL/Kr+Bl3AvMJcKjc=

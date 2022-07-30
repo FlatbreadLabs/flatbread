@@ -1,0 +1,26 @@
+name: YamlAuthor_Skills
+kind: OBJECT
+fields:
+  - label: Breathing
+    name: breathing
+    component: float
+  - label: Cat pat
+    name: cat_pat
+    component: float
+  - label: Existence
+    name: existence
+    component: string
+  - label: Liquid consumption
+    name: liquid_consumption
+    component: float
+  - label: Sitting
+    name: sitting
+    component: float
+  - label: Sports
+    name: sports
+    component: float
+component: object
+label: Yaml Author_ Skills
+referenceField: id
+meta:
+  hash: EraBF4GYQg2wjaeu4MEoihjMDtU=

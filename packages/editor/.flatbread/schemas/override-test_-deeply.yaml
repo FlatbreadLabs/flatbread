@@ -1,0 +1,11 @@
+name: OverrideTest_Deeply
+kind: OBJECT
+fields:
+  - label: Nested
+    name: nested
+    component: string
+component: object
+label: Override Test_ Deeply
+referenceField: id
+meta:
+  hash: 8olmxrqF+7RQ4+snnCEexrAIduc=

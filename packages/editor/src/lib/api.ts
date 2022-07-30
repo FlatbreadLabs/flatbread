@@ -1,7 +1,9 @@
 import { getStores } from '$app/stores';
-import { capitalize } from 'lodash-es';
+import { capitalize, keyBy } from 'lodash-es';
 import { get } from 'svelte/store';
 import wretch from 'wretch';
+import type { Field, GqlField, GqlSchema } from '$lib/types';
+import Config from './config';
 
 const api = wretch().url('http://localhost:5057/graphql');
 
@@ -84,15 +86,32 @@ export async function getGqlTypes() {
 		})
 		.json();
 
-	const types = result.data.__schema.types;
-	return new Map(types.map((t) => [t.name, transformSchema(t)]));
+	const types: GqlSchema[] = result.data.__schema.types;
+	const queryListFields = (types.find((t) => t.name === 'Query') as GqlSchema).fields.filter(
+		(t) => t.type.kind === 'LIST'
+	);
+	const querySchema = keyBy(queryListFields, 'type.ofType.name');
+
+	console.log(querySchema);
+
+	const gqlTypes = await Promise.all(
+		types.map(async (t) => {
+			const shouldConfig = !t.name.startsWith('__') && t.kind === 'OBJECT';
+			const schema = transformSchema(t, querySchema);
+			return [t.name, shouldConfig ? await Config.get(t.name, schema) : schema];
+		})
+	);
+
+	return {
+		gqlTypes: new Map(gqlTypes),
+		queryListFields
+	};
 }
 
 interface GetCollectionQueryArgs {
-	visits: number;
-	visited: Record<string, number>;
-	depth: number;
-	preventCycles: boolean;
+	visits?: number;
+	visited?: Record<string, number>;
+	depth?: number;
 }
 
 function getCollectionQuery(
@@ -101,6 +120,8 @@ function getCollectionQuery(
 	{ visits = 2, depth = Infinity, visited = {} }: GetCollectionQueryArgs
 ) {
 	const collection = gqlTypes.get(collectionName);
+
+	console.log({ collection, collectionName });
 
 	return collection.fields
 		.map((field) => {
@@ -124,21 +145,20 @@ function getFilter(filter: any) {
 	return `(filter: ${filter})`;
 }
 
-interface QueryCollectionArgs {
+interface QueryCollectionArgs extends GetCollectionQueryArgs {
 	query: string;
 	collection: string;
-	depth?: number;
 	filter?: any;
 }
 
 export async function queryCollection(args: QueryCollectionArgs, gqlTypes) {
+	const { collection, filter, ...rest } = args;
 	const query = `{
     ${args.query}${getFilter(args.filter)} {
-      ${getCollectionQuery(args.collection, gqlTypes, { depth: args.depth })}
+      ${getCollectionQuery(args.collection, gqlTypes, rest)}
     }
   }
   `;
-
 	const results = await api.post({ query }).json();
 	return results.data[args.query];
 }
@@ -147,6 +167,14 @@ export function getComponentType(type) {
 	const { kind, name } = type;
 	if (kind === 'SCALAR') return name.toLowerCase();
 	return kind.toLowerCase();
+}
+
+export function getNameFromLabel(label?: string) {
+	if (!label) return undefined;
+	return label
+		.replace(/^all/, '')
+		.replace(/([A-Z])/g, ' $1')
+		.trim();
 }
 
 // sort specific fields higher than the rest, in order
@@ -159,22 +187,23 @@ function weightedSort(a: string, b: string) {
 	return fieldSortWeights.length - aw - (fieldSortWeights.length - bw);
 }
 
-export function transformSchema(schema) {
-	const fields =
+export function transformSchema(schema: GqlSchema, querySchemaFieldMap: Record<string, GqlField>) {
+	const fields: Field[] =
 		schema.fields
-			?.map((field) => {
+			?.map((field: GqlField) => {
 				return {
-					label: capitalize(field.name.replace(/_+/g, ' ')).trim(),
+					label: capitalize(field.name.replace(/_+/g, ' ').trim()),
 					name: field.name,
 					description: field.description,
 					type: field.type,
 					disabled: field.name.startsWith('_') || field.name === 'id',
-					component: getComponentType(field.type)
+					component: getComponentType(field.type),
+					collection: field.type.kind === 'OBJECT' ? field.type.name : undefined
 				};
 			})
-			.sort((a, b) => {
-				if (a.readOnly && !b.readOnly) return 1;
-				if (!a.readOnly && b.readOnly) return -1;
+			.sort((a: Field, b: Field) => {
+				if (a.disabled && !b.disabled) return 1;
+				if (!a.disabled && b.disabled) return -1;
 				if (a.type.kind !== 'SCALAR' && b.type.kind === 'SCALAR') return 1;
 				if (a.type.kind === 'SCALAR' && b.type.kind !== 'SCALAR') return -1;
 
@@ -188,6 +217,9 @@ export function transformSchema(schema) {
 
 	const result = {
 		...schema,
+		component: schema.kind.toLowerCase(),
+		label: getNameFromLabel(schema.name),
+		pluralName: getNameFromLabel(querySchemaFieldMap[schema.name]?.name),
 		referenceField,
 		fields
 	};

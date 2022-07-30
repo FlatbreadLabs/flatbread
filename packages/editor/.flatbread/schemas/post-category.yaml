@@ -1,35 +1,51 @@
-label: Post Categories
-name: allPostCategories
-description: Return a set of PostCategories
-disabled: false
-component: list
-schema:
-  name: PostCategory
-  kind: OBJECT
-  fields:
-    - { label: Title, name: title, disabled: false, component: string }
-    - {
-        label: collection,
-        name: _collection,
-        description: The collection name,
-        disabled: true,
-        component: string
-      }
-    - { label: filename, name: _filename, disabled: true, component: string }
-    - { label: path, name: _path, disabled: true, component: string }
-    - { label: slug, name: _slug, disabled: true, component: string }
-    - { label: Category, name: category, disabled: false, component: string }
-    - { label: Id, name: id, disabled: true, component: string }
-    - { label: Rating, name: rating, disabled: false, component: float }
-    - { label: Slug, name: slug, disabled: false, component: string }
-    - { label: content, name: _content, disabled: true, component: object }
-    - {
-        label: Authors,
-        name: authors,
-        description: All Authors that are referenced by this PostCategory,
-        disabled: false,
-        component: list
-      }
-  referenceField: title
+name: PostCategory
+kind: OBJECT
+fields:
+  - label: Title
+    name: title
+    component: string
+  - label: Category
+    name: category
+    component: string
+  - label: Rating
+    name: rating
+    component: float
+  - label: Slug
+    name: slug
+    component: string
+  - label: Authors
+    name: authors
+    description: All Authors that are referenced by this PostCategory
+    component: list
+  - label: Collection
+    name: _collection
+    description: The collection name
+    disabled: true
+    component: string
+  - label: Filename
+    name: _filename
+    disabled: true
+    component: string
+  - label: Path
+    name: _path
+    disabled: true
+    component: string
+  - label: Slug
+    name: _slug
+    disabled: true
+    component: string
+  - label: Id
+    name: id
+    disabled: true
+    component: string
+  - label: Content
+    name: _content
+    disabled: true
+    component: object
+    collection: PostCategory__content
+component: object
+label: Post Category
+pluralName: Post Categories
+referenceField: title
 meta:
-  hash: AzBMdh85EQBjJKyBC4yODtR8loA=
+  hash: tTodpqF2LjHylcNi24dgcAEUBU8=
