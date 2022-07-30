@@ -1,4 +1,4 @@
-export * from '@flatbread/config';
+export { default as defineConfig, loadConfig } from '@flatbread/config';
 export * from '@flatbread/core';
 
 export * from '@flatbread/source-filesystem';
