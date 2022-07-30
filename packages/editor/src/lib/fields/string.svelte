@@ -12,4 +12,5 @@
 	{:else}
 		<input type="string" disabled={field.disabled} bind:value />
 	{/if}
+	{#if field.description}<small>{field.description}</small>{/if}
 </label>

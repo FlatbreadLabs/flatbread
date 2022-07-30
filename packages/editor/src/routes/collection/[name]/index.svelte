@@ -4,6 +4,7 @@
 	export async function load({ params, url, session }) {
 		const { gqlTypes, queryTypes } = session;
 		const querySchema = queryTypes.get(params.name);
+		console.log({ queryTypes, params, querySchema})
 		const collection = querySchema.schema;
 		const results = await queryCollection(
 			{ query: params.name, collection: collection.name },

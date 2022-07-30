@@ -2,6 +2,7 @@
 	import { getSession } from '$lib/api';
 
 	const { gqlTypes, queryTypes } = getSession();
+
 </script>
 
 <main class="container">
@@ -11,7 +12,7 @@
 			<a sveltekit:prefetch href="/collection/{collection.name}">
 				<details>
 					<summary>
-						{collection.label}
+						{collection.schema.pluralName}
 					</summary>
 				</details>
 			</a>

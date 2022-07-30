@@ -12,25 +12,14 @@
 	const component = fieldComponents[getComponentType(field.type.ofType)];
 </script>
 
-<h5>
-	{field.label}
-</h5>
-<div class="divider" />
-<div class="collection">
-	{#each items as value}
-		<div class="item">
-			<svelte:component this={component} inList {field} {value} />
-		</div>
-	{/each}
+<div data-field="list">
+	<h4 style="margin-bottom:0;">{field.label}</h4>
+	{#if field.description}<small>{field.description}</small>{/if}
+	<div class="content">
+		{#each items as value}
+			<div class="item">
+				<svelte:component this={component} inList {field} {value} />
+			</div>
+		{/each}
+	</div>
 </div>
-<div class="divider" />
-
-<style lang="scss">
-	.collection {
-		/* display: grid; */
-		/* display: flex; */
-		/* flex-wrap: wrap; */
-		/* grid-template-columns: 1fr 1fr; */
-		/* gap: 1rem; */
-	}
-</style>

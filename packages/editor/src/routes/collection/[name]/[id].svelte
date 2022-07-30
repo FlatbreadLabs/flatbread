@@ -11,7 +11,7 @@
 				query: queryName,
 				collection: querySchema.schema.name,
 				filter: `{ id: { eq: "${params.id}" } }`,
-				depth: Infinity
+				visits: 2
 			},
 			gqlTypes
 		);
@@ -47,7 +47,7 @@
 			]}
 		/>
 	</nav>
-
+	<h1>Edit {querySchema.schema.label}</h1>
 	<form>
 		{#each querySchema.schema.fields as field}
 			<FieldComponent {field} value={record[field.name]} />

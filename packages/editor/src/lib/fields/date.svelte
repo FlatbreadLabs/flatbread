@@ -11,4 +11,5 @@
 		{value?.split('T')?.[0] ?? value}
 	{:else}<input type="date" disabled={field.disabled} value={value?.split('T')?.[0] ?? value} />
 	{/if}
+	{#if field.description}<small>{field.description}</small>{/if}
 </label>

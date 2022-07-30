@@ -30,6 +30,32 @@
 			padding: 1.75rem 0;
 		}
 
+		[data-field='object'],
+		[data-field='list'] {
+			margin-bottom: var(--spacing);
+			padding: var(--form-element-spacing-vertical) 0;
+
+			.content {
+				margin: calc(var(--form-element-spacing-vertical)) 0;
+				padding-left: 1rem;
+				border-left: var(--border-width) solid var(--form-element-border-color);
+			}
+		}
+
+		h1,
+		h2,
+		h3,
+		h4,
+		h5,
+		h6 {
+			+ small {
+				display: block;
+				width: 100%;
+				margin-bottom: var(--spacing);
+				color: var(--muted-color);
+			}
+		}
+
 		/* Cyan Light scheme (Default) */
 		/* Can be forced with data-theme="light" */
 		[data-theme='light'],
