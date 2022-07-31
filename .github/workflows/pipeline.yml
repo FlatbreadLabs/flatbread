@@ -4,15 +4,13 @@ on:
   - push
 
 jobs:
-  build:
+  install-deps:
     runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
         node-version: [16.x]
         os: [ubuntu-latest]
       fail-fast: false
-
     steps:
       - uses: actions/checkout@v3
 
@@ -34,13 +32,41 @@ jobs:
         run: |
           echo "FLATBREAD_CI=true" >> $GITHUB_ENV
 
-      - run: pnpm i
+      - run: pnpm i --frozen-lockfile
+
+  flatbread-build:
+    runs-on: ${{ matrix.os }}
+    needs: install-deps
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+        os: [ubuntu-latest]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Get built packages dist paths
+        id: get-built-packages-dist-paths
+        run: |
+          echo "::set-output name=paths::$(find packages -name dist)"
+        shell: bash
+
+      - name: Use Flatbread packages build cache
+        uses: actions/cache@v3
+        id: cache-built-packages
+        with:
+          path: ${{ steps.get-built-packages-dist-paths.outputs.paths }}
+          key: ${{ runner.os }}-${{ hashFiles('packages/**') }}
 
       - name: Build
+        if: steps.cache-built-packages.outputs.cache-hit != 'true'
         run: pnpm build
 
   lint:
     runs-on: ${{ matrix.os }}
+    needs: install-deps
 
     strategy:
       matrix:
@@ -50,32 +76,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2.2.2
-        with:
-          version: ^7.3.0
-          run_install: false
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          registry-url: https://registry.npmjs.org/
-          cache: 'pnpm'
-
-      - name: Set an escape hatch exclusive to this monorepo
-        id: escape_hatch
-        run: |
-          echo "FLATBREAD_CI=true" >> $GITHUB_ENV
-
-      - run: pnpm i
 
       - name: Lint
         run: pnpm lint
 
   test:
     runs-on: ${{ matrix.os }}
+    needs: [install-deps, flatbread-build]
 
     strategy:
       matrix:
@@ -85,29 +92,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2.2.2
-        with:
-          version: ^7.3.0
-          run_install: false
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          registry-url: https://registry.npmjs.org/
-          cache: 'pnpm'
-
-      - name: Set an escape hatch exclusive to this monorepo
-        id: escape_hatch
-        run: |
-          echo "FLATBREAD_CI=true" >> $GITHUB_ENV
-
-      - run: pnpm i
-
-      - name: Build
-        run: pnpm build
 
       - name: Test
         run: pnpm test
