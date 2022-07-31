@@ -49,6 +49,7 @@ export default defineConfig({
           inputDir: 'static/authorImages',
           outputDir: 'static/g',
           publicPath: '/g',
+          skipPlaceholder: true,
         }),
       ],
     },

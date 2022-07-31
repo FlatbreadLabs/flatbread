@@ -27,7 +27,6 @@
               srcset
               srcsetwebp
               srcsetavif
-              placeholder
               aspectratio
             }
             friend {
@@ -99,9 +98,7 @@
 
 <div class="grid grid-cols-2 divide-x-2 divide-black">
   <Pane label="JSON Output">
-    <pre
-      class="overflow-auto p-3"
-      style="height: calc(100vh - 3.5rem);">
+    <pre class="overflow-auto p-3" style="height: calc(100vh - 3.5rem);">
       <code class="text-sm">
         {JSON.stringify(data, null, 2)}
       </code>
