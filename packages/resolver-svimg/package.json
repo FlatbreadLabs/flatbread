@@ -38,9 +38,9 @@
     "svimg": "^2.0.0"
   },
   "devDependencies": {
-    "svimg": "^2.0.0",
     "@flatbread/core": "workspace:*",
     "@types/node": "^16.11.42",
+    "svimg": "^3.0.0",
     "tsup": "^6.1.2",
     "typescript": "^4.7.4"
   }

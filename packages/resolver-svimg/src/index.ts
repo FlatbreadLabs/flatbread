@@ -4,6 +4,15 @@ const queue = new Queue();
 
 type Config = Parameters<typeof generateComponentAttributes>[0];
 
+const SVIMG_TYPE = `
+type Svimg {
+  srcset: String
+  srcsetwebp: String
+  srcsetavif: String
+  placeholder: String
+  aspectratio: Float
+}`;
+
 /**
  *
  * @param field the field to override
@@ -13,7 +22,7 @@ type Config = Parameters<typeof generateComponentAttributes>[0];
 export function createSvImgField(field: string, config: Omit<Config, 'src'>) {
   return {
     field,
-    type: 'JSON',
+    type: SVIMG_TYPE,
     resolve(src: string) {
       if (!src) return null;
       return generateComponentAttributes({ queue, ...config, src });

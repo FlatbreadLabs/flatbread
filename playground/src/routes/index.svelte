@@ -23,7 +23,13 @@
             name
             entity
             enjoys
-            image
+            image {
+              srcset
+              srcsetwebp
+              srcsetavif
+              placeholder
+              aspectratio
+            }
             friend {
               name
               date_joined
