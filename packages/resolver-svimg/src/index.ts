@@ -16,7 +16,8 @@ type Svimg {
 /**
  *
  * @param field the field to override
- * @param config
+ * @param config GenerateComponentAttributesOptions from svimg
+ * @see https://github.com/xiphux/svimg/blob/master/src/component/generate-component-attributes.ts#L10
  * @returns
  */
 export function createSvImgField(field: string, config: Omit<Config, 'src'>) {
