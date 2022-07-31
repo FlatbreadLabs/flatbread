@@ -1,7 +1,9 @@
 <script lang="ts" context="module">
 	export async function load({ params, url, session }) {
-		const { gqlTypes, queryTypes } = session;
+		const { gqlTypes, queryTypes } = session as Session;
 		const querySchema = queryTypes.get(params.name);
+
+		if (!querySchema) throw new Error(`Unable to find schema for ${params.name}`);
 
 		const collection = querySchema.schema;
 
@@ -17,9 +19,10 @@
 <script lang="ts">
 	import Breadcrumbs from '$lib/breadcrumbs.svelte';
 	import FieldComponent from '$lib/field-component.svelte';
+	import type { QueryCollection, Schema, Session } from '$lib/types';
 
-	export let collection;
-	export let querySchema;
+	export let collection: Schema;
+	export let querySchema: QueryCollection;
 </script>
 
 <main class="container">

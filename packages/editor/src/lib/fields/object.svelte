@@ -1,13 +1,16 @@
 <script lang="ts">
-	import { getSession } from '$lib/api';
+	import { isField, type Field, type GqlSchema } from '$lib/types';
+
+	import { getSession } from '$lib/utils';
 	import { get } from 'lodash-es';
 
 	const { gqlTypes, queryTypes } = getSession();
 
 	// export let
 	export let value;
-	export let field;
+	export let field: Field | GqlSchema;
 	export let inList = false;
+	export let isRoot = false;
 
 	const fieldComponents = Object.fromEntries(
 		Object.entries(import.meta.glob('./*.svelte', { eager: true })).map(([key, value]) => [
@@ -17,10 +20,11 @@
 	);
 
 	// TODO: hide read only fields by default in an accordian and have a show more button at the bottom
+	let gqlTypeName = isField(field) ? field?.type?.ofType?.name ?? field?.type?.name : field.name;
 
-	const gqlCollection = gqlTypes.get(field.type.ofType?.name ?? field.type.name);
+	export let collection = gqlTypes.get(gqlTypeName);
 
-	let collection = gqlCollection;
+	if (!collection) throw new Error(`Unable to load schema for type ${gqlTypeName}`);
 
 	const editableFields = collection.fields.filter((f) => !f.disabled);
 	const disabledFields = collection.fields.filter((f) => f.disabled);
@@ -28,9 +32,15 @@
 
 <!-- <div class="divider" /> -->
 {#if value}
-	<div data-field="object">
+	<div data-field="object" data-root={isRoot}>
 		<h4 style="margin-bottom: 0;">
-			{#if !inList}{field.label}{:else}{get(value, collection.referenceField)}{/if}
+			{#if !isRoot}
+				{#if !inList}
+					{field?.label}
+				{:else}
+					{get(value, collection.referenceField)}
+				{/if}
+			{/if}
 		</h4>
 		{#if !inList && field.description}<small>{field.description}</small>{/if}
 		<div class="content">

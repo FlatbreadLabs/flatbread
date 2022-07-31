@@ -1,10 +1,13 @@
 <script lang="ts" context="module">
 	import { queryCollection } from '$lib/api';
 
+	/** @type {import('@sveltejs/kit').Load} */
 	export async function load({ params, url, session }) {
-		const { gqlTypes, queryTypes } = session;
+		const { gqlTypes, queryTypes } = session as Session;
 		const queryName = params.name;
 		const querySchema = queryTypes.get(queryName);
+
+		if (!querySchema) throw new Error(`Failed to load schema for ${queryName}`);
 
 		const results = await queryCollection(
 			{
@@ -29,7 +32,8 @@
 
 <script lang="ts">
 	import Breadcrumbs from '$lib/breadcrumbs.svelte';
-	import FieldComponent from '$lib/field-component.svelte';
+	import ObjectComponent from '$lib/fields/object.svelte';
+	import type { Session } from '$lib/types';
 	import { get } from 'lodash-es';
 
 	export let querySchema: any;
@@ -49,8 +53,6 @@
 	</nav>
 	<h1>Edit {querySchema.schema.label}</h1>
 	<form>
-		{#each querySchema.schema.fields as field}
-			<FieldComponent {field} value={record[field.name]} />
-		{/each}
+		<ObjectComponent isRoot field={querySchema.schema} value={record} />
 	</form>
 </main>

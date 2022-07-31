@@ -1,16 +1,10 @@
-import { getStores } from '$app/stores';
-import type { GqlSchema } from '$lib/types';
+import type { GqlSchema, Schema } from '$lib/types';
 import { keyBy } from 'lodash-es';
-import { get } from 'svelte/store';
 import wretch from 'wretch';
 import Config from './config';
 import { transformSchema } from './schema';
 
 const api = wretch().url('http://localhost:5057/graphql');
-
-export function getSession() {
-	return get(getStores().session);
-}
 
 export async function getSchema() {
 	const schema = await api
@@ -92,7 +86,7 @@ export async function getGqlTypes() {
 	const querySchema = keyBy(queryListFields, 'type.ofType.name');
 
 	const gqlTypes = await Promise.all(
-		types.map<Promise<[string, GqlSchema]>>(async (t) => {
+		types.map<Promise<[string, Schema]>>(async (t) => {
 			const shouldConfig = !t.name.startsWith('__') && t.kind === 'OBJECT';
 			const schema = transformSchema(t, querySchema);
 			return [t.name, shouldConfig ? await Config.get(t.name, schema) : schema];
@@ -118,8 +112,6 @@ function getCollectionQuery(
 ): string {
 	const collection = gqlTypes.get(collectionName);
 
-	console.log({ collection, collectionName });
-
 	return (
 		collection?.fields
 			.map((field) => {
@@ -137,10 +129,6 @@ function getCollectionQuery(
 			})
 			.join(' ') ?? ''
 	);
-}
-
-export function sanitizeGlobImport([key, value]: [string, any]) {
-	return [key.replace(/^.*\//, '').replace(/\..*$/, ''), value.default];
 }
 
 function getFilter(filter: any) {

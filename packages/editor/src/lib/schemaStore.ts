@@ -1,4 +1,3 @@
-import { get, set } from 'lodash-es';
 import { writable } from 'svelte/store';
 
 export const gqlTypesStore = writable(new Map());

@@ -47,7 +47,7 @@ fields:
     collection: YamlAuthor__content
 component: object
 label: Yaml Author
-pluralName: Authors (Yaml)
+pluralName: Yaml Authors
 referenceField: name
 meta:
-  hash: g0Rr4CZt9guOrAgv0PrNOnIhjdg=
+  hash: M2rEU7eSlHf6OKNjxsTJlgZDg8M=

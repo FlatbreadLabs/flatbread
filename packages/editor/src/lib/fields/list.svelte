@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { sanitizeGlobImport } from '$lib/api';
+	import { sanitizeGlobImport } from '$lib/utils';
 	import { getComponentType } from '$lib/schema';
 
 	const fieldComponents = Object.fromEntries(

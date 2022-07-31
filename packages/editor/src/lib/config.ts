@@ -3,11 +3,12 @@ import { isArray, isEqual, keyBy, merge, mergeWith } from 'lodash-es';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { GqlSchema } from './types';
+import type { GqlSchema, Schema } from './types';
 
 function replacer(key, value) {
 	if (key === 'type') return undefined;
 	if (value === null) return undefined;
+	if (value === '') return undefined;
 	if (key === 'disabled' && value === false) return undefined;
 	return value;
 }
@@ -35,7 +36,7 @@ export default class Config {
 		}
 	}
 
-	static async get(collectionName: string, schema: GqlSchema) {
+	static async get(collectionName: string, schema: Schema) {
 		let existing;
 		let filePath = this.getPath(schema);
 

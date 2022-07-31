@@ -1,5 +1,5 @@
 import { capitalize } from 'lodash-es';
-import type { Field, GqlField, GqlSchema, GqlType } from './types';
+import type { Field, GqlField, GqlSchema, GqlType, Schema } from './types';
 
 export function getComponentType(type: GqlType) {
 	const { kind, name } = type;
@@ -8,7 +8,7 @@ export function getComponentType(type: GqlType) {
 }
 
 export function getNameFromLabel(label?: string) {
-	if (!label) return undefined;
+	if (!label) return '';
 	return label
 		.replace(/^all/, '')
 		.replace(/([A-Z])/g, ' $1')
@@ -28,7 +28,7 @@ function weightedSort(a: string, b: string) {
 export function transformSchema(schema: GqlSchema, querySchemaFieldMap: Record<string, GqlField>) {
 	const fields: Field[] =
 		schema.fields
-			?.map((field: GqlField) => {
+			?.map((field: GqlField): Field => {
 				return {
 					label: capitalize(field.name.replace(/_+/g, ' ').trim()),
 					name: field.name,
@@ -53,7 +53,7 @@ export function transformSchema(schema: GqlSchema, querySchemaFieldMap: Record<s
 	const referenceField =
 		['name', 'title'].find((fieldName) => fields.find((field) => field.name === fieldName)) ?? 'id';
 
-	const result = {
+	const result: Schema = {
 		...schema,
 		component: schema.kind.toLowerCase(),
 		label: getNameFromLabel(schema.name),

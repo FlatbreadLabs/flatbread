@@ -35,7 +35,7 @@
 			margin-bottom: var(--spacing);
 			padding: var(--form-element-spacing-vertical) 0;
 
-			.content {
+			&:not([data-root='true']) .content {
 				margin: calc(var(--form-element-spacing-vertical)) 0;
 				padding-left: 1rem;
 				border-left: var(--border-width) solid var(--form-element-border-color);

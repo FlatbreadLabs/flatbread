@@ -1,11 +1,11 @@
 <script lang="ts" context="module">
 	import { queryCollection } from '$lib/api';
 
+	/** @type {import('./__types/[name]').Load} */
 	export async function load({ params, url, session }) {
 		const { gqlTypes, queryTypes } = session;
 		const querySchema = queryTypes.get(params.name);
-		console.log({ queryTypes, params, querySchema });
-		const collection = querySchema.schema;
+		const collection = querySchema?.schema;
 		const results = await queryCollection(
 			{ query: params.name, collection: collection.name },
 			gqlTypes
@@ -24,10 +24,11 @@
 <script lang="ts">
 	import Breadcrumbs from '$lib/breadcrumbs.svelte';
 	import FieldComponent from '$lib/field-component.svelte';
+	import type { QueryCollection, Schema } from '$lib/types';
 
-	export let collection;
+	export let collection: Schema;
 	export let results: any[];
-	export let querySchema;
+	export let querySchema: QueryCollection;
 
 	const visibleFields = collection.fields.filter(
 		(field) => field.type.kind === 'SCALAR' && !field.name.startsWith('_') && field.name !== 'id'
