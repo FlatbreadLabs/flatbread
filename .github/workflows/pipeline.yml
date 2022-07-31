@@ -112,7 +112,7 @@ jobs:
       - name: Test
         run: pnpm test
 
-  integration-build:
+  integration-sveltekit:
     runs-on: ${{ matrix.os }}
 
     strategy:
