@@ -51,6 +51,7 @@
   },
   "type": "module",
   "dependencies": {
-    "svimg": "^2.0.0"
+    "svimg": "^2.0.0",
+    "vite": "^3.0.3"
   }
 }
