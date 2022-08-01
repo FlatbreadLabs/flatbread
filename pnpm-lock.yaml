@@ -274,7 +274,7 @@ importers:
       flatbread: workspace:*
       graphql: 16.5.0
       graphql-helix: 1.9.1
-      prettier: 2.4.1
+      prettier: 2.7.1
       prettier-plugin-svelte: 2.4.0
       svelte: 3.49.0
       svelte-check: 2.8.0
@@ -299,8 +299,8 @@ importers:
       flatbread: link:../packages/flatbread
       graphql: 16.5.0
       graphql-helix: 1.9.1_graphql@16.5.0
-      prettier: 2.4.1
-      prettier-plugin-svelte: 2.4.0_dpyndeqetnmyd5fsphheurz2km
+      prettier: 2.7.1
+      prettier-plugin-svelte: 2.4.0_o3ioganyptcsrh6x4hnxvjkpqi
       svelte: 3.49.0
       svelte-check: 2.8.0_nxvsp6sjiltnatqa6jdm4mr6zu
       svelte-preprocess: 4.10.7_bgntxiihuqhg5mwaa7nczjwpga
@@ -6488,20 +6488,14 @@ packages:
     engines: {node: '>= 0.8.0'}
     dev: true
 
-  /prettier-plugin-svelte/2.4.0_dpyndeqetnmyd5fsphheurz2km:
+  /prettier-plugin-svelte/2.4.0_o3ioganyptcsrh6x4hnxvjkpqi:
     resolution: {integrity: sha512-JwJ9bOz4XHLQtiLnX4mTSSDUdhu12WH8sTwy/XTDCSyPlah6IcV7NWeYBZscPEcceu2YnW8Y9sJCP40Z2UH9GA==}
     peerDependencies:
       prettier: ^1.16.4 || ^2.0.0
       svelte: ^3.2.0
     dependencies:
-      prettier: 2.4.1
+      prettier: 2.7.1
       svelte: 3.49.0
-    dev: true
-
-  /prettier/2.4.1:
-    resolution: {integrity: sha512-9fbDAXSBcc6Bs1mZrDYb3XKzDLm4EXXL9sC1LqKP5rZkT6KRr/rf9amVUcODVXgguK/isJz0d0hP72WeaKWsvA==}
-    engines: {node: '>=10.13.0'}
-    hasBin: true
     dev: true
 
   /prettier/2.7.1:
