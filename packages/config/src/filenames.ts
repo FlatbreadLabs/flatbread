@@ -11,4 +11,4 @@ export const FLATBREAD_CONFIG_FILE_NAMES: ConfigFileName[] = [
   'flatbread.config.cts',
 ];
 
-export const FLATBREAD_CONFIG_FILE_REGEX = /flatbread\.config\.[mc]?[jt]s$/;
+export const FLATBREAD_CONFIG_FILE_REGEX = /^flatbread\.config\.[mc]?[jt]s$/;
