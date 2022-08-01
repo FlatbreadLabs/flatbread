@@ -33,6 +33,7 @@
     "graphql-compose": "9.0.8",
     "graphql-compose-json": "6.2.0",
     "lodash-es": "4.17.21",
+    "lru-cache": "7.13.1",
     "matcher": "5.0.0",
     "plur": "5.1.0"
   },

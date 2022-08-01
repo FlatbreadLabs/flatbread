@@ -9,7 +9,7 @@ import {
   generateArgsForSingleItemQuery,
 } from '../generators/arguments';
 import resolveQueryArgs from '../resolvers/arguments';
-import { cacheSchema } from '../cache/cache';
+import { cacheSchema, checkCacheForSchema } from '../cache/cache';
 import {
   ConfigResult,
   EntryNode,
@@ -35,6 +35,13 @@ export async function generateSchema(
   const { config } = configResult;
   if (!config) {
     throw new Error('Config is not defined');
+  }
+
+  // Let's see if we have a cached version of the schema. If so, short-circuit and return it.
+  const cachedSchema = checkCacheForSchema(config);
+
+  if (cachedSchema) {
+    return cachedSchema;
   }
 
   // Invoke initialize function if it exists and provide loaded config
@@ -211,7 +218,7 @@ export async function generateSchema(
 
   const schema = schemaComposer.buildSchema();
 
-  cacheSchema(schema);
+  cacheSchema(config, schema);
 
   return schema;
 }

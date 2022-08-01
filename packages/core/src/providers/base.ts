@@ -1,10 +1,8 @@
 import { generateSchema } from '../generators/schema';
-import { cache } from '../cache/cache';
 import { FlatbreadConfig } from '../types';
 import { initializeConfig } from '../utils/initializeConfig';
 
 import { graphql, GraphQLArgs, GraphQLSchema } from 'graphql';
-import { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue';
 
 /**
  * **Flatbread Provider**
@@ -12,12 +10,11 @@ import { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue';
  * Create a new Flatbread provider which contains a GraphQL `query` function that's baked with a Flatbread config
  */
 export class FlatbreadProvider {
-  private schemaPromise: PromiseOrValue<GraphQLSchema>;
+  private schemaPromise: Promise<GraphQLSchema>;
 
   constructor(config: FlatbreadConfig) {
     const initializedConfig = initializeConfig(config);
-    this.schemaPromise =
-      cache.schema ?? generateSchema({ config: initializedConfig });
+    this.schemaPromise = generateSchema({ config: initializedConfig });
   }
 
   /**
