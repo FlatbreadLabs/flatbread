@@ -156,15 +156,15 @@ importers:
   packages/resolver-svimg:
     specifiers:
       '@flatbread/core': workspace:*
-      '@types/node': ^16.11.42
-      svimg: ^3.0.0
-      tsup: ^6.1.2
-      typescript: ^4.7.4
+      '@types/node': 16.11.42
+      svimg: 3.0.0
+      tsup: 6.1.2
+      typescript: 4.7.4
     devDependencies:
       '@flatbread/core': link:../core
       '@types/node': 16.11.42
       svimg: 3.0.0
-      tsup: 6.1.3_typescript@4.7.4
+      tsup: 6.1.2_typescript@4.7.4
       typescript: 4.7.4
 
   packages/source-filesystem:
@@ -7937,6 +7937,42 @@ packages:
 
   /tslib/2.4.0:
     resolution: {integrity: sha512-d6xOpEDfsi2CZVlPQzGeux8XMwLT9hssAsaPYExaQMuYskwb+x1x7J371tWlbBdWHroy99KnVB6qIkUbs5X3UQ==}
+
+  /tsup/6.1.2_typescript@4.7.4:
+    resolution: {integrity: sha512-Hw4hKDHaAQkm2eVavlArEOrAPA93bziRDamdfwaNs0vXQdUUFfItvUWY0L/F6oQQMVh6GvjQq1+HpDXw8UKtPA==}
+    engines: {node: '>=14'}
+    hasBin: true
+    peerDependencies:
+      '@swc/core': ^1
+      postcss: ^8.4.12
+      typescript: ^4.1.0
+    peerDependenciesMeta:
+      '@swc/core':
+        optional: true
+      postcss:
+        optional: true
+      typescript:
+        optional: true
+    dependencies:
+      bundle-require: 3.0.4_esbuild@0.14.49
+      cac: 6.7.12
+      chokidar: 3.5.3
+      debug: 4.3.4
+      esbuild: 0.14.49
+      execa: 5.1.1
+      globby: 11.1.0
+      joycon: 3.1.1
+      postcss-load-config: 3.1.4
+      resolve-from: 5.0.0
+      rollup: 2.77.0
+      source-map: 0.8.0-beta.0
+      sucrase: 3.24.0
+      tree-kill: 1.2.2
+      typescript: 4.7.4
+    transitivePeerDependencies:
+      - supports-color
+      - ts-node
+    dev: true
 
   /tsup/6.1.3_6oasmw356qmm23djlsjgkwvrtm:
     resolution: {integrity: sha512-eRpBnbfpDFng+EJNTQ90N7QAf4HAGGC7O3buHIjroKWK7D1ibk9/YnR/3cS8HsMU5T+6Oi+cnF+yU5WmCnB//Q==}
