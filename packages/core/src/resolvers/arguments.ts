@@ -51,6 +51,8 @@ const resolveQueryArgs = async (
 
 /**
  * Builds a GraphQL query fragment from a `filterSetManifest`.
+ * This is useful for building a GraphQL query which resolves a set of content nodes which include the fields specified in the filter set.
+ * That result can then be used to filter the nodes by the filter argument in the `sift` function, obtaining a list of matching nodes.
  *
  * @example
  * // Consider this query with a complex filter:
