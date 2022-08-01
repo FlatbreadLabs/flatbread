@@ -7,8 +7,9 @@ import {
   generateArgsForAllItemQuery,
   generateArgsForManyItemQuery,
   generateArgsForSingleItemQuery,
-} from '../generators/arguments.js';
-import resolveQueryArgs from '../resolvers/arguments.js';
+} from '../generators/arguments';
+import resolveQueryArgs from '../resolvers/arguments';
+import { cacheSchema, checkCacheForSchema } from '../cache/cache';
 import {
   ConfigResult,
   EntryNode,
@@ -34,6 +35,13 @@ export async function generateSchema(
   const { config } = configResult;
   if (!config) {
     throw new Error('Config is not defined');
+  }
+
+  // Let's see if we have a cached version of the schema. If so, short-circuit and return it.
+  const cachedSchema = checkCacheForSchema(config);
+
+  if (cachedSchema) {
+    return cachedSchema;
   }
 
   // Invoke initialize function if it exists and provide loaded config
@@ -122,7 +130,13 @@ export async function generateSchema(
           cloneDeep(allContentNodesJSON[type])?.filter((node: EntryNode) =>
             idsToFind?.includes(node.id)
           ) ?? [];
-        return resolveQueryArgs(matches, rp.args, type, schemaComposer);
+        return resolveQueryArgs(matches, rp.args, config, {
+          type: {
+            name: type,
+            pluralName: pluralType,
+            pluralQueryName: pluralTypeQueryName,
+          },
+        });
       },
     });
 
@@ -133,7 +147,13 @@ export async function generateSchema(
       description: `Return a set of ${pluralType}`,
       resolve: (rp: Record<string, any>) => {
         const nodes = cloneDeep(allContentNodesJSON[type]);
-        return resolveQueryArgs(nodes, rp.args, type, schemaComposer);
+        return resolveQueryArgs(nodes, rp.args, config, {
+          type: {
+            name: type,
+            pluralName: pluralType,
+            pluralQueryName: pluralTypeQueryName,
+          },
+        });
       },
     });
 
@@ -196,7 +216,11 @@ export async function generateSchema(
     });
   }
 
-  return schemaComposer.buildSchema();
+  const schema = schemaComposer.buildSchema();
+
+  cacheSchema(config, schema);
+
+  return schema;
 }
 
 /**

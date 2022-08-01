@@ -3,9 +3,8 @@ import filesystem from '@flatbread/source-filesystem';
 import markdownTransforer from '@flatbread/transformer-markdown';
 import { FlatbreadProvider } from '../base';
 
-test('basic query', async (t) => {
-  console.log(process.cwd());
-  const flatbread = new FlatbreadProvider({
+function basicProject() {
+  return new FlatbreadProvider({
     source: filesystem(),
     transformer: markdownTransforer({
       markdown: {
@@ -24,11 +23,32 @@ test('basic query', async (t) => {
       },
     ],
   });
+}
+
+test('basic query', async (t) => {
+  const flatbread = basicProject();
 
   const result = await flatbread.query({
     source: `
     query AllAuthors {
       allAuthors {
+        name
+        enjoys
+      }
+    }
+  `,
+  });
+
+  t.snapshot(result);
+});
+
+test('relational filter query', async (t) => {
+  const flatbread = basicProject();
+
+  const result = await flatbread.query({
+    source: `
+    query AllAuthors {
+      allAuthors(filter: {friend: {name: {wildcard: "Anot*"}}}) {
         name
         enjoys
       }
