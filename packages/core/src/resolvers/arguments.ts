@@ -1,7 +1,7 @@
+import { keyBy } from 'lodash-es';
 import sift, { generateFilterSetManifest } from '../utils/sift';
-import { ContentNode, FlatbreadConfig } from 'flatbread';
+import { ContentNode, FlatbreadConfig } from '../types';
 import { FlatbreadProvider } from '../providers/base';
-
 interface ResolveQueryArgsOptions {
   type: {
     name: string;
@@ -22,11 +22,15 @@ const resolveQueryArgs = async (
   const { skip, limit, order, sortBy, filter } = args;
 
   if (filter) {
+    // Place the nodes into a keyed object by ID so we can easily filter by ID without doing tons of looping.
+    // TODO: store all nodes in an ID-keyed object.
+    const nodeById = keyBy(nodes, 'id');
+
     // Turn the filter into a GraphQL subquery that returns an array of matching content node IDs.
     const listOfNodeIDsToFilter = await resolveFilter(filter, config, options);
 
-    nodes = listOfNodeIDsToFilter.map((desiredNodeId) =>
-      nodes.find((node) => node.id === desiredNodeId)
+    nodes = listOfNodeIDsToFilter.map(
+      (desiredNodeId) => nodeById[desiredNodeId]
     );
   }
 
