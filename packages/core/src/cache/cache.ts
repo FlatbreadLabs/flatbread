@@ -45,8 +45,6 @@ export function checkCacheForSchema(
 
 /**
  * Generates a hash key for a given Flatbread config.
- *
- * TODO: handle field changes in content nodes (e.g. changing a field from a string to an int)
  */
 export function getSchemaHash(config: LoadedFlatbreadConfig) {
   return createHash('md5').update(anyToString(config)).digest('hex');

@@ -121,6 +121,8 @@ If everything goes well, you'll see a pretty `graphql` endpoint echoed out to yo
 
 You can query that same endpoint in your app in any way you'd like. Flatbread doesn't care what framework you use.
 
+> NOTE: detecting changes to your content while Flatbread is running is [not yet supported](https://github.com/tonyketcham/flatbread/issues/65). You'll have to restart the process to get updated content.
+
 ## Query arguments
 
 The following arguments are listed in their order of operation.

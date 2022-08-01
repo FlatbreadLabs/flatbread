@@ -121,6 +121,8 @@ If everything goes well, you'll see a pretty `graphql` endpoint echoed out to yo
 
 You can query that same endpoint in your app in any way you'd like. Flatbread doesn't care what framework you use.
 
+> NOTE: detecting changes to your content while Flatbread is running is [not yet supported](https://github.com/tonyketcham/flatbread/issues/65). You'll have to restart the process to get updated content.
+
 ## Query arguments
 
 The following arguments are listed in their order of operation.
@@ -250,6 +252,47 @@ Limits the number of returned entries to the specified amount. Accepts an intege
 ## Query within your app ❓❓
 
 [Check out the playground for an example](https://github.com/tonyketcham/flatbread/tree/main/playground) of using Flatbread with SvelteKit to safely shoot off GraphQL queries using a static (or node) adapter.
+
+## Field Overrides
+
+field overrides allow you to define custom types or transforms for specific data based on what field it is in in the content
+
+### Example
+
+```js
+{
+  content: {
+    ...
+    overrides: [
+      {
+        // using the field name
+        field: 'name'
+        // the resulting type is string
+        // this can be a custom gql type
+        type: 'String',
+        // capitalize the name
+        resolve: name => capitalize(name)
+      },
+    ]
+  }
+}
+```
+
+### Supported syntax for field
+
+- basic nested objects
+
+  `nested.object`
+
+- a basic array (will map array values)
+
+  `an.array[]`
+
+- a nested object inside an array (will also map array)
+
+  `an.array[]with.object`
+
+for more information in Overrides, they adhere to the GraphQLFieldConfig outlined here https://graphql-compose.github.io/docs/basics/what-is-resolver.html
 
 # ☀️ Contributing
 
