@@ -38,6 +38,12 @@ export function validateConfigStructure(
     );
   }
 
+  if (!('transformer' in config)) {
+    throw new Error(
+      `Your Flatbread config is missing a valid "transformer" property. Make sure to include a Flatbread-compatible transformer, such as @flatbread/transformer-markdown`
+    );
+  }
+
   if (!('content' in config) || !Array.isArray(config.content)) {
     throw new Error(
       'Your Flatbread config is missing a valid "content" property.'

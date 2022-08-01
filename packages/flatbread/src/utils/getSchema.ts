@@ -1,5 +1,5 @@
 import colors from 'kleur';
-import type { ConfigResult, FlatbreadConfig } from '../';
+import type { ConfigResult, LoadedFlatbreadConfig } from '../';
 
 /**
  * Wrapper around grabbing the user config and killing
@@ -7,7 +7,9 @@ import type { ConfigResult, FlatbreadConfig } from '../';
  *
  * @returns user config promise
  */
-export async function getConfig(): Promise<ConfigResult<FlatbreadConfig>> {
+export async function getConfig(): Promise<
+  ConfigResult<LoadedFlatbreadConfig>
+> {
   const { loadConfig } = await import('@flatbread/config');
 
   try {

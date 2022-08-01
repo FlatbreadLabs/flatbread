@@ -10,4 +10,7 @@ export const tsup: Options = {
   dts: true,
   shims: true,
   treeshake: true,
+  banner: {
+    js: `import { createRequire } from 'module';const require = createRequire(import.meta.url);`,
+  },
 };

@@ -1,19 +1,25 @@
+import { defaultsDeep } from 'lodash-es';
 import { read } from 'to-vfile';
 
-import type { SourcePlugin } from '@flatbread/core';
+import type { LoadedFlatbreadConfig, SourcePlugin } from '@flatbread/core';
 import type { VFile } from 'vfile';
-import type { FileNode, sourceFilesystemConfig } from './types';
+import type {
+  FileNode,
+  InitializedSourceFilesystemConfig,
+  sourceFilesystemConfig,
+} from './types';
 import gatherFileNodes from './utils/gatherFileNodes';
 
 /**
  * Get nodes (files) from the directory
  *
  * @param path The directory to read from
+ * @param config 'InitializedSourceFileSystemConfig
  * @returns An array of content nodes
  */
 async function getNodesFromDirectory(
   path: string,
-  config: sourceFilesystemConfig = {}
+  config: InitializedSourceFilesystemConfig
 ): Promise<VFile[]> {
   const { extensions } = config;
   const nodes: FileNode[] = await gatherFileNodes(path, { extensions });
@@ -35,7 +41,7 @@ async function getNodesFromDirectory(
  */
 async function getAllNodes(
   allContentTypes: Record<string, any>[],
-  config: sourceFilesystemConfig
+  config: InitializedSourceFilesystemConfig
 ): Promise<Record<string, VFile[]>> {
   const nodeEntries = await Promise.all(
     allContentTypes.map(
@@ -62,13 +68,18 @@ async function getAllNodes(
  * @param sourceConfig content types config
  * @returns A function that returns functions which fetch lists of nodes
  */
-export const source: SourcePlugin = (
-  sourceConfig?: sourceFilesystemConfig
-) => ({
-  fetchByType: (path: string) =>
-    getNodesFromDirectory(path, sourceConfig ?? {}),
-  fetch: (allContentTypes: Record<string, any>[]) =>
-    getAllNodes(allContentTypes, sourceConfig ?? {}),
-});
+export const source: SourcePlugin = (sourceConfig?: sourceFilesystemConfig) => {
+  let config: InitializedSourceFilesystemConfig;
+
+  return {
+    initialize: (flatbreadConfig: LoadedFlatbreadConfig) => {
+      const { extensions } = flatbreadConfig.loaded;
+      config = defaultsDeep(sourceConfig ?? {}, { extensions });
+    },
+    fetchByType: (path: string) => getNodesFromDirectory(path, config),
+    fetch: (allContentTypes: Record<string, any>[]) =>
+      getAllNodes(allContentTypes, config),
+  };
+};
 
 export default source;

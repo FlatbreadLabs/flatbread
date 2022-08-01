@@ -13,6 +13,10 @@ export interface MarkdownTransformerConfig {
    * User-configurable options for the [unified](https://github.com/unifiedjs/unified) processor.
    */
   markdown?: MarkdownConfig;
+  /**
+   * Specify file extensions to transform. Defaults to `['.md']`
+   */
+  extensions?: string[];
 }
 
 /**

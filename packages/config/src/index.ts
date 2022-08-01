@@ -8,7 +8,8 @@ export { loadConfig } from './load';
  * @param config flatbread instance options
  * @returns flatbread config
  */
-export const defineConfig = (config: FlatbreadConfig): FlatbreadConfig =>
-  config;
+export function defineConfig(config: FlatbreadConfig): FlatbreadConfig {
+  return config;
+}
 
 export default defineConfig;

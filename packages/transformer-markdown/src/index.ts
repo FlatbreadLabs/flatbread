@@ -38,8 +38,11 @@ export const parse = (
  * @returns Markdown parser, preknown GraphQL schema fragments, and an EntryNode inspector function.
  */
 export const transformer: TransformerPlugin = (
-  config: MarkdownTransformerConfig
+  config: MarkdownTransformerConfig = {}
 ) => {
+  const extensions = (config.extensions || ['.md']).map((ext: string) =>
+    ext.startsWith('.') ? ext : `.${ext}`
+  );
   return {
     parse: (input: VFile): EntryNode => parse(input, config),
     preknownSchemaFragments: () => ({
@@ -50,6 +53,7 @@ export const transformer: TransformerPlugin = (
       },
     }),
     inspect: (input: EntryNode) => String(input),
+    extensions,
   };
 };
 

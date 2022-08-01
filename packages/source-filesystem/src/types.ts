@@ -7,8 +7,12 @@ export interface sourceFilesystemConfig {
   /**
    * File extensions to include
    */
-  extensions?: string[];
   [key: string]: any;
+}
+
+export interface InitializedSourceFilesystemConfig
+  extends sourceFilesystemConfig {
+  extensions: string[];
 }
 
 export interface FileNode extends Dirent {

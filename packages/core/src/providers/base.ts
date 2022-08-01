@@ -1,5 +1,6 @@
 import { generateSchema } from '../generators/schema';
-import { FlatbreadConfig } from '../types';
+import { FlatbreadConfig, LoadedFlatbreadConfig } from '../types';
+import { initializeConfig } from '../utils/initializeConfig';
 
 import { graphql, GraphQLArgs, GraphQLSchema } from 'graphql';
 
@@ -11,7 +12,8 @@ export class FlatbreadProvider {
   private schemaPromise: Promise<GraphQLSchema>;
 
   constructor(config: FlatbreadConfig) {
-    this.schemaPromise = generateSchema({ config });
+    const initializedConfig = initializeConfig(config);
+    this.schemaPromise = generateSchema({ config: initializedConfig });
   }
 
   async query(args: Omit<GraphQLArgs, 'schema'>) {

@@ -1,6 +1,6 @@
 import {
-  markdownTransformer,
-  filesystem,
+  transformerMarkdown,
+  sourceFilesystem,
   type FlatbreadConfig,
 } from 'flatbread';
 
@@ -11,8 +11,8 @@ const transformerConfig = {
   },
 };
 const config = {
-  source: filesystem(),
-  transformer: markdownTransformer(transformerConfig),
+  source: sourceFilesystem(),
+  transformer: transformerMarkdown(transformerConfig),
 
   content: [
     {

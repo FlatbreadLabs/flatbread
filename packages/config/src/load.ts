@@ -1,4 +1,8 @@
-import type { ConfigResult, FlatbreadConfig } from '@flatbread/core';
+import {
+  ConfigResult,
+  FlatbreadConfig,
+  initializeConfig,
+} from '@flatbread/core';
 import { build } from 'esbuild';
 import colors from 'kleur';
 import fs from 'node:fs/promises';
@@ -111,7 +115,8 @@ export async function loadConfig({ cwd = process.cwd() } = {}): Promise<
 
   const configFilePath = path.join(cwd, configFileName);
   const { code } = await bundleConfigFile(cwd, configFileName);
-  const config = await esmLoader(configFileName, code);
+  const rawConfig = await esmLoader(configFileName, code);
+  const config = initializeConfig(rawConfig);
 
   return {
     filepath: configFilePath,
