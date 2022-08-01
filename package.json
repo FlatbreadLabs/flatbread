@@ -44,7 +44,7 @@
   "devDependencies": {
     "@ava/typescript": "3.0.1",
     "@nrwl/workspace": "14.4.3",
-    "@types/node": "16.11.45",
+    "@types/node": "16.11.47",
     "ava": "4.3.1",
     "bumpp": "8.2.1",
     "esno": "0.16.3",
