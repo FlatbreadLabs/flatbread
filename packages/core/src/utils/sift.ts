@@ -65,13 +65,13 @@ function generateComparisonFunction(
     case 'gte':
       return (a: any) => a >= value;
     case 'in':
-      return (a: any) => value.includes(a);
+      return (a: any) => isArrayElseThrow(value) && value.includes(a);
     case 'nin':
-      return (a: any) => !value.includes(a);
+      return (a: any) => isArrayElseThrow(value) && !value.includes(a);
     case 'includes':
-      return (a: any) => a.includes(value);
+      return (a: any) => isArrayElseThrow(a) && a.includes(value);
     case 'excludes':
-      return (a: any) => !a.includes(value);
+      return (a: any) => isArrayElseThrow(a) && !a.includes(value);
     case 'regex':
       return (a: any) => value.test(a);
     case 'wildcard':
@@ -83,6 +83,13 @@ function generateComparisonFunction(
     default:
       throw new Error(`Unsupported operation: ${operation}`);
   }
+}
+
+function isArrayElseThrow(value: any): value is any[] {
+  if (Array.isArray(value)) {
+    return true;
+  }
+  throw new Error(`Expected array, got: ${value}`);
 }
 
 /**
