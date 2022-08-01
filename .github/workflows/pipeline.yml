@@ -181,4 +181,5 @@ jobs:
       - run: pnpm i
 
       - name: Build Next.js integration
-        run: cd examples/nextjs && pnpm build
+        # TODO: extract the Flatbread build to a separate job that this job can depend on
+        run: pnpm build && cd examples/nextjs && pnpm build
