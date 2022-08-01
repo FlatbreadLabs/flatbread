@@ -4,13 +4,13 @@
   "version": "1.0.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tonyketcham/flatbread.git",
+    "url": "git+https://github.com/FlatbreadLabs/flatbread.git",
     "directory": "playground"
   },
   "author": "Tony Ketcham <ketcham.dev@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tonyketcham/flatbread/issues"
+    "url": "https://github.com/FlatbreadLabs/flatbread/issues"
   },
   "scripts": {
     "flat": "flatbread start",

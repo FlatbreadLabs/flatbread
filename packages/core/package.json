@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tonyketcham/flatbread.git",
+    "url": "git+https://github.com/FlatbreadLabs/flatbread.git",
     "directory": "packages/core"
   },
-  "homepage": "https://github.com/tonyketcham/flatbread/tree/main/packages/core#readme",
+  "homepage": "https://github.com/FlatbreadLabs/flatbread/tree/main/packages/core#readme",
   "author": "Tony Ketcham <ketcham.dev@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tonyketcham/flatbread/issues"
+    "url": "https://github.com/FlatbreadLabs/flatbread/issues"
   },
   "exports": {
     ".": "./dist/index.js"
