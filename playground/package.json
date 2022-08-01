@@ -40,7 +40,7 @@
     "graphql": "16.5.0",
     "graphql-helix": "1.9.1",
     "prettier": "2.7.1",
-    "prettier-plugin-svelte": "2.4.0",
+    "prettier-plugin-svelte": "2.7.0",
     "svelte": "3.49.0",
     "svelte-check": "2.8.0",
     "svelte-preprocess": "4.10.7",

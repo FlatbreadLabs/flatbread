@@ -275,7 +275,7 @@ importers:
       graphql: 16.5.0
       graphql-helix: 1.9.1
       prettier: 2.7.1
-      prettier-plugin-svelte: 2.4.0
+      prettier-plugin-svelte: 2.7.0
       svelte: 3.49.0
       svelte-check: 2.8.0
       svelte-preprocess: 4.10.7
@@ -300,7 +300,7 @@ importers:
       graphql: 16.5.0
       graphql-helix: 1.9.1_graphql@16.5.0
       prettier: 2.7.1
-      prettier-plugin-svelte: 2.4.0_o3ioganyptcsrh6x4hnxvjkpqi
+      prettier-plugin-svelte: 2.7.0_o3ioganyptcsrh6x4hnxvjkpqi
       svelte: 3.49.0
       svelte-check: 2.8.0_nxvsp6sjiltnatqa6jdm4mr6zu
       svelte-preprocess: 4.10.7_bgntxiihuqhg5mwaa7nczjwpga
@@ -6488,8 +6488,8 @@ packages:
     engines: {node: '>= 0.8.0'}
     dev: true
 
-  /prettier-plugin-svelte/2.4.0_o3ioganyptcsrh6x4hnxvjkpqi:
-    resolution: {integrity: sha512-JwJ9bOz4XHLQtiLnX4mTSSDUdhu12WH8sTwy/XTDCSyPlah6IcV7NWeYBZscPEcceu2YnW8Y9sJCP40Z2UH9GA==}
+  /prettier-plugin-svelte/2.7.0_o3ioganyptcsrh6x4hnxvjkpqi:
+    resolution: {integrity: sha512-fQhhZICprZot2IqEyoiUYLTRdumULGRvw0o4dzl5jt0jfzVWdGqeYW27QTWAeXhoupEZJULmNoH3ueJwUWFLIA==}
     peerDependencies:
       prettier: ^1.16.4 || ^2.0.0
       svelte: ^3.2.0
