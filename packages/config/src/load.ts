@@ -4,34 +4,15 @@ import {
   initializeConfig,
 } from '@flatbread/core';
 import { build } from 'esbuild';
-import colors from 'kleur';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { NoConfigFoundError, TooManyConfigsFoundError } from './errors';
 import {
   validateConfigHasDefaultExport,
   validateConfigStructure,
 } from './validate';
-
-type ConfigFileExtension = 'js' | 'mjs' | 'cjs' | 'ts' | 'mts' | 'cts';
-type ConfigFileName = `flatbread.config.${ConfigFileExtension}`;
-
-export const FLATBREAD_CONFIG_FILE_NAMES: ConfigFileName[] = [
-  'flatbread.config.js',
-  'flatbread.config.mjs',
-  'flatbread.config.cjs',
-
-  'flatbread.config.ts',
-  'flatbread.config.mts',
-  'flatbread.config.cts',
-];
-
-const FLATBREAD_CONFIG_FILE_REGEX = /flatbread\.config\.[mc]?[jt]s$/;
-
-const VALID_CONFIG_NAMES_MESSAGE = `Valid config filenames are:\n\t${colors.green(
-  FLATBREAD_CONFIG_FILE_NAMES.join('\n\t')
-)}
-`;
+import { ConfigFileName, FLATBREAD_CONFIG_FILE_REGEX } from './filenames';
 
 /**
  * Loads an ESModule-style config file.
@@ -90,27 +71,12 @@ export async function loadConfig({ cwd = process.cwd() } = {}): Promise<
   ) as ConfigFileName[];
 
   if (matchingFiles.length > 1) {
-    console.error(
-      colors.red(
-        `
-        Multiple config files found (${colors.gray(matchingFiles.join(', '))}).
-        
-        Please declare ${colors.bold('only')} one! 😅\n
-        `
-      ) + VALID_CONFIG_NAMES_MESSAGE
-    );
-    process.exit(1);
+    throw new TooManyConfigsFoundError(matchingFiles);
   } else if (matchingFiles.length === 1) {
     // Grab the config file name declared in the user's project root
     configFileName = matchingFiles[0];
   } else {
-    console.error(
-      colors.red(
-        `No config file found. Please declare one! 😅\n
-      `
-      ) + VALID_CONFIG_NAMES_MESSAGE
-    );
-    process.exit(1);
+    throw new NoConfigFoundError();
   }
 
   const configFilePath = path.join(cwd, configFileName);
