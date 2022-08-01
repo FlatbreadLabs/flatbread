@@ -112,7 +112,7 @@ importers:
       find-up: ^6.3.0
       gradient-string: ^2.0.1
       graphql: 16.5.0
-      graphql-helix: 1.9.1
+      graphql-helix: 1.13.0
       kleur: ^4.1.5
       remark-github: ^11.2.3
       sade: ^1.8.1
@@ -135,7 +135,7 @@ importers:
       find-up: 6.3.0
       gradient-string: 2.0.1
       graphql: 16.5.0
-      graphql-helix: 1.9.1_graphql@16.5.0
+      graphql-helix: 1.13.0_graphql@16.5.0
       kleur: 4.1.5
       remark-github: 11.2.4
       sade: 1.8.1
@@ -273,7 +273,7 @@ importers:
       eslint-plugin-svelte3: 3.4.1
       flatbread: workspace:*
       graphql: 16.5.0
-      graphql-helix: 1.9.1
+      graphql-helix: 1.13.0
       prettier: 2.7.1
       prettier-plugin-svelte: 2.4.0
       svelte: 3.49.0
@@ -298,7 +298,7 @@ importers:
       eslint-plugin-svelte3: 3.4.1_k4rvtr32uzrs6rwp57u73ssa6q
       flatbread: link:../packages/flatbread
       graphql: 16.5.0
-      graphql-helix: 1.9.1_graphql@16.5.0
+      graphql-helix: 1.13.0_graphql@16.5.0
       prettier: 2.7.1
       prettier-plugin-svelte: 2.4.0_o3ioganyptcsrh6x4hnxvjkpqi
       svelte: 3.49.0
@@ -4245,8 +4245,8 @@ packages:
       graphql-type-json: 0.3.2_graphql@16.5.0
     dev: false
 
-  /graphql-helix/1.9.1_graphql@16.5.0:
-    resolution: {integrity: sha512-Of4iMFy+lesAF52RsgTlSUtgAlogWNQt8xp817fcgdJtGNO1bo4RPR4yXD5vZYHbw01Vm2fmaPOCUps5BJJSXw==}
+  /graphql-helix/1.13.0_graphql@16.5.0:
+    resolution: {integrity: sha512-cqDKMoRywKjnL0ZWCTB0GOiBgsH6d3nU4JGDF6RuzAyd35tmalzKpSxkx3NNp4H5RvnKWnrukWzR51wUq277ng==}
     peerDependencies:
       graphql: ^15.3.0 || ^16.0.0 || ^16.0.1
     dependencies:
