@@ -69,7 +69,7 @@ importers:
       graphql-compose: 9.0.8
       graphql-compose-json: 6.2.0
       lodash-es: 4.17.21
-      lru-cache: 7.13.1
+      lru-cache: 7.13.2
       matcher: 5.0.0
       plur: 5.1.0
       tsup: 6.2.1
@@ -80,7 +80,7 @@ importers:
       graphql-compose: 9.0.8_graphql@16.5.0
       graphql-compose-json: 6.2.0_graphql-compose@9.0.8
       lodash-es: 4.17.21
-      lru-cache: 7.13.1
+      lru-cache: 7.13.2
       matcher: 5.0.0
       plur: 5.1.0
     devDependencies:
@@ -5463,6 +5463,11 @@ packages:
 
   /lru-cache/7.13.1:
     resolution: {integrity: sha512-CHqbAq7NFlW3RSnoWXLJBxCWaZVBrfa9UEHId2M3AW8iEBurbqduNexEUCGc3SHc6iCYXNJCDi903LajSVAEPQ==}
+    engines: {node: '>=12'}
+    dev: false
+
+  /lru-cache/7.13.2:
+    resolution: {integrity: sha512-VJL3nIpA79TodY/ctmZEfhASgqekbT574/c4j3jn4bKXbSCnTTCH/KltZyvL2GlV+tGSMtsWyem8DCX7qKTMBA==}
     engines: {node: '>=12'}
     dev: false
 
