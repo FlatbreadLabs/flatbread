@@ -125,7 +125,7 @@ we recommend querying all of the fields, and taking advantage of the fantastic w
 
 ## Things of note
 
-The configuration provided in `flatbread.config.js` will affect what fields are populated when querying the related fields, based on configuration provided specific fields will always return null for example:
+The configuration provided in `flatbread.config.js` will affect what fields are populated when querying the related fields. Based on that provided configuration, specific fields will always return `null`, for example:
 
 | configuration field | default | note                                                 |
 | ------------------- | ------- | ---------------------------------------------------- |
