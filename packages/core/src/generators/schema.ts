@@ -1,15 +1,15 @@
 import { schemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
-import { cloneDeep, defaultsDeep, merge } from 'lodash-es';
+import { cloneDeep, merge } from 'lodash-es';
 import plur from 'plur';
 import { VFile } from 'vfile';
+import { cacheSchema, checkCacheForSchema } from '../cache/cache';
 import {
   generateArgsForAllItemQuery,
   generateArgsForManyItemQuery,
   generateArgsForSingleItemQuery,
 } from '../generators/arguments';
 import resolveQueryArgs from '../resolvers/arguments';
-import { cacheSchema, checkCacheForSchema } from '../cache/cache';
 import {
   ConfigResult,
   EntryNode,
@@ -17,7 +17,7 @@ import {
   Transformer,
 } from '../types';
 import { map } from '../utils/map';
-import { getFieldOverrides } from '../utils/fieldOverrides';
+import { generateCollection } from './generateCollection';
 
 interface RootQueries {
   maybeReturnsSingleItem: string[];
@@ -69,11 +69,12 @@ export async function generateSchema(
       collection,
       composeWithJson(
         collection,
-        defaultsDeep(
-          {},
-          getFieldOverrides(collection, config),
-          ...nodes.map((node) => merge({}, node, preknownSchemaFragments))
-        ),
+        generateCollection({
+          collection,
+          nodes,
+          config,
+          preknownSchemaFragments,
+        }),
         { schemaComposer }
       ),
     ])
