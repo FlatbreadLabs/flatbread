@@ -23,6 +23,13 @@
             name
             entity
             enjoys
+            image {
+              srcset
+              srcsetwebp
+              srcsetavif
+              placeholder
+              aspectratio
+            }
             friend {
               name
               date_joined
@@ -74,7 +81,12 @@
 </script>
 
 <script>
+  import { browser } from '$app/env';
   import Pane from './../lib/components/Pane.svelte';
+
+  if (browser) {
+    import('svimg/dist/s-image');
+  }
 
   export let data = {};
   export let error = null;
@@ -101,7 +113,16 @@
         <h3 class="text-xl font-medium">{post.title}</h3>
         <ul>
           <li class="text-xs font-semibold text-gray-500">
-            By: {joinAuthors(post.authors)}
+            <div class="flex">
+              {#each post.authors as author}
+                <div>
+                  <div class="h-12 w-12">
+                    <s-image {...author.image} />
+                  </div>
+                  {author.name}
+                </div>
+              {/each}
+            </div>
           </li>
           <li class="text-xs font-semibold text-gray-500">
             Rating: {post.rating}

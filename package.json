@@ -39,6 +39,7 @@
     "@flatbread/core": "workspace:*",
     "@flatbread/source-filesystem": "workspace:*",
     "@flatbread/transformer-markdown": "workspace:*",
+    "@flatbread/resolver-svimg": "workspace:*",
     "flatbread": "workspace:*"
   },
   "devDependencies": {

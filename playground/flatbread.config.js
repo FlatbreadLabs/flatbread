@@ -1,8 +1,9 @@
+import { createSvImgField } from '@flatbread/resolver-svimg';
 import {
   defineConfig,
   markdownTransformer,
   yamlTransformer,
-  filesystem,
+  sourceFilesystem,
 } from 'flatbread';
 
 const transformerConfig = {
@@ -12,21 +13,8 @@ const transformerConfig = {
   },
 };
 
-function flatbreadImage(field) {
-  return {
-    field,
-    type: `type FlatbreadImage { src: String alt: String }`,
-    resolve(source) {
-      return {
-        alt: 'a nice description',
-        src: source,
-      };
-    },
-  };
-}
-
 export default defineConfig({
-  source: filesystem(),
+  source: sourceFilesystem(),
   transformer: [markdownTransformer(transformerConfig), yamlTransformer()],
   content: [
     {
@@ -56,6 +44,13 @@ export default defineConfig({
       refs: {
         friend: 'Author',
       },
+      overrides: [
+        createSvImgField('image', {
+          inputDir: 'static/authorImages',
+          outputDir: 'static/g',
+          publicPath: '/g',
+        }),
+      ],
     },
     {
       path: 'content/yaml/authors',
@@ -75,9 +70,6 @@ export default defineConfig({
           test2: null,
           resolve: (source) => String(source).toUpperCase(),
         },
-        flatbreadImage('image'),
-        flatbreadImage('image2'),
-
         {
           field: 'array[]',
           type: 'String',
