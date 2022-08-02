@@ -8,7 +8,7 @@ import {
 
 const transformerConfig = {
   markdown: {
-    gfm: true,
+    gfm: undefined,
     externalLinks: true,
   },
 };
@@ -66,6 +66,8 @@ export default defineConfig({
         {
           field: 'deeply.nested',
           type: 'String',
+          test: undefined,
+          test2: null,
           resolve: (source) => String(source).toUpperCase(),
         },
         {

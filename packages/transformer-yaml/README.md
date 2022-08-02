@@ -48,4 +48,4 @@ This transformer plugin currently does not accept any config options. It support
 
 Refer to your source plugin's documentation for the relevant `content` Flatbread config option.
 
-If you're using a CMS like NetlifyCMS, you'll want to pair this with the [`source-filesystem`](https://github.com/tonyketcham/flatbread/blob/main/packages/source-filesystem/README.md) plugin.
+If you're using a CMS like NetlifyCMS, you'll want to pair this with the [`source-filesystem`](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/source-filesystem/README.md) plugin.

@@ -62,7 +62,7 @@ export const limit = (pluralType: string) => ({
  * Argument for ordering the direction of sorting items in the query results.
  *
  * @param pluralType plural name of the content type
- * @param defaultOrder default order to use if not explicitly specified in the query
+ * @param defaultValue default order to use if not explicitly specified in the query
  */
 export const order = (
   pluralType: string,

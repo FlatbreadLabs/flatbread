@@ -2,20 +2,18 @@ import { GraphQLFieldConfigArgumentMap, GraphQLInputType } from 'graphql';
 import { Maybe } from 'graphql/jsutils/Maybe';
 import type { VFile } from 'vfile';
 
-// export interface FlatbreadJsonNode {
-//   __filename?: string;
-//   slug: string;
-//   [key: string]: any;
-//   timeToRead: number;
-//   content: string;
-// }
+export type IdentifierField = string | number;
 
-// export interface FlatbreadJsonTypeMap {
-//   name: string;
-//   fields: {
-//     [key: string]: string | Record<string, any>;
-//   };
-// }
+/**
+ * A JSON representation of a content node.
+ */
+export type BaseContentNode = {
+  id: IdentifierField;
+};
+
+export type ContentNode = BaseContentNode & {
+  [key: string]: unknown;
+};
 
 /**
  * Flatbread's configuration interface.
