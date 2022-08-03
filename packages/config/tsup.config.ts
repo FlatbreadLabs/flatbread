@@ -14,7 +14,7 @@ export const tsup: Options = {
     js: `
       import { createRequire } from 'module';
       import { resolve } from 'path';
-      
+
       const require = createRequire(resolve(import.meta.url));`,
   },
 };
