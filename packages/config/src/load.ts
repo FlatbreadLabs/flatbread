@@ -116,6 +116,12 @@ async function bundleConfigFile(
     outExtension: {
       '.js': '.mjs',
     },
+    //
+    // Workaround for sharp being CJS/platform-exclusive so we can't bundle it in the config bundling.
+    //
+    // TODO: make this dynamic such that resolvers can provide an array of external dependencies to merge into this property.
+    //
+    external: ['sharp'],
   });
 
   const { text } = configBuild?.outputFiles[0];

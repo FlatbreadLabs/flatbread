@@ -38,13 +38,13 @@ export default defineConfig({
 });
 ```
 
-A filesystem source will also require a transformer in order to parse the files into the proper internal schema. The example above is looking for a set of [Markdown](https://en.wikipedia.org/wiki/Markdown) files, so in order to let [Flatbread](https://github.com/tonyketcham/flatbread) understand the content of markdown (.md, .markdown, .mdx) files, you must install [@flatbread/transformer-markdown](https://www.npmjs.com/package/@flatbread/transformer-markdown) as a dependency. Register the transformer which coresponds to your content filetype as the `transformer` property in your `flatbread.config.js`.
+A filesystem source will also require a transformer in order to parse the files into the proper internal schema. The example above is looking for a set of [Markdown](https://en.wikipedia.org/wiki/Markdown) files, so in order to let [Flatbread](https://github.com/FlatbreadLabs/flatbread) understand the content of markdown (.md, .markdown, .mdx) files, you must install [@flatbread/transformer-markdown](https://www.npmjs.com/package/@flatbread/transformer-markdown) as a dependency. Register the transformer which coresponds to your content filetype as the `transformer` property in your `flatbread.config.js`.
 
 ### Options
 
 #### content
 
-- Type: [`Content`](https://github.com/tonyketcham/flatbread/blob/main/packages/core/src/types.ts) _required_
+- Type: [`Content`](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/core/src/types.ts) _required_
 
 An array of content types - each of which will appear in GraphQL.
 

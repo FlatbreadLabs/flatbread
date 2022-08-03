@@ -1,0 +1,47 @@
+{
+  "name": "@flatbread/resolver-svimg",
+  "version": "1.0.0-alpha.0",
+  "description": "use svimg as a flatbread field resolver",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tonyketcham/flatbread.git",
+    "directory": "packages/resolver-svimg"
+  },
+  "homepage": "https://github.com/tonyketcham/flatbread/tree/main/packages/resolver-svimg#readme",
+  "author": "Adam Sparks <adamsparks92@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tonyketcham/flatbread/issues"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "*.d.ts"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch src"
+  },
+  "engines": {
+    "node": "^14.13.1 || >=16.0.0"
+  },
+  "peerDependencies": {
+    "svimg": "^2.0.0 || ^3.0.0"
+  },
+  "devDependencies": {
+    "@flatbread/core": "workspace:*",
+    "@types/node": "16.11.42",
+    "svimg": "3.0.0",
+    "tsup": "6.2.1",
+    "typescript": "4.7.4"
+  }
+}

@@ -16,7 +16,7 @@ export function getFieldOverrides(collection: string, config: FlatbreadConfig) {
   if (!content?.overrides) return {};
   const overrides = content.overrides;
 
-  return overrides.reduce((fields: any, override: Override<any, any>) => {
+  return overrides.reduce((fields: any, override: Override) => {
     const { field, type, ...rest } = override;
     let path = field.replace(/\[\]/g, '[0]');
     const endsWithArray = path.endsWith('[0]');

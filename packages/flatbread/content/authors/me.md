@@ -1,6 +1,7 @@
 ---
 name: Tony
-id: '2a3e'
+id: 2a3e
+friend: 435r
 enjoys:
   - cats
   - tea

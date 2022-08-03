@@ -1,3 +1,4 @@
+import { createSvImgField } from '@flatbread/resolver-svimg';
 import {
   defineConfig,
   transformerMarkdown,
@@ -7,23 +8,10 @@ import {
 
 const transformerConfig = {
   markdown: {
-    gfm: true,
+    gfm: undefined,
     externalLinks: true,
   },
 };
-
-function flatbreadImage(field) {
-  return {
-    field,
-    type: `type FlatbreadImage { src: String alt: String }`,
-    resolve(source) {
-      return {
-        alt: 'a nice description',
-        src: source,
-      };
-    },
-  };
-}
 
 export default defineConfig({
   source: sourceFilesystem(),
@@ -56,6 +44,13 @@ export default defineConfig({
       refs: {
         friend: 'Author',
       },
+      overrides: [
+        createSvImgField('image', {
+          inputDir: 'static/authorImages',
+          outputDir: 'static/g',
+          publicPath: '/g',
+        }),
+      ],
     },
     {
       path: 'content/yaml/authors',
@@ -71,11 +66,10 @@ export default defineConfig({
         {
           field: 'deeply.nested',
           type: 'String',
+          test: undefined,
+          test2: null,
           resolve: (source) => String(source).toUpperCase(),
         },
-        flatbreadImage('image'),
-        flatbreadImage('image2'),
-
         {
           field: 'array[]',
           type: 'String',
