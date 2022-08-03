@@ -1,28 +1,15 @@
 import { schemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
-import { cloneDeep, defaultsDeep, merge } from 'lodash-es';
+import { defaultsDeep, merge } from 'lodash-es';
 import plur from 'plur';
 import { VFile } from 'vfile';
-import {
-  generateArgsForAllItemQuery,
-  generateArgsForManyItemQuery,
-  generateArgsForSingleItemQuery,
-} from '../generators/arguments';
-import resolveQueryArgs from '../resolvers/arguments';
-import { cacheSchema, checkCacheForSchema } from '../cache/cache';
-import {
-  ConfigResult,
-  EntryNode,
-  LoadedFlatbreadConfig,
-  Transformer,
-} from '../types';
-import { map } from '../utils/map';
-import { getFieldOverrides } from '../utils/fieldOverrides';
 
-interface RootQueries {
-  maybeReturnsSingleItem: string[];
-  maybeReturnsList: string[];
-}
+import { cacheSchema, checkCacheForSchema } from '../cache/cache';
+import { ConfigResult, LoadedFlatbreadConfig, Transformer } from '../types';
+import { getFieldOverrides } from '../utils/fieldOverrides';
+import { map } from '../utils/map';
+import addCollectionMutations from './collectionMutations';
+import addCollectionQueries from './collectionQueries';
 
 /**
  * Generates a GraphQL schema from content nodes.
@@ -79,28 +66,19 @@ export async function generateSchema(
     ])
   );
 
-  /**
-   * @todo potentially able to remove this
-   **/
-  let queries: RootQueries = {
-    maybeReturnsSingleItem: [],
-    maybeReturnsList: [],
-  };
-
   // Main builder loop - iterate through each content type and generate query resolvers + relationships for it
-  for (const [type, schema] of Object.entries(schemaArray)) {
-    const pluralType = plur(type, 2);
-    const pluralTypeQueryName = 'all' + pluralType;
+  for (const [name, objectComposer] of Object.entries(schemaArray)) {
+    const pluralName = plur(name, 2);
 
     //
     /// Global meta fields
     //
 
-    schema.addFields({
+    objectComposer.addFields({
       _collection: {
         type: 'String',
         description: 'The collection name',
-        resolve: () => type,
+        resolve: () => name,
       },
     });
 
@@ -108,72 +86,23 @@ export async function generateSchema(
     /// Query resolvers
     //
 
-    schema.addResolver({
-      name: 'findById',
-      type: () => schema,
-      description: `Find one ${type} by its ID`,
-      args: generateArgsForSingleItemQuery(),
-      resolve: (rp: Record<string, any>) =>
-        cloneDeep(allContentNodesJSON[type]).find(
-          (node: EntryNode) => node.id === rp.args.id
-        ),
+    addCollectionQueries({
+      name,
+      pluralName,
+      objectComposer,
+      schemaComposer,
+      allContentNodesJSON,
+      config,
     });
 
-    schema.addResolver({
-      name: 'findMany',
-      type: () => [schema],
-      description: `Find many ${pluralType} by their IDs`,
-      args: generateArgsForManyItemQuery(pluralType),
-      resolve: (rp: Record<string, any>) => {
-        const idsToFind = rp.args.ids ?? [];
-        const matches =
-          cloneDeep(allContentNodesJSON[type])?.filter((node: EntryNode) =>
-            idsToFind?.includes(node.id)
-          ) ?? [];
-        return resolveQueryArgs(matches, rp.args, config, {
-          type: {
-            name: type,
-            pluralName: pluralType,
-            pluralQueryName: pluralTypeQueryName,
-          },
-        });
-      },
+    addCollectionMutations({
+      name,
+      pluralName,
+      objectComposer,
+      schemaComposer,
+      allContentNodesJSON,
+      config,
     });
-
-    schema.addResolver({
-      name: 'all',
-      args: generateArgsForAllItemQuery(pluralType),
-      type: () => [schema],
-      description: `Return a set of ${pluralType}`,
-      resolve: (rp: Record<string, any>) => {
-        const nodes = cloneDeep(allContentNodesJSON[type]);
-        return resolveQueryArgs(nodes, rp.args, config, {
-          type: {
-            name: type,
-            pluralName: pluralType,
-            pluralQueryName: pluralTypeQueryName,
-          },
-        });
-      },
-    });
-
-    schemaComposer.Query.addFields({
-      /**
-       * Add find by ID to each content type
-       */
-      [type]: schema.getResolver('findById'),
-      /**
-       * Add find 'many' to each content type
-       */
-      [pluralTypeQueryName]: schema.getResolver('all'),
-    });
-
-    /**
-     * Separate the queries by return type for later use when wrapping the query resolvers
-     * @todo potentially able to remove this
-     **/
-    queries.maybeReturnsSingleItem.push(type);
-    queries.maybeReturnsList.push(pluralTypeQueryName);
   }
 
   // Create map of references on each content node

@@ -2,7 +2,7 @@ import yaml from 'js-yaml';
 import type { YAMLException } from 'js-yaml';
 import slugify from '@sindresorhus/slugify';
 import type { EntryNode, TransformerPlugin } from '@flatbread/core';
-import type { VFile } from 'vfile';
+import { VFile } from 'vfile';
 
 /**
  * Transforms a yaml file (content node) to JSON.
@@ -32,15 +32,21 @@ export const parse = (input: VFile): EntryNode => {
   );
 };
 
+function serialize(node: EntryNode): VFile {
+  const doc = yaml.dump(node);
+  return new VFile(doc);
+}
+
 /**
- * Converts markdown files to meaningful data.
+ * Converts yaml files to meaningful data.
  *
- * @returns Markdown parser, preknown GraphQL schema fragments, and an EntryNode inspector function.
+ * @returns yaml parser, preknown GraphQL schema fragments, and an EntryNode inspector function.
  */
 const transformer: TransformerPlugin = () => {
   return {
     parse: (input: VFile): EntryNode => parse(input),
     inspect: (input: EntryNode) => String(input),
+    serialize,
     extensions: ['.yaml', '.yml'],
   };
 };
