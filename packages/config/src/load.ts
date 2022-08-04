@@ -131,7 +131,6 @@ async function bundleConfigFile(
             // Externalize bare imports (ex. `import { createSvImgField } from '@flatbread/resolver-svimg'`)
             //
             if (id[0] !== '.' && !path.isAbsolute(id)) {
-              console.log(id);
               return {
                 external: true,
               };
