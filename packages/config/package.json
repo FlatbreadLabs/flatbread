@@ -35,6 +35,9 @@
     "dist",
     "*.d.ts"
   ],
+  "dependencies": {
+    "esbuild": "0.14.49"
+  },
   "devDependencies": {
     "@flatbread/core": "workspace:*",
     "@types/node": "16.11.47",

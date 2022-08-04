@@ -37,7 +37,7 @@ export const parse = (input: VFile): EntryNode => {
  *
  * @returns Markdown parser, preknown GraphQL schema fragments, and an EntryNode inspector function.
  */
-const transformer: TransformerPlugin = () => {
+export const transformer: TransformerPlugin = () => {
   return {
     parse: (input: VFile): EntryNode => parse(input),
     inspect: (input: EntryNode) => String(input),
