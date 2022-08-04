@@ -1,14 +1,25 @@
-import { LoadedFlatbreadConfig, Transformer } from '../types';
+import { cloneDeep } from 'lodash-es';
+import { FlatbreadConfig, LoadedFlatbreadConfig, Transformer } from '../types';
+import { toArray } from './arrayUtils';
 
-export function initializeConfig(config: any): LoadedFlatbreadConfig {
-  config.transformer = Array.isArray(config.transformer)
-    ? config.transformer
-    : [config.transformer];
+/**
+ * Processes a config object and returns a normalized version of it.
+ */
+export function initializeConfig(
+  rawConfig: FlatbreadConfig
+): LoadedFlatbreadConfig {
+  const config = cloneDeep(rawConfig);
+  const transformer = toArray(config.transformer ?? []);
 
-  config.loaded = {
-    extensions: config.transformer
-      .map((transformer: Transformer) => transformer.extensions || [])
-      .flat(),
+  const newConfig = {
+    ...config,
+    transformer,
+    loaded: {
+      extensions: transformer
+        .map((transformer: Transformer) => transformer.extensions || [])
+        .flat(),
+    },
   };
-  return config;
+
+  return newConfig;
 }

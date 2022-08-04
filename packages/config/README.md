@@ -10,6 +10,15 @@ Use `pnpm`, `npm`, or `yarn`:
 pnpm i @flatbread/config
 ```
 
+Valid config filenames:
+
+- `flatbread.config.js`
+- `flatbread.config.mjs`
+- `flatbread.config.cjs`
+- `flatbread.config.ts`
+- `flatbread.config.mts`
+- `flatbread.config.cts`
+
 ## 👩‍🍳 Typical Usage
 
 ### defineConfig(config)

@@ -17,11 +17,9 @@ export async function getConfig(): Promise<
   } catch (err) {
     // Provide a helpful error message if the config file is not found
     console.error(
-      colors.red('\nFlatbread could not find a valid') +
-        colors.bold(' flatbread.config.js') +
-        colors.red(
-          ' file. Make sure you have one with the correct schema in your project root to use this!\n'
-        )
+      colors.red('\nFlatbread was not supplied a valid') +
+        colors.bold(' config') +
+        colors.red(' file.\n')
     );
     console.error(err);
     process.exit(1);
