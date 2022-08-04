@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@flatbread/transformer-yaml": "workspace:*",
-    "@sveltejs/adapter-auto": "next",
+    "@sveltejs/adapter-static": "next",
     "@sveltejs/kit": "next",
     "@typescript-eslint/eslint-plugin": "4.33.0",
     "@typescript-eslint/parser": "4.33.0",
