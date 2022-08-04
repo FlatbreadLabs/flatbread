@@ -8,7 +8,7 @@ import {
 
 const transformerConfig = {
   markdown: {
-    gfm: undefined,
+    gfm: true,
     externalLinks: true,
   },
 };
