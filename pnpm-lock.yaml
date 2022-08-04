@@ -230,13 +230,13 @@ importers:
     specifiers:
       '@flatbread/core': workspace:*
       '@types/node': 16.11.42
-      svimg: 3.0.0
+      svimg: 3.1.0
       tsup: 6.2.1
       typescript: 4.7.4
     devDependencies:
       '@flatbread/core': link:../core
       '@types/node': 16.11.42
-      svimg: 3.0.0
+      svimg: 3.1.0
       tsup: 6.2.1_typescript@4.7.4
       typescript: 4.7.4
 
@@ -8794,6 +8794,18 @@ packages:
       p-queue: 6.6.2
       sharp: 0.30.7
       string-replace-async: 2.0.0
+    dev: false
+
+  /svimg/3.1.0:
+    resolution: {integrity: sha512-f1EmMPZMeEoCkcNSNFnbw5i+uhnxqGSjkvT/DfV5tQPJQezErH2vQ927//uMOk609MMHKI62wUi8oiPROdqePg==}
+    engines: {node: '>=14.0.0', pnpm: '>=7.0.0'}
+    dependencies:
+      md5-file: 5.0.0
+      node-html-parser: 4.1.5
+      p-queue: 6.6.2
+      sharp: 0.30.7
+      string-replace-async: 2.0.0
+    dev: true
 
   /symbol-tree/3.2.4:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
