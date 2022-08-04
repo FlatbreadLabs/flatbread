@@ -13,6 +13,7 @@ import {
   validateConfigStructure,
 } from './validate';
 import { ConfigFileName, FLATBREAD_CONFIG_FILE_REGEX } from './filenames';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 
 /**
  * Loads an ESModule-style config file.
@@ -116,12 +117,61 @@ async function bundleConfigFile(
     outExtension: {
       '.js': '.mjs',
     },
-    //
-    // Workaround for sharp being CJS/platform-exclusive so we can't bundle it in the config bundling.
-    //
-    // TODO: make this dynamic such that resolvers can provide an array of external dependencies to merge into this property.
-    //
-    external: ['sharp'],
+    watch: true,
+    plugins: [
+      {
+        //
+        // This prevents esbuild from bundling node-modules particularly to avoid an issue when bundling dependencies that puke when loaded in an ESM scope, even if shimmed.
+        // Thank u for the solution to this, Vite :)
+        //
+        name: 'externalize-deps',
+        setup(build) {
+          build.onResolve({ filter: /.*/ }, ({ path: id, importer }) => {
+            //
+            // Externalize bare imports (ex. `import { createSvImgField } from '@flatbread/resolver-svimg'`)
+            //
+            if (id[0] !== '.' && !path.isAbsolute(id)) {
+              console.log(id);
+              return {
+                external: true,
+              };
+            }
+            //
+            // Bundle the rest and make sure that we can also access
+            // its third-party dependencies.
+            //
+            // Externalize if not.
+            //
+            // monorepo/
+            //  ├─ package.json
+            //  ├─ utils.js -----------> bundle (share same node_modules)
+            //  ├─ flatbread-project/
+            //  │   ├─ flatbread.config.js --> entry
+            //  │   ├─ package.json
+            //  ├─ anotha-project/
+            //  │   ├─ utils.js --------> external (has own node_modules)
+            //  │   ├─ package.json
+            //
+            const idFsPath = path.resolve(path.dirname(importer), id);
+            const idPkgPath = lookupFile(idFsPath, [`package.json`], {
+              pathOnly: true,
+            });
+            if (idPkgPath) {
+              const idPkgDir = path.dirname(idPkgPath);
+              // if this file needs to go up one or more directory to reach the flatbread config,
+              // that means it has it's own node_modules (e.g. `anotha-project` in the above graph)
+              if (path.relative(idPkgDir, fileName).startsWith('..')) {
+                return {
+                  // normalize actual import after bundled as a single flatbread config
+                  path: pathToFileURL(idFsPath).href,
+                  external: true,
+                };
+              }
+            }
+          });
+        },
+      },
+    ],
   });
 
   const { text } = configBuild?.outputFiles[0];
@@ -129,4 +179,32 @@ async function bundleConfigFile(
   return {
     code: text,
   };
+}
+
+interface LookupFileOptions {
+  pathOnly?: boolean;
+  rootDir?: string;
+}
+
+/**
+ * Lookup a file in a directory, diving into subdirectories until it is found.
+ */
+function lookupFile(
+  dir: string,
+  formats: string[],
+  options?: LookupFileOptions
+): string | undefined {
+  for (const format of formats) {
+    const fullPath = path.join(dir, format);
+    if (existsSync(fullPath) && statSync(fullPath).isFile()) {
+      return options?.pathOnly ? fullPath : readFileSync(fullPath, 'utf-8');
+    }
+  }
+  const parentDir = path.dirname(dir);
+  if (
+    parentDir !== dir &&
+    (!options?.rootDir || parentDir.startsWith(options?.rootDir))
+  ) {
+    return lookupFile(parentDir, formats, options);
+  }
 }
