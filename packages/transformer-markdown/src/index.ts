@@ -1,10 +1,9 @@
 import matter from 'gray-matter';
-import slugify from '@sindresorhus/slugify';
-import { html, excerpt, timeToRead } from './graphql/schema-helpers';
+import { excerpt, html, timeToRead } from './graphql/schema-helpers';
 
-import type { MarkdownTransformerConfig } from './types';
 import type { EntryNode, TransformerPlugin } from '@flatbread/core';
 import type { VFile } from 'vfile';
+import type { MarkdownTransformerConfig } from './types';
 
 export * from './types';
 
@@ -20,9 +19,6 @@ export const parse = (
 ): EntryNode => {
   const { data, content } = matter(String(input), config.grayMatter);
   return {
-    _filename: input.basename,
-    _path: input.path,
-    _slug: slugify(input.stem ?? ''),
     ...input.data,
     ...data,
     _content: {

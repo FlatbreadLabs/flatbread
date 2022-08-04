@@ -1,6 +1,6 @@
 import { schemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
-import { defaultsDeep, merge } from 'lodash-es';
+import { defaultsDeep, get, merge } from 'lodash-es';
 import plur from 'plur';
 import { VFile } from 'vfile';
 
@@ -59,7 +59,17 @@ export async function generateSchema(
         defaultsDeep(
           {},
           getFieldOverrides(collection, config),
-          ...nodes.map((node) => merge({}, node, preknownSchemaFragments))
+          ...nodes.map((node) =>
+            merge(
+              {
+                _flatbread: {
+                  reference: get(node, node?._flatbread?.referenceField),
+                },
+              },
+              node,
+              preknownSchemaFragments
+            )
+          )
         ),
         { schemaComposer }
       ),
@@ -170,11 +180,9 @@ const fetchPreknownSchemaFragments = (
 
 function getTransformerExtensionMap(transformer: Transformer[]) {
   const transformerMap = new Map();
-  transformer.forEach((t) => {
-    t.extensions.forEach((extension) => {
-      transformerMap.set(extension, t);
-    });
-  });
+  transformer.forEach((t) =>
+    t.extensions.forEach((extension) => transformerMap.set(extension, t))
+  );
   return transformerMap;
 }
 

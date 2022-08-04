@@ -3,9 +3,11 @@
     const query = `
       query PostCategory {
         allPostCategories (sortBy: "title", order: DESC) {
-          _collection
-          _filename
-          _slug
+          _flatbread {
+            _filename
+            _collection
+            _slug
+          }
           id
           title
           category

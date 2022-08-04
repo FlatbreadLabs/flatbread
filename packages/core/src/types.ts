@@ -23,13 +23,13 @@ export type ContentNode = BaseContentNode & {
 export interface FlatbreadConfig {
   source: Source;
   transformer?: Transformer | Transformer[];
-  content: Content;
+  content: Partial<CollectionEntry>[];
 }
 
 export interface LoadedFlatbreadConfig {
   source: Source;
   transformer: Transformer[];
-  content: Content;
+  content: CollectionEntry[];
   loaded: {
     extensions: string[];
   };
@@ -69,9 +69,8 @@ export type EntryNode = Record<string, any>;
  */
 export interface Source {
   initialize?: (flatbreadConfig: LoadedFlatbreadConfig) => void;
-  fetchByType?: (path: string) => Promise<any[]>;
   fetch: (
-    allContentTypes: Record<string, any>[]
+    allContentTypes: CollectionEntry[]
   ) => Promise<Record<string, VFile[]>>;
 }
 
@@ -93,12 +92,14 @@ export interface Override {
 }
 
 /**
- * An array of content descriptions which can be used to retrieve content nodes.
+ * A collection entry which can be used to retrieve content nodes.
  *
  * This is paired with a `Source` (and, *optionally*, a `Transformer`) plugin.
  */
-export type Content = {
+export interface CollectionEntry {
   collection: string;
   overrides?: Override[];
+  referenceField: string;
+
   [key: string]: any;
-}[];
+}

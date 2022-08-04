@@ -1,7 +1,6 @@
-import yaml from 'js-yaml';
-import type { YAMLException } from 'js-yaml';
-import slugify from '@sindresorhus/slugify';
 import type { EntryNode, TransformerPlugin } from '@flatbread/core';
+import type { YAMLException } from 'js-yaml';
+import yaml from 'js-yaml';
 import { VFile } from 'vfile';
 
 /**
@@ -18,9 +17,6 @@ export const parse = (input: VFile): EntryNode => {
 
   if (typeof doc === 'object') {
     return {
-      _filename: input.basename,
-      _path: input.path,
-      _slug: slugify(input.stem ?? ''),
       ...input.data,
       ...doc,
     };
