@@ -26,7 +26,7 @@ export default function orchestrateProcesses({
   packageManager = null,
 }: OrchestraOptions) {
   const pkgManager = packageManager || detectPkgManager(process.cwd());
-  let serverModulePath = 'node_modules/flatbread/dist/graphql/server.js';
+  const serverModulePath = 'node_modules/flatbread/dist/graphql/server.js';
 
   process.cwd();
   const gql = fork(resolve(process.cwd(), serverModulePath), [''], {
@@ -36,7 +36,7 @@ export default function orchestrateProcesses({
       FLATBREAD_PORT: String(flatbreadPort),
     },
   });
-  let runningScripts = [gql];
+  const runningScripts = [gql];
 
   gql.on('message', (msg) => {
     if (msg === 'flatbread-gql-ready') {
@@ -49,7 +49,7 @@ export default function orchestrateProcesses({
       runningScripts.push(targetProcess);
 
       // Exit the parent process when the target process exits
-      for (let script of runningScripts) {
+      for (const script of runningScripts) {
         script.on('close', () => {
           process.exit();
         });

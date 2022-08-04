@@ -82,7 +82,7 @@ export async function generateSchema(
   /**
    * @todo potentially able to remove this
    **/
-  let queries: RootQueries = {
+  const queries: RootQueries = {
     maybeReturnsSingleItem: [],
     maybeReturnsList: [],
   };

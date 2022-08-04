@@ -56,7 +56,7 @@ export default async function gatherFileNodes(
   // for each segment - gather names for capture groups
   // and calculate what to remove from matches ex: [name].md => remove .md from match
   const segments = globs.map((branch) => {
-    let index = branch.indexOf(']');
+    const index = branch.indexOf(']');
     if (index === -1) return null;
     return {
       name: branch.slice(0, index),

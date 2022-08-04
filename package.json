@@ -15,7 +15,7 @@
     "dev": "pnpm -r --parallel --filter !{examples/*} dev",
     "lint:eslint": "eslint packages/**/src",
     "lint:prettier": "prettier --check --plugin-search-dir=. .",
-    "lint": "pnpm lint:prettier",
+    "lint": "pnpm lint:prettier && pnpm lint:eslint",
     "lint:fix": "pnpm lint:fix:prettier",
     "lint:fix:prettier": "pretty-quick --staged",
     "play": "cd examples/sveltekit && pnpm dev",

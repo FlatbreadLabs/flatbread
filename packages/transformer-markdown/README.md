@@ -71,18 +71,6 @@ export interface MarkdownTransformerConfig {
 }
 
 /**
- * An engine may either be an object with parse and
- * (optionally) stringify methods, or a function that will
- * be used for parsing only.
- */
-export type LanguageEngine =
-  | {
-      parse: (input: string) => object;
-      stringify?: (data: object) => string;
-    }
-  | ((input: string) => object);
-
-/**
  * User-configurable options for the [gray-matter](https://www.npmjs.com/package/gray-matter) frontmatter parser.
  */
 export interface GrayMatterConfig {

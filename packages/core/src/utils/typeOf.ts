@@ -9,7 +9,10 @@ export default function typeOf<T>(obj?: T) {
     return (obj + '').toLowerCase();
   } // implicit toString() conversion
 
-  var deepType = Object.prototype.toString.call(obj).slice(8, -1).toLowerCase();
+  const deepType = Object.prototype.toString
+    .call(obj)
+    .slice(8, -1)
+    .toLowerCase();
   if (deepType === 'generatorfunction') {
     return 'function';
   }

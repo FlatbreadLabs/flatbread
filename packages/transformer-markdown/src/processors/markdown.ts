@@ -28,6 +28,7 @@ const applyPlugins = (
 ): Processor => {
   plugins.forEach((plugin) => {
     if (Array.isArray(plugin)) {
+      // TODO: is this a bug?
       if (plugin[1] && plugin[1]) processor.use(plugin[0] as Plugin, plugin[1]);
       else processor.use(plugin[0]);
     } else {

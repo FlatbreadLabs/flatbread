@@ -83,7 +83,7 @@ const resolveQueryArgs = async (
  *
  */
 function buildFilterQueryFragment(filterSetManifest: TargetAndComparator) {
-  let filterToQuery = [];
+  const filterToQuery = [];
 
   for (const filter of filterSetManifest) {
     let graphQLFieldAccessor = '';
