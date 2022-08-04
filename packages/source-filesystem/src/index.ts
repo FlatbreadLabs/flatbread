@@ -45,13 +45,10 @@ async function getAllNodes(
 ): Promise<Record<string, VFile[]>> {
   const nodeEntries = await Promise.all(
     allContentTypes.map(
-      async (contentType): Promise<Record<string, any>> =>
-        new Promise(async (res) =>
-          res([
-            contentType.collection,
-            await getNodesFromDirectory(contentType.path, config),
-          ])
-        )
+      async (contentType): Promise<Record<string, any>> => [
+        contentType.collection,
+        await getNodesFromDirectory(contentType.path, config),
+      ]
     )
   );
 

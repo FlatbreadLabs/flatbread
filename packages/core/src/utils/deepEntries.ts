@@ -14,7 +14,7 @@ const deepEntries = (
   stack: any[] = []
 ): [string[], any] => {
   if (typeOf(obj) === 'object') {
-    for (let [key, value] of Object.entries(obj)) {
+    for (const [key, value] of Object.entries(obj)) {
       stack = deepEntries(value, [...path, key], stack);
     }
   } else {

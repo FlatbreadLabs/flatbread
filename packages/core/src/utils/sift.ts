@@ -26,9 +26,9 @@ const createFilterFunction = (
     // Filter args transformed to logical expressions.
     filterSetManifest ??= generateFilterSetManifest(filterArgs);
 
-    let evaluatedFilterSet: boolean[] = [];
+    const evaluatedFilterSet: boolean[] = [];
 
-    for (let { path, comparator } of filterSetManifest) {
+    for (const { path, comparator } of filterSetManifest) {
       // Retrieve the value of interest from the node.
       const needle = get(node, path, undefined);
       // Compare the value of interest to the target value, and store the result of the evaluated expression.
