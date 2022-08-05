@@ -1,5 +1,6 @@
 import matter from 'gray-matter';
 import { excerpt, html, timeToRead } from './graphql/schema-helpers';
+import ownPackage from '../package.json';
 
 import type { EntryNode, TransformerPlugin } from '@flatbread/core';
 import type { VFile } from 'vfile';
@@ -41,6 +42,7 @@ export const transformer: TransformerPlugin = (
   );
   return {
     parse: (input: VFile): EntryNode => parse(input, config),
+    id: ownPackage.name,
     preknownSchemaFragments: () => ({
       _content: {
         html: html(config),

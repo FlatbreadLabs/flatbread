@@ -1,12 +1,13 @@
 import slugify from '@sindresorhus/slugify';
 import { defaultsDeep, merge } from 'lodash-es';
 import { read } from 'to-vfile';
-
+import ownPackage from '../package.json';
 import type {
   CollectionEntry,
   LoadedFlatbreadConfig,
   SourcePlugin,
 } from '@flatbread/core';
+import { relative } from 'path';
 import type { VFile } from 'vfile';
 import type {
   FileNode,
@@ -39,8 +40,9 @@ async function getNodesFromDirectory(
           referenceField: collectionEntry.referenceField,
           collection: collectionEntry.collection,
           filename: file.basename,
-          path: file.path,
+          path: relative(process.cwd(), file.path),
           slug: slugify(file.stem ?? ''),
+          sourcedBy: ownPackage.name,
         },
       });
 

@@ -2,6 +2,7 @@ import type { EntryNode, TransformerPlugin } from '@flatbread/core';
 import type { YAMLException } from 'js-yaml';
 import yaml from 'js-yaml';
 import { VFile } from 'vfile';
+import ownPackage from '../package.json';
 
 /**
  * Transforms a yaml file (content node) to JSON.
@@ -42,6 +43,7 @@ export const transformer: TransformerPlugin = () => {
   return {
     parse: (input: VFile): EntryNode => parse(input),
     inspect: (input: EntryNode) => String(input),
+    id: ownPackage.name,
     serialize,
     extensions: ['.yaml', '.yml'],
   };

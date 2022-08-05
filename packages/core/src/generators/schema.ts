@@ -59,17 +59,7 @@ export async function generateSchema(
         defaultsDeep(
           {},
           getFieldOverrides(collection, config),
-          ...nodes.map((node) =>
-            merge(
-              {
-                _flatbread: {
-                  reference: get(node, node?._flatbread?.referenceField),
-                },
-              },
-              node,
-              preknownSchemaFragments
-            )
-          )
+          ...nodes.map((node) => merge({}, node, preknownSchemaFragments))
         ),
         { schemaComposer }
       ),
@@ -213,7 +203,11 @@ const optionallyTransformContentNodes = (
       if (!transformer?.parse) {
         throw new Error(`no transformer found for ${node.path}`);
       }
-      return transformer.parse(node);
+      console.log({ transformer });
+      const doc = transformer.parse(node);
+      doc._flatbread.transformedBy = transformer.id;
+      doc._flatbread.reference = get(doc, doc._flatbread.referenceField);
+      return doc;
     });
   }
 

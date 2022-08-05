@@ -4,9 +4,9 @@
       query PostCategory {
         allPostCategories (sortBy: "title", order: DESC) {
           _flatbread {
-            _filename
-            _collection
-            _slug
+            filename
+            collection
+            slug
           }
           id
           title
@@ -20,7 +20,9 @@
             timeToRead
           }
           authors {
-            _slug
+            _flatbread {
+              slug
+            }
             id
             name
             entity

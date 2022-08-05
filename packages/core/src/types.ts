@@ -51,6 +51,7 @@ export interface Transformer {
    * @param input Node to transform
    */
   parse?: (input: VFile) => EntryNode;
+  id?: string;
   preknownSchemaFragments?: () => Record<string, any>;
   inspect: (input: EntryNode) => string;
   extensions: string[];
@@ -69,6 +70,7 @@ export type EntryNode = Record<string, any>;
  */
 export interface Source {
   initialize?: (flatbreadConfig: LoadedFlatbreadConfig) => void;
+  id?: string;
   fetch: (
     allContentTypes: CollectionEntry[]
   ) => Promise<Record<string, VFile[]>>;
