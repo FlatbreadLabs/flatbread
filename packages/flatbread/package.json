@@ -1,6 +1,6 @@
 {
   "name": "flatbread",
-  "version": "1.0.0-alpha.19",
+  "version": "1.0.0-alpha.20",
   "description": "Consume relational, flat-file data using GraphQL 🥯 inside damn near any framework.",
   "type": "module",
   "scripts": {
@@ -19,10 +19,7 @@
     "url": "https://github.com/FlatbreadLabs/flatbread/issues"
   },
   "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
+    ".": "./dist/index.js"
   },
   "main": "dist/index.js",
   "module": "dist/index.js",

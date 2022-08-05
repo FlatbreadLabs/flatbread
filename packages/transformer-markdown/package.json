@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/transformer-markdown",
-  "version": "1.0.0-alpha.6",
+  "version": "1.0.0-alpha.7",
   "description": "Convert .md files to in-memory JSON model",
   "type": "module",
   "repository": {
@@ -15,10 +15,7 @@
     "url": "https://github.com/FlatbreadLabs/flatbread/issues"
   },
   "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
+    ".": "./dist/index.js"
   },
   "main": "dist/index.js",
   "module": "dist/index.js",

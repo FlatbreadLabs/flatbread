@@ -15,10 +15,7 @@
     "url": "https://github.com/tonyketcham/flatbread/issues"
   },
   "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
+    ".": "./dist/index.js"
   },
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -40,7 +37,7 @@
   "devDependencies": {
     "@flatbread/core": "workspace:*",
     "@types/node": "16.11.42",
-    "svimg": "3.0.0",
+    "svimg": "3.1.0",
     "tsup": "6.2.1",
     "typescript": "4.7.4"
   }

@@ -1,21 +1,21 @@
 import { createSvImgField } from '@flatbread/resolver-svimg';
 import {
   defineConfig,
-  markdownTransformer,
-  yamlTransformer,
+  transformerMarkdown,
+  transformerYaml,
   sourceFilesystem,
 } from 'flatbread';
 
 const transformerConfig = {
   markdown: {
-    gfm: undefined,
+    gfm: true,
     externalLinks: true,
   },
 };
 
 export default defineConfig({
   source: sourceFilesystem(),
-  transformer: [markdownTransformer(transformerConfig), yamlTransformer()],
+  transformer: [transformerMarkdown(transformerConfig), transformerYaml()],
   content: [
     {
       path: 'content/markdown/posts',
@@ -48,7 +48,7 @@ export default defineConfig({
         createSvImgField('image', {
           inputDir: 'static/authorImages',
           outputDir: 'static/g',
-          publicPath: '/g',
+          srcGenerator: (path) => '/g/' + path,
         }),
       ],
     },

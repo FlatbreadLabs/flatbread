@@ -2,7 +2,7 @@ import sade from 'sade';
 import colors from 'kleur';
 import gradient from 'gradient-string';
 import { version } from '../../package.json';
-import { networkInterfaces, release } from 'os';
+import { networkInterfaces, release } from 'node:os';
 import orchestrateProcesses from './runner';
 import initConfig from './initConfig';
 

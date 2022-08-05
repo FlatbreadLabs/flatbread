@@ -60,7 +60,7 @@ package.json
 In reference to that structure, set up a `flatbread.config.js` in the root of your project:
 
 ```js
-import { defineConfig, markdownTransformer, filesystem } from 'flatbread';
+import { defineConfig, transformerMarkdown, sourceFilesystem } from 'flatbread';
 
 const transformerConfig = {
   markdown: {
@@ -69,8 +69,8 @@ const transformerConfig = {
   },
 };
 export default defineConfig({
-  source: filesystem(),
-  transformer: markdownTransformer(transformerConfig),
+  source: sourceFilesystem(),
+  transformer: transformerMarkdown(transformerConfig),
 
   content: [
     {
@@ -251,7 +251,7 @@ Limits the number of returned entries to the specified amount. Accepts an intege
 
 ## Query within your app ❓❓
 
-[Check out the playground for an example](https://github.com/FlatbreadLabs/flatbread/tree/main/playground) of using Flatbread with SvelteKit to safely shoot off GraphQL queries using a static (or node) adapter.
+[Check out the example integrations](https://github.com/FlatbreadLabs/flatbread/tree/main/playground) of using Flatbread with frameworks like SvelteKit and Next.js.
 
 ## Field overrides
 
@@ -306,8 +306,10 @@ Clone the entire monorepo! Once you've installed dependencies with `pnpm -w i`, 
 
 This will run a dev server across packages in the monorepo
 
+You may need to seed this with a `pnpm build` first, as there can be a race condition with parallel type generation. After that, you can automatically & incrementally build changes with:
+
 ```bash
-pnpm -w dev
+pnpm dev
 ```
 
 ## **working on a package** ⚒️
@@ -317,13 +319,12 @@ Open another **terminal** tab.
 | ☝️ Keep the dev server running in your other tab |
 | ------------------------------------------------ |
 
-### Option 1: use the Playground as a demo project
+### Option 1: use the SvelteKit example as a demo project
 
 This allows you to work in the full context of a Flatbread instance as an end-user would, except you can tinker with the `packages` internals.
 
 ```bash
-cd playground
-pnpm dev
+pnpm play
 ```
 
 This is a good option when you want to test without creating temporary clutter per-package that you wouldn't want to commit.
@@ -344,14 +345,12 @@ node dist/index.mjs # ya need Node v16+
 
 ## **build for production** 📦
 
-This will use `tsup` to build each package linked in the monorepo unless opted out per-package.
+This will use `tsup` to build each package linked in the monorepo except the integration examples.
 
 ```bash
 pnpm build
 ```
 
 # 📓 Sidenotes
-
-The transpiled TS files in the [`playground`](https://github.com/FlatbreadLabs/flatbread/tree/main/playground) are being tracked in the repo to appease the Vite gods so I can develop quicker. As the project progresses, I'll likely yeet those outta here.
 
 Huge shoutouts to [@antfu](https://github.com/antfu/) and [@sveltejs/kit](https://github.com/sveltejs/kit) for both having invaluable reference points to guide me through learning more advanced Node, Typescript, and monorepo design all in parallel during this project.

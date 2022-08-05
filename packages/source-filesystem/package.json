@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/source-filesystem",
-  "version": "1.0.0-alpha.7",
+  "version": "1.0.0-alpha.8",
   "description": "Filesystem source for Flatbread",
   "type": "module",
   "repository": {
@@ -15,10 +15,7 @@
     "url": "https://github.com/FlatbreadLabs/flatbread/issues"
   },
   "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
+    ".": "./dist/index.js"
   },
   "main": "dist/index.js",
   "module": "dist/index.js",
