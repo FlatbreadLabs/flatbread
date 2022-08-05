@@ -1,8 +1,6 @@
 /**
  * when used as a template literal tag will remove the indentation that exists from the code block indentation
  *
- * @param strings
- * @returns
  */
 
 export function outdent(
