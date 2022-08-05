@@ -22,6 +22,6 @@ export function generateCollection<T>({
       getFieldOverrides(collection, config),
       ...nodes.map((node) => merge({}, node, preknownSchemaFragments))
     ),
-    config.fieldTransform
+    config.fieldNameTransform
   );
 }
