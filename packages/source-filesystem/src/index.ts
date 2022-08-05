@@ -1,7 +1,7 @@
 import slugify from '@sindresorhus/slugify';
 import { defaultsDeep, merge } from 'lodash-es';
 import { read } from 'to-vfile';
-import ownPackage from '../package.json';
+import ownPackage from '../package.json' assert { type: 'json' };
 import type {
   CollectionEntry,
   LoadedFlatbreadConfig,

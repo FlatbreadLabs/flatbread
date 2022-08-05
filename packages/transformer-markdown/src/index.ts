@@ -1,6 +1,6 @@
 import matter from 'gray-matter';
 import { excerpt, html, timeToRead } from './graphql/schema-helpers';
-import ownPackage from '../package.json';
+import ownPackage from '../package.json' assert { type: 'json' };
 
 import type { EntryNode, TransformerPlugin } from '@flatbread/core';
 import type { VFile } from 'vfile';

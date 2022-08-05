@@ -2,7 +2,7 @@ import type { EntryNode, TransformerPlugin } from '@flatbread/core';
 import type { YAMLException } from 'js-yaml';
 import yaml from 'js-yaml';
 import { VFile } from 'vfile';
-import ownPackage from '../package.json';
+import ownPackage from '../package.json' assert { type: 'json' };
 
 /**
  * Transforms a yaml file (content node) to JSON.

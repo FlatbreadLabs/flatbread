@@ -203,7 +203,6 @@ const optionallyTransformContentNodes = (
       if (!transformer?.parse) {
         throw new Error(`no transformer found for ${node.path}`);
       }
-      console.log({ transformer });
       const doc = transformer.parse(node);
       doc._flatbread.transformedBy = transformer.id;
       doc._flatbread.reference = get(doc, doc._flatbread.referenceField);
