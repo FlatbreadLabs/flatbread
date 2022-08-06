@@ -74,14 +74,17 @@ export interface FlatbreadArgs<Context> {
   addRecord(
     collection: LoadedCollectionEntry,
     record: EntryNode,
-    context: Context
+    context?: Context
   ): void;
 }
 
 export interface Source<Context> {
   initialize?: (flatbreadConfig: LoadedFlatbreadConfig) => void;
   id?: string;
-  put: (source: VFile, ctx: Context) => Promise<Context>;
+  put: (
+    source: VFile,
+    ctx: Context
+  ) => Promise<{ doc: VFile; context: Context }>;
   fetch: (
     allContentTypes: LoadedCollectionEntry[],
     flatbread: FlatbreadArgs<Context>

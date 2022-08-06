@@ -24,5 +24,9 @@
       ]
     }
   },
+  //https://github.com/avajs/ava/discussions/3036#discussioncomment-2928239
+  "ts-node": {
+    "transpileOnly": true
+  },
   "exclude": ["**/dist/**", "**/node_modules/**"]
 }
