@@ -1,13 +1,14 @@
 import slugify from '@sindresorhus/slugify';
 import { defaultsDeep, merge } from 'lodash-es';
-import { read } from 'to-vfile';
+import { read, write } from 'to-vfile';
 import ownPackage from '../package.json' assert { type: 'json' };
 import type {
+  CollectionContext,
   CollectionEntry,
   LoadedFlatbreadConfig,
   SourcePlugin,
 } from '@flatbread/core';
-import { relative } from 'path';
+import { relative, resolve } from 'path';
 import type { VFile } from 'vfile';
 import type {
   FileNode,
@@ -80,6 +81,17 @@ async function getAllNodes(
   return nodes;
 }
 
+// TODO: _flatbread data should be extracted from plugins
+// plugin should return a context object and be given the same context object back when saving,
+// this context object will be saved internally under _flatbread[collectionId]
+
+async function put(source: VFile, ctx: CollectionContext) {
+  (source.basename = ctx.filename),
+    (source.path = resolve(process.cwd(), ctx.path));
+
+  await write(source);
+}
+
 /**
  * Source filesystem plugin for fetching flat-file content nodes from directories on disk.
  *
@@ -95,6 +107,7 @@ export const source: SourcePlugin = (sourceConfig?: sourceFilesystemConfig) => {
       config = defaultsDeep(sourceConfig ?? {}, { extensions });
     },
     fetch: (content: CollectionEntry[]) => getAllNodes(content, config),
+    put,
   };
 };
 

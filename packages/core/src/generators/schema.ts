@@ -1,11 +1,17 @@
 import { schemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
-import { defaultsDeep, get, merge } from 'lodash-es';
+import { defaultsDeep, get, keyBy, merge } from 'lodash-es';
 import plur from 'plur';
 import { VFile } from 'vfile';
 
 import { cacheSchema, checkCacheForSchema } from '../cache/cache';
-import { ConfigResult, LoadedFlatbreadConfig, Transformer } from '../types';
+import {
+  CollectionContext,
+  ConfigResult,
+  EntryNode,
+  LoadedFlatbreadConfig,
+  Transformer,
+} from '../types';
 import { getFieldOverrides } from '../utils/fieldOverrides';
 import { map } from '../utils/map';
 import addCollectionMutations from './collectionMutations';
@@ -66,6 +72,33 @@ export async function generateSchema(
     ])
   );
 
+  const transformersById = {
+    ...Object.fromEntries(
+      config.transformer.map((transformer) => [transformer.id, transformer])
+    ),
+    // this will be the default for collections that aren't already `transformedBy` anything
+    undefined: config.transformer[0],
+  };
+
+  async function updateCollectionRecord(
+    entry: EntryNode & { _flatbread: CollectionContext }
+  ) {
+    const { _flatbread: ctx, ...record } = entry;
+    const file = await transformersById[ctx.transformedBy].serialize(
+      record,
+      ctx
+    );
+
+    await config?.source.put(file, ctx);
+    const index = allContentNodesJSON[ctx.collection].findIndex(
+      (c) => get(c, ctx.referenceField) === ctx.reference
+    );
+
+    // replace in memory representation of record
+    allContentNodesJSON[ctx.collection][index] = entry;
+    return entry;
+  }
+
   // Main builder loop - iterate through each content type and generate query resolvers + relationships for it
   for (const [name, objectComposer] of Object.entries(schemaArray)) {
     const pluralName = plur(name, 2);
@@ -91,6 +124,7 @@ export async function generateSchema(
       pluralName,
       objectComposer,
       schemaComposer,
+      transformersById,
       allContentNodesJSON,
       config,
     });
@@ -100,7 +134,7 @@ export async function generateSchema(
       pluralName,
       objectComposer,
       schemaComposer,
-      allContentNodesJSON,
+      updateCollectionRecord,
       config,
     });
   }

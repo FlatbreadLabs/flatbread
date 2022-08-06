@@ -54,6 +54,7 @@ export interface Transformer {
   id?: string;
   preknownSchemaFragments?: () => Record<string, any>;
   inspect: (input: EntryNode) => string;
+  serialize: (input: EntryNode, ctx: CollectionContext) => VFile;
   extensions: string[];
 }
 
@@ -71,6 +72,7 @@ export type EntryNode = Record<string, any>;
 export interface Source {
   initialize?: (flatbreadConfig: LoadedFlatbreadConfig) => void;
   id?: string;
+  put: (source: VFile, ctx: CollectionContext) => Promise<void>;
   fetch: (
     allContentTypes: CollectionEntry[]
   ) => Promise<Record<string, VFile[]>>;
@@ -91,6 +93,17 @@ export interface Override {
     data: any,
     extended: { source: any; context: any; args: any }
   ) => any;
+}
+
+export interface CollectionContext {
+  referenceField: string;
+  collection: string;
+  filename: string;
+  path: string;
+  slug: string;
+  sourcedBy: string;
+  transformedBy: string;
+  reference: string;
 }
 
 /**

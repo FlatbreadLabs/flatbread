@@ -2,8 +2,12 @@ import matter from 'gray-matter';
 import { excerpt, html, timeToRead } from './graphql/schema-helpers';
 import ownPackage from '../package.json' assert { type: 'json' };
 
-import type { EntryNode, TransformerPlugin } from '@flatbread/core';
-import type { VFile } from 'vfile';
+import type {
+  CollectionContext,
+  EntryNode,
+  TransformerPlugin,
+} from '@flatbread/core';
+import { VFile } from 'vfile';
 import type { MarkdownTransformerConfig } from './types';
 
 export * from './types';
@@ -28,6 +32,17 @@ export const parse = (
   };
 };
 
+function serialize(
+  data: EntryNode,
+  ctx: CollectionContext,
+  config: MarkdownTransformerConfig
+) {
+  const { _content, ...rest } = data;
+  const doc = matter.stringify(_content.raw, rest, config.grayMatter);
+
+  return new VFile(doc);
+}
+
 /**
  * Converts markdown files to meaningful data.
  *
@@ -51,6 +66,8 @@ export const transformer: TransformerPlugin = (
       },
     }),
     inspect: (input: EntryNode) => String(input),
+    serialize: (input: EntryNode, ctx: CollectionContext) =>
+      serialize(input, ctx, config),
     extensions,
   };
 };

@@ -7,7 +7,7 @@ import {
   generateArgsForSingleItemQuery,
 } from '../generators/arguments';
 import { cloneDeep } from 'lodash-es';
-import { EntryNode, LoadedFlatbreadConfig } from '../types';
+import { EntryNode, LoadedFlatbreadConfig, Transformer } from '../types';
 
 export interface AddCollectionQueriesArgs {
   name: string;
@@ -16,6 +16,7 @@ export interface AddCollectionQueriesArgs {
   objectComposer: ObjectTypeComposer;
   schemaComposer: SchemaComposer;
   allContentNodesJSON: Record<string, any[]>;
+  transformersById: Record<string, Transformer>;
 }
 
 export default function addCollectionQueries(args: AddCollectionQueriesArgs) {

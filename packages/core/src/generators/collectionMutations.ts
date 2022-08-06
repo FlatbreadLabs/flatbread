@@ -1,5 +1,11 @@
 import { ObjectTypeComposer, SchemaComposer } from 'graphql-compose';
-import { LoadedFlatbreadConfig } from '../types';
+import { merge } from 'lodash-es';
+import {
+  CollectionContext,
+  EntryNode,
+  LoadedFlatbreadConfig,
+  Transformer,
+} from '../types';
 
 export interface AddCollectionMutationsArgs {
   name: string;
@@ -7,7 +13,9 @@ export interface AddCollectionMutationsArgs {
   config: LoadedFlatbreadConfig;
   objectComposer: ObjectTypeComposer;
   schemaComposer: SchemaComposer;
-  allContentNodesJSON: Record<string, any[]>;
+  updateCollectionRecord: (
+    entry: EntryNode & { _flatbread: CollectionContext }
+  ) => Promise<EntryNode>;
 }
 
 export default function addCollectionMutations(
@@ -19,17 +27,29 @@ export default function addCollectionMutations(
     config,
     objectComposer,
     schemaComposer,
-    allContentNodesJSON,
+    updateCollectionRecord,
   } = args;
 
   schemaComposer.Mutation.addFields({
-    [`upsert${name}`]: {
+    [`update${name}`]: {
       type: objectComposer,
       args: { [name]: objectComposer.getInputType() },
       description: `Update or create a ${name}`,
-      async resolve(_, payload) {
-        console.dir({ payload }, { depth: Infinity });
-        return payload;
+      async resolve(source, payload) {
+        // remove _flatbread to prevent injection
+        const { _flatbread, ...update } = source.author;
+
+        const targetRecord = objectComposer
+          .getResolver('findById')
+          .resolve({ args: update });
+
+        // remove supplied key (might not be required)
+        delete update[targetRecord._flatbread.referenceField];
+        const newRecord = merge(targetRecord, update);
+
+        await updateCollectionRecord(newRecord);
+
+        return newRecord;
       },
     },
   });

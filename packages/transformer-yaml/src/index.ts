@@ -1,4 +1,8 @@
-import type { EntryNode, TransformerPlugin } from '@flatbread/core';
+import type {
+  CollectionContext,
+  EntryNode,
+  TransformerPlugin,
+} from '@flatbread/core';
 import type { YAMLException } from 'js-yaml';
 import yaml from 'js-yaml';
 import { VFile } from 'vfile';
@@ -29,7 +33,7 @@ export const parse = (input: VFile): EntryNode => {
   );
 };
 
-function serialize(node: EntryNode): VFile {
+function serialize(node: EntryNode, ctx: CollectionContext): VFile {
   const doc = yaml.dump(node);
   return new VFile(doc);
 }
