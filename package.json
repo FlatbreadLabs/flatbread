@@ -44,6 +44,7 @@
   },
   "devDependencies": {
     "@ava/typescript": "3.0.1",
+    "@changesets/cli": "2.24.2",
     "@nrwl/workspace": "14.4.3",
     "@types/inquirer": "8.2.1",
     "@types/node": "16.11.47",
