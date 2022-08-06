@@ -1,7 +1,17 @@
 {
-  "name": "nextjs",
+  "name": "@flatbread/example-nextjs",
   "version": "0.1.0",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FlatbreadLabs/flatbread.git",
+    "directory": "examples/nextjs"
+  },
+  "author": "Tony Ketcham <ketcham.dev@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/FlatbreadLabs/flatbread/issues"
+  },
   "scripts": {
     "dev": "flatbread start -- next dev",
     "build": "flatbread start -- next build",
