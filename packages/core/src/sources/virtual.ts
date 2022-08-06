@@ -12,7 +12,7 @@ interface MemContext {
   collectionName: string;
 }
 
-export class SourceMemory implements Source<MemContext> {
+export class SourceVirtual implements Source<MemContext> {
   private data: Record<string, any[]> = {};
 
   public id = '@flatbread/sourceMemory';

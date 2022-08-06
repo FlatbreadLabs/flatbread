@@ -1,15 +1,14 @@
-import test from 'ava';
-import filesystem from '@flatbread/source-filesystem';
 import markdownTransformer from '@flatbread/transformer-markdown';
+import test from 'ava';
+import { SourceVirtual } from '../../sources/virtual';
 import { FlatbreadProvider } from '../base';
-import { SourceMemory } from '../../sources/base';
 import { mockData } from './mockData';
 
-const sourceMemory = new SourceMemory(mockData);
+const sourceVirtual = new SourceVirtual(mockData);
 
 function basicProject() {
   return new FlatbreadProvider({
-    source: sourceMemory,
+    source: sourceVirtual,
     transformer: markdownTransformer({
       markdown: {
         gfm: true,
