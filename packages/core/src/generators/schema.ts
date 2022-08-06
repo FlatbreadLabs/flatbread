@@ -7,11 +7,14 @@ import { VFile } from 'vfile';
 import { cacheSchema, checkCacheForSchema } from '../cache/cache';
 import {
   CollectionContext,
+  CollectionEntry,
   ConfigResult,
   EntryNode,
   LoadedFlatbreadConfig,
+  Source,
   Transformer,
 } from '../types';
+import createHash from '../utils/createHash';
 import { getFieldOverrides } from '../utils/fieldOverrides';
 import { map } from '../utils/map';
 import addCollectionMutations from './collectionMutations';
@@ -41,7 +44,27 @@ export async function generateSchema(
   config.source.initialize?.(config);
 
   // Invoke the content source resolver to retrieve the content nodes
-  const allContentNodes = await config.source.fetch(config.content);
+  let allContentNodes: Record<string, any> = {};
+
+  const addRecord =
+    (source: Source<any>) =>
+    <Ctx>(collection: CollectionEntry, record: EntryNode, context: Ctx) => {
+      allContentNodes[collection.collection] =
+        allContentNodes[collection.collection] ?? [];
+      allContentNodes[collection.collection].push({
+        record,
+        context: {
+          sourceContext: context,
+          sourcedBy: source.id,
+          collection: collection.collection,
+          referenceField: collection.referenceField ?? 'id',
+        },
+      });
+    };
+
+  await config.source.fetch(config.content, {
+    addRecord: addRecord(config.source),
+  });
 
   // Transform the content nodes to the expected JSON format if needed
   const allContentNodesJSON = optionallyTransformContentNodes(
@@ -81,15 +104,15 @@ export async function generateSchema(
   };
 
   async function updateCollectionRecord(
-    entry: EntryNode & { _flatbread: CollectionContext }
+    entry: EntryNode & { _flatbread: any }
   ) {
     const { _flatbread: ctx, ...record } = entry;
     const file = await transformersById[ctx.transformedBy].serialize(
       record,
-      ctx
+      ctx.transformContext
     );
 
-    await config?.source.put(file, ctx);
+    await config?.source.put(file, ctx.sourceContext);
     const index = allContentNodesJSON[ctx.collection].findIndex(
       (c) => get(c, ctx.referenceField) === ctx.reference
     );
@@ -232,14 +255,16 @@ const optionallyTransformContentNodes = (
      * @todo if this becomes a performance bottleneck, consider overloading the source plugin API to accept a transform function so we can avoid mapping through the content nodes twice
      * */
 
-    return map(allContentNodes, (node: VFile) => {
-      const transformer = transformerMap.get(node.extname);
+    return map(allContentNodes, (node: { record: VFile; context: any }) => {
+      const transformer = transformerMap.get(node.record.extname);
       if (!transformer?.parse) {
-        throw new Error(`no transformer found for ${node.path}`);
+        throw new Error(`no transformer found for ${node.record.path}`);
       }
-      const doc = transformer.parse(node);
+      const { record: doc, context } = transformer.parse(node.record);
+      doc._flatbread = node.context;
       doc._flatbread.transformedBy = transformer.id;
-      doc._flatbread.reference = get(doc, doc._flatbread.referenceField);
+      doc._flatbread.transformContext = context;
+      doc._flatbread.reference = get(doc, node.context.referenceField);
       return doc;
     });
   }

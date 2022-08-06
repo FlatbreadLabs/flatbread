@@ -21,13 +21,13 @@ export type ContentNode = BaseContentNode & {
  * @todo This needs to be typed more strictly.
  */
 export interface FlatbreadConfig {
-  source: Source;
+  source: Source<any>;
   transformer?: Transformer | Transformer[];
   content: Partial<CollectionEntry>[];
 }
 
 export interface LoadedFlatbreadConfig {
-  source: Source;
+  source: Source<any>;
   transformer: Transformer[];
   content: CollectionEntry[];
   loaded: {
@@ -69,16 +69,28 @@ export type EntryNode = Record<string, any>;
  * The result of an invoked `Source` plugin which contains methods on how to retrieve content nodes in
  * their raw (if coupled with a `Transformer` plugin) or processed form.
  */
-export interface Source {
-  initialize?: (flatbreadConfig: LoadedFlatbreadConfig) => void;
-  id?: string;
-  put: (source: VFile, ctx: CollectionContext) => Promise<void>;
-  fetch: (
-    allContentTypes: CollectionEntry[]
-  ) => Promise<Record<string, VFile[]>>;
+
+export interface FlatbreadArgs<Context> {
+  addRecord(
+    collection: CollectionEntry,
+    record: EntryNode,
+    context: Context
+  ): void;
 }
 
-export type SourcePlugin = (sourceConfig?: Record<string, any>) => Source;
+export interface Source<Context> {
+  initialize?: (flatbreadConfig: LoadedFlatbreadConfig) => void;
+  id?: string;
+  put: (source: VFile, ctx: Context) => Promise<Context>;
+  fetch: (
+    allContentTypes: CollectionEntry[],
+    flatbread: FlatbreadArgs<Context>
+  ) => Promise<void>;
+}
+
+export type SourcePlugin<Context> = (
+  sourceConfig?: Record<string, any>
+) => Source<Context>;
 
 /**
  * An override can be used to declare a custom resolve for a field in content

@@ -2,7 +2,7 @@ import { cloneDeep, defaultsDeep } from 'lodash-es';
 import { CollectionEntry } from '../types';
 import { FlatbreadConfig, LoadedFlatbreadConfig, Transformer } from '../types';
 import { toArray } from './arrayUtils';
-import { createHash } from 'crypto';
+import createHash from './createHash';
 import { anyToString } from './stringUtils';
 
 /**
@@ -13,9 +13,11 @@ export function initializeConfig(
 ): LoadedFlatbreadConfig {
   const config = cloneDeep(rawConfig);
   const transformer = toArray(config.transformer ?? []).map((t) => {
-    t.id = t.id ?? createHash('sha256').update(anyToString(t)).digest('hex');
+    t.id = t.id ?? createHash(t);
     return t;
   });
+
+  config.source.id = config.source.id ?? createHash(config.source);
 
   return {
     ...config,

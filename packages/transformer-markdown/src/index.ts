@@ -24,10 +24,12 @@ export const parse = (
 ): EntryNode => {
   const { data, content } = matter(String(input), config.grayMatter);
   return {
-    ...input.data,
-    ...data,
-    _content: {
-      raw: content,
+    record: {
+      ...input.data,
+      ...data,
+      _content: {
+        raw: content,
+      },
     },
   };
 };

@@ -22,8 +22,10 @@ export const parse = (input: VFile): EntryNode => {
 
   if (typeof doc === 'object') {
     return {
-      ...input.data,
-      ...doc,
+      record: {
+        ...input.data,
+        ...doc,
+      },
     };
   }
   throw new Error(
