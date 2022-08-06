@@ -1,20 +1,18 @@
 import { schemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
-import { defaultsDeep, get, keyBy, merge } from 'lodash-es';
+import { defaultsDeep, get, merge } from 'lodash-es';
 import plur from 'plur';
 import { VFile } from 'vfile';
 
 import { cacheSchema, checkCacheForSchema } from '../cache/cache';
 import {
-  CollectionContext,
-  CollectionEntry,
   ConfigResult,
   EntryNode,
+  LoadedCollectionEntry,
   LoadedFlatbreadConfig,
   Source,
   Transformer,
 } from '../types';
-import createHash from '../utils/createHash';
 import { getFieldOverrides } from '../utils/fieldOverrides';
 import { map } from '../utils/map';
 import addCollectionMutations from './collectionMutations';
@@ -48,18 +46,25 @@ export async function generateSchema(
 
   const addRecord =
     (source: Source<any>) =>
-    <Ctx>(collection: CollectionEntry, record: EntryNode, context: Ctx) => {
-      allContentNodes[collection.collection] =
-        allContentNodes[collection.collection] ?? [];
-      allContentNodes[collection.collection].push({
+    <Ctx>(
+      collection: LoadedCollectionEntry,
+      record: EntryNode,
+      context: Ctx
+    ) => {
+      allContentNodes[collection.name] = allContentNodes[collection.name] ?? [];
+
+      const newRecord = {
         record,
         context: {
           sourceContext: context,
           sourcedBy: source.id,
-          collection: collection.collection,
+          collection: collection.name,
           referenceField: collection.referenceField ?? 'id',
         },
-      });
+      };
+
+      allContentNodes[collection.name].push(newRecord);
+      return newRecord;
     };
 
   await config.source.fetch(config.content, {
@@ -87,7 +92,7 @@ export async function generateSchema(
         collection,
         defaultsDeep(
           {},
-          getFieldOverrides(collection, config),
+          getFieldOverrides(collection, config.content),
           ...nodes.map((node) => merge({}, node, preknownSchemaFragments))
         ),
         { schemaComposer }
@@ -103,14 +108,10 @@ export async function generateSchema(
     undefined: config.transformer[0],
   };
 
-  async function updateCollectionRecord(
-    entry: EntryNode & { _flatbread: any }
-  ) {
-    const { _flatbread: ctx, ...record } = entry;
-    const file = await transformersById[ctx.transformedBy].serialize(
-      record,
-      ctx.transformContext
-    );
+  async function updateCollectionRecord(entry: EntryNode & { _metadata: any }) {
+    const { _metadata: ctx, ...record } = entry;
+    const { serialize } = transformersById[ctx.transformedBy];
+    const file = await serialize(record, ctx.transformContext);
 
     await config?.source.put(file, ctx.sourceContext);
     const index = allContentNodesJSON[ctx.collection].findIndex(
@@ -163,8 +164,8 @@ export async function generateSchema(
   }
 
   // Create map of references on each content node
-  for (const { collection, refs } of config.content) {
-    const typeTC = schemaComposer.getOTC(collection);
+  for (const { name, refs } of config.content) {
+    const typeTC = schemaComposer.getOTC(name);
 
     if (!refs) continue;
 
@@ -181,7 +182,7 @@ export async function generateSchema(
           description: `All ${plur(
             String(refType),
             2
-          )} that are referenced by this ${collection}`,
+          )} that are referenced by this ${name}`,
           resolver: () => refTypeTC.getResolver('findMany'),
           prepareArgs: {
             ids: (source) => source[refField],
@@ -191,7 +192,7 @@ export async function generateSchema(
       } else {
         // If the reference field has a single node
         typeTC.addRelation(refField, {
-          description: `The ${refType} referenced by this ${collection}`,
+          description: `The ${refType} referenced by this ${name}`,
           resolver: () => refTypeTC.getResolver('findById'),
           prepareArgs: {
             id: (source) => source[refField],
@@ -261,13 +262,14 @@ const optionallyTransformContentNodes = (
         throw new Error(`no transformer found for ${node.record.path}`);
       }
       const { record: doc, context } = transformer.parse(node.record);
-      doc._flatbread = node.context;
-      doc._flatbread.transformedBy = transformer.id;
-      doc._flatbread.transformContext = context;
-      doc._flatbread.reference = get(doc, node.context.referenceField);
+      doc._metadata = node.context;
+      doc._metadata.transformedBy = transformer.id;
+      doc._metadata.transformContext = context;
+      doc._metadata.reference = get(doc, node.context.referenceField);
       return doc;
     });
   }
 
+  // TODO: might need to map this to attach metadata here
   return allContentNodes;
 };

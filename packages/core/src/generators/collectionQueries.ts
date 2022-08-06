@@ -37,8 +37,10 @@ export default function addCollectionQueries(args: AddCollectionQueriesArgs) {
     description: `Find one ${name} by its ID`,
     args: generateArgsForSingleItemQuery(),
     resolve: (rp: Record<string, any>) =>
-      cloneDeep(allContentNodesJSON[name]).find(
-        (node: EntryNode) => node.id === rp.args.id
+      cloneDeep(
+        allContentNodesJSON[name].find(
+          (node: EntryNode) => node.id === rp.args.id
+        )
       ),
   });
 

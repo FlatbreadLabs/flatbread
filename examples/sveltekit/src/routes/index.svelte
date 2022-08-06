@@ -3,10 +3,12 @@
     const query = `
       query PostCategory {
         allPostCategories (sortBy: "title", order: DESC) {
-          _flatbread {
-            filename
+          _metadata {
+            sourceContext {
+              filename
+              slug
+            }
             collection
-            slug
           }
           id
           title
@@ -20,8 +22,10 @@
             timeToRead
           }
           authors {
-            _flatbread {
-              slug
+            _metadata {
+              sourceContext {
+                slug
+              }
             }
             id
             name

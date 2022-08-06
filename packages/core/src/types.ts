@@ -23,13 +23,13 @@ export type ContentNode = BaseContentNode & {
 export interface FlatbreadConfig {
   source: Source<any>;
   transformer?: Transformer | Transformer[];
-  content: Partial<CollectionEntry>[];
+  content: CollectionEntry[];
 }
 
 export interface LoadedFlatbreadConfig {
   source: Source<any>;
   transformer: Transformer[];
-  content: CollectionEntry[];
+  content: LoadedCollectionEntry[];
   loaded: {
     extensions: string[];
   };
@@ -72,7 +72,7 @@ export type EntryNode = Record<string, any>;
 
 export interface FlatbreadArgs<Context> {
   addRecord(
-    collection: CollectionEntry,
+    collection: LoadedCollectionEntry,
     record: EntryNode,
     context: Context
   ): void;
@@ -83,7 +83,7 @@ export interface Source<Context> {
   id?: string;
   put: (source: VFile, ctx: Context) => Promise<Context>;
   fetch: (
-    allContentTypes: CollectionEntry[],
+    allContentTypes: LoadedCollectionEntry[],
     flatbread: FlatbreadArgs<Context>
   ) => Promise<void>;
 }
@@ -123,10 +123,15 @@ export interface CollectionContext {
  *
  * This is paired with a `Source` (and, *optionally*, a `Transformer`) plugin.
  */
-export interface CollectionEntry {
-  collection: string;
-  overrides?: Override[];
-  referenceField: string;
 
-  [key: string]: any;
+export interface CollectionEntry {
+  name: string;
+  path: string;
+  overrides?: Override[];
+  refs?: Record<string, string>;
+  referenceField?: string;
+}
+
+export interface LoadedCollectionEntry extends CollectionEntry {
+  referenceField: string;
 }

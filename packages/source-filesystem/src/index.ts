@@ -4,7 +4,7 @@ import { read, write } from 'to-vfile';
 import ownPackage from '../package.json' assert { type: 'json' };
 import type {
   CollectionContext,
-  CollectionEntry,
+  LoadedCollectionEntry,
   FlatbreadArgs,
   LoadedFlatbreadConfig,
   SourcePlugin,
@@ -32,7 +32,7 @@ interface Context {
  * @returns An array of content nodes
  */
 async function getNodesFromDirectory(
-  collectionEntry: CollectionEntry,
+  collectionEntry: LoadedCollectionEntry,
   { addRecord }: FlatbreadArgs<Context>,
   config: InitializedSourceFilesystemConfig
 ): Promise<void> {
@@ -61,7 +61,7 @@ async function getNodesFromDirectory(
  * @returns
  */
 async function getAllNodes(
-  allCollectionEntries: CollectionEntry[],
+  allCollectionEntries: LoadedCollectionEntry[],
   flatbread: FlatbreadArgs<Context>,
   config: InitializedSourceFilesystemConfig
 ): Promise<void> {
@@ -70,7 +70,7 @@ async function getAllNodes(
       async (contentType): Promise<Record<string, any>> =>
         new Promise(async (res) =>
           res([
-            contentType.collection,
+            contentType.name,
             await getNodesFromDirectory(contentType, flatbread, config),
           ])
         )
@@ -110,8 +110,10 @@ export function source(sourceConfig?: sourceFilesystemConfig) {
       const { extensions } = flatbreadConfig.loaded;
       config = defaultsDeep(sourceConfig ?? {}, { extensions });
     },
-    fetch: (content: CollectionEntry[], flatbread: FlatbreadArgs<Context>) =>
-      getAllNodes(content, flatbread, config),
+    fetch: (
+      content: LoadedCollectionEntry[],
+      flatbread: FlatbreadArgs<Context>
+    ) => getAllNodes(content, flatbread, config),
     put,
   };
 }

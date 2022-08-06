@@ -1,8 +1,8 @@
 import { cloneDeep, defaultsDeep } from 'lodash-es';
-import { CollectionEntry } from '../types';
+import { LoadedCollectionEntry } from '../types';
 import { FlatbreadConfig, LoadedFlatbreadConfig, Transformer } from '../types';
 import { toArray } from './arrayUtils';
-import createHash from './createHash';
+import createShaHash from './createShaHash';
 import { anyToString } from './stringUtils';
 
 /**
@@ -13,15 +13,15 @@ export function initializeConfig(
 ): LoadedFlatbreadConfig {
   const config = cloneDeep(rawConfig);
   const transformer = toArray(config.transformer ?? []).map((t) => {
-    t.id = t.id ?? createHash(t);
+    t.id = t.id ?? createShaHash(t);
     return t;
   });
 
-  config.source.id = config.source.id ?? createHash(config.source);
+  config.source.id = config.source.id ?? createShaHash(config.source);
 
   return {
     ...config,
-    content: config.content?.map((content: Partial<CollectionEntry>) =>
+    content: config.content?.map((content: Partial<LoadedCollectionEntry>) =>
       defaultsDeep(content, { referenceField: 'id' })
     ),
     transformer,

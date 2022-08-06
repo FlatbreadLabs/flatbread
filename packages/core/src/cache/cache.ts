@@ -1,8 +1,7 @@
 import { GraphQLSchema } from 'graphql';
 import LRU from 'lru-cache';
-import { createHash } from 'node:crypto';
 import { LoadedFlatbreadConfig } from '../types';
-import { anyToString } from '../utils/stringUtils';
+import createShaHash from '../utils/createShaHash';
 
 type SchemaCacheKey = string;
 
@@ -29,7 +28,7 @@ export function cacheSchema(
   config: LoadedFlatbreadConfig,
   schema: GraphQLSchema
 ) {
-  const schemaHashKey = getSchemaHash(config);
+  const schemaHashKey = createShaHash(config);
   cache.schema.set(schemaHashKey, schema);
 }
 
@@ -39,13 +38,6 @@ export function cacheSchema(
 export function checkCacheForSchema(
   config: LoadedFlatbreadConfig
 ): GraphQLSchema | undefined {
-  const schemaHashKey = getSchemaHash(config);
+  const schemaHashKey = createShaHash(config);
   return cache.schema.get(schemaHashKey);
-}
-
-/**
- * Generates a hash key for a given Flatbread config.
- */
-export function getSchemaHash(config: LoadedFlatbreadConfig) {
-  return createHash('md5').update(anyToString(config)).digest('hex');
 }

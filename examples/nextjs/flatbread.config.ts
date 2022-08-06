@@ -17,14 +17,14 @@ const config = {
   content: [
     {
       path: '../../packages/flatbread/content/posts',
-      collection: 'Post',
+      name: 'Post',
       refs: {
         authors: 'Author',
       },
     },
     {
       path: '../../packages/flatbread/content/authors',
-      collection: 'Author',
+      name: 'Author',
       refs: {
         friend: 'Author',
       },

@@ -14,7 +14,7 @@ export interface AddCollectionMutationsArgs {
   objectComposer: ObjectTypeComposer;
   schemaComposer: SchemaComposer;
   updateCollectionRecord: (
-    entry: EntryNode & { _flatbread: CollectionContext }
+    entry: EntryNode & { _metadata: CollectionContext }
   ) => Promise<EntryNode>;
 }
 
@@ -36,15 +36,15 @@ export default function addCollectionMutations(
       args: { [name]: objectComposer.getInputType() },
       description: `Update or create a ${name}`,
       async resolve(source, payload) {
-        // remove _flatbread to prevent injection
-        const { _flatbread, ...update } = source.author;
+        // remove _metadata to prevent injection
+        const { _metadata, ...update } = source.author;
 
         const targetRecord = objectComposer
           .getResolver('findById')
           .resolve({ args: update });
 
         // remove supplied key (might not be required)
-        delete update[targetRecord._flatbread.referenceField];
+        delete update[targetRecord._metadata.referenceField];
         const newRecord = merge(targetRecord, update);
 
         await updateCollectionRecord(newRecord);
