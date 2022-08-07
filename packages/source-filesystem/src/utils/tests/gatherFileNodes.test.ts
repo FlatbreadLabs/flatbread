@@ -32,20 +32,20 @@ test('basic case', async (t) => {
   t.snapshot(result2);
 });
 
-test('double level recursion', async (t) => {
-  const result = await gatherFileNodes('deeply/**/*.md', opts);
-  t.snapshot(result);
-});
+// test('double level recursion', async (t) => {
+//   const result = await gatherFileNodes('deeply/**/*.md', opts);
+//   t.snapshot(result);
+// });
 
 test('double level recursion named', async (t) => {
   const result = await gatherFileNodes('deeply/[a]/[b].md', opts);
   t.snapshot(result);
 });
 
-test('single level recursion', async (t) => {
-  const result = await gatherFileNodes('./*.md', opts as any);
-  t.snapshot(result);
-});
+// test('single level recursion', async (t) => {
+//   const result = await gatherFileNodes('./*.md', opts as any);
+//   t.snapshot(result);
+// });
 
 test('double level recursion named without parent directory', async (t) => {
   const result = await gatherFileNodes('./[genre]/[title].md', opts);
@@ -57,15 +57,15 @@ test('single level named', async (t) => {
   t.snapshot(result);
 });
 
-test('double level first named', async (t) => {
-  const result = await gatherFileNodes('./[genre]/*.md', opts);
-  t.snapshot(result);
-});
+// test('double level first named', async (t) => {
+//   const result = await gatherFileNodes('./[genre]/*.md', opts);
+//   t.snapshot(result);
+// });
 
-test('double level second named', async (t) => {
-  const result = await gatherFileNodes('./**/[title].md', opts);
-  t.snapshot(result);
-});
+// test('double level second named', async (t) => {
+//   const result = await gatherFileNodes('./**/[title].md', opts);
+//   t.snapshot(result);
+// });
 
 test('triple level', async (t) => {
   const result = await gatherFileNodes('./[random]/[name]/[title].md', opts);

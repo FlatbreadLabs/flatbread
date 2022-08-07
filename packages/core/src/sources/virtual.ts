@@ -39,12 +39,16 @@ export class SourceVirtual implements Source<MemContext> {
     }
   }
 
-  async put(doc: VFile, context: MemContext) {
-    const record = this.data[context.collectionName].find(
-      (entry) => entry.path === context.id
+  async put(doc: VFile, context: MemContext, parentContext: any) {
+    const record = this.data[parentContext.collection].find(
+      (entry) => entry.path === parentContext.reference
     );
 
-    record.value = doc;
+    if (record) {
+      record.value = doc.value;
+    } else {
+      this.data[parentContext.collection].push(doc);
+    }
 
     return { doc, context };
   }

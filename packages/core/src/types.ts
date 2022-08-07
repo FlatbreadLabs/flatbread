@@ -83,7 +83,8 @@ export interface Source<Context> {
   id?: string;
   put: (
     source: VFile,
-    ctx: Context
+    ctx: Context,
+    parentContext: any
   ) => Promise<{ doc: VFile; context: Context }>;
   fetch: (
     allContentTypes: LoadedCollectionEntry[],
@@ -133,6 +134,8 @@ export interface CollectionEntry {
   overrides?: Override[];
   refs?: Record<string, string>;
   referenceField?: string;
+  defaultTransformer?: string;
+  defaultSource?: string;
 }
 
 export interface LoadedCollectionEntry extends CollectionEntry {

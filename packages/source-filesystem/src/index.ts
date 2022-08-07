@@ -1,15 +1,12 @@
-import slugify from '@sindresorhus/slugify';
-import { defaultsDeep, merge } from 'lodash-es';
-import { read, write } from 'to-vfile';
-import ownPackage from '../package.json' assert { type: 'json' };
 import type {
-  CollectionContext,
-  LoadedCollectionEntry,
   FlatbreadArgs,
+  LoadedCollectionEntry,
   LoadedFlatbreadConfig,
-  SourcePlugin,
 } from '@flatbread/core';
+import slugify from '@sindresorhus/slugify';
+import { defaultsDeep } from 'lodash-es';
 import { relative, resolve } from 'path';
+import { read, write } from 'to-vfile';
 import type { VFile } from 'vfile';
 import type {
   FileNode,
@@ -65,7 +62,7 @@ async function getAllNodes(
   flatbread: FlatbreadArgs<Context>,
   config: InitializedSourceFilesystemConfig
 ): Promise<void> {
-  const nodeEntries = await Promise.all(
+  await Promise.all(
     allCollectionEntries.map(
       async (contentType): Promise<Record<string, any>> =>
         new Promise(async (res) =>
@@ -76,18 +73,10 @@ async function getAllNodes(
         )
     )
   );
-
-  const nodes = Object.fromEntries(
-    nodeEntries as Iterable<readonly [PropertyKey, any]>
-  );
 }
 
-// TODO: _flatbread data should be extracted from plugins
-// plugin should return a context object and be given the same context object back when saving,
-// this context object will be saved internally under _flatbread[collectionId]
-
-async function put(doc: VFile, context: Context) {
-  doc.basename = context.filename;
+async function put(doc: VFile, context: Context, parentContext: any) {
+  doc.basename = context?.filename ?? parentContext.reference;
   doc.path = resolve(process.cwd(), context.path);
 
   await write(doc);

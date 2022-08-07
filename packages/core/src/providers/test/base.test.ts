@@ -66,7 +66,7 @@ test('update collection record', async (t) => {
   const flatbread = basicProject();
   const sitting = (Math.random() * 100) | 0;
   const result: any = await flatbread.query({
-    rootValue: { author: { id: '2a3e', skills: { sitting } } },
+    variableValues: { author: { id: '2a3e', skills: { sitting } } },
     source: `
       mutation UpdateAuthor($author: AuthorInput){
         updateAuthor(Author: $author) {
@@ -85,6 +85,42 @@ test('update collection record', async (t) => {
     source: `
       query  {
         Author(id: "2a3e") {
+          id
+          skills {
+            sitting
+          }
+        }
+      }
+    `,
+  });
+
+  t.is(updated.data.Author.skills.sitting, sitting);
+});
+
+test('create collection record', async (t) => {
+  const flatbread = basicProject();
+  const sitting = 69;
+  const result: any = await flatbread.query({
+    variableValues: { test: { skills: { sitting } } },
+    source: `
+      mutation CreateAuthor($test: AuthorCreateInput){
+        createAuthor(Author: $test) {
+          id
+          skills {
+            sitting
+          }
+        }
+      }
+    `,
+  });
+
+  t.is(result.data.createAuthor.skills.sitting, sitting);
+
+  const updated: any = await flatbread.query({
+    variableValues: { id: result.data.createAuthor.id },
+    source: `
+      query QueryAuthor($id: String)  {
+        Author(id: $id) {
           id
           skills {
             sitting

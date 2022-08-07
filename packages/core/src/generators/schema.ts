@@ -1,6 +1,7 @@
 import { schemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
-import { defaultsDeep, get, merge } from 'lodash-es';
+import { defaultsDeep, get, merge, set } from 'lodash-es';
+import { nanoid } from 'nanoid';
 import plur from 'plur';
 import { VFile } from 'vfile';
 
@@ -12,6 +13,7 @@ import {
   LoadedFlatbreadConfig,
   Source,
   Transformer,
+  CollectionEntry,
 } from '../types';
 import { getFieldOverrides } from '../utils/fieldOverrides';
 import { map } from '../utils/map';
@@ -108,18 +110,33 @@ export async function generateSchema(
     undefined: config.transformer[0],
   };
 
-  async function updateCollectionRecord(entry: EntryNode & { _metadata: any }) {
-    const { _metadata: ctx, ...record } = entry;
-    const { serialize } = transformersById[ctx.transformedBy];
+  async function updateCollectionRecord(
+    collection: CollectionEntry,
+    entry: EntryNode & { _metadata: any }
+  ) {
+    const ctx = entry._metadata;
+    const { serialize, id: transformerId } =
+      transformersById[ctx.transformedBy];
+
+    if (ctx.reference) {
+      const index = allContentNodesJSON[ctx.collection].findIndex(
+        (c) => get(c, ctx.referenceField) === ctx.reference
+      );
+
+      if (index < 0) throw new Error('Failed to find record to update');
+      // replace in memory representation of record
+      allContentNodesJSON[ctx.collection][index] = entry;
+    } else {
+      entry._metadata.reference = nanoid();
+      set(entry, entry._metadata.referenceField, entry._metadata.reference);
+      entry._metadata.transformedBy = transformerId;
+      allContentNodesJSON[ctx.collection].push(entry);
+    }
+
+    const { _metadata, ...record } = entry;
     const file = await serialize(record, ctx.transformContext);
+    await config?.source.put(file, ctx.sourceContext, ctx);
 
-    await config?.source.put(file, ctx.sourceContext);
-    const index = allContentNodesJSON[ctx.collection].findIndex(
-      (c) => get(c, ctx.referenceField) === ctx.reference
-    );
-
-    // replace in memory representation of record
-    allContentNodesJSON[ctx.collection][index] = entry;
     return entry;
   }
 
@@ -143,6 +160,8 @@ export async function generateSchema(
     /// Query resolvers
     //
 
+    // TODO: add a new type of plugin that can add resolvers to each collection, they should be called here
+
     addCollectionQueries({
       name,
       pluralName,
@@ -160,6 +179,7 @@ export async function generateSchema(
       schemaComposer,
       updateCollectionRecord,
       config,
+      collectionEntry: config.content.find((c) => c.name === name),
     });
   }
 

@@ -40,7 +40,7 @@ function serialize(
   config: MarkdownTransformerConfig
 ) {
   const { _content, ...rest } = data;
-  const doc = matter.stringify(_content.raw, rest, config.grayMatter);
+  const doc = matter.stringify(_content?.raw ?? '', rest, config.grayMatter);
 
   return new VFile(doc);
 }
