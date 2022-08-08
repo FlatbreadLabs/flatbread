@@ -15,7 +15,7 @@ function basicProject() {
 
     content: [
       {
-        path: 'packages/flatbread/content/authors',
+        path: 'examples/content/markdown/authors',
         collection: 'Author',
         refs: {
           friend: 'Author',
@@ -48,7 +48,7 @@ test('relational filter query', async (t) => {
   const result = await flatbread.query({
     source: `
     query AllAuthors {
-      allAuthors(filter: {friend: {name: {wildcard: "Anot*"}}}) {
+      allAuthors(filter: {friend: {name: {eq: "Eva"}}}) {
         name
         enjoys
       }
