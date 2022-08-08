@@ -18,7 +18,7 @@ function basicProject() {
 
     content: [
       {
-        path: 'packages/flatbread/content/authors',
+        path: 'examples/content/markdown/authors',
         name: 'Author',
         refs: {
           friend: 'Author',
