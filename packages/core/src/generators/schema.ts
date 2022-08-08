@@ -1,20 +1,20 @@
 import { schemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
 import { defaultsDeep, get, merge, set } from 'lodash-es';
-import { nanoid } from 'nanoid';
 import plur from 'plur';
 import { VFile } from 'vfile';
 
 import { cacheSchema, checkCacheForSchema } from '../cache/cache';
 import {
+  CollectionEntry,
   ConfigResult,
   EntryNode,
   LoadedCollectionEntry,
   LoadedFlatbreadConfig,
   Source,
   Transformer,
-  CollectionEntry,
 } from '../types';
+import { createUniqueId } from '../utils/createUniqueId';
 import { getFieldOverrides } from '../utils/fieldOverrides';
 import { map } from '../utils/map';
 import addCollectionMutations from './collectionMutations';
@@ -115,8 +115,11 @@ export async function generateSchema(
     entry: EntryNode & { _metadata: any }
   ) {
     const ctx = entry._metadata;
-    const { serialize, id: transformerId } =
-      transformersById[ctx.transformedBy];
+    const {
+      serialize,
+      extensions,
+      id: transformerId,
+    } = transformersById[ctx.transformedBy];
 
     if (ctx.reference) {
       const index = allContentNodesJSON[ctx.collection].findIndex(
@@ -127,15 +130,20 @@ export async function generateSchema(
       // replace in memory representation of record
       allContentNodesJSON[ctx.collection][index] = entry;
     } else {
-      entry._metadata.reference = nanoid();
+      entry._metadata.reference = createUniqueId();
       set(entry, entry._metadata.referenceField, entry._metadata.reference);
       entry._metadata.transformedBy = transformerId;
+      entry._metadata.extension = extensions?.[0];
       allContentNodesJSON[ctx.collection].push(entry);
     }
 
     const { _metadata, ...record } = entry;
     const file = await serialize(record, ctx.transformContext);
-    await config?.source.put(file, ctx.sourceContext, ctx);
+    await config?.source.put(file, ctx.sourceContext, {
+      parentContext: ctx,
+      collection,
+      record,
+    });
 
     return entry;
   }
@@ -179,7 +187,9 @@ export async function generateSchema(
       schemaComposer,
       updateCollectionRecord,
       config,
-      collectionEntry: config.content.find((c) => c.name === name),
+      collectionEntry: config.content.find(
+        (c) => c.name === name
+      ) as CollectionEntry,
     });
   }
 

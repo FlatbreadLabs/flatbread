@@ -84,7 +84,7 @@ export interface Source<Context> {
   put: (
     source: VFile,
     ctx: Context,
-    parentContext: any
+    opts: { parentContext: any; collection: CollectionEntry; record: any }
   ) => Promise<{ doc: VFile; context: Context }>;
   fetch: (
     allContentTypes: LoadedCollectionEntry[],

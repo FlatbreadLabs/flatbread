@@ -41,6 +41,11 @@ export default async function gatherFileNodes(
   path: string,
   { readDirectory = readDir, extensions }: GatherFileNodesOptions = {}
 ): Promise<FileNode[]> {
+  if (path.includes('*'))
+    throw new Error(
+      `* wildcards are not supported, only variable named paths like [example]\nPlease change path in config "${path}"`
+    );
+
   /**
    * Prepend a period to the extension if it doesn't have one.
    * If no extensions are provided, use the default ones.

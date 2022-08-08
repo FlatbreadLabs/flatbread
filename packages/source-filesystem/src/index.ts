@@ -1,11 +1,12 @@
 import type {
+  CollectionEntry,
   FlatbreadArgs,
   LoadedCollectionEntry,
   LoadedFlatbreadConfig,
 } from '@flatbread/core';
 import slugify from '@sindresorhus/slugify';
-import { defaultsDeep } from 'lodash-es';
-import { relative, resolve } from 'path';
+import { defaultsDeep, get } from 'lodash-es';
+import path, { relative, resolve } from 'path';
 import { read, write } from 'to-vfile';
 import type { VFile } from 'vfile';
 import type {
@@ -75,9 +76,36 @@ async function getAllNodes(
   );
 }
 
-async function put(doc: VFile, context: Context, parentContext: any) {
+export function createPath(
+  collection: CollectionEntry,
+  record: any,
+  parentContext: any
+): string {
+  const partialPath = collection.path.replace(
+    /\[(.*?)\]/g,
+    (_: any, match: any) => get(record, match)
+  );
+
+  const filename = path.parse(partialPath);
+
+  if (!filename.ext) {
+    return resolve(
+      partialPath,
+      parentContext.reference + parentContext.extension
+    );
+  }
+
+  return partialPath;
+}
+
+async function put(
+  doc: VFile,
+  context: Context,
+  { parentContext, collection, record }: any
+) {
+  const path = context?.path ?? createPath(collection, record, parentContext);
   doc.basename = context?.filename ?? parentContext.reference;
-  doc.path = resolve(process.cwd(), context.path);
+  doc.path = resolve(process.cwd(), path);
 
   await write(doc);
 
