@@ -8,7 +8,7 @@ import {
 
 const transformerConfig = {
   markdown: {
-    gfm: undefined,
+    gfm: true,
     externalLinks: true,
   },
 };
@@ -48,7 +48,7 @@ export default defineConfig({
         createSvImgField('image', {
           inputDir: 'static/authorImages',
           outputDir: 'static/g',
-          publicPath: '/g',
+          srcGenerator: (path) => '/g/' + path,
         }),
       ],
     },
