@@ -46,8 +46,15 @@ export async function generateSchema(
   // Invoke the content source resolver to retrieve the content nodes
   let allContentNodes: Record<string, any> = {};
 
+  let collectionEntriesByName = Object.fromEntries(
+    config.content.map((collection: LoadedCollectionEntry) => [
+      collection.name,
+      collection,
+    ])
+  );
+
   const addRecord =
-    (source: Source<any>) =>
+    (sourceId: string) =>
     <Ctx>(
       collection: LoadedCollectionEntry,
       record: EntryNode,
@@ -59,7 +66,7 @@ export async function generateSchema(
         record,
         context: {
           sourceContext: context,
-          sourcedBy: source.id,
+          sourcedBy: sourceId,
           collection: collection.name,
           referenceField: collection.referenceField ?? 'id',
         },
@@ -69,8 +76,20 @@ export async function generateSchema(
       return newRecord;
     };
 
+  function addCreationRequiredFields(
+    collection: CollectionEntry,
+    fields: string[]
+  ): void {
+    if (!collectionEntriesByName[collection.name])
+      throw new Error(`Couldn't find collection ${collection.name}`);
+    collectionEntriesByName?.[collection.name]?.creationRequiredFields?.push(
+      ...fields
+    );
+  }
+
   await config.source.fetch(config.content, {
-    addRecord: addRecord(config.source),
+    addRecord: addRecord(config.source.id as string),
+    addCreationRequiredFields,
   });
 
   // Transform the content nodes to the expected JSON format if needed
@@ -187,9 +206,7 @@ export async function generateSchema(
       schemaComposer,
       updateCollectionRecord,
       config,
-      collectionEntry: config.content.find(
-        (c) => c.name === name
-      ) as CollectionEntry,
+      collectionEntry: collectionEntriesByName[name],
     });
   }
 

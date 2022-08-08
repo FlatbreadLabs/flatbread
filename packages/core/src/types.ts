@@ -76,6 +76,10 @@ export interface FlatbreadArgs<Context> {
     record: EntryNode,
     context?: Context
   ): void;
+  addCreationRequiredFields(
+    collection: LoadedCollectionEntry,
+    fields: string[]
+  ): void;
 }
 
 export interface Source<Context> {
@@ -134,10 +138,12 @@ export interface CollectionEntry {
   overrides?: Override[];
   refs?: Record<string, string>;
   referenceField?: string;
+  creationRequiredFields?: string[];
   defaultTransformer?: string;
   defaultSource?: string;
 }
 
 export interface LoadedCollectionEntry extends CollectionEntry {
   referenceField: string;
+  creationRequiredFields: string[];
 }

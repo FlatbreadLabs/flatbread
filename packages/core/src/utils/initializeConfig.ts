@@ -22,7 +22,10 @@ export function initializeConfig(
   return {
     ...config,
     content: config.content?.map((content: Partial<LoadedCollectionEntry>) =>
-      defaultsDeep(content, { referenceField: 'id' })
+      defaultsDeep(content, {
+        referenceField: 'id',
+        creationRequiredFields: [],
+      })
     ),
     transformer,
     loaded: {

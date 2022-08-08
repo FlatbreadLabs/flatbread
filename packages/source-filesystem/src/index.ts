@@ -31,13 +31,19 @@ interface Context {
  */
 async function getNodesFromDirectory(
   collectionEntry: LoadedCollectionEntry,
-  { addRecord }: FlatbreadArgs<Context>,
+  { addRecord, addCreationRequiredFields }: FlatbreadArgs<Context>,
   config: InitializedSourceFilesystemConfig
 ): Promise<void> {
   const { extensions } = config;
   const nodes: FileNode[] = await gatherFileNodes(collectionEntry.path, {
     extensions,
   });
+
+  // collect all the variable path segments [like] [these]
+  const requiredFields = Array.from(
+    collectionEntry.path.matchAll(/\[(.*?)\]/g)
+  ).map((m) => m[1]);
+  addCreationRequiredFields(collectionEntry, requiredFields);
 
   await Promise.all(
     nodes.map(async (node: FileNode): Promise<void> => {
