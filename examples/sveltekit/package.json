@@ -24,7 +24,8 @@
     "lint": "prettier --ignore-path .gitignore --check --plugin-search-dir=. . && eslint --ignore-path .gitignore .",
     "format": "prettier --ignore-path .gitignore --write --plugin-search-dir=. .",
     "transpile": "tsc --watch",
-    "flatbread:withnpm": "flatbread start -X npm -- -h"
+    "flatbread:withnpm": "flatbread start -X npm -- -h",
+    "prepare": "svelte-kit sync"
   },
   "devDependencies": {
     "@flatbread/transformer-yaml": "workspace:*",
