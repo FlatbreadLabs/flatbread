@@ -31,7 +31,11 @@ To use the most common setup for markdown files sourced from the filesystem, Fla
 The following example takes you through the default flatbread setup.
 
 ```bash
-pnpm i flatbread@latest
+# barebones
+pnpm i flatbread
+
+# these are your likely suspects, but other plugins might fit your use cases
+pnpm i flatbread @flatbread/transformer-markdown @flatbread/source-filesystem
 ```
 
 Automatically create a `flatbread.config.js` file:
@@ -60,7 +64,9 @@ package.json
 In reference to that structure, set up a `flatbread.config.js` in the root of your project:
 
 ```js
-import { defineConfig, transformerMarkdown, sourceFilesystem } from 'flatbread';
+import { defineConfig } from 'flatbread';
+import { transformMarkdown } from '@flatbread/transformer-markdown';
+import { sourceFilesystem } from '@flatbread/source-filesystem';
 
 const transformerConfig = {
   markdown: {
@@ -70,7 +76,7 @@ const transformerConfig = {
 };
 export default defineConfig({
   source: sourceFilesystem(),
-  transformer: transformerMarkdown(transformerConfig),
+  transformer: transformMarkdown(transformerConfig),
 
   content: [
     {

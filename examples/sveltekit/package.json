@@ -28,6 +28,9 @@
   },
   "devDependencies": {
     "@flatbread/transformer-yaml": "workspace:*",
+    "@flatbread/transformer-markdown": "workspace:*",
+    "@flatbread/source-filesystem": "workspace:*",
+    "@flatbread/resolver-svimg": "workspace:*",
     "@sveltejs/adapter-static": "next",
     "@sveltejs/kit": "next",
     "@typescript-eslint/eslint-plugin": "4.33.0",

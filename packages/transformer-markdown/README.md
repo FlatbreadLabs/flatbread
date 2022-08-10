@@ -16,11 +16,11 @@ Pair this with a compatible source plugin in your `flatbread.config.js` file:
 
 ```js
 // flatbread.config.js
-import defineConfig from '@flatbread/config';
-import transformer from '@flatbread/transformer-markdown';
-import filesystem from '@flatbread/source-filesystem';
+import { defineConfig } from 'flatbread';
+import { transformMarkdown } from '@flatbread/transformer-markdown';
+import { sourceFilesystem } from '@flatbread/source-filesystem';
 
-const transformerConfig = {
+const transformConfig = {
   markdown: {
     gfm: true,
     externalLinks: true,
@@ -28,8 +28,8 @@ const transformerConfig = {
 };
 
 export default defineConfig({
-  source: filesystem({ extensions: ['.md', '.mdx', '.markdown'] }),
-  transformer: transformer(transformerConfig),
+  source: sourceFilesystem({ extensions: ['.md', '.mdx', '.markdown'] }),
+  transformer: transformMarkdown(transformConfig),
   content: [
     {
       path: 'content/posts',

@@ -9,6 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@flatbread/transformer-yaml": "workspace:*",
+    "@flatbread/transformer-markdown": "workspace:*",
+    "@flatbread/source-filesystem": "workspace:*",
+    "@flatbread/resolver-svimg": "workspace:*",
     "flatbread": "workspace:*",
     "next": "12.2.3",
     "react": "18.2.0",
