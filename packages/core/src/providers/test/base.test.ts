@@ -66,7 +66,7 @@ test('create custom collection resolver', async (t) => {
     ],
   });
 
-  const result: any = await flatbread.query({ source: `{ fakeAuthor }`});
+  const result: any = await flatbread.query({ source: `{ fakeAuthor }` });
   t.is(result.data.fakeAuthor, 'fake Author!');
 });
 

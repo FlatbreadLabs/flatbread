@@ -40,7 +40,8 @@ export interface CollectionResolverArgs {
   ) => Promise<EntryNode>;
 }
 
-export type CollectionResolver = (schemaComposer: SchemaComposer,
+export type CollectionResolver = (
+  schemaComposer: SchemaComposer,
   args: CollectionResolverArgs
 ) => void | Promise<void>;
 
