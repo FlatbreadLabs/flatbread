@@ -21,6 +21,7 @@ export function initializeConfig(
 
   return {
     ...config,
+    collectionResolvers: config.collectionResolvers || [],
     content: config.content?.map((content: Partial<LoadedCollectionEntry>) =>
       defaultsDeep(content, {
         referenceField: 'id',

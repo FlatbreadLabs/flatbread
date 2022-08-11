@@ -168,14 +168,14 @@ export async function generateSchema(
   }
 
   // Main builder loop - iterate through each content type and generate query resolvers + relationships for it
-  for (const [name, objectComposer] of Object.entries(schemaArray)) {
+  for (const [name, objectTypeComposer] of Object.entries(schemaArray)) {
     const pluralName = plur(name, 2);
 
     //
     /// Global meta fields
     //
 
-    objectComposer.addFields({
+    objectTypeComposer.addFields({
       _collection: {
         type: 'String',
         description: 'The collection name',
@@ -189,25 +189,39 @@ export async function generateSchema(
 
     // TODO: add a new type of plugin that can add resolvers to each collection, they should be called here
 
-    addCollectionQueries({
+    const collectionEntry = collectionEntriesByName[name];
+
+    addCollectionQueries(schemaComposer, {
       name,
       pluralName,
-      objectComposer,
-      schemaComposer,
-      transformersById,
       allContentNodesJSON,
+      updateCollectionRecord,
+      objectTypeComposer,
       config,
+      collectionEntry,
     });
 
-    addCollectionMutations({
+    addCollectionMutations(schemaComposer, {
       name,
       pluralName,
-      objectComposer,
-      schemaComposer,
+      objectTypeComposer,
       updateCollectionRecord,
       config,
-      collectionEntry: collectionEntriesByName[name],
+      collectionEntry,
     });
+
+    await Promise.all(
+      config.collectionResolvers.map((collectionResolver) =>
+        collectionResolver(schemaComposer, {
+          name,
+          pluralName,
+          objectTypeComposer,
+          updateCollectionRecord,
+          config,
+          collectionEntry,
+        })
+      )
+    );
   }
 
   // Create map of references on each content node

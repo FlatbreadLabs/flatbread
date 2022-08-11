@@ -1,38 +1,13 @@
 import { ObjectTypeComposer, SchemaComposer } from 'graphql-compose';
 import { get, merge } from 'lodash-es';
-import {
-  CollectionContext,
-  CollectionEntry,
-  EntryNode,
-  LoadedCollectionEntry,
-  LoadedFlatbreadConfig,
-} from '../types';
-
-export interface AddCollectionMutationsArgs {
-  name: string;
-  pluralName: string;
-  config: LoadedFlatbreadConfig;
-  objectComposer: ObjectTypeComposer;
-  schemaComposer: SchemaComposer;
-  collectionEntry: LoadedCollectionEntry;
-  updateCollectionRecord: (
-    collection: CollectionEntry,
-    entry: EntryNode & { _metadata: CollectionContext }
-  ) => Promise<EntryNode>;
-}
+import { CollectionContext, CollectionResolverArgs, EntryNode } from '../types';
 
 export default function addCollectionMutations(
-  args: AddCollectionMutationsArgs
+  schemaComposer: SchemaComposer,
+  args: CollectionResolverArgs
 ) {
-  const {
-    name,
-    pluralName,
-    config,
-    objectComposer,
-    schemaComposer,
-    updateCollectionRecord,
-    collectionEntry,
-  } = args;
+  const { name, objectTypeComposer, updateCollectionRecord, collectionEntry } =
+    args;
 
   async function update(
     payload: Record<string, EntryNode>,
@@ -41,7 +16,7 @@ export default function addCollectionMutations(
     // remove _metadata to prevent injection
     const { _metadata, ...update } = payload?.[name];
 
-    const targetRecord = objectComposer
+    const targetRecord = objectTypeComposer
       .getResolver('findById')
       .resolve({ args: update });
 
@@ -76,9 +51,9 @@ export default function addCollectionMutations(
 
   schemaComposer.Mutation.addFields({
     [`update${name}`]: {
-      type: objectComposer,
+      type: objectTypeComposer,
       args: {
-        [name]: objectComposer
+        [name]: objectTypeComposer
           .getInputTypeComposer()
           .makeFieldNonNull(collectionEntry.creationRequiredFields),
       },
@@ -86,7 +61,7 @@ export default function addCollectionMutations(
       async resolve(source: unknown, payload: Record<string, EntryNode>) {
         const { _metadata, ...args } = payload?.[name];
 
-        const existingRecord = objectComposer
+        const existingRecord = objectTypeComposer
           .getResolver('findById')
           .resolve({ args });
 
@@ -102,9 +77,9 @@ export default function addCollectionMutations(
       update,
     },
     [`create${name}`]: {
-      type: objectComposer,
+      type: objectTypeComposer,
       args: {
-        [name]: objectComposer
+        [name]: objectTypeComposer
           .getInputTypeComposer()
           .clone(`${name}CreateInput`)
           .removeField('id')
@@ -114,12 +89,12 @@ export default function addCollectionMutations(
       resolve: create,
     },
     [`upsert${name}`]: {
-      type: objectComposer,
-      args: { [name]: objectComposer.getInputTypeComposer() },
+      type: objectTypeComposer,
+      args: { [name]: objectTypeComposer.getInputTypeComposer() },
       async resolve(source: unknown, payload: Record<string, EntryNode>) {
         const { _metadata, ...args } = payload?.[name];
 
-        const existingRecord = objectComposer
+        const existingRecord = objectTypeComposer
           .getResolver('findById')
           .resolve({ args });
 

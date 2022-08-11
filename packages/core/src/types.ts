@@ -1,4 +1,5 @@
 import { GraphQLFieldConfigArgumentMap, GraphQLInputType } from 'graphql';
+import { ObjectTypeComposer, SchemaComposer } from 'graphql-compose';
 import { Maybe } from 'graphql/jsutils/Maybe';
 import type { VFile } from 'vfile';
 
@@ -24,12 +25,30 @@ export interface FlatbreadConfig {
   source: Source<any>;
   transformer?: Transformer | Transformer[];
   content: CollectionEntry[];
+  collectionResolvers?: CollectionResolver[];
 }
+
+export interface CollectionResolverArgs {
+  name: string;
+  pluralName: string;
+  config: LoadedFlatbreadConfig;
+  objectTypeComposer: ObjectTypeComposer;
+  collectionEntry: LoadedCollectionEntry;
+  updateCollectionRecord: (
+    collection: CollectionEntry,
+    entry: EntryNode & { _metadata: CollectionContext }
+  ) => Promise<EntryNode>;
+}
+
+export type CollectionResolver = (schemaComposer: SchemaComposer,
+  args: CollectionResolverArgs
+) => void | Promise<void>;
 
 export interface LoadedFlatbreadConfig {
   source: Source<any>;
   transformer: Transformer[];
   content: LoadedCollectionEntry[];
+  collectionResolvers: CollectionResolver[];
   loaded: {
     extensions: string[];
   };

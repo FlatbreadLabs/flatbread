@@ -3,6 +3,7 @@ import test from 'ava';
 import { SourceVirtual } from '../../sources/virtual';
 import { FlatbreadProvider } from '../base';
 import { mockData } from './mockData';
+import { CollectionResolverArgs } from '../../types';
 
 const sourceVirtual = new SourceVirtual(mockData);
 
@@ -27,6 +28,47 @@ function basicProject() {
     ],
   });
 }
+
+test('create custom collection resolver', async (t) => {
+  const flatbread = await new FlatbreadProvider({
+    source: sourceVirtual,
+    transformer: markdownTransformer({
+      markdown: {
+        gfm: true,
+        externalLinks: true,
+      },
+    }),
+
+    collectionResolvers: [
+      function fakeResolver(schemaComposer, args) {
+        const { name } = args;
+
+        schemaComposer.Query.addFields({
+          [`fake${name}`]: {
+            type: 'String',
+            description: `fake resolver`,
+            resolve() {
+              return `fake ${name}!`;
+            },
+          },
+        });
+      },
+    ],
+
+    content: [
+      {
+        path: 'examples/content/markdown/authors',
+        name: 'Author',
+        refs: {
+          friend: 'Author',
+        },
+      },
+    ],
+  });
+
+  const result: any = await flatbread.query({ source: `{ fakeAuthor }`});
+  t.is(result.data.fakeAuthor, 'fake Author!');
+});
 
 test('basic query', async (t) => {
   const flatbread = basicProject();

@@ -1,39 +1,26 @@
-import { ObjectTypeComposer, SchemaComposer } from 'graphql-compose';
 import resolveQueryArgs from '../resolvers/arguments';
 
+import { SchemaComposer } from 'graphql-compose';
+import { cloneDeep } from 'lodash-es';
 import {
   generateArgsForAllItemQuery,
   generateArgsForManyItemQuery,
   generateArgsForSingleItemQuery,
 } from '../generators/arguments';
-import { cloneDeep } from 'lodash-es';
-import { EntryNode, LoadedFlatbreadConfig, Transformer } from '../types';
+import { CollectionResolverArgs, EntryNode } from '../types';
 
-export interface AddCollectionQueriesArgs {
-  name: string;
-  pluralName: string;
-  config: LoadedFlatbreadConfig;
-  objectComposer: ObjectTypeComposer;
-  schemaComposer: SchemaComposer;
-  allContentNodesJSON: Record<string, any[]>;
-  transformersById: Record<string, Transformer>;
-}
-
-export default function addCollectionQueries(args: AddCollectionQueriesArgs) {
-  const {
-    name,
-    pluralName,
-    config,
-    objectComposer,
-    schemaComposer,
-    allContentNodesJSON,
-  } = args;
+export default function addCollectionQueries(
+  schemaComposer: SchemaComposer,
+  args: CollectionResolverArgs & { allContentNodesJSON: Record<string, any[]> }
+) {
+  const { name, pluralName, config, objectTypeComposer, allContentNodesJSON } =
+    args;
 
   const pluralTypeQueryName = 'all' + pluralName;
 
-  objectComposer.addResolver({
+  objectTypeComposer.addResolver({
     name: 'findById',
-    type: () => objectComposer,
+    type: () => objectTypeComposer,
     description: `Find one ${name} by its ID`,
     args: generateArgsForSingleItemQuery(),
     resolve: (rp: Record<string, any>) =>
@@ -44,9 +31,9 @@ export default function addCollectionQueries(args: AddCollectionQueriesArgs) {
       ),
   });
 
-  objectComposer.addResolver({
+  objectTypeComposer.addResolver({
     name: 'findMany',
-    type: () => [objectComposer],
+    type: () => [objectTypeComposer],
     description: `Find many ${pluralName} by their IDs`,
     args: generateArgsForManyItemQuery(pluralName),
     resolve: (rp: Record<string, any>) => {
@@ -65,10 +52,10 @@ export default function addCollectionQueries(args: AddCollectionQueriesArgs) {
     },
   });
 
-  objectComposer.addResolver({
+  objectTypeComposer.addResolver({
     name: 'all',
     args: generateArgsForAllItemQuery(pluralName),
-    type: () => [objectComposer],
+    type: () => [objectTypeComposer],
     description: `Return a set of ${pluralName}`,
     resolve: (rp: Record<string, any>) => {
       const nodes = cloneDeep(allContentNodesJSON[name]);
@@ -86,10 +73,10 @@ export default function addCollectionQueries(args: AddCollectionQueriesArgs) {
     /**
      * Add find by ID to each content type
      */
-    [name]: objectComposer.getResolver('findById'),
+    [name]: objectTypeComposer.getResolver('findById'),
     /**
      * Add find 'many' to each content type
      */
-    [pluralTypeQueryName]: objectComposer.getResolver('all'),
+    [pluralTypeQueryName]: objectTypeComposer.getResolver('all'),
   });
 }

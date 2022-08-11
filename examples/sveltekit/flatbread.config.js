@@ -16,6 +16,23 @@ const transformerConfig = {
 export default defineConfig({
   source: sourceFilesystem(),
   transformer: [transformerMarkdown(transformerConfig), transformerYaml()],
+
+  collectionResolvers: [
+    function fakeResolver(schemaComposer, args) {
+      const { name } = args;
+
+      schemaComposer.Query.addFields({
+        [`fake${name}`]: {
+          type: 'String',
+          description: `fake resolver`,
+          resolve() {
+            return `fake ${name}!`;
+          },
+        },
+      });
+    },
+  ],
+
   content: [
     {
       path: 'content/markdown/posts',
