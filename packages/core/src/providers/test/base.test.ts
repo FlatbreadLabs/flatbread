@@ -17,6 +17,7 @@ function basicProject() {
       },
     }),
 
+    
     content: [
       {
         path: 'examples/content/markdown/authors',
