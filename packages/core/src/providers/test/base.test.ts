@@ -1,12 +1,12 @@
 import test from 'ava';
-import filesystem from '@flatbread/source-filesystem';
-import markdownTransformer from '@flatbread/transformer-markdown';
+import { sourceFilesystem } from '@flatbread/source-filesystem';
+import { transformMarkdown } from '@flatbread/transformer-markdown';
 import { FlatbreadProvider } from '../base';
 
 function basicProject() {
   return new FlatbreadProvider({
-    source: filesystem(),
-    transformer: markdownTransformer({
+    source: sourceFilesystem(),
+    transformer: transformMarkdown({
       markdown: {
         gfm: true,
         externalLinks: true,

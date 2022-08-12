@@ -5,7 +5,7 @@ import type { EntryNode, TransformerPlugin } from '@flatbread/core';
 import type { VFile } from 'vfile';
 
 /**
- * Transforms a yaml file (content node) to JSON.
+ * Transforms a YAML file (content node) to JSON.
  *
  * @param {VFile} input - A VFile object representing a content node.
  */
@@ -33,16 +33,14 @@ export const parse = (input: VFile): EntryNode => {
 };
 
 /**
- * Converts markdown files to meaningful data.
+ * Converts YAML files to meaningful data.
  *
- * @returns Markdown parser, preknown GraphQL schema fragments, and an EntryNode inspector function.
+ * @returns YAML parser, preknown GraphQL schema fragments, and an EntryNode inspector function.
  */
-export const transformer: TransformerPlugin = () => {
+export const transformYaml: TransformerPlugin = () => {
   return {
     parse: (input: VFile): EntryNode => parse(input),
     inspect: (input: EntryNode) => String(input),
     extensions: ['.yaml', '.yml'],
   };
 };
-
-export default transformer;

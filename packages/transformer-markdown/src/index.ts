@@ -37,7 +37,7 @@ export const parse = (
  * @param config Markdown transformer configuration.
  * @returns Markdown parser, preknown GraphQL schema fragments, and an EntryNode inspector function.
  */
-export const transformer: TransformerPlugin = (
+export const transformMarkdown: TransformerPlugin = (
   config: MarkdownTransformerConfig = {}
 ) => {
   const extensions = (config.extensions || ['.md']).map((ext: string) =>
@@ -56,5 +56,3 @@ export const transformer: TransformerPlugin = (
     extensions,
   };
 };
-
-export default transformer;

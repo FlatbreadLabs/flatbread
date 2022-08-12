@@ -1,10 +1,8 @@
+import { defineConfig } from 'flatbread';
+import { sourceFilesystem } from '@flatbread/source-filesystem';
+import { transformMarkdown } from '@flatbread/transformer-markdown';
+import { transformYaml } from '@flatbread/transformer-yaml';
 import { createSvImgField } from '@flatbread/resolver-svimg';
-import {
-  defineConfig,
-  transformerMarkdown,
-  transformerYaml,
-  sourceFilesystem,
-} from 'flatbread';
 
 const transformerConfig = {
   markdown: {
@@ -15,7 +13,7 @@ const transformerConfig = {
 
 export default defineConfig({
   source: sourceFilesystem(),
-  transformer: [transformerMarkdown(transformerConfig), transformerYaml()],
+  transformer: [transformMarkdown(transformerConfig), transformYaml()],
   content: [
     {
       path: 'content/markdown/posts',

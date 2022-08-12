@@ -32,8 +32,8 @@
     "node": "^14.13.1 || >=16.0.0"
   },
   "dependencies": {
-    "@sindresorhus/slugify": "^2.1.0",
-    "js-yaml": "^4.1.0"
+    "@sindresorhus/slugify": "2.1.0",
+    "js-yaml": "4.1.0"
   },
   "devDependencies": {
     "@flatbread/core": "workspace:*",

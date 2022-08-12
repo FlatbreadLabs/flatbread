@@ -68,7 +68,9 @@ async function getAllNodes(
  * @param sourceConfig content types config
  * @returns A function that returns functions which fetch lists of nodes
  */
-export const source: SourcePlugin = (sourceConfig?: sourceFilesystemConfig) => {
+export const sourceFilesystem: SourcePlugin = (
+  sourceConfig?: sourceFilesystemConfig
+) => {
   let config: InitializedSourceFilesystemConfig;
 
   return {
@@ -81,5 +83,3 @@ export const source: SourcePlugin = (sourceConfig?: sourceFilesystemConfig) => {
       getAllNodes(allContentTypes, config),
   };
 };
-
-export default source;

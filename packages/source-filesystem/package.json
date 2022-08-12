@@ -32,9 +32,9 @@
     "node": "^14.13.1 || >=16.0.0"
   },
   "dependencies": {
-    "lodash-es": "^4.17.21",
-    "to-vfile": "^7.2.3",
-    "unified": "^10.1.2"
+    "lodash-es": "4.17.21",
+    "to-vfile": "7.2.3",
+    "unified": "10.1.2"
   },
   "devDependencies": {
     "@flatbread/core": "workspace:*",
