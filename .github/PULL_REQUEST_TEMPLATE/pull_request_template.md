@@ -2,7 +2,7 @@
 
 <!-- This message body should clearly illustrate what problems it solves. -->
 
-Closes # <!-- It's really useful if your PR references an issue where it is discussed ahead of time. If this PR closes any issues, please list them here with a seperate `Closes #<issue-number>` line for each. If there are any related issues that this does not close, list them before the "Closes" prefix. -->
+Closes # <!-- It's really useful if your PR references an issue where it is discussed ahead of time. If this PR closes any issues, please list them here with a seperate `Closes #<issue-number>` line for each. If there are any related issues that this does not close, list them without the "Closes" prefix. -->
 
 ### Please don't delete this checklist! Before submitting the PR, please make sure you do the following:
 
