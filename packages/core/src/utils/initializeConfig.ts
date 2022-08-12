@@ -1,6 +1,7 @@
 import { cloneDeep } from 'lodash-es';
 import { FlatbreadConfig, LoadedFlatbreadConfig, Transformer } from '../types';
 import { toArray } from './arrayUtils';
+import camelCase from './camelCase';
 
 /**
  * Processes a config object and returns a normalized version of it.
@@ -11,7 +12,8 @@ export function initializeConfig(
   const config = cloneDeep(rawConfig);
   const transformer = toArray(config.transformer ?? []);
 
-  const newConfig = {
+  return {
+    fieldNameTransform: camelCase,
     ...config,
     transformer,
     loaded: {
@@ -20,6 +22,4 @@ export function initializeConfig(
         .flat(),
     },
   };
-
-  return newConfig;
 }
