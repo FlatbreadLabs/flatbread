@@ -1,0 +1,25 @@
+/* 
+* This project utilizes Tailwind for styling.
+* See https://tailwindcss.com/ for more info.
+*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+//
+/// Fonts
+//
+
+@font-face {
+  font-family: 'Dosis';
+  font-weight: 800;
+  font-display: swap;
+  src: url(/fonts/Dosis/static/Dosis-ExtraBold.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Dosis';
+  font-weight: 700;
+  font-display: swap;
+  src: url(/fonts/Dosis/static/Dosis-Bold.ttf) format('truetype');
+}
