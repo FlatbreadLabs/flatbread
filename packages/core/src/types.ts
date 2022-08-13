@@ -24,12 +24,14 @@ export interface FlatbreadConfig {
   source: Source<any>;
   transformer?: Transformer | Transformer[];
   content: CollectionEntry[];
+  fieldNameTransform?: (field: string) => string;
 }
 
 export interface LoadedFlatbreadConfig {
   source: Source<any>;
   transformer: Transformer[];
   content: LoadedCollectionEntry[];
+  fieldNameTransform: (field: string) => string;
   loaded: {
     extensions: string[];
   };

@@ -4,6 +4,7 @@ import { FlatbreadConfig, LoadedFlatbreadConfig, Transformer } from '../types';
 import { toArray } from './arrayUtils';
 import createShaHash from './createShaHash';
 import { anyToString } from './stringUtils';
+import camelCase from './camelCase';
 
 /**
  * Processes a config object and returns a normalized version of it.
@@ -20,6 +21,7 @@ export function initializeConfig(
   config.source.id = config.source.id ?? createShaHash(config.source);
 
   return {
+    fieldNameTransform: camelCase,
     ...config,
     content: config.content?.map((content: Partial<LoadedCollectionEntry>) =>
       defaultsDeep(content, {
