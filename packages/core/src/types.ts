@@ -1,20 +1,19 @@
-import { GraphQLFieldConfig } from 'graphql';
+import { GraphQLFieldConfigArgumentMap, GraphQLInputType } from 'graphql';
+import { Maybe } from 'graphql/jsutils/Maybe';
 import type { VFile } from 'vfile';
 
-// export interface FlatbreadJsonNode {
-//   __filename?: string;
-//   slug: string;
-//   [key: string]: any;
-//   timeToRead: number;
-//   content: string;
-// }
+export type IdentifierField = string | number;
 
-// export interface FlatbreadJsonTypeMap {
-//   name: string;
-//   fields: {
-//     [key: string]: string | Record<string, any>;
-//   };
-// }
+/**
+ * A JSON representation of a content node.
+ */
+export type BaseContentNode = {
+  id: IdentifierField;
+};
+
+export type ContentNode = BaseContentNode & {
+  [key: string]: unknown;
+};
 
 /**
  * Flatbread's configuration interface.
@@ -25,12 +24,14 @@ export interface FlatbreadConfig {
   source: Source;
   transformer?: Transformer | Transformer[];
   content: Content;
+  fieldNameTransform?: (field: string) => string;
 }
 
 export interface LoadedFlatbreadConfig {
   source: Source;
   transformer: Transformer[];
   content: Content;
+  fieldNameTransform: (field: string) => string;
   loaded: {
     extensions: string[];
   };
@@ -81,13 +82,16 @@ export type SourcePlugin = (sourceConfig?: Record<string, any>) => Source;
 /**
  * An override can be used to declare a custom resolve for a field in content
  */
-export interface Override<Source, Context>
-  extends GraphQLFieldConfig<Source, Context> {
+// derived from GraphQLFieldConfig<Source, Context>
+export interface Override {
   field: string;
-  resolve: <Data, Result, Arguments>(
-    data: Data,
-    extended: { source: Source; context: Context; args: Arguments }
-  ) => Result;
+  type: GraphQLInputType | string;
+  args?: GraphQLFieldConfigArgumentMap;
+  description?: Maybe<string>;
+  resolve: (
+    data: any,
+    extended: { source: any; context: any; args: any }
+  ) => any;
 }
 
 /**
@@ -97,6 +101,6 @@ export interface Override<Source, Context>
  */
 export type Content = {
   collection: string;
-  overrides?: Override<any, any>[];
+  overrides?: Override[];
   [key: string]: any;
 }[];

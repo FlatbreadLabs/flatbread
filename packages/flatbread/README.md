@@ -1,12 +1,12 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/tonyketcham/flatbread/main/assets/flatbread%20logo%20v2%20x4%401-1728x1080%20centered%20header.png"/>
+<img src="https://raw.githubusercontent.com/FlatbreadLabs/flatbread/main/assets/flatbread%20logo%20v2%20x4%401-1728x1080%20centered%20header.png"/>
 </p>
 
 <h1 align="center">Flatbread 🥪</h1>
 
 <p align="center">
-  <a href="https://github.com/tonyketcham/flatbread/actions/workflows/pipeline.yml">
-    <img src="https://github.com/tonyketcham/flatbread/actions/workflows/pipeline.yml/badge.svg" alt="pipeline status"/>
+  <a href="https://github.com/FlatbreadLabs/flatbread/actions/workflows/pipeline.yml">
+    <img src="https://github.com/FlatbreadLabs/flatbread/actions/workflows/pipeline.yml/badge.svg" alt="pipeline status"/>
   </a>
   <a href="https://join.slack.com/t/flatbreadworkspace/shared_invite/zt-1bvnhr38j-oHFun85aGfaNp9qwizOORw">
     <img src="https://img.shields.io/static/v1?label=Slack&message=Flatbread&color=ECB22E&logo=slack" alt="Join the Flatbread slack" />
@@ -26,7 +26,7 @@ Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://w
 
 🚧 This project is currently experimental, and the API may change considerably before `v1.0`. Feel free to hop in and contribute some issues or PRs!
 
-To use the most common setup for markdown files sourced from the filesystem, Flatbread interally ships with + exposes the [`source-filesystem`](https://github.com/tonyketcham/flatbread/tree/main/packages/source-filesystem) + [`transformer-markdown`](https://github.com/tonyketcham/flatbread/tree/main/packages/transformer-markdown) plugins.
+To use the most common setup for markdown files sourced from the filesystem, Flatbread interally ships with + exposes the [`source-filesystem`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/source-filesystem) + [`transformer-markdown`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/transformer-markdown) plugins.
 
 The following example takes you through the default flatbread setup.
 
@@ -40,7 +40,7 @@ Automatically create a `flatbread.config.js` file:
 npx flatbread init
 ```
 
-> If you're lookin for different use cases, take a peek through the various [`packages`](https://github.com/tonyketcham/flatbread/tree/main/packages) to see if any of those plugins fit your needs. You can find the relevant usage API contained therein.
+> If you're lookin for different use cases, take a peek through the various [`packages`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages) to see if any of those plugins fit your needs. You can find the relevant usage API contained therein.
 
 Take this example where we have a content folder in our repo containing posts and author data:
 
@@ -60,7 +60,7 @@ package.json
 In reference to that structure, set up a `flatbread.config.js` in the root of your project:
 
 ```js
-import { defineConfig, markdownTransformer, filesystem } from 'flatbread';
+import { defineConfig, transformerMarkdown, sourceFilesystem } from 'flatbread';
 
 const transformerConfig = {
   markdown: {
@@ -69,8 +69,8 @@ const transformerConfig = {
   },
 };
 export default defineConfig({
-  source: filesystem(),
-  transformer: markdownTransformer(transformerConfig),
+  source: sourceFilesystem(),
+  transformer: transformerMarkdown(transformerConfig),
 
   content: [
     {
@@ -120,6 +120,8 @@ pnpm run dev
 If everything goes well, you'll see a pretty `graphql` endpoint echoed out to your console by Flatbread. If you open that link in your browser, Apollo Studio will open for you to explore the schema Flatbread generated. Apollo Studio has some nice auto-prediction and gives you helpers in the schema explorer for building your queries.
 
 You can query that same endpoint in your app in any way you'd like. Flatbread doesn't care what framework you use.
+
+> NOTE: detecting changes to your content while Flatbread is running is [not yet supported](https://github.com/FlatbreadLabs/flatbread/issues/65). You'll have to restart the process to get updated content.
 
 ## Query arguments
 
@@ -205,7 +207,7 @@ Caveats:
 
 - Currently cannot infer date strings and then compare `Date` types in filters
   - should work if you dynamically pass in a `Date` object from your client, though not extensively tested
-  - if you wanna take a shot at that, start a PR for [adding arg typeOf checks and subsequent unique comparator functions 🥪](https://github.com/tonyketcham/flatbread/blob/main/packages/core/src/utils/sift.ts)
+  - if you wanna take a shot at that, start a PR for [adding arg typeOf checks and subsequent unique comparator functions 🥪](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/core/src/utils/sift.ts)
 
 #### Combining multiple filters
 
@@ -249,7 +251,62 @@ Limits the number of returned entries to the specified amount. Accepts an intege
 
 ## Query within your app ❓❓
 
-[Check out the playground for an example](https://github.com/tonyketcham/flatbread/tree/main/playground) of using Flatbread with SvelteKit to safely shoot off GraphQL queries using a static (or node) adapter.
+[Check out the example integrations](https://github.com/FlatbreadLabs/flatbread/tree/main/playground) of using Flatbread with frameworks like SvelteKit and Next.js.
+
+## Field overrides
+
+Field overrides allow you to define custom GraphQL types or resolvers on top of fields in your content. For example, you could [optimize images](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/resolver-svimg/), encapsulate an endpoint, and more!
+
+### Example
+
+```js
+{
+  content: {
+    ...
+    overrides: [
+      {
+        // using the field name
+        field: 'name'
+        // the resulting type is string
+        // this can be a custom gql type
+        type: 'String',
+        // capitalize the name
+        resolve: name => capitalize(name)
+      },
+    ]
+  }
+}
+```
+
+### Supported syntax for field
+
+- basic nested objects
+
+  `nested.object`
+
+- a basic array (will map array values)
+
+  `an.array[]`
+
+- a nested object inside an array (will also map array)
+
+  `an.array[]with.object`
+
+for more information in Overrides, they adhere to the GraphQLFieldConfig outlined here https://graphql-compose.github.io/docs/basics/what-is-resolver.html
+
+## Advanced Config
+
+### `fieldNameTransform`
+
+Accepts a function which takes in field names and transforms them for the GraphQL schema generation -- this is used internally to remove spaces but can be used for other global transforms as well
+
+````js
+{
+  ...
+  // replace all spaces in field names with an underscore
+  fieldNameTransform: (fieldName) => field.name.replace(/\s/g,'_')
+  ...
+}
 
 # ☀️ Contributing
 
@@ -263,9 +320,11 @@ Clone the entire monorepo! Once you've installed dependencies with `pnpm -w i`, 
 
 This will run a dev server across packages in the monorepo
 
+You may need to seed this with a `pnpm build` first, as there can be a race condition with parallel type generation. After that, you can automatically & incrementally build changes with:
+
 ```bash
-pnpm -w dev
-```
+pnpm dev
+````
 
 ## **working on a package** ⚒️
 
@@ -274,13 +333,12 @@ Open another **terminal** tab.
 | ☝️ Keep the dev server running in your other tab |
 | ------------------------------------------------ |
 
-### Option 1: use the Playground as a demo project
+### Option 1: use the SvelteKit example as a demo project
 
 This allows you to work in the full context of a Flatbread instance as an end-user would, except you can tinker with the `packages` internals.
 
 ```bash
-cd playground
-pnpm dev
+pnpm play
 ```
 
 This is a good option when you want to test without creating temporary clutter per-package that you wouldn't want to commit.
@@ -301,14 +359,12 @@ node dist/index.mjs # ya need Node v16+
 
 ## **build for production** 📦
 
-This will use `tsup` to build each package linked in the monorepo unless opted out per-package.
+This will use `tsup` to build each package linked in the monorepo except the integration examples.
 
 ```bash
 pnpm build
 ```
 
 # 📓 Sidenotes
-
-The transpiled TS files in the [`playground`](https://github.com/tonyketcham/flatbread/tree/main/playground) are being tracked in the repo to appease the Vite gods so I can develop quicker. As the project progresses, I'll likely yeet those outta here.
 
 Huge shoutouts to [@antfu](https://github.com/antfu/) and [@sveltejs/kit](https://github.com/sveltejs/kit) for both having invaluable reference points to guide me through learning more advanced Node, Typescript, and monorepo design all in parallel during this project.
