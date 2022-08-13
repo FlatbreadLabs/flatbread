@@ -14,6 +14,12 @@ function replacer(key, value) {
 }
 
 // TODO: capture
+interface Field {
+	label: string;
+	name: string;
+	description: string;
+	component: string;
+}
 
 export default class Config {
 	static getPath(schema: GqlSchema) {
@@ -47,10 +53,15 @@ export default class Config {
 
 			schema = mergeWith(schema, existing, function (a, b) {
 				if (isArray(a)) {
-					const aMap = keyBy(a, 'name');
-					return b.map((field) => {
-						return merge(aMap[field.name], field);
-					});
+					const aMap = new Map<string, Field>(a.map((a) => [a.name, a]));
+					return b
+						.map((field: Field) => {
+							const cur = aMap.get(field.name);
+							if (!cur) return;
+							aMap.delete(field.name);
+							return merge(cur, field);
+						})
+						.concat(...aMap.values());
 				}
 			});
 		} else {

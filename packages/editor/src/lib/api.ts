@@ -112,6 +112,8 @@ function getCollectionQuery(
 ): string {
 	const collection = gqlTypes.get(collectionName);
 
+	// TODO: fields that exist in schema but not in graphql fail because they don't have field.type
+
 	return (
 		collection?.fields
 			.map((field) => {

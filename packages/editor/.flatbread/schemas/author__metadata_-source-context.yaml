@@ -1,0 +1,17 @@
+name: Author__metadata_SourceContext
+kind: OBJECT
+fields:
+  - label: Filename
+    name: filename
+    component: string
+  - label: Path
+    name: path
+    component: string
+  - label: Slug
+    name: slug
+    component: string
+component: object
+label: Author__metadata_ Source Context
+referenceField: id
+meta:
+  hash: gSsmwSPcdxtWn3jegimd00XqCo8=

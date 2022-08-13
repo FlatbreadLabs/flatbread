@@ -1,0 +1,78 @@
+name: Mutation
+kind: OBJECT
+fields:
+  - label: Createauthor
+    name: createAuthor
+    description: Create a Author
+    component: object
+    collection: Author
+  - label: Createoverridetest
+    name: createOverrideTest
+    description: Create a OverrideTest
+    component: object
+    collection: OverrideTest
+  - label: Createpost
+    name: createPost
+    description: Create a Post
+    component: object
+    collection: Post
+  - label: Createpostcategory
+    name: createPostCategory
+    description: Create a PostCategory
+    component: object
+    collection: PostCategory
+  - label: Createyamlauthor
+    name: createYamlAuthor
+    description: Create a YamlAuthor
+    component: object
+    collection: YamlAuthor
+  - label: Updateauthor
+    name: updateAuthor
+    description: Update a Author
+    component: object
+    collection: Author
+  - label: Updateoverridetest
+    name: updateOverrideTest
+    description: Update a OverrideTest
+    component: object
+    collection: OverrideTest
+  - label: Updatepost
+    name: updatePost
+    description: Update a Post
+    component: object
+    collection: Post
+  - label: Updatepostcategory
+    name: updatePostCategory
+    description: Update a PostCategory
+    component: object
+    collection: PostCategory
+  - label: Updateyamlauthor
+    name: updateYamlAuthor
+    description: Update a YamlAuthor
+    component: object
+    collection: YamlAuthor
+  - label: Upsertauthor
+    name: upsertAuthor
+    component: object
+    collection: Author
+  - label: Upsertoverridetest
+    name: upsertOverrideTest
+    component: object
+    collection: OverrideTest
+  - label: Upsertpost
+    name: upsertPost
+    component: object
+    collection: Post
+  - label: Upsertpostcategory
+    name: upsertPostCategory
+    component: object
+    collection: PostCategory
+  - label: Upsertyamlauthor
+    name: upsertYamlAuthor
+    component: object
+    collection: YamlAuthor
+component: object
+label: Mutation
+referenceField: id
+meta:
+  hash: NhJ1i1yQcPoJu/n0bLd/kDItWXs=

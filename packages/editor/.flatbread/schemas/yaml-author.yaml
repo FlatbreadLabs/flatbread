@@ -24,18 +24,6 @@ fields:
     description: The collection name
     disabled: true
     component: string
-  - label: Filename
-    name: _filename
-    disabled: true
-    component: string
-  - label: Path
-    name: _path
-    disabled: true
-    component: string
-  - label: Slug
-    name: _slug
-    disabled: true
-    component: string
   - label: Id
     name: id
     disabled: true
@@ -45,9 +33,14 @@ fields:
     disabled: true
     component: object
     collection: YamlAuthor__content
+  - label: Metadata
+    name: _metadata
+    disabled: true
+    component: object
+    collection: YamlAuthor__metadata
 component: object
 label: Yaml Author
 pluralName: Yaml Authors
 referenceField: name
 meta:
-  hash: M2rEU7eSlHf6OKNjxsTJlgZDg8M=
+  hash: 6Qoac76cYXfo2rmktr9sRMg7bbU=

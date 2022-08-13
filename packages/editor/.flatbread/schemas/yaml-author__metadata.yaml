@@ -1,0 +1,30 @@
+name: YamlAuthor__metadata
+kind: OBJECT
+fields:
+  - label: Collection
+    name: collection
+    component: string
+  - label: Reference
+    name: reference
+    component: string
+  - label: Referencefield
+    name: referenceField
+    component: string
+  - label: Sourcedby
+    name: sourcedBy
+    component: string
+  - label: Transformcontext
+    name: transformContext
+    component: json
+  - label: Transformedby
+    name: transformedBy
+    component: string
+  - label: Sourcecontext
+    name: sourceContext
+    component: object
+    collection: YamlAuthor__metadata_SourceContext
+component: object
+label: Yaml Author__metadata
+referenceField: id
+meta:
+  hash: 4Bt4Y6vbWdX6IdRXkAHRQnAaTbY=

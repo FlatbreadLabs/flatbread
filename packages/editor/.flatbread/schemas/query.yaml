@@ -1,6 +1,26 @@
 name: Query
 kind: OBJECT
 fields:
+  - label: Fakeauthor
+    name: fakeAuthor
+    description: fake resolver
+    component: string
+  - label: Fakeoverridetest
+    name: fakeOverrideTest
+    description: fake resolver
+    component: string
+  - label: Fakepost
+    name: fakePost
+    description: fake resolver
+    component: string
+  - label: Fakepostcategory
+    name: fakePostCategory
+    description: fake resolver
+    component: string
+  - label: Fakeyamlauthor
+    name: fakeYamlAuthor
+    description: fake resolver
+    component: string
   - label: Allauthors
     name: allAuthors
     description: Return a set of Authors
@@ -12,10 +32,6 @@ fields:
   - label: Allpostcategories
     name: allPostCategories
     description: Return a set of PostCategories
-    component: list
-  - label: Allpostcategoryblobs
-    name: allPostCategoryBlobs
-    description: Return a set of PostCategoryBlobs
     component: list
   - label: Allposts
     name: allPosts
@@ -45,11 +61,6 @@ fields:
     description: Find one PostCategory by its ID
     component: object
     collection: PostCategory
-  - label: Postcategoryblob
-    name: PostCategoryBlob
-    description: Find one PostCategoryBlob by its ID
-    component: object
-    collection: PostCategoryBlob
   - label: Yamlauthor
     name: YamlAuthor
     description: Find one YamlAuthor by its ID
@@ -59,4 +70,4 @@ component: object
 label: Query
 referenceField: id
 meta:
-  hash: rXgvtTxZ7oy9+5ZQ+o+10pFOznc=
+  hash: iqYXAmXfI7xEPRotyw5ZH37w2L4=
