@@ -1,8 +1,9 @@
 import test from 'ava';
+import { LoadedCollectionEntry } from '../../types';
 import { getFieldOverrides } from '../fieldOverrides.js';
 
-function getProps(overrides: any[]): [string, any] {
-  return ['t', { content: [{ collection: 't', overrides }] }];
+function getProps(overrides: any[]): [string, LoadedCollectionEntry[]] {
+  return ['t', [{ name: 't', overrides, referenceField: 'id' }]];
 }
 
 test('basic override', (t) => {

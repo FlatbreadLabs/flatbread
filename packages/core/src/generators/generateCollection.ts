@@ -19,7 +19,7 @@ export function generateCollection<T>({
   return transformKeys(
     defaultsDeep(
       {},
-      getFieldOverrides(collection, config),
+      getFieldOverrides(collection, config.content),
       ...nodes.map((node) => merge({}, node, preknownSchemaFragments))
     ),
     config.fieldNameTransform

@@ -154,6 +154,7 @@ importers:
       lodash-es: 4.17.21
       lru-cache: 7.13.2
       matcher: 5.0.0
+      nanoid: 4.0.0
       plur: 5.1.0
       tsup: 6.2.1
       typescript: 4.7.4
@@ -165,6 +166,7 @@ importers:
       lodash-es: 4.17.21
       lru-cache: 7.13.2
       matcher: 5.0.0
+      nanoid: 4.0.0
       plur: 5.1.0
     devDependencies:
       '@types/lodash-es': 4.17.6
@@ -300,6 +302,7 @@ importers:
   packages/source-filesystem:
     specifiers:
       '@flatbread/core': workspace:*
+      '@sindresorhus/slugify': ^2.1.0
       '@types/lodash-es': 4.17.6
       '@types/node': 16.11.47
       lodash-es: ^4.17.21
@@ -314,6 +317,7 @@ importers:
       unified: 10.1.2
     devDependencies:
       '@flatbread/core': link:../core
+      '@sindresorhus/slugify': 2.1.0
       '@types/lodash-es': 4.17.6
       '@types/node': 16.11.47
       tsup: 6.2.1_typescript@4.7.4
@@ -323,7 +327,6 @@ importers:
   packages/transformer-markdown:
     specifiers:
       '@flatbread/core': workspace:*
-      '@sindresorhus/slugify': ^2.1.0
       '@types/node': 16.11.47
       '@types/sanitize-html': 2.6.2
       graphql: 16.5.0
@@ -353,7 +356,6 @@ importers:
       unified: ^10.1.2
       vfile: 5.3.4
     dependencies:
-      '@sindresorhus/slugify': 2.1.0
       graphql: 16.5.0
       gray-matter: 4.0.3
       lodash-es: 4.17.21
@@ -388,7 +390,6 @@ importers:
   packages/transformer-yaml:
     specifiers:
       '@flatbread/core': workspace:*
-      '@sindresorhus/slugify': ^2.1.0
       '@types/js-yaml': 4.0.5
       '@types/node': 16.11.47
       js-yaml: ^4.1.0
@@ -396,7 +397,6 @@ importers:
       typescript: 4.7.4
       vfile: 5.3.4
     dependencies:
-      '@sindresorhus/slugify': 2.1.0
       js-yaml: 4.1.0
     devDependencies:
       '@flatbread/core': link:../core
@@ -1661,7 +1661,7 @@ packages:
     dependencies:
       '@sindresorhus/transliterate': 1.5.0
       escape-string-regexp: 5.0.0
-    dev: false
+    dev: true
 
   /@sindresorhus/transliterate/1.5.0:
     resolution: {integrity: sha512-/sfSkoNelLq5riqNRp5uBjHIKBi1MWZk9ubRT1WiBQuTfmDf7BeQkph2DJzRB83QagMPHk2VDjuvpy0VuwyzdA==}
@@ -1669,7 +1669,7 @@ packages:
     dependencies:
       escape-string-regexp: 5.0.0
       lodash.deburr: 4.1.0
-    dev: false
+    dev: true
 
   /@sinonjs/commons/1.8.3:
     resolution: {integrity: sha512-xkNcLAn/wZaX14RPlwizcKicDk9G3F8m2nU3L7Ukm5zBgTwiT0wsoFAHx9Jq56fJA1z/7uKGtCRu16sOUCLIHQ==}
@@ -7086,7 +7086,7 @@ packages:
 
   /lodash.deburr/4.1.0:
     resolution: {integrity: sha512-m/M1U1f3ddMCs6Hq2tAsYThTBDaAKFDX3dwDo97GEYzamXi9SqUpjWi/Rrj/gf3X2n8ktwgZrlP1z6E3v/IExQ==}
-    dev: false
+    dev: true
 
   /lodash.merge/4.6.2:
     resolution: {integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==}
@@ -7793,6 +7793,12 @@ packages:
     resolution: {integrity: sha512-MqBkQh/OHTS2egovRtLk45wEyNXwF+cokD+1YPf9u5VfJiRdAiRwB2froX5Co9Rh20xs4siNPm8naNotSD6RBw==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
+
+  /nanoid/4.0.0:
+    resolution: {integrity: sha512-IgBP8piMxe/gf73RTQx7hmnhwz0aaEXYakvqZyE302IXW3HyVNhdNGC+O2MwMAVhLEnvXlvKtGbtJf6wvHihCg==}
+    engines: {node: ^14 || ^16 || >=18}
+    hasBin: true
+    dev: false
 
   /napi-build-utils/1.0.2:
     resolution: {integrity: sha512-ONmRUqK7zj7DWX0D9ADe03wbwOBZxNAfF20PlGfCWQcD3+/MakShIHrMqx9YwPTfxDdF1zLeL+RGZiR9kGMLdg==}

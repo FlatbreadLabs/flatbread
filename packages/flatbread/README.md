@@ -83,6 +83,10 @@ export default defineConfig({
     {
       path: 'content/authors',
       collection: 'Author',
+      // the field to use as the primary key, 'id' by default
+      referenceField: 'id',
+      // a list of fields that are required when creating a new record (mostly used by plugins)
+      creationRequiredFields: []
       refs: {
         friend: 'Author',
       },

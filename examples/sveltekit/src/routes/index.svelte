@@ -3,9 +3,13 @@
     const query = `
       query PostCategory {
         allPostCategories (sortBy: "title", order: DESC) {
-          _collection
-          _filename
-          _slug
+          _metadata {
+            sourceContext {
+              filename
+              slug
+            }
+            collection
+          }
           id
           title
           category
@@ -18,7 +22,11 @@
             timeToRead
           }
           authors {
-            _slug
+            _metadata {
+              sourceContext {
+                slug
+              }
+            }
             id
             name
             entity
