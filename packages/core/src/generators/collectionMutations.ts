@@ -74,7 +74,6 @@ export default function addCollectionMutations(
           );
         return update(payload, existingRecord);
       },
-      update,
     },
     [`create${name}`]: {
       type: objectTypeComposer,
