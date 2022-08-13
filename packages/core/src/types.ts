@@ -25,6 +25,7 @@ export interface FlatbreadConfig {
   source: Source<any>;
   transformer?: Transformer | Transformer[];
   content: CollectionEntry[];
+  fieldNameTransform?: (field: string) => string;
   collectionResolvers?: CollectionResolver[];
 }
 
@@ -50,6 +51,7 @@ export interface LoadedFlatbreadConfig {
   transformer: Transformer[];
   content: LoadedCollectionEntry[];
   collectionResolvers: CollectionResolver[];
+  fieldNameTransform: (field: string) => string;
   loaded: {
     extensions: string[];
   };

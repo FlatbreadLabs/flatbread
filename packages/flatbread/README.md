@@ -298,6 +298,20 @@ Field overrides allow you to define custom GraphQL types or resolvers on top of 
 
 for more information in Overrides, they adhere to the GraphQLFieldConfig outlined here https://graphql-compose.github.io/docs/basics/what-is-resolver.html
 
+## Advanced Config
+
+### `fieldNameTransform`
+
+Accepts a function which takes in field names and transforms them for the GraphQL schema generation -- this is used internally to remove spaces but can be used for other global transforms as well
+
+````js
+{
+  ...
+  // replace all spaces in field names with an underscore
+  fieldNameTransform: (fieldName) => field.name.replace(/\s/g,'_')
+  ...
+}
+
 # ☀️ Contributing
 
 You're encouraged to [join our Slack](https://join.slack.com/t/flatbreadworkspace/shared_invite/zt-1bvnhr38j-oHFun85aGfaNp9qwizOORw) and ask questions! Let us know if anything is unclear - if so, that just means we need to improve our docs 😁 We can help set you off on the right foot so you don't feel like you're flying blind.
@@ -314,7 +328,7 @@ You may need to seed this with a `pnpm build` first, as there can be a race cond
 
 ```bash
 pnpm dev
-```
+````
 
 ## **working on a package** ⚒️
 

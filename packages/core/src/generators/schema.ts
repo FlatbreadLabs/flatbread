@@ -3,8 +3,8 @@ import { composeWithJson } from 'graphql-compose-json';
 import { defaultsDeep, get, merge, set } from 'lodash-es';
 import plur from 'plur';
 import { VFile } from 'vfile';
-
 import { cacheSchema, checkCacheForSchema } from '../cache/cache';
+
 import {
   CollectionEntry,
   ConfigResult,
@@ -16,6 +16,7 @@ import {
 } from '../types';
 import { createUniqueId } from '../utils/createUniqueId';
 import { getFieldOverrides } from '../utils/fieldOverrides';
+import { generateCollection } from './generateCollection';
 import { map } from '../utils/map';
 import addCollectionMutations from './collectionMutations';
 import addCollectionQueries from './collectionQueries';
@@ -111,11 +112,12 @@ export async function generateSchema(
       collection,
       composeWithJson(
         collection,
-        defaultsDeep(
-          {},
-          getFieldOverrides(collection, config.content),
-          ...nodes.map((node) => merge({}, node, preknownSchemaFragments))
-        ),
+        generateCollection({
+          collection,
+          nodes,
+          config,
+          preknownSchemaFragments,
+        }),
         { schemaComposer }
       ),
     ])
