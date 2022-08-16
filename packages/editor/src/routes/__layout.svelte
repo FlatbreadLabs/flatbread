@@ -2,9 +2,11 @@
 	import '@picocss/pico/css/pico.css';
 </script>
 
+
 <slot />
 
 <style lang="scss">
+
 	:global {
 		.flex {
 			display: flex;

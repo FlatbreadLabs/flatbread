@@ -19,24 +19,25 @@
 <script lang="ts">
 	import Breadcrumbs from '$lib/breadcrumbs.svelte';
 	import FieldComponent from '$lib/field-component.svelte';
+	import Header from '$lib/header.svelte';
 	import type { QueryCollection, Schema, Session } from '$lib/types';
 
 	export let collection: Schema;
 	export let querySchema: QueryCollection;
 </script>
 
+<Header>
+	<Breadcrumbs
+		slot="header-left"
+		allowBack
+		breadcrumbs={[
+			{ label: 'Collections', path: '/' },
+			{ label: querySchema.label, path: `/collection/${querySchema.name}` },
+			{ label: 'New' }
+		]}
+	/>
+</Header>
 <main class="container">
-	<nav>
-		<Breadcrumbs
-			allowBack
-			breadcrumbs={[
-				{ label: 'Collections', path: '/' },
-				{ label: querySchema.label, path: `/collection/${querySchema.name}` },
-				{ label: 'New' }
-			]}
-		/>
-	</nav>
-
 	<form>
 		{#each collection.fields as field}
 			<FieldComponent {field} />

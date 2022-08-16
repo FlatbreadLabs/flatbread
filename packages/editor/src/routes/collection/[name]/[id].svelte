@@ -33,6 +33,7 @@
 <script lang="ts">
 	import Breadcrumbs from '$lib/breadcrumbs.svelte';
 	import ObjectComponent from '$lib/fields/object.svelte';
+	import Header from '$lib/header.svelte';
 	import type { Session } from '$lib/types';
 	import { get } from 'lodash-es';
 
@@ -40,8 +41,8 @@
 	export let record: any;
 </script>
 
-<main class="container">
-	<nav>
+<Header>
+	<nav slot="header-left">
 		<Breadcrumbs
 			allowBack
 			breadcrumbs={[
@@ -51,6 +52,8 @@
 			]}
 		/>
 	</nav>
+</Header>
+<main class="container">
 	<h1>Edit {querySchema.schema.label}</h1>
 	<form>
 		<ObjectComponent isRoot field={querySchema.schema} value={record} />

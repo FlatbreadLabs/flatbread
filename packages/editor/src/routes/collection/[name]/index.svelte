@@ -24,6 +24,7 @@
 <script lang="ts">
 	import Breadcrumbs from '$lib/breadcrumbs.svelte';
 	import FieldComponent from '$lib/field-component.svelte';
+	import Header from '$lib/header.svelte';
 	import type { QueryCollection, Schema } from '$lib/types';
 
 	export let collection: Schema;
@@ -35,14 +36,18 @@
 	);
 </script>
 
-<main class="container">
-	<nav class="flex row apart">
-		<Breadcrumbs
-			allowBack
-			breadcrumbs={[{ label: 'Collections', path: '/' }, { label: querySchema.label }]}
-		/>
+<Header>
+	<Breadcrumbs
+		slot='header-left'
+		allowBack
+		breadcrumbs={[{ label: 'Collections', path: '/' }, { label: querySchema.label }]}
+	/>
+	<div slot="header-right">
 		<a href="/collection/{querySchema.name}/new">Create new {collection.name}</a>
-	</nav>
+	</div>
+</Header>
+<main class="container">
+	<h1>{collection.pluralName}</h1>
 	<table>
 		<tr>
 			{#each visibleFields as field}
