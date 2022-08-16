@@ -43,9 +43,9 @@ export async function generateSchema(
   config.source.initialize?.(config);
 
   // Invoke the content source resolver to retrieve the content nodes
-  let allContentNodes: Record<string, any> = {};
+  const allContentNodes: Record<string, any> = {};
 
-  let collectionEntriesByName = Object.fromEntries(
+  const collectionEntriesByName = Object.fromEntries(
     config.content.map((collection: LoadedCollectionEntry) => [
       collection.name,
       collection,
@@ -151,7 +151,8 @@ export async function generateSchema(
     } else {
       const reference = get(entry, entry._metadata.referenceField);
       entry._metadata.reference = reference ?? createUniqueId();
-      if (!reference) set(entry, entry._metadata.referenceField, entry._metadata.reference);
+      if (!reference)
+        set(entry, entry._metadata.referenceField, entry._metadata.reference);
       entry._metadata.transformedBy = transformerId;
       entry._metadata.extension = extensions?.[0];
       allContentNodesJSON[ctx.collection].push(entry);
@@ -220,6 +221,7 @@ export async function generateSchema(
 
     Object.entries(refs).forEach(([refField, refType]) => {
       const refTypeTC = schemaComposer.getOTC(refType);
+      const refCollectionEntry = collectionEntriesByName[refType];
 
       // If the current content type has this valid reference field as declared in the config, we'll add a resolver for this reference
       if (!typeTC.hasField(refField)) return;
@@ -244,7 +246,8 @@ export async function generateSchema(
           description: `The ${refType} referenced by this ${name}`,
           resolver: () => refTypeTC.getResolver('findByReferenceField'),
           prepareArgs: {
-            [collectionEntriesByName[refType].referenceField]: (source) => source[refField],
+            [refCollectionEntry.referenceField]: (source: EntryNode) =>
+              source[refField],
           },
           projection: { [refField]: true },
         });
