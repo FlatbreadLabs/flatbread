@@ -16,7 +16,7 @@
     "lint:prettier": "prettier --check --plugin-search-dir=. .",
     "lint": "pnpm lint:prettier",
     "lint:fix": "pnpm lint:fix:prettier",
-    "lint:fix:prettier": "pretty-quick --staged",
+    "lint:fix:prettier": "prettier --write --plugin-search-dir=. .",
     "play": "cd examples/sveltekit && pnpm dev",
     "play:build": "pnpm build && cd examples/sveltekit && pnpm build",
     "prepublish:ci": "pnpm -r update",
