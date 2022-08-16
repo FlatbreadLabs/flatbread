@@ -6,4 +6,3 @@ enjoys:
   - coding
   - flatbread
 ---
-

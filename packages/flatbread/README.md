@@ -260,6 +260,7 @@ Limits the number of returned entries to the specified amount. Accepts an intege
 ## Create and update records (mutations)
 
 Create a new record
+
 ```graphql
 
 mutate ($example: PostInput) {
@@ -271,6 +272,7 @@ mutate ($example: PostInput) {
 ```
 
 Update an existing record
+
 ```graphql
 mutate ($example: PostInput) {
   updatePost(Post: $example) {
@@ -280,8 +282,8 @@ mutate ($example: PostInput) {
 }
 ```
 
-
 Upsert a record (will update if reference exists, or create a new one)
+
 ```graphql
 mutate ($example: PostInput) {
   upsertPost(Post: $example) {
@@ -290,7 +292,6 @@ mutate ($example: PostInput) {
   }
 }
 ```
-
 
 ## Field overrides
 

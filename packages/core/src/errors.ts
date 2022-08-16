@@ -16,7 +16,9 @@ export class IllegalFieldNameError extends Error {
   }
 }
 
-export class ReferenceAlreadyExistsError<K extends Record<string, K>> extends Error {
+export class ReferenceAlreadyExistsError<
+  K extends Record<string, K>
+> extends Error {
   constructor(
     payload: K,
     collectionName: string,
