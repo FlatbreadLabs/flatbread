@@ -1,0 +1,44 @@
+name: OverrideTest
+kind: OBJECT
+fields:
+  - label: Title
+    name: title
+    component: string
+  - label: Array
+    name: array
+    component: list
+  - label: Array2
+    name: array2
+    component: list
+  - label: Array3
+    name: array3
+    component: list
+  - label: Deeply
+    name: deeply
+    component: object
+    collection: OverrideTest_Deeply
+  - label: Collection
+    name: _collection
+    description: The collection name
+    disabled: true
+    component: string
+  - label: Id
+    name: id
+    disabled: true
+    component: string
+  - label: Content
+    name: _content
+    disabled: true
+    component: object
+    collection: OverrideTest__content
+  - label: Metadata
+    name: _metadata
+    disabled: true
+    component: object
+    collection: OverrideTest__metadata
+component: object
+label: Override Test
+pluralName: Override Tests
+referenceField: title
+meta:
+  hash: J7yZu464rDAR0+xgyPOQKdKdRH0=

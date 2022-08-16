@@ -1,0 +1,46 @@
+name: YamlAuthor
+kind: OBJECT
+fields:
+  - label: Name
+    name: name
+    component: string
+  - label: Date joined
+    name: date_joined
+    component: date
+  - label: Enjoys
+    name: enjoys
+    component: list
+  - label: Friend
+    name: friend
+    description: The YamlAuthor referenced by this YamlAuthor
+    component: object
+    collection: YamlAuthor
+  - label: Skills
+    name: skills
+    component: object
+    collection: YamlAuthor_Skills
+  - label: Collection
+    name: _collection
+    description: The collection name
+    disabled: true
+    component: string
+  - label: Id
+    name: id
+    disabled: true
+    component: string
+  - label: Content
+    name: _content
+    disabled: true
+    component: object
+    collection: YamlAuthor__content
+  - label: Metadata
+    name: _metadata
+    disabled: true
+    component: object
+    collection: YamlAuthor__metadata
+component: object
+label: Yaml Author
+pluralName: Yaml Authors
+referenceField: name
+meta:
+  hash: 6Qoac76cYXfo2rmktr9sRMg7bbU=

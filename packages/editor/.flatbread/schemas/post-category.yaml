@@ -1,0 +1,44 @@
+name: PostCategory
+kind: OBJECT
+fields:
+  - label: Title
+    name: title
+    component: string
+  - label: Category
+    name: category
+    component: string
+  - label: Rating
+    name: rating
+    component: float
+  - label: Slug
+    name: slug
+    component: string
+  - label: Authors
+    name: authors
+    description: All Authors that are referenced by this PostCategory
+    component: list
+  - label: Collection
+    name: _collection
+    description: The collection name
+    disabled: true
+    component: string
+  - label: Id
+    name: id
+    disabled: true
+    component: string
+  - label: Content
+    name: _content
+    disabled: true
+    component: object
+    collection: PostCategory__content
+  - label: Metadata
+    name: _metadata
+    disabled: true
+    component: object
+    collection: PostCategory__metadata
+component: object
+label: Post Category
+pluralName: Post Categories
+referenceField: title
+meta:
+  hash: tcwprbAYH9iqUyH8YR9c7zBOdPI=

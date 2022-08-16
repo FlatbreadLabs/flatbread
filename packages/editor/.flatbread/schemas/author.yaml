@@ -1,0 +1,53 @@
+name: Author
+kind: OBJECT
+fields:
+  - label: Name
+    name: name
+    component: string
+  - label: Date joined
+    name: date_joined
+    component: date
+  - label: Entity
+    name: entity
+    component: string
+  - label: Enjoys
+    name: enjoys
+    component: list
+  - label: Friend
+    name: friend
+    description: The Author referenced by this Author
+    component: object
+    collection: Author
+  - label: Image
+    name: image
+    component: svimg
+    collection: Svimg
+  - label: Skills
+    name: skills
+    component: object
+    collection: Author_Skills
+  - label: Collection
+    name: _collection
+    description: The collection name
+    disabled: true
+    component: string
+  - label: Id
+    name: id
+    disabled: true
+    component: string
+  - label: Content
+    name: _content
+    disabled: true
+    component: object
+    collection: Author__content
+  - label: Metadata
+    name: _metadata
+    disabled: true
+    component: object
+    collection: Author__metadata
+component: object
+label: Author
+pluralName: Authors
+referenceField: name
+meta:
+  hash: wJ/UxraDtoG3TPy2ZtymmKmFHJA=

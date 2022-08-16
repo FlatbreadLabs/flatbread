@@ -1,0 +1,45 @@
+{
+	"name": "@flatbread/editor",
+	"version": "0.0.1",
+	"types": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"package": "svelte-kit package",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync",
+		"check": "svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
+		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
+		"format": "prettier --write --plugin-search-dir=. ."
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-auto": "next",
+		"@sveltejs/kit": "next",
+		"@typescript-eslint/eslint-plugin": "^5.31.0",
+		"@typescript-eslint/parser": "^5.31.0",
+		"eslint": "^8.20.0",
+		"eslint-config-prettier": "^8.5.0",
+		"eslint-plugin-svelte3": "^4.0.0",
+		"prettier": "^2.7.1",
+		"prettier-plugin-svelte": "^2.7.0",
+		"sass": "^1.54.0",
+		"svelte": "^3.49.0",
+		"svelte-check": "^2.8.0",
+		"svelte-preprocess": "^4.10.7",
+		"tslib": "^2.4.0",
+		"typescript": "^4.7.4",
+		"vite": "^3.0.3"
+	},
+	"type": "module",
+	"dependencies": {
+		"@picocss/pico": "^1.5.3",
+		"@types/js-yaml": "^4.0.5",
+		"@types/lodash-es": "^4.17.6",
+		"js-yaml": "^4.1.0",
+		"lodash-es": "^4.17.21",
+		"node-fetch": "^3.2.9",
+		"svimg": "3.1.0",
+		"wretch": "^1.7.10"
+	}
+}

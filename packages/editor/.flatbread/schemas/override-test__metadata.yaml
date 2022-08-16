@@ -1,0 +1,30 @@
+name: OverrideTest__metadata
+kind: OBJECT
+fields:
+  - label: Collection
+    name: collection
+    component: string
+  - label: Reference
+    name: reference
+    component: string
+  - label: Referencefield
+    name: referenceField
+    component: string
+  - label: Sourcedby
+    name: sourcedBy
+    component: string
+  - label: Transformcontext
+    name: transformContext
+    component: json
+  - label: Transformedby
+    name: transformedBy
+    component: string
+  - label: Sourcecontext
+    name: sourceContext
+    component: object
+    collection: OverrideTest__metadata_SourceContext
+component: object
+label: Override Test__metadata
+referenceField: id
+meta:
+  hash: KixWfqfskAAu42t6siU5TWzQ1Jg=

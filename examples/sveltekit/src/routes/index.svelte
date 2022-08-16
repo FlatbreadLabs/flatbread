@@ -3,9 +3,13 @@
     const query = `
       query PostCategory {
         allPostCategories (sortBy: "title", order: DESC) {
-          _collection
-          _filename
-          _slug
+          _metadata {
+            sourceContext {
+              filename
+              slug
+            }
+            collection
+          }
           id
           title
           category
@@ -18,7 +22,11 @@
             timeToRead
           }
           authors {
-            _slug
+            _metadata {
+              sourceContext {
+                slug
+              }
+            }
             id
             name
             entity
@@ -99,9 +107,7 @@
 
 <div class="grid grid-cols-2 divide-x-2 divide-black">
   <Pane label="JSON Output">
-    <pre
-      class="overflow-auto p-3"
-      style="height: calc(100vh - 3.5rem);">
+    <pre class="overflow-auto p-3" style="height: calc(100vh - 3.5rem);">
       <code class="text-sm">
         {JSON.stringify(data, null, 2)}
       </code>

@@ -1,0 +1,23 @@
+name: OverrideTest__content
+kind: OBJECT
+fields:
+  - label: Excerpt
+    name: excerpt
+    description: A plaintext excerpt taken from the main content
+    component: string
+  - label: Html
+    name: html
+    description: The content as HTML
+    component: string
+  - label: Raw
+    name: raw
+    component: string
+  - label: Timetoread
+    name: timeToRead
+    description: How long (in minutes) it would take an average reader to read the main content.
+    component: int
+component: object
+label: Override Test__content
+referenceField: id
+meta:
+  hash: vuNQhfGHdxZdWDR+JoDUvw9iWoY=

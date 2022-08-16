@@ -1,0 +1,33 @@
+name: Svimg
+description: An Image Optimized by Svimg
+kind: OBJECT
+fields:
+  - label: Aspectratio
+    name: aspectratio
+    description: Aspect ratio of image
+    component: float
+  - label: Placeholder
+    name: placeholder
+    description: 'inline blurred placeholder image -- returns null if disabled via skipPlaceholder: true in config'
+    component: string
+  - label: Raw
+    name: raw
+    description: The raw value supplied from config
+    component: string
+  - label: Srcset
+    name: srcset
+    description: Responsive images and widths
+    component: string
+  - label: Srcsetavif
+    name: srcsetavif
+    description: 'Responsive Avif images and widths -- returns null if disabled via avif: false in config'
+    component: string
+  - label: Srcsetwebp
+    name: srcsetwebp
+    description: 'Responsive WebP images and widths -- returns null if disabled via webp: false in config'
+    component: string
+component: object
+label: Svimg
+referenceField: id
+meta:
+  hash: GnCxN+wFSZ8m4KacYt/7Yoaw/xk=

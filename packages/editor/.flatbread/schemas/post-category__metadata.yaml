@@ -1,0 +1,30 @@
+name: PostCategory__metadata
+kind: OBJECT
+fields:
+  - label: Collection
+    name: collection
+    component: string
+  - label: Reference
+    name: reference
+    component: string
+  - label: Referencefield
+    name: referenceField
+    component: string
+  - label: Sourcedby
+    name: sourcedBy
+    component: string
+  - label: Transformcontext
+    name: transformContext
+    component: json
+  - label: Transformedby
+    name: transformedBy
+    component: string
+  - label: Sourcecontext
+    name: sourceContext
+    component: object
+    collection: PostCategory__metadata_SourceContext
+component: object
+label: Post Category__metadata
+referenceField: id
+meta:
+  hash: ohMlDKpJ3ab37oMAGyO1/HM6c5c=

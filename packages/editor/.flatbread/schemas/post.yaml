@@ -1,0 +1,38 @@
+name: Post
+kind: OBJECT
+fields:
+  - label: Title
+    name: title
+    component: string
+  - label: Rating
+    name: rating
+    component: float
+  - label: Authors
+    name: authors
+    description: All Authors that are referenced by this Post
+    component: list
+  - label: Collection
+    name: _collection
+    description: The collection name
+    disabled: true
+    component: string
+  - label: Id
+    name: id
+    disabled: true
+    component: string
+  - label: Content
+    name: _content
+    disabled: true
+    component: object
+    collection: Post__content
+  - label: Metadata
+    name: _metadata
+    disabled: true
+    component: object
+    collection: Post__metadata
+component: object
+label: Post
+pluralName: Posts
+referenceField: title
+meta:
+  hash: LllYynCtbVNDF8wA8Gj5NcR/ypY=

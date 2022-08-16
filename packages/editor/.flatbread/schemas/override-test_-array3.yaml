@@ -1,0 +1,12 @@
+name: OverrideTest_Array3
+kind: OBJECT
+fields:
+  - label: Obj
+    name: obj
+    component: object
+    collection: OverrideTest_Array3_Obj
+component: object
+label: Override Test_ Array3
+referenceField: id
+meta:
+  hash: 34791d5i8uHnVwwh6lXB/MVzq4I=

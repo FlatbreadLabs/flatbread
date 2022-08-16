@@ -1,10 +1,14 @@
 import matter from 'gray-matter';
-import slugify from '@sindresorhus/slugify';
-import { html, excerpt, timeToRead } from './graphql/schema-helpers';
+import { excerpt, html, timeToRead } from './graphql/schema-helpers';
+import ownPackage from '../package.json' assert { type: 'json' };
 
+import type {
+  CollectionContext,
+  EntryNode,
+  TransformerPlugin,
+} from '@flatbread/core';
+import { VFile } from 'vfile';
 import type { MarkdownTransformerConfig } from './types';
-import type { EntryNode, TransformerPlugin } from '@flatbread/core';
-import type { VFile } from 'vfile';
 
 export * from './types';
 
@@ -20,16 +24,26 @@ export const parse = (
 ): EntryNode => {
   const { data, content } = matter(String(input), config.grayMatter);
   return {
-    _filename: input.basename,
-    _path: input.path,
-    _slug: slugify(input.stem ?? ''),
-    ...input.data,
-    ...data,
-    _content: {
-      raw: content,
+    record: {
+      ...input.data,
+      ...data,
+      _content: {
+        raw: content,
+      },
     },
   };
 };
+
+function serialize(
+  data: EntryNode,
+  ctx: CollectionContext,
+  config: MarkdownTransformerConfig
+) {
+  const { _content, ...rest } = data;
+  const doc = matter.stringify(_content?.raw ?? '', rest, config.grayMatter);
+
+  return new VFile(doc);
+}
 
 /**
  * Converts markdown files to meaningful data.
@@ -45,6 +59,7 @@ export const transformer: TransformerPlugin = (
   );
   return {
     parse: (input: VFile): EntryNode => parse(input, config),
+    id: ownPackage.name,
     preknownSchemaFragments: () => ({
       _content: {
         html: html(config),
@@ -53,6 +68,8 @@ export const transformer: TransformerPlugin = (
       },
     }),
     inspect: (input: EntryNode) => String(input),
+    serialize: (input: EntryNode, ctx: CollectionContext) =>
+      serialize(input, ctx, config),
     extensions,
   };
 };
