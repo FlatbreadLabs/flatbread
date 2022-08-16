@@ -1,6 +1,6 @@
 import { schemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
-import { defaultsDeep, get, merge, set } from 'lodash-es';
+import { get, merge, set } from 'lodash-es';
 import plur from 'plur';
 import { VFile } from 'vfile';
 import { cacheSchema, checkCacheForSchema } from '../cache/cache';
@@ -11,15 +11,13 @@ import {
   EntryNode,
   LoadedCollectionEntry,
   LoadedFlatbreadConfig,
-  Source,
   Transformer,
 } from '../types';
 import { createUniqueId } from '../utils/createUniqueId';
-import { getFieldOverrides } from '../utils/fieldOverrides';
-import { generateCollection } from './generateCollection';
 import { map } from '../utils/map';
 import addCollectionMutations from './collectionMutations';
 import addCollectionQueries from './collectionQueries';
+import { generateCollection } from './generateCollection';
 
 /**
  * Generates a GraphQL schema from content nodes.
@@ -45,9 +43,9 @@ export async function generateSchema(
   config.source.initialize?.(config);
 
   // Invoke the content source resolver to retrieve the content nodes
-  let allContentNodes: Record<string, any> = {};
+  const allContentNodes: Record<string, any> = {};
 
-  let collectionEntriesByName = Object.fromEntries(
+  const collectionEntriesByName = Object.fromEntries(
     config.content.map((collection: LoadedCollectionEntry) => [
       collection.name,
       collection,
@@ -151,8 +149,10 @@ export async function generateSchema(
       // replace in memory representation of record
       allContentNodesJSON[ctx.collection][index] = entry;
     } else {
-      entry._metadata.reference = createUniqueId();
-      set(entry, entry._metadata.referenceField, entry._metadata.reference);
+      const reference = get(entry, entry._metadata.referenceField);
+      entry._metadata.reference = reference ?? createUniqueId();
+      if (!reference)
+        set(entry, entry._metadata.referenceField, entry._metadata.reference);
       entry._metadata.transformedBy = transformerId;
       entry._metadata.extension = extensions?.[0];
       allContentNodesJSON[ctx.collection].push(entry);
@@ -199,6 +199,7 @@ export async function generateSchema(
       allContentNodesJSON,
       updateCollectionRecord,
       objectTypeComposer,
+      collectionEntry: collectionEntriesByName[name],
       config,
       collectionEntry,
     });
@@ -234,6 +235,7 @@ export async function generateSchema(
 
     Object.entries(refs).forEach(([refField, refType]) => {
       const refTypeTC = schemaComposer.getOTC(refType);
+      const refCollectionEntry = collectionEntriesByName[refType];
 
       // If the current content type has this valid reference field as declared in the config, we'll add a resolver for this reference
       if (!typeTC.hasField(refField)) return;
@@ -248,7 +250,7 @@ export async function generateSchema(
           )} that are referenced by this ${name}`,
           resolver: () => refTypeTC.getResolver('findMany'),
           prepareArgs: {
-            ids: (source) => source[refField],
+            references: (source) => source[refField],
           },
           projection: { [refField]: true },
         });
@@ -256,9 +258,10 @@ export async function generateSchema(
         // If the reference field has a single node
         typeTC.addRelation(refField, {
           description: `The ${refType} referenced by this ${name}`,
-          resolver: () => refTypeTC.getResolver('findById'),
+          resolver: () => refTypeTC.getResolver('findByReferenceField'),
           prepareArgs: {
-            id: (source) => source[refField],
+            [refCollectionEntry.referenceField]: (source: EntryNode) =>
+              source[refField],
           },
           projection: { [refField]: true },
         });

@@ -257,6 +257,41 @@ Limits the number of returned entries to the specified amount. Accepts an intege
 
 [Check out the example integrations](https://github.com/FlatbreadLabs/flatbread/tree/main/playground) of using Flatbread with frameworks like SvelteKit and Next.js.
 
+## Create and update records (mutations)
+
+Create a new record
+```graphql
+
+mutate ($example: PostInput) {
+  createPost(Post: $example) {
+    id
+    title
+  }
+}
+```
+
+Update an existing record
+```graphql
+mutate ($example: PostInput) {
+  updatePost(Post: $example) {
+    id
+    title
+  }
+}
+```
+
+
+Upsert a record (will update if reference exists, or create a new one)
+```graphql
+mutate ($example: PostInput) {
+  upsertPost(Post: $example) {
+    id
+    title
+  }
+}
+```
+
+
 ## Field overrides
 
 Field overrides allow you to define custom GraphQL types or resolvers on top of fields in your content. For example, you could [optimize images](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/resolver-svimg/), encapsulate an endpoint, and more!

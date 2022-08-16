@@ -6,7 +6,7 @@ enjoys:
   - cats
   - coffee
   - design
-friend: 40s3
+friend: Eva
 date_joined: 2021-04-22T16:41:59.558Z
 skills:
   sitting: 304

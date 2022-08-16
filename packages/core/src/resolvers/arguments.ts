@@ -1,11 +1,12 @@
-import { keyBy } from 'lodash-es';
+import { get, keyBy } from 'lodash-es';
 import sift, {
   generateFilterSetManifest,
   TargetAndComparator,
 } from '../utils/sift';
-import { ContentNode, FlatbreadConfig } from '../types';
+import { ContentNode, FlatbreadConfig, LoadedCollectionEntry } from '../types';
 import { FlatbreadProvider } from '../providers/base';
 interface ResolveQueryArgsOptions {
+  collectionEntry: LoadedCollectionEntry;
   type: {
     name: string;
     pluralName: string;
@@ -27,14 +28,20 @@ const resolveQueryArgs = async (
   if (filter) {
     // Place the nodes into a keyed object by ID so we can easily filter by ID without doing tons of looping.
     // TODO: store all nodes in an ID-keyed object.
-    // TODO: replace id field with user-defined/fallback identifier field.
-    const nodeById = keyBy(nodes, 'id');
+    const nodeByReference = keyBy(
+      nodes,
+      options.collectionEntry.referenceField
+    );
 
     // Turn the filter into a GraphQL subquery that returns an array of matching content node IDs.
-    const listOfNodeIDsToFilter = await resolveFilter(filter, config, options);
+    const listOfRecordReferencesToFilter = await resolveFilter(
+      filter,
+      config,
+      options
+    );
 
-    nodes = listOfNodeIDsToFilter.map(
-      (desiredNodeId) => nodeById[desiredNodeId]
+    nodes = listOfRecordReferencesToFilter.map(
+      (desiredNodeReference) => nodeByReference[desiredNodeReference]
     );
   }
 
@@ -83,7 +90,7 @@ const resolveQueryArgs = async (
  *
  */
 function buildFilterQueryFragment(filterSetManifest: TargetAndComparator) {
-  let filterToQuery = [];
+  const filterToQuery = [];
 
   for (const filter of filterSetManifest) {
     let graphQLFieldAccessor = '';
@@ -134,11 +141,10 @@ export const resolveFilter = async (
   // Build a GraphQL query fragment that will be used to resolve content nodes in a structure expected by the sift function, for the given filter.
   const filterQueryFragment = buildFilterQueryFragment(filterSetManifest);
 
-  // TODO: replace id field with user-defined/fallback identifier field
   const queryString = `
     query ${options.type.pluralQueryName}_FilterSubquery {
       ${options.type.pluralQueryName} {
-        id
+        ${options.collectionEntry.referenceField}
         ${filterQueryFragment}
       }
     }
@@ -150,7 +156,12 @@ export const resolveFilter = async (
 
   const result = data?.[options.type.pluralQueryName] as ContentNode[];
 
-  return result.filter(sift(filter)).map((node) => node.id);
+  return result
+    .filter(sift(filter))
+    .map(
+      (node) =>
+        get(node, options.collectionEntry.referenceField) as string | number
+    );
 };
 
 /**

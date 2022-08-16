@@ -145,7 +145,7 @@ test('create collection record', async (t) => {
   const result: any = await flatbread.query({
     variableValues: { test: { skills: { sitting } } },
     source: `
-      mutation CreateAuthor($test: AuthorCreateInput){
+      mutation CreateAuthor($test: AuthorInput){
         createAuthor(Author: $test) {
           id
           skills {
@@ -173,4 +173,24 @@ test('create collection record', async (t) => {
   });
 
   t.is(updated.data.Author.skills.sitting, sitting);
+});
+
+test('prevents creating record with duplicate reference', async (t) => {
+  const flatbread = basicProject();
+
+  const result = await flatbread.query({
+    variableValues: { test: { id: '2a3e' } },
+    source: `
+      mutation CreateAuthor($test: AuthorInput){
+        createAuthor(Author: $test) {
+          id
+          skills {
+            sitting
+          }
+        }
+      }
+    `,
+  });
+
+  t.snapshot(result.errors);
 });

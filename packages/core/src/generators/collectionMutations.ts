@@ -1,5 +1,6 @@
-import { ObjectTypeComposer, SchemaComposer } from 'graphql-compose';
+import { SchemaComposer } from 'graphql-compose';
 import { get, merge } from 'lodash-es';
+import { ReferenceAlreadyExistsError } from '../errors';
 import { CollectionContext, CollectionResolverArgs, EntryNode } from '../types';
 
 export default function addCollectionMutations(
@@ -16,22 +17,34 @@ export default function addCollectionMutations(
     // remove _metadata to prevent injection
     const { _metadata, ...update } = payload?.[name];
 
-    const targetRecord = objectTypeComposer
-      .getResolver('findById')
-      .resolve({ args: update });
-
     // remove supplied key (might not be required)
-    delete update[targetRecord._metadata.referenceField];
-    const newRecord = merge(targetRecord, update);
+    delete update[existing._metadata.referenceField];
+    const newRecord = merge(existing, update);
 
-    await updateCollectionRecord(collectionEntry, newRecord);
+    await updateCollectionRecord(
+      collectionEntry,
+      newRecord as EntryNode & { _metadata: Partial<CollectionContext> }
+    );
 
     return newRecord;
   }
 
   async function create(source: unknown, payload: Record<string, EntryNode>) {
+    const existingRecordWithId = await objectTypeComposer
+      .getResolver('findByReferenceField')
+      .resolve({ args: payload[name] });
+
+    if (existingRecordWithId) {
+      throw new ReferenceAlreadyExistsError(
+        payload[name],
+        name,
+        existingRecordWithId._metadata
+      );
+    }
+
     collectionEntry.creationRequiredFields.forEach((field) => {
-      if (!payload[name].hasOwnProperty(field))
+
+      if (!Object.hasOwn(payload[name], field))
         throw new Error(
           `field ${field} is required when creating a new ${name}`
         );
@@ -62,7 +75,7 @@ export default function addCollectionMutations(
         const { _metadata, ...args } = payload?.[name];
 
         const existingRecord = objectTypeComposer
-          .getResolver('findById')
+          .getResolver('findByReferenceField')
           .resolve({ args });
 
         if (!existingRecord)
@@ -80,8 +93,6 @@ export default function addCollectionMutations(
       args: {
         [name]: objectTypeComposer
           .getInputTypeComposer()
-          .clone(`${name}CreateInput`)
-          .removeField('id')
           .makeFieldNonNull(collectionEntry.creationRequiredFields),
       },
       description: `Create a ${name}`,
@@ -94,7 +105,7 @@ export default function addCollectionMutations(
         const { _metadata, ...args } = payload?.[name];
 
         const existingRecord = objectTypeComposer
-          .getResolver('findById')
+          .getResolver('findByReferenceField')
           .resolve({ args });
 
         if (existingRecord) return update(payload, existingRecord);
