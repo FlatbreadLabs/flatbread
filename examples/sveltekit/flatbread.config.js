@@ -34,6 +34,7 @@ export default defineConfig({
     {
       path: 'content/markdown/authors',
       name: 'Author',
+      referenceField: 'name',
       refs: {
         friend: 'Author',
       },

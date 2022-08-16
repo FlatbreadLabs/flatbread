@@ -1,13 +1,17 @@
 import { ObjectTypeComposer, SchemaComposer } from 'graphql-compose';
 import resolveQueryArgs from '../resolvers/arguments';
 
+import { cloneDeep, get } from 'lodash-es';
 import {
   generateArgsForAllItemQuery,
   generateArgsForManyItemQuery,
-  generateArgsForSingleItemQuery,
 } from '../generators/arguments';
-import { cloneDeep } from 'lodash-es';
-import { EntryNode, LoadedFlatbreadConfig, Transformer } from '../types';
+import {
+  EntryNode,
+  LoadedCollectionEntry,
+  LoadedFlatbreadConfig,
+  Transformer,
+} from '../types';
 
 export interface AddCollectionQueriesArgs {
   name: string;
@@ -17,6 +21,7 @@ export interface AddCollectionQueriesArgs {
   schemaComposer: SchemaComposer;
   allContentNodesJSON: Record<string, any[]>;
   transformersById: Record<string, Transformer>;
+  collectionEntry: LoadedCollectionEntry;
 }
 
 export default function addCollectionQueries(args: AddCollectionQueriesArgs) {
@@ -26,20 +31,27 @@ export default function addCollectionQueries(args: AddCollectionQueriesArgs) {
     config,
     objectComposer,
     schemaComposer,
+    collectionEntry,
     allContentNodesJSON,
   } = args;
 
   const pluralTypeQueryName = 'all' + pluralName;
 
   objectComposer.addResolver({
-    name: 'findById',
+    name: 'findByReferenceField',
     type: () => objectComposer,
-    description: `Find one ${name} by its ID`,
-    args: generateArgsForSingleItemQuery(),
+    description: `Find one ${name} by its ${collectionEntry.referenceField}`,
+    args: {
+      [collectionEntry.referenceField]: objectComposer
+        .getInputTypeComposer()
+        .getField(collectionEntry.referenceField),
+    },
     resolve: (rp: Record<string, any>) =>
       cloneDeep(
         allContentNodesJSON[name].find(
-          (node: EntryNode) => node.id === rp.args.id
+          (node: EntryNode) =>
+            node[collectionEntry.referenceField] ===
+            rp.args[collectionEntry.referenceField]
         )
       ),
   });
@@ -47,15 +59,16 @@ export default function addCollectionQueries(args: AddCollectionQueriesArgs) {
   objectComposer.addResolver({
     name: 'findMany',
     type: () => [objectComposer],
-    description: `Find many ${pluralName} by their IDs`,
+    description: `Find many ${pluralName} by their ${collectionEntry.referenceField}`,
     args: generateArgsForManyItemQuery(pluralName),
     resolve: (rp: Record<string, any>) => {
-      const idsToFind = rp.args.ids ?? [];
+      const referencesToFind = rp.args.references ?? [];
       const matches =
         cloneDeep(allContentNodesJSON[name])?.filter((node: EntryNode) =>
-          idsToFind?.includes(node.id)
+          referencesToFind?.includes(get(node, collectionEntry.referenceField))
         ) ?? [];
       return resolveQueryArgs(matches, rp.args, config, {
+        collectionEntry,
         type: {
           name: name,
           pluralName: pluralName,
@@ -73,6 +86,7 @@ export default function addCollectionQueries(args: AddCollectionQueriesArgs) {
     resolve: (rp: Record<string, any>) => {
       const nodes = cloneDeep(allContentNodesJSON[name]);
       return resolveQueryArgs(nodes, rp.args, config, {
+        collectionEntry,
         type: {
           name: name,
           pluralName: pluralName,
@@ -86,7 +100,7 @@ export default function addCollectionQueries(args: AddCollectionQueriesArgs) {
     /**
      * Add find by ID to each content type
      */
-    [name]: objectComposer.getResolver('findById'),
+    [name]: objectComposer.getResolver('findByReferenceField'),
     /**
      * Add find 'many' to each content type
      */

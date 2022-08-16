@@ -2,8 +2,7 @@
 id: jksfd4-234fdh-5345fj-3455-09836
 title: 'Soup Reflection'
 authors:
-  - r3c6
-  - ab2c
+  - Yoshi
 rating: 96
 ---
 

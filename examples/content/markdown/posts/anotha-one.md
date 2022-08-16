@@ -2,8 +2,8 @@
 id: 92348fds-453fdh-59ddsd-3332-09876
 title: 'Test post A'
 authors:
-  - 40s3
-  - 2a3e
+  - Eva
+  - Tony
 rating: 84.3
 ---
 
