@@ -300,13 +300,14 @@ for more information in Overrides, they adhere to the GraphQLFieldConfig outline
 
 Accepts a function which takes in field names and transforms them for the GraphQL schema generation -- this is used internally to remove spaces but can be used for other global transforms as well
 
-````js
+```js
 {
   ...
   // replace all spaces in field names with an underscore
   fieldNameTransform: (fieldName) => field.name.replace(/\s/g,'_')
   ...
 }
+```
 
 # ☀️ Contributing
 
