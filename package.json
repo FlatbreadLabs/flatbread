@@ -51,7 +51,7 @@
     "@types/node": "16.11.47",
     "ava": "4.3.1",
     "bumpp": "8.2.1",
-    "eslint": "7",
+    "eslint": "7.32.0",
     "esno": "0.16.3",
     "export-size": "0.5.2",
     "husky": "8.0.1",
