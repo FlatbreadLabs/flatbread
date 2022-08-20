@@ -325,7 +325,7 @@ You may need to seed this with a `pnpm build` first, as there can be a race cond
 
 ```bash
 pnpm dev
-````
+```
 
 ## **working on a package** ⚒️
 
