@@ -8,7 +8,7 @@ Closes # <!-- It's really useful if your PR references an issue where it is disc
 
 - [ ] I added doc comments to any new public exports, and inline comments to any hard-to-understand areas
 - [ ] My changes generate no new console errors locally
-- [ ] If applicable, include a test that fails without this PR but passes with it
+- [ ] If applicable, try to include a test that fails without this PR but passes with it
 
 ### Tests
 
