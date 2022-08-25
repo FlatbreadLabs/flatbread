@@ -1,8 +1,12 @@
-import yaml from 'js-yaml';
+import type {
+  CollectionContext,
+  EntryNode,
+  TransformerPlugin,
+} from '@flatbread/core';
 import type { YAMLException } from 'js-yaml';
-import slugify from '@sindresorhus/slugify';
-import type { EntryNode, TransformerPlugin } from '@flatbread/core';
-import type { VFile } from 'vfile';
+import yaml from 'js-yaml';
+import { VFile } from 'vfile';
+import ownPackage from '../package.json' assert { type: 'json' };
 
 /**
  * Transforms a yaml file (content node) to JSON.
@@ -18,11 +22,10 @@ export const parse = (input: VFile): EntryNode => {
 
   if (typeof doc === 'object') {
     return {
-      _filename: input.basename,
-      _path: input.path,
-      _slug: slugify(input.stem ?? ''),
-      ...input.data,
-      ...doc,
+      record: {
+        ...input.data,
+        ...doc,
+      },
     };
   }
   throw new Error(
@@ -32,15 +35,22 @@ export const parse = (input: VFile): EntryNode => {
   );
 };
 
+function serialize(node: EntryNode, ctx: CollectionContext): VFile {
+  const doc = yaml.dump(node);
+  return new VFile(doc);
+}
+
 /**
- * Converts markdown files to meaningful data.
+ * Converts yaml files to meaningful data.
  *
- * @returns Markdown parser, preknown GraphQL schema fragments, and an EntryNode inspector function.
+ * @returns yaml parser, preknown GraphQL schema fragments, and an EntryNode inspector function.
  */
 export const transformer: TransformerPlugin = () => {
   return {
     parse: (input: VFile): EntryNode => parse(input),
     inspect: (input: EntryNode) => String(input),
+    id: ownPackage.name,
+    serialize,
     extensions: ['.yaml', '.yml'],
   };
 };

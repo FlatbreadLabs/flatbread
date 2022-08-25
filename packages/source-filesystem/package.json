@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@flatbread/core": "workspace:*",
+    "@sindresorhus/slugify": "^2.1.0",
     "@types/lodash-es": "4.17.6",
     "@types/node": "16.11.47",
     "tsup": "6.2.1",

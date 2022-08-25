@@ -1,28 +1,23 @@
 import { schemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
-import { cloneDeep, merge } from 'lodash-es';
+import { get, merge, set } from 'lodash-es';
 import plur from 'plur';
 import { VFile } from 'vfile';
 import { cacheSchema, checkCacheForSchema } from '../cache/cache';
+
 import {
-  generateArgsForAllItemQuery,
-  generateArgsForManyItemQuery,
-  generateArgsForSingleItemQuery,
-} from '../generators/arguments';
-import resolveQueryArgs from '../resolvers/arguments';
-import {
+  CollectionEntry,
   ConfigResult,
   EntryNode,
+  LoadedCollectionEntry,
   LoadedFlatbreadConfig,
   Transformer,
 } from '../types';
+import { createUniqueId } from '../utils/createUniqueId';
 import { map } from '../utils/map';
+import addCollectionMutations from './collectionMutations';
+import addCollectionQueries from './collectionQueries';
 import { generateCollection } from './generateCollection';
-
-interface RootQueries {
-  maybeReturnsSingleItem: string[];
-  maybeReturnsList: string[];
-}
 
 /**
  * Generates a GraphQL schema from content nodes.
@@ -48,7 +43,53 @@ export async function generateSchema(
   config.source.initialize?.(config);
 
   // Invoke the content source resolver to retrieve the content nodes
-  const allContentNodes = await config.source.fetch(config.content);
+  const allContentNodes: Record<string, any> = {};
+
+  const collectionEntriesByName = Object.fromEntries(
+    config.content.map((collection: LoadedCollectionEntry) => [
+      collection.name,
+      collection,
+    ])
+  );
+
+  const addRecord =
+    (sourceId: string) =>
+    <Ctx>(
+      collection: LoadedCollectionEntry,
+      record: EntryNode,
+      context: Ctx
+    ) => {
+      allContentNodes[collection.name] = allContentNodes[collection.name] ?? [];
+
+      const newRecord = {
+        record,
+        context: {
+          sourceContext: context,
+          sourcedBy: sourceId,
+          collection: collection.name,
+          referenceField: collection.referenceField ?? 'id',
+        },
+      };
+
+      allContentNodes[collection.name].push(newRecord);
+      return newRecord;
+    };
+
+  function addCreationRequiredFields(
+    collection: CollectionEntry,
+    fields: string[]
+  ): void {
+    if (!collectionEntriesByName[collection.name])
+      throw new Error(`Couldn't find collection ${collection.name}`);
+    collectionEntriesByName?.[collection.name]?.creationRequiredFields?.push(
+      ...fields
+    );
+  }
+
+  await config.source.fetch(config.content, {
+    addRecord: addRecord(config.source.id as string),
+    addCreationRequiredFields,
+  });
 
   // Transform the content nodes to the expected JSON format if needed
   const allContentNodesJSON = optionallyTransformContentNodes(
@@ -80,28 +121,67 @@ export async function generateSchema(
     ])
   );
 
-  /**
-   * @todo potentially able to remove this
-   **/
-  let queries: RootQueries = {
-    maybeReturnsSingleItem: [],
-    maybeReturnsList: [],
+  const transformersById = {
+    ...Object.fromEntries(
+      config.transformer.map((transformer) => [transformer.id, transformer])
+    ),
+    // this will be the default for collections that aren't already `transformedBy` anything
+    undefined: config.transformer[0],
   };
 
+  async function updateCollectionRecord(
+    collection: CollectionEntry,
+    entry: EntryNode & { _metadata: any }
+  ) {
+    const ctx = entry._metadata;
+    const {
+      serialize,
+      extensions,
+      id: transformerId,
+    } = transformersById[ctx.transformedBy];
+
+    if (ctx.reference) {
+      const index = allContentNodesJSON[ctx.collection].findIndex(
+        (c) => get(c, ctx.referenceField) === ctx.reference
+      );
+
+      if (index < 0) throw new Error('Failed to find record to update');
+      // replace in memory representation of record
+      allContentNodesJSON[ctx.collection][index] = entry;
+    } else {
+      const reference = get(entry, entry._metadata.referenceField);
+      entry._metadata.reference = reference ?? createUniqueId();
+      if (!reference)
+        set(entry, entry._metadata.referenceField, entry._metadata.reference);
+      entry._metadata.transformedBy = transformerId;
+      entry._metadata.extension = extensions?.[0];
+      allContentNodesJSON[ctx.collection].push(entry);
+    }
+
+    const { _metadata, ...record } = entry;
+    const file = await serialize(record, ctx.transformContext);
+    await config?.source.put(file, ctx.sourceContext, {
+      parentContext: ctx,
+      collection,
+      record,
+    });
+
+    return entry;
+  }
+
   // Main builder loop - iterate through each content type and generate query resolvers + relationships for it
-  for (const [type, schema] of Object.entries(schemaArray)) {
-    const pluralType = plur(type, 2);
-    const pluralTypeQueryName = 'all' + pluralType;
+  for (const [name, objectTypeComposer] of Object.entries(schemaArray)) {
+    const pluralName = plur(name, 2);
 
     //
     /// Global meta fields
     //
 
-    schema.addFields({
+    objectTypeComposer.addFields({
       _collection: {
         type: 'String',
         description: 'The collection name',
-        resolve: () => type,
+        resolve: () => name,
       },
     });
 
@@ -109,82 +189,53 @@ export async function generateSchema(
     /// Query resolvers
     //
 
-    schema.addResolver({
-      name: 'findById',
-      type: () => schema,
-      description: `Find one ${type} by its ID`,
-      args: generateArgsForSingleItemQuery(),
-      resolve: (rp: Record<string, any>) =>
-        cloneDeep(allContentNodesJSON[type]).find(
-          (node: EntryNode) => node.id === rp.args.id
-        ),
+    // TODO: add a new type of plugin that can add resolvers to each collection, they should be called here
+
+    const collectionEntry = collectionEntriesByName[name];
+
+    addCollectionQueries(schemaComposer, {
+      name,
+      pluralName,
+      allContentNodesJSON,
+      updateCollectionRecord,
+      objectTypeComposer,
+      collectionEntry: collectionEntriesByName[name],
+      config,
+      collectionEntry,
     });
 
-    schema.addResolver({
-      name: 'findMany',
-      type: () => [schema],
-      description: `Find many ${pluralType} by their IDs`,
-      args: generateArgsForManyItemQuery(pluralType),
-      resolve: (rp: Record<string, any>) => {
-        const idsToFind = rp.args.ids ?? [];
-        const matches =
-          cloneDeep(allContentNodesJSON[type])?.filter((node: EntryNode) =>
-            idsToFind?.includes(node.id)
-          ) ?? [];
-        return resolveQueryArgs(matches, rp.args, config, {
-          type: {
-            name: type,
-            pluralName: pluralType,
-            pluralQueryName: pluralTypeQueryName,
-          },
-        });
-      },
+    addCollectionMutations(schemaComposer, {
+      name,
+      pluralName,
+      objectTypeComposer,
+      updateCollectionRecord,
+      config,
+      collectionEntry,
     });
 
-    schema.addResolver({
-      name: 'all',
-      args: generateArgsForAllItemQuery(pluralType),
-      type: () => [schema],
-      description: `Return a set of ${pluralType}`,
-      resolve: (rp: Record<string, any>) => {
-        const nodes = cloneDeep(allContentNodesJSON[type]);
-        return resolveQueryArgs(nodes, rp.args, config, {
-          type: {
-            name: type,
-            pluralName: pluralType,
-            pluralQueryName: pluralTypeQueryName,
-          },
-        });
-      },
-    });
-
-    schemaComposer.Query.addFields({
-      /**
-       * Add find by ID to each content type
-       */
-      [type]: schema.getResolver('findById'),
-      /**
-       * Add find 'many' to each content type
-       */
-      [pluralTypeQueryName]: schema.getResolver('all'),
-    });
-
-    /**
-     * Separate the queries by return type for later use when wrapping the query resolvers
-     * @todo potentially able to remove this
-     **/
-    queries.maybeReturnsSingleItem.push(type);
-    queries.maybeReturnsList.push(pluralTypeQueryName);
+    await Promise.all(
+      config.collectionResolvers.map((collectionResolver) =>
+        collectionResolver(schemaComposer, {
+          name,
+          pluralName,
+          objectTypeComposer,
+          updateCollectionRecord,
+          config,
+          collectionEntry,
+        })
+      )
+    );
   }
 
   // Create map of references on each content node
-  for (const { collection, refs } of config.content) {
-    const typeTC = schemaComposer.getOTC(collection);
+  for (const { name, refs } of config.content) {
+    const typeTC = schemaComposer.getOTC(name);
 
     if (!refs) continue;
 
     Object.entries(refs).forEach(([refField, refType]) => {
       const refTypeTC = schemaComposer.getOTC(refType);
+      const refCollectionEntry = collectionEntriesByName[refType];
 
       // If the current content type has this valid reference field as declared in the config, we'll add a resolver for this reference
       if (!typeTC.hasField(refField)) return;
@@ -196,20 +247,21 @@ export async function generateSchema(
           description: `All ${plur(
             String(refType),
             2
-          )} that are referenced by this ${collection}`,
+          )} that are referenced by this ${name}`,
           resolver: () => refTypeTC.getResolver('findMany'),
           prepareArgs: {
-            ids: (source) => source[refField],
+            references: (source) => source[refField],
           },
           projection: { [refField]: true },
         });
       } else {
         // If the reference field has a single node
         typeTC.addRelation(refField, {
-          description: `The ${refType} referenced by this ${collection}`,
-          resolver: () => refTypeTC.getResolver('findById'),
+          description: `The ${refType} referenced by this ${name}`,
+          resolver: () => refTypeTC.getResolver('findByReferenceField'),
           prepareArgs: {
-            id: (source) => source[refField],
+            [refCollectionEntry.referenceField]: (source: EntryNode) =>
+              source[refField],
           },
           projection: { [refField]: true },
         });
@@ -242,11 +294,9 @@ const fetchPreknownSchemaFragments = (
 
 function getTransformerExtensionMap(transformer: Transformer[]) {
   const transformerMap = new Map();
-  transformer.forEach((t) => {
-    t.extensions.forEach((extension) => {
-      transformerMap.set(extension, t);
-    });
-  });
+  transformer.forEach((t) =>
+    t.extensions.forEach((extension) => transformerMap.set(extension, t))
+  );
   return transformerMap;
 }
 
@@ -272,14 +322,20 @@ const optionallyTransformContentNodes = (
      * @todo if this becomes a performance bottleneck, consider overloading the source plugin API to accept a transform function so we can avoid mapping through the content nodes twice
      * */
 
-    return map(allContentNodes, (node: VFile) => {
-      const transformer = transformerMap.get(node.extname);
+    return map(allContentNodes, (node: { record: VFile; context: any }) => {
+      const transformer = transformerMap.get(node.record.extname);
       if (!transformer?.parse) {
-        throw new Error(`no transformer found for ${node.path}`);
+        throw new Error(`no transformer found for ${node.record.path}`);
       }
-      return transformer.parse(node);
+      const { record: doc, context } = transformer.parse(node.record);
+      doc._metadata = node.context;
+      doc._metadata.transformedBy = transformer.id;
+      doc._metadata.transformContext = context;
+      doc._metadata.reference = get(doc, node.context.referenceField);
+      return doc;
     });
   }
 
+  // TODO: might need to map this to attach metadata here
   return allContentNodes;
 };

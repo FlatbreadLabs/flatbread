@@ -32,7 +32,6 @@
     "node": "^14.13.1 || >=16.0.0"
   },
   "dependencies": {
-    "@sindresorhus/slugify": "^2.1.0",
     "graphql": "16.5.0",
     "gray-matter": "^4.0.3",
     "lodash-es": "^4.17.21",

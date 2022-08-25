@@ -83,6 +83,10 @@ export default defineConfig({
     {
       path: 'content/authors',
       collection: 'Author',
+      // the field to use as the primary key, 'id' by default
+      referenceField: 'id',
+      // a list of fields that are required when creating a new record (mostly used by plugins)
+      creationRequiredFields: []
       refs: {
         friend: 'Author',
       },
@@ -252,6 +256,42 @@ Limits the number of returned entries to the specified amount. Accepts an intege
 ## Query within your app ❓❓
 
 [Check out the example integrations](https://github.com/FlatbreadLabs/flatbread/tree/main/playground) of using Flatbread with frameworks like SvelteKit and Next.js.
+
+## Create and update records (mutations)
+
+Create a new record
+
+```graphql
+
+mutate ($example: PostInput) {
+  createPost(Post: $example) {
+    id
+    title
+  }
+}
+```
+
+Update an existing record
+
+```graphql
+mutate ($example: PostInput) {
+  updatePost(Post: $example) {
+    id
+    title
+  }
+}
+```
+
+Upsert a record (will update if reference exists, or create a new one)
+
+```graphql
+mutate ($example: PostInput) {
+  upsertPost(Post: $example) {
+    id
+    title
+  }
+}
+```
 
 ## Field overrides
 

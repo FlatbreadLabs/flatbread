@@ -1,20 +1,24 @@
-import { FlatbreadConfig, Override } from '../types';
 import { get, set } from 'lodash-es';
+import { CollectionEntry } from '../../dist';
+import { Override } from '../types';
 
 /**
  * Get an object containing functions nested in an object structure
  * aligning to the listed overrides in the config
  *
- * @param collection the collection string referenced in the config
- * @param config the flatbread config object
+ * @param collectionName the collection string referenced in the config
+ * @param entries the flatbread config object
  * @returns an object in the shape of the json schema
  */
-export function getFieldOverrides(collection: string, config: FlatbreadConfig) {
-  const content = config.content.find(
-    (content) => content.collection === collection
+export function getFieldOverrides(
+  collectionName: string,
+  entries: CollectionEntry[]
+) {
+  const collectionEntry = entries.find(
+    (entry) => entry.name === collectionName
   );
-  if (!content?.overrides) return {};
-  const overrides = content.overrides;
+  if (!collectionEntry?.overrides) return {};
+  const overrides = collectionEntry.overrides;
 
   return overrides.reduce((fields: any, override: Override) => {
     const { field, type, ...rest } = override;

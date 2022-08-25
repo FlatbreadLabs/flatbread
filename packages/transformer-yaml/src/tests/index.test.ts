@@ -26,6 +26,6 @@ const transformer = Transformer();
 
 test('it can parse a basic yaml file', async (t) => {
   const parse = transformer.parse as (input: VFile) => EntryNode;
-  const node = parse(testFile);
-  t.snapshot(node);
+  const { record } = parse(testFile);
+  t.snapshot(record);
 });
