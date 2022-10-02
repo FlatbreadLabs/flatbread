@@ -1,7 +1,7 @@
 import { GraphQLSchema } from 'graphql';
 import LRU from 'lru-cache';
 import { LoadedFlatbreadConfig } from '../types';
-import createShaHash from '../utils/createShaHash';
+import { createShaHash } from '../utils/createShaHash';
 
 type SchemaCacheKey = string;
 

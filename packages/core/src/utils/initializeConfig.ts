@@ -2,8 +2,7 @@ import { cloneDeep, defaultsDeep } from 'lodash-es';
 import { LoadedCollectionEntry } from '../types';
 import { FlatbreadConfig, LoadedFlatbreadConfig, Transformer } from '../types';
 import { toArray } from './arrayUtils';
-import createShaHash from './createShaHash';
-import { anyToString } from './stringUtils';
+import { createShaHash } from './createShaHash';
 import camelCase from './camelCase';
 
 /**
@@ -14,11 +13,11 @@ export function initializeConfig(
 ): LoadedFlatbreadConfig {
   const config = cloneDeep(rawConfig);
   const transformer = toArray(config.transformer ?? []).map((t) => {
-    t.id = t.id ?? createShaHash(t);
+    t.id ||= createShaHash(t);
     return t;
   });
 
-  config.source.id = config.source.id ?? createShaHash(config.source);
+  config.source.id ||= createShaHash(config.source);
 
   return {
     fieldNameTransform: camelCase,
