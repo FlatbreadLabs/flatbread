@@ -48,7 +48,7 @@
     "@ava/typescript": "3.0.1",
     "@nrwl/workspace": "14.4.3",
     "@types/inquirer": "8.2.1",
-    "@types/node": "16.11.47",
+    "@types/node": "16.18.23",
     "ava": "4.3.1",
     "bumpp": "8.2.1",
     "eslint": "7",
