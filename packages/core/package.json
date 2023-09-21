@@ -29,7 +29,7 @@
     "*.d.ts"
   ],
   "dependencies": {
-    "graphql": "16.5.0",
+    "graphql": "16.8.1",
     "graphql-compose": "9.0.8",
     "graphql-compose-json": "6.2.0",
     "lodash-es": "4.17.21",
