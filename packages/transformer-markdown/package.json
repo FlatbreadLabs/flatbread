@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@sindresorhus/slugify": "^2.1.0",
-    "graphql": "16.5.0",
+    "graphql": "16.8.1",
     "gray-matter": "^4.0.3",
     "lodash-es": "^4.17.21",
     "rehype-raw": "^6.1.1",
