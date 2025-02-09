@@ -36,7 +36,7 @@
     "*.d.ts"
   ],
   "dependencies": {
-    "esbuild": "0.15.1"
+    "esbuild": "0.25.0"
   },
   "devDependencies": {
     "@flatbread/core": "workspace:*",
