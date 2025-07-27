@@ -5,11 +5,13 @@
 import { fork, spawn } from 'node:child_process';
 import { basename, resolve } from 'node:path';
 import { findUpSync } from 'find-up';
+import { existsSync } from 'node:fs';
 import colors from 'kleur';
 
 export interface OrchestraOptions {
   corunner: string;
   flatbreadPort: number;
+  https?: boolean;
   packageManager: string | null;
 }
 
@@ -23,17 +25,21 @@ export interface OrchestraOptions {
 export default function orchestrateProcesses({
   corunner,
   flatbreadPort,
+  https = false,
   packageManager = null,
 }: OrchestraOptions) {
   const pkgManager = packageManager || detectPkgManager(process.cwd());
-  let serverModulePath = 'node_modules/flatbread/dist/graphql/server.js';
+
+  // Try to resolve the server module path
+  let serverModulePath = resolveServerModulePath(pkgManager);
 
   process.cwd();
-  const gql = fork(resolve(process.cwd(), serverModulePath), [''], {
+  const gql = fork(serverModulePath, [''], {
     env: {
       ...process.env,
       NODE_OPTIONS: '--experimental-vm-modules',
       FLATBREAD_PORT: String(flatbreadPort),
+      FLATBREAD_HTTPS: String(https),
     },
   });
   let runningScripts = [gql];
@@ -81,6 +87,71 @@ export default function orchestrateProcesses({
       child.kill();
     });
   });
+}
+
+/**
+ * Resolve the GraphQL server module path using Node.js module resolution with fallbacks
+ */
+function resolveServerModulePath(pkgManager: string | null): string {
+  try {
+    // First, try to use Node.js's require.resolve for proper module resolution
+    // This handles the vast majority of normal installations
+    const flatbreadPackageJson = require.resolve('flatbread/package.json');
+    const flatbreadDir = resolve(flatbreadPackageJson, '..');
+    const serverPath = resolve(flatbreadDir, 'dist/graphql/server.js');
+
+    if (existsSync(serverPath)) {
+      return serverPath;
+    }
+  } catch (error) {
+    // require.resolve failed, try fallback approaches
+  }
+
+  // Fallback: Search up the directory tree for node_modules/flatbread
+  // This handles hoisted node_modules and monorepo scenarios
+  const nodeModulesPath = findNodeModulesFlatbread(process.cwd());
+  if (nodeModulesPath !== null) {
+    return nodeModulesPath;
+  }
+
+  // If we still can't find it, provide a helpful error
+  throw new Error(
+    'Could not locate flatbread GraphQL server module. ' +
+      `Please ensure flatbread is properly installed by running \`${
+        pkgManager ?? 'npm'
+      } install flatbread\`.`
+  );
+}
+
+/**
+ * Search up the directory tree for node_modules/flatbread/dist/graphql/server.js
+ */
+function findNodeModulesFlatbread(startDir: string): string | null {
+  let currentDir = startDir;
+
+  while (currentDir !== resolve(currentDir, '..')) {
+    const serverPath = resolve(
+      currentDir,
+      'node_modules/flatbread/dist/graphql/server.js'
+    );
+    if (existsSync(serverPath)) {
+      return serverPath;
+    }
+
+    // Move up one directory
+    currentDir = resolve(currentDir, '..');
+  }
+
+  // Check the root directory as well
+  const rootServerPath = resolve(
+    currentDir,
+    'node_modules/flatbread/dist/graphql/server.js'
+  );
+  if (existsSync(rootServerPath)) {
+    return rootServerPath;
+  }
+
+  return null;
 }
 
 /**
