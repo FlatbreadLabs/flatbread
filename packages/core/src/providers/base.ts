@@ -13,6 +13,7 @@ export class FlatbreadProvider {
   private schemaPromise: Promise<GraphQLSchema>;
 
   constructor(config: FlatbreadConfig) {
+    console.log('config', config);
     const initializedConfig = initializeConfig(config);
     this.schemaPromise = generateSchema({ config: initializedConfig });
   }
@@ -24,6 +25,7 @@ export class FlatbreadProvider {
    * @returns GraphQL response
    */
   async query(args: Omit<GraphQLArgs, 'schema'>) {
+    console.log('query', args);
     const schema = await this.schemaPromise;
     return await graphql({ schema, ...args });
   }

@@ -1,4 +1,4 @@
-import typeOf from './typeOf';
+import { isPlainObject } from 'lodash-es';
 
 /**
  * Recursively transforms a nested object into a multidimensional array of length-2, where the first item is an array of keys leading to the value and the second item is the value found at the end of the path.
@@ -13,12 +13,12 @@ const deepEntries = (
   path: string[] = [],
   stack: any[] = []
 ): [string[], any] => {
-  if (typeOf(obj) === 'object') {
-    for (let [key, value] of Object.entries(obj)) {
+  for (let [key, value] of Object.entries(obj)) {
+    if (isPlainObject(value)) {
       stack = deepEntries(value, [...path, key], stack);
+    } else {
+      stack.push([[...path, key], value]);
     }
-  } else {
-    stack.push([path, obj]);
   }
   return stack as [string[], any];
 };

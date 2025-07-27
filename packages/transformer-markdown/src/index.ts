@@ -1,8 +1,8 @@
-import { VFile } from 'vfile';
+import type { VFile } from 'vfile';
 import matter from 'gray-matter';
 import slugify from '@sindresorhus/slugify';
 import {
-  EntryNode,
+  AnyContentNode,
   TransformerPlugin,
   BaseNodeSchema,
   validateContent,
@@ -11,7 +11,7 @@ import { MarkdownTransformerConfig } from './types';
 import { html, excerpt, timeToRead } from './graphql/schema-helpers';
 
 /**
- * Markdown transformer – converts front-matter & body into a flat `EntryNode`.
+ * Markdown transformer – converts front-matter & body into a flat `AnyContentNode`.
  *
  * It also exposes `_content` schema fragments (`html`, `excerpt`, `timeToRead`)
  * so downstream code can attach custom resolvers.
@@ -21,7 +21,7 @@ export * from './types';
 export const parse = (
   input: VFile,
   config: MarkdownTransformerConfig
-): EntryNode => {
+): AnyContentNode => {
   const { data, content } = matter(String(input), config.grayMatter);
   const slug = slugify(input.stem ?? '');
 
@@ -35,10 +35,16 @@ export const parse = (
     _content: {
       raw: content,
     },
-  } as EntryNode;
+  } as AnyContentNode;
 
-  validateContent(node, BaseNodeSchema);
-  return node;
+  const validation = validateContent(node, BaseNodeSchema);
+  if (!validation.success) {
+    throw new Error(
+      `Validation failed for ${input.path}: ${validation.error.message}`
+    );
+  }
+
+  return validation.data;
 };
 
 export const transformer: TransformerPlugin<MarkdownTransformerConfig> = (
@@ -48,7 +54,7 @@ export const transformer: TransformerPlugin<MarkdownTransformerConfig> = (
     ext.startsWith('.') ? ext : `.${ext}`
   );
   return {
-    parse: (input: VFile): EntryNode => parse(input, config),
+    parse: (input: VFile): AnyContentNode => parse(input, config),
     preknownSchemaFragments: () => ({
       _content: {
         html: html(config)(),
@@ -56,9 +62,8 @@ export const transformer: TransformerPlugin<MarkdownTransformerConfig> = (
         timeToRead: timeToRead(config)(),
       },
     }),
-    inspect: (input: EntryNode) => String(input),
+    inspect: (input: AnyContentNode) => String(input),
     extensions,
-    contentSchema: BaseNodeSchema,
   };
 };
 

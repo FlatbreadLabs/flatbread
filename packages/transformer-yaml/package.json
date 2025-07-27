@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@sindresorhus/slugify": "^2.1.0",
+    "@flatbread/core": "workspace:^",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
 import { AnyContentNode, Filter, FilterOperation, FilterValue } from '../types';
-import { get } from 'lodash-es';
+import { get, isPlainObject } from 'lodash-es';
 import deepEntries from './deepEntries';
 import reduceBooleans from './reduceBooleans';
 import { isMatch as isWildcardMatch } from 'matcher';
@@ -18,13 +18,13 @@ const createFilterFunction = <T extends AnyContentNode>(
 ) => {
   return (node: T): boolean => {
     // If there are no filter args, return true (include all)
-    if (!filterArgs) {
+    if (!filterArgs || !isPlainObject(filterArgs)) {
       return true;
     }
 
     // If a filter set manifest is not given, generate one
     // Filter args transformed to logical expressions.
-    filterSetManifest ??= generateFilterSetManifest(filterArgs);
+    filterSetManifest ??= generateFilterSetManifest(filterArgs as Filter<T>);
 
     const evaluatedFilterSet: boolean[] = [];
 

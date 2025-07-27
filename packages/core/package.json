@@ -30,18 +30,18 @@
   ],
   "dependencies": {
     "graphql": "16.5.0",
-    "graphql-compose": "9.0.8",
-    "graphql-compose-json": "6.2.0",
-    "lodash-es": "4.17.21",
-    "lru-cache": "7.13.2",
-    "matcher": "5.0.0",
-    "plur": "5.1.0"
+    "graphql-compose": "^9.1.0",
+    "graphql-compose-json": "^6.2.0",
+    "lodash-es": "^4.17.21",
+    "lru-cache": "^11.1.0",
+    "matcher": "^5.0.0",
+    "plur": "^5.1.0",
+    "vfile": "^6.0.0"
   },
   "devDependencies": {
     "@types/lodash-es": "4.17.6",
     "@types/node": "16.11.47",
     "tsup": "8.5.0",
-    "typescript": "5.8.3",
-    "vfile": "6.0.3"
+    "typescript": "5.8.3"
   }
 }

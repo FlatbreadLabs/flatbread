@@ -116,9 +116,7 @@ export async function generateSchema(
       description: `Find one ${type} by its ID`,
       args: generateArgsForSingleItemQuery(),
       resolve: (rp: { args: { id: string | number } }) =>
-        cloneDeep(contentNodes).find(
-          (node: AnyContentNode) => node.id === rp.args.id
-        ),
+        contentNodes.find((node: AnyContentNode) => node.id === rp.args.id),
     });
 
     schema.addResolver({
@@ -131,7 +129,7 @@ export async function generateSchema(
       }) => {
         const idsToFind = rp.args.ids ?? [];
         const matches =
-          cloneDeep(contentNodes)?.filter((node: AnyContentNode) =>
+          contentNodes?.filter((node: AnyContentNode) =>
             idsToFind?.includes(node.id)
           ) ?? [];
         return resolveQueryArgs(matches, rp.args, config, {
@@ -150,7 +148,7 @@ export async function generateSchema(
       type: () => [schema],
       description: `Return a set of ${pluralType}`,
       resolve: (rp: { args: Record<string, unknown> }) => {
-        const nodes = cloneDeep(contentNodes);
+        const nodes = contentNodes;
         return resolveQueryArgs(nodes, rp.args, config, {
           type: {
             name: type,
