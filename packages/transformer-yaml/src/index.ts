@@ -17,10 +17,12 @@ export const parse = (input: VFile): EntryNode => {
   });
 
   if (typeof doc === 'object') {
+    const slug = slugify(input.stem ?? '');
     return {
+      id: (doc as any).id || slug, // Use explicit id from YAML or fall back to slug
       _filename: input.basename,
       _path: input.path,
-      _slug: slugify(input.stem ?? ''),
+      _slug: slug,
       ...input.data,
       ...doc,
     };

@@ -19,10 +19,12 @@ export const parse = (
   config: MarkdownTransformerConfig
 ): EntryNode => {
   const { data, content } = matter(String(input), config.grayMatter);
+  const slug = slugify(input.stem ?? '');
   return {
+    id: data.id || slug, // Use explicit id from frontmatter or fall back to slug
     _filename: input.basename,
     _path: input.path,
-    _slug: slugify(input.stem ?? ''),
+    _slug: slug,
     ...input.data,
     ...data,
     _content: {
@@ -37,7 +39,7 @@ export const parse = (
  * @param config Markdown transformer configuration.
  * @returns Markdown parser, preknown GraphQL schema fragments, and an EntryNode inspector function.
  */
-export const transformer: TransformerPlugin = (
+export const transformer: TransformerPlugin<MarkdownTransformerConfig> = (
   config: MarkdownTransformerConfig = {}
 ) => {
   const extensions = (config.extensions || ['.md']).map((ext: string) =>

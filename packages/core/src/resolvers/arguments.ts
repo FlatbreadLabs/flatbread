@@ -82,8 +82,8 @@ const resolveQueryArgs = async (
  *  title
  *
  */
-function buildFilterQueryFragment(filterSetManifest: TargetAndComparator) {
-  let filterToQuery = [];
+function buildFilterQueryFragment(filterSetManifest: TargetAndComparator<any>) {
+  const filterToQuery = [];
 
   for (const filter of filterSetManifest) {
     let graphQLFieldAccessor = '';

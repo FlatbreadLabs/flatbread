@@ -78,13 +78,9 @@ export interface Transformer<
 }
 
 /**
- * Type-safe schema fragment definition
+ * Type-safe schema fragment definition - more flexible for existing usage
  */
-export interface SchemaFragment {
-  type: GraphQLInputType | string;
-  description?: string;
-  resolve?: ResolverFunction<unknown, unknown>;
-}
+export type SchemaFragment = Record<string, any>;
 
 export type TransformerPlugin<TConfig = unknown> = (
   config?: TConfig
@@ -99,7 +95,7 @@ export type EntryNode<
 > = ContentNode<TFields>;
 
 /**
- * Enhanced source interface with generic content mapping
+ * Enhanced source interface - sources can return raw files or processed content
  */
 export interface Source<
   TContentMap extends Record<string, AnyContentNode> = Record<
@@ -107,13 +103,11 @@ export interface Source<
     AnyContentNode
   >
 > {
-  initialize?: (flatbreadConfig: LoadedFlatbreadConfig<TContentMap>) => void;
-  fetchByType?: <K extends keyof TContentMap>(
-    path: string
-  ) => Promise<TContentMap[K][]>;
+  initialize?: (flatbreadConfig: LoadedFlatbreadConfig) => void;
+  fetchByType?: (path: string) => Promise<VFile[]>;
   fetch: (
-    allContentTypes: ContentTypeConfig<TContentMap>[]
-  ) => Promise<Record<keyof TContentMap, VFile[]>>;
+    allContentTypes: Record<string, any>[]
+  ) => Promise<Record<string, VFile[]>>;
 }
 
 export type SourcePlugin<TConfig = unknown> = (
@@ -227,14 +221,20 @@ export type FilterValue<T, Op extends FilterOperation> = Op extends 'in' | 'nin'
   : T;
 
 /**
- * Recursive filter type for nested object filtering
+ * Simplified filter type that allows flexible nested object filtering
  */
-export type Filter<T> = {
-  readonly [K in keyof T]?: T[K] extends Record<string, unknown>
-    ? Filter<T[K]>
-    : {
-        readonly [Op in FilterOperation]?: FilterValue<T[K], Op>;
-      };
+export type Filter<T = any> = {
+  readonly [K in keyof T]?: Filter<T[K]> | FilterOperations<T[K]>;
+} & {
+  // Allow additional properties for dynamic content structures
+  readonly [key: string]: Filter<any> | FilterOperations<any> | undefined;
+};
+
+/**
+ * Filter operations for a specific field type
+ */
+export type FilterOperations<T = any> = {
+  readonly [Op in FilterOperation]?: FilterValue<T, Op>;
 };
 
 /**
