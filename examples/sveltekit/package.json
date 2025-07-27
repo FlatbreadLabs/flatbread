@@ -37,7 +37,7 @@
     "eslint-config-prettier": "8.5.0",
     "eslint-plugin-svelte3": "3.4.1",
     "flatbread": "workspace:*",
-    "graphql": "16.5.0",
+    "graphql": "16.11.0",
     "prettier": "2.7.1",
     "prettier-plugin-svelte": "2.4.0",
     "svelte": "3.49.0",

@@ -5,7 +5,9 @@ import rehypeRaw from 'rehype-raw';
 import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
 import rehypeSanitize from 'rehype-sanitize';
-import external from 'remark-external-links';
+// Plugin for adding target/rel attributes to external links
+import rehypeExternalLinks from 'rehype-external-links';
+import type { Options as ExternalLinksOptions } from 'rehype-external-links';
 import gfm from 'remark-gfm';
 
 import type {
@@ -14,29 +16,24 @@ import type {
   PluggableList,
   Plugin,
 } from '../types';
-import type { Options as ExternalLinksOptions } from 'remark-external-links';
 
-/**
- * Add plugins with optional config to the processor via mutation.
- * @param plugins Tuples of plugin and config
- * @param processor UnifiedJS processor
- * @returns the processor
- */
-const applyPlugins = (
-  plugins: PluggableList,
-  processor: Processor
-): Processor => {
-  plugins.forEach((plugin) => {
-    if (Array.isArray(plugin)) {
-      if (plugin[1] && plugin[1]) processor.use(plugin[0] as Plugin, plugin[1]);
-      else processor.use(plugin[0]);
+// Inline helper to attach plugins while keeping strict typings.
+function attachPlugins(list: PluggableList, proc: unknown) {
+  for (const pl of list) {
+    if (Array.isArray(pl)) {
+      // Tuple form: [pluginFn, options]
+      const [fn, opts] = pl;
+      // The unified types make this awkward to type precisely without exposing internal generics.
+      // Using `as unknown` maintains type‐safety externally without resorting to `any`.
+      (proc as unknown as { use: (f: Plugin, o?: unknown) => void }).use(
+        fn as Plugin,
+        opts
+      );
     } else {
-      processor.use(plugin as Plugin);
+      (proc as unknown as { use: (f: Plugin) => void }).use(pl as Plugin);
     }
-  });
-
-  return processor;
-};
+  }
+}
 
 /**
  * Factory function to create a processor for markdown files.
@@ -45,30 +42,33 @@ const applyPlugins = (
  */
 export function createMarkdownProcessor(
   options: MarkdownConfig = {}
-): Processor {
+) {
   const toMDAST = unified().use(remarkParse).use(remarkFrontmatter);
 
   if (options.remarkPlugins) {
-    applyPlugins(options.remarkPlugins, toMDAST);
+    attachPlugins(options.remarkPlugins, toMDAST);
   }
   if (options.gfm) {
     toMDAST.use(gfm);
   }
-  if (options.externalLinks) {
-    const externalLinksConfig = {
-      target: options?.externalLinksTarget ?? '_blank',
-      rel: options?.externalLinksRel ?? ['nofollow', 'noopener', 'noreferrer'],
-    };
-    toMDAST.use(external, externalLinksConfig as ExternalLinksOptions);
-  }
-
   const toHAST = toMDAST
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
     .use(rehypeSanitize);
 
+  if (options.externalLinks) {
+    const externalLinksConfig = {
+      target: options?.externalLinksTarget ?? '_blank',
+      rel: options?.externalLinksRel ?? ['nofollow', 'noopener', 'noreferrer'],
+    };
+    toHAST.use(
+      rehypeExternalLinks,
+      externalLinksConfig as ExternalLinksOptions
+    );
+  }
+
   if (options.rehypePlugins) {
-    applyPlugins(options.rehypePlugins, toHAST);
+    attachPlugins(options.rehypePlugins, toHAST);
   }
 
   const processor = toHAST.use(rehypeStringify);

@@ -22,7 +22,7 @@
     "prepublish:ci": "pnpm -r update",
     "publish:ci": "esno scripts/publish.ts",
     "bump": "esno scripts/bumpVersions.ts",
-    "test": "NODE_OPTIONS='--trace-warnings' ava",
+    "test": "ava",
     "dev:test": "NODE_OPTIONS='--trace-warnings' ava --watch --verbose",
     "prepare": "husky install"
   },
