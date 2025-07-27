@@ -33,14 +33,14 @@
   },
   "dependencies": {
     "lodash-es": "^4.17.21",
-    "to-vfile": "^7.2.3",
+    "to-vfile": "^8.0.0",
     "unified": "^10.1.2"
   },
   "devDependencies": {
     "@flatbread/core": "workspace:*",
     "@types/lodash-es": "4.17.6",
     "@types/node": "16.11.47",
-    "tsup": "8.5.0",
+    "tsup": "6.2.1",
     "typescript": "5.8.3",
     "vfile": "6.0.3"
   }
