@@ -12,7 +12,7 @@ import {
 import resolveQueryArgs from '../resolvers/arguments';
 import {
   ConfigResult,
-  EntryNode,
+  AnyContentNode,
   LoadedFlatbreadConfig,
   Transformer,
 } from '../types';
@@ -83,7 +83,7 @@ export async function generateSchema(
   /**
    * @todo potentially able to remove this
    **/
-  let queries: RootQueries = {
+  const queries: RootQueries = {
     maybeReturnsSingleItem: [],
     maybeReturnsList: [],
   };
@@ -92,6 +92,7 @@ export async function generateSchema(
   for (const [type, schema] of Object.entries(schemaArray)) {
     const pluralType = plur(type, 2);
     const pluralTypeQueryName = 'all' + pluralType;
+    const contentNodes = allContentNodesJSON[type];
 
     //
     /// Global meta fields
@@ -114,9 +115,9 @@ export async function generateSchema(
       type: () => schema,
       description: `Find one ${type} by its ID`,
       args: generateArgsForSingleItemQuery(),
-      resolve: (rp: Record<string, any>) =>
-        cloneDeep(allContentNodesJSON[type]).find(
-          (node: EntryNode) => node.id === rp.args.id
+      resolve: (rp: { args: { id: string | number } }) =>
+        cloneDeep(contentNodes).find(
+          (node: AnyContentNode) => node.id === rp.args.id
         ),
     });
 
@@ -125,10 +126,12 @@ export async function generateSchema(
       type: () => [schema],
       description: `Find many ${pluralType} by their IDs`,
       args: generateArgsForManyItemQuery(pluralType),
-      resolve: (rp: Record<string, any>) => {
+      resolve: (rp: {
+        args: { ids?: (string | number)[] } & Record<string, unknown>;
+      }) => {
         const idsToFind = rp.args.ids ?? [];
         const matches =
-          cloneDeep(allContentNodesJSON[type])?.filter((node: EntryNode) =>
+          cloneDeep(contentNodes)?.filter((node: AnyContentNode) =>
             idsToFind?.includes(node.id)
           ) ?? [];
         return resolveQueryArgs(matches, rp.args, config, {
@@ -146,8 +149,8 @@ export async function generateSchema(
       args: generateArgsForAllItemQuery(pluralType),
       type: () => [schema],
       description: `Return a set of ${pluralType}`,
-      resolve: (rp: Record<string, any>) => {
-        const nodes = cloneDeep(allContentNodesJSON[type]);
+      resolve: (rp: { args: Record<string, unknown> }) => {
+        const nodes = cloneDeep(contentNodes);
         return resolveQueryArgs(nodes, rp.args, config, {
           type: {
             name: type,
@@ -184,7 +187,7 @@ export async function generateSchema(
     if (!refs) continue;
 
     Object.entries(refs).forEach(([refField, refType]) => {
-      const refTypeTC = schemaComposer.getOTC(refType);
+      const refTypeTC = schemaComposer.getOTC(refType as string);
 
       // If the current content type has this valid reference field as declared in the config, we'll add a resolver for this reference
       if (!typeTC.hasField(refField)) return;
@@ -199,7 +202,7 @@ export async function generateSchema(
           )} that are referenced by this ${collection}`,
           resolver: () => refTypeTC.getResolver('findMany'),
           prepareArgs: {
-            ids: (source) => source[refField],
+            ids: (source: AnyContentNode) => source[refField],
           },
           projection: { [refField]: true },
         });
@@ -209,7 +212,7 @@ export async function generateSchema(
           description: `The ${refType} referenced by this ${collection}`,
           resolver: () => refTypeTC.getResolver('findById'),
           prepareArgs: {
-            id: (source) => source[refField],
+            id: (source: AnyContentNode) => source[refField],
           },
           projection: { [refField]: true },
         });
@@ -233,7 +236,7 @@ export async function generateSchema(
  */
 const fetchPreknownSchemaFragments = (
   config: LoadedFlatbreadConfig
-): Record<string, any> | {} => {
+): Record<string, any> => {
   return config.transformer.reduce(
     (all, next) => merge(all, next.preknownSchemaFragments?.() || {}),
     {}
@@ -241,7 +244,7 @@ const fetchPreknownSchemaFragments = (
 };
 
 function getTransformerExtensionMap(transformer: Transformer[]) {
-  const transformerMap = new Map();
+  const transformerMap = new Map<string, Transformer>();
   transformer.forEach((t) => {
     t.extensions.forEach((extension) => {
       transformerMap.set(extension, t);
@@ -257,12 +260,11 @@ function getTransformerExtensionMap(transformer: Transformer[]) {
  * @param config Flatbread config object
  */
 const optionallyTransformContentNodes = (
-  allContentNodes: Record<string, any[]>,
+  allContentNodes: Record<string, VFile[]>,
   config: LoadedFlatbreadConfig
-): Record<string, any[]> => {
+): Record<string, AnyContentNode[]> => {
   if (config.transformer) {
     const transformerMap = getTransformerExtensionMap(config.transformer);
-    // const globs = Object.entries(transformers);
 
     /**
      * Map through each content type,
@@ -272,14 +274,15 @@ const optionallyTransformContentNodes = (
      * @todo if this becomes a performance bottleneck, consider overloading the source plugin API to accept a transform function so we can avoid mapping through the content nodes twice
      * */
 
-    return map(allContentNodes, (node: VFile) => {
-      const transformer = transformerMap.get(node.extname);
+    return map(allContentNodes, (node: VFile): AnyContentNode => {
+      const transformer = transformerMap.get(node.extname || '');
       if (!transformer?.parse) {
         throw new Error(`no transformer found for ${node.path}`);
       }
-      return transformer.parse(node);
+      return transformer.parse(node) as AnyContentNode;
     });
   }
 
-  return allContentNodes;
+  // Return as-is if no transformer (will be cast appropriately by the caller)
+  return allContentNodes as unknown as Record<string, AnyContentNode[]>;
 };
