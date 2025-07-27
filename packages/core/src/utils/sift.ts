@@ -30,7 +30,7 @@ const createFilterFunction = <T extends AnyContentNode>(
 
     for (const { path, comparator } of filterSetManifest) {
       // Retrieve the value of interest from the node.
-      const needle = get(node, path, undefined);
+      const needle = get(unwrapNode(node), path, undefined);
       // Compare the value of interest to the target value, and store the result of the evaluated expression.
       evaluatedFilterSet.push(generateComparisonFunction(comparator)(needle));
     }
@@ -149,6 +149,23 @@ function generateComparisonFunction<T>(
     default:
       throw new Error(`Unsupported operation: ${operation}`);
   }
+}
+
+/**
+ * Some transformers return a validation wrapper. This util unwraps either
+ * `{ success, data }` or returns the value untouched.
+ */
+function unwrapNode<T>(node: T | { success: boolean; data: T }): T {
+  if (
+    node &&
+    typeof node === 'object' &&
+    'success' in node &&
+    (node as any).success === true &&
+    'data' in node
+  ) {
+    return (node as any).data;
+  }
+  return node as T;
 }
 
 /**

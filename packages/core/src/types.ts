@@ -42,12 +42,7 @@ export type GraphQLResolver<
 /**
  * Improved schema fragment type - still flexible but better than Record<string, any>
  */
-export type SchemaFragment = {
-  type: () => string | Function;
-  description?: string;
-  args?: Record<string, unknown>;
-  resolve: GraphQLResolver;
-};
+export type SchemaFragment = Record<string, unknown>;
 
 /**
  * Flatbread's configuration interface with improved type safety.

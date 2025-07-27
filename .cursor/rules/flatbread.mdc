@@ -1,0 +1,17 @@
+---
+alwaysApply: true
+---
+
+Flatbread is an open source project designed to robustly allow users to convert any type of relational, flat-file content into a GraphQL endpoint. A user defines the structure of their content, creating relationship mappings within a config object. The user may elect to transform some files using transformer plugins, or add custom functionality and GraphQL types on a field via resolver plugins.
+
+This toolset offers some packages which are usually coupled with the core when consumed in common use cases.
+
+## Docs per package
+
+Overview -> @README.md
+/core -> @README.md
+/config -> @README.md
+/transformer-yaml -> @README.md
+/transformer-markdown -> @README.md
+/source-filesystem -> @README.md
+/resolver-svgimg -> @readme.md
