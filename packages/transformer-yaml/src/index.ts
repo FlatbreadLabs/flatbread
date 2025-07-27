@@ -1,22 +1,18 @@
+import { VFile } from 'vfile';
 import yaml from 'js-yaml';
-import type { YAMLException } from 'js-yaml';
 import slugify from '@sindresorhus/slugify';
-import type { EntryNode, TransformerPlugin } from '@flatbread/core';
-import type { VFile } from 'vfile';
+import { EntryNode, TransformerPlugin } from '@flatbread/core';
 
 /**
- * Transforms a yaml file (content node) to JSON.
+ * Parse a YAML file into an EntryNode.
  *
- * @param {VFile} input - A VFile object representing a content node.
+ * @param input VFile
+ * @returns EntryNode
  */
 export const parse = (input: VFile): EntryNode => {
-  const doc = yaml.load(String(input), {
-    filename: input.path,
-    onWarning: (warning: YAMLException) =>
-      console.log(console.warn(warning.toString())),
-  });
+  const doc = yaml.load(String(input));
 
-  if (typeof doc === 'object') {
+  if (typeof doc === 'object' && doc !== null) {
     const slug = slugify(input.stem ?? '');
     return {
       id: (doc as any).id || slug, // Use explicit id from YAML or fall back to slug
@@ -27,24 +23,19 @@ export const parse = (input: VFile): EntryNode => {
       ...doc,
     };
   }
-  throw new Error(
-    `Parsing ${
-      input.path
-    } yielded a '${typeof doc}' when an 'object' was expected.`
-  );
+
+  throw new Error(`Could not parse yaml file ${input.path}`);
 };
 
 /**
- * Converts markdown files to meaningful data.
+ * Plugin for parsing YAML data.
  *
- * @returns Markdown parser, preknown GraphQL schema fragments, and an EntryNode inspector function.
+ * @returns Transformer
  */
 export const transformer: TransformerPlugin = () => {
   return {
-    parse: (input: VFile): EntryNode => parse(input),
+    parse,
     inspect: (input: EntryNode) => String(input),
-    extensions: ['.yaml', '.yml'],
+    extensions: ['.yml', '.yaml'] as const,
   };
 };
-
-export default transformer;

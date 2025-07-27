@@ -26,6 +26,30 @@ export type ContentNode<
 export type AnyContentNode = ContentNode<Record<string, unknown>>;
 
 /**
+ * Improved GraphQL resolver type - replaces previous any usage
+ */
+export type GraphQLResolver<
+  TParent = unknown,
+  TArgs = Record<string, unknown>,
+  TReturn = unknown
+> = (
+  parent: TParent,
+  args: TArgs,
+  context?: unknown,
+  info?: unknown
+) => TReturn | Promise<TReturn>;
+
+/**
+ * Improved schema fragment type - still flexible but better than Record<string, any>
+ */
+export type SchemaFragment = {
+  type: () => string | Function;
+  description?: string;
+  args?: Record<string, unknown>;
+  resolve: GraphQLResolver;
+};
+
+/**
  * Flatbread's configuration interface with improved type safety.
  */
 export interface FlatbreadConfig<
@@ -77,11 +101,6 @@ export interface Transformer<
   extensions: readonly string[];
 }
 
-/**
- * Type-safe schema fragment definition - more flexible for existing usage
- */
-export type SchemaFragment = Record<string, any>;
-
 export type TransformerPlugin<TConfig = unknown> = (
   config?: TConfig
 ) => Transformer;
@@ -106,7 +125,7 @@ export interface Source<
   initialize?: (flatbreadConfig: LoadedFlatbreadConfig) => void;
   fetchByType?: (path: string) => Promise<VFile[]>;
   fetch: (
-    allContentTypes: Record<string, any>[]
+    allContentTypes: ContentTypeConfig<TContentMap>[]
   ) => Promise<Record<string, VFile[]>>;
 }
 
@@ -221,19 +240,22 @@ export type FilterValue<T, Op extends FilterOperation> = Op extends 'in' | 'nin'
   : T;
 
 /**
- * Simplified filter type that allows flexible nested object filtering
+ * Improved filter type - more flexible than before while still providing some type safety
  */
-export type Filter<T = any> = {
-  readonly [K in keyof T]?: Filter<T[K]> | FilterOperations<T[K]>;
+export type Filter<T extends AnyContentNode = AnyContentNode> = {
+  readonly [K in keyof T]?: FilterOperations<T[K]> | Filter<AnyContentNode>;
 } & {
   // Allow additional properties for dynamic content structures
-  readonly [key: string]: Filter<any> | FilterOperations<any> | undefined;
+  readonly [key: string]:
+    | FilterOperations<unknown>
+    | Filter<AnyContentNode>
+    | undefined;
 };
 
 /**
- * Filter operations for a specific field type
+ * Filter operations for a specific field type with better constraints
  */
-export type FilterOperations<T = any> = {
+export type FilterOperations<T = unknown> = {
   readonly [Op in FilterOperation]?: FilterValue<T, Op>;
 };
 

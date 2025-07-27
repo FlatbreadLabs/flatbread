@@ -1,10 +1,9 @@
+import { VFile } from 'vfile';
 import matter from 'gray-matter';
 import slugify from '@sindresorhus/slugify';
+import { EntryNode, TransformerPlugin } from '@flatbread/core';
+import { MarkdownTransformerConfig } from './types';
 import { html, excerpt, timeToRead } from './graphql/schema-helpers';
-
-import type { MarkdownTransformerConfig } from './types';
-import type { EntryNode, TransformerPlugin } from '@flatbread/core';
-import type { VFile } from 'vfile';
 
 export * from './types';
 
@@ -20,6 +19,7 @@ export const parse = (
 ): EntryNode => {
   const { data, content } = matter(String(input), config.grayMatter);
   const slug = slugify(input.stem ?? '');
+
   return {
     id: data.id || slug, // Use explicit id from frontmatter or fall back to slug
     _filename: input.basename,
@@ -45,14 +45,13 @@ export const transformer: TransformerPlugin<MarkdownTransformerConfig> = (
   const extensions = (config.extensions || ['.md']).map((ext: string) =>
     ext.startsWith('.') ? ext : `.${ext}`
   );
+
   return {
     parse: (input: VFile): EntryNode => parse(input, config),
     preknownSchemaFragments: () => ({
-      _content: {
-        html: html(config),
-        excerpt: excerpt(config),
-        timeToRead: timeToRead(config),
-      },
+      html: html(config),
+      excerpt: excerpt(config),
+      timeToRead: timeToRead(config),
     }),
     inspect: (input: EntryNode) => String(input),
     extensions,

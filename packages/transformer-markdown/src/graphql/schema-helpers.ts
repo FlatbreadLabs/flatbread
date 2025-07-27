@@ -5,6 +5,7 @@ import {
 } from '../processors';
 import sanitizeHtml from 'sanitize-html';
 import { MarkdownTransformerConfig } from '../types';
+import { GraphQLResolver } from '@flatbread/core';
 
 /**
  * A GraphQL field for the time to read the content, if it exists.
@@ -20,30 +21,31 @@ export const timeToRead = (config: MarkdownTransformerConfig) => () => ({
       defaultValue: 230,
     },
   },
-  resolve: async (parentNode: any, args: { speed: number }) => {
-    if (!parentNode.html) {
-      parentNode.html = await transformContentToHTML(
-        parentNode.raw,
+  resolve: (async (parentNode: any, args: { speed: number }) => {
+    const content = parentNode._content || {};
+    if (!content.html) {
+      content.html = await transformContentToHTML(
+        content.raw,
         config.markdown ?? {}
       );
     }
 
-    const plaintext = parentNode
-      ? sanitizeHtml(parentNode.html, {
+    const plaintext = content.html
+      ? sanitizeHtml(content.html, {
           allowedAttributes: {},
           allowedTags: [],
         }).replace(/\r?\n|\r/g, ' ')
       : '';
 
     return estimateTimeToRead(plaintext, args.speed);
-  },
+  }) as GraphQLResolver,
 });
 
 /**
  * A GraphQL field for an excerpt of the content, if it exists.
  */
 export const excerpt = (config: MarkdownTransformerConfig) => () => ({
-  type: 'String',
+  type: () => 'String',
   description: 'A plaintext excerpt taken from the main content',
   args: {
     length: {
@@ -52,22 +54,23 @@ export const excerpt = (config: MarkdownTransformerConfig) => () => ({
       defaultValue: 200,
     },
   },
-  resolve: async (parentNode: any, args: { length: number }) => {
-    if (!parentNode.html) {
-      parentNode.html = await transformContentToHTML(
-        parentNode.raw,
+  resolve: (async (parentNode: any, args: { length: number }) => {
+    const content = parentNode._content || {};
+    if (!content.html) {
+      content.html = await transformContentToHTML(
+        content.raw,
         config.markdown ?? {}
       );
     }
 
-    const plaintext = parentNode
-      ? sanitizeHtml(parentNode.html, {
+    const plaintext = content.html
+      ? sanitizeHtml(content.html, {
           allowedAttributes: {},
           allowedTags: [],
         }).replace(/\r?\n|\r/g, ' ')
       : '';
     return createExcerpt(plaintext, args.length);
-  },
+  }) as GraphQLResolver,
 });
 
 /**
@@ -76,13 +79,14 @@ export const excerpt = (config: MarkdownTransformerConfig) => () => ({
 export const html = (config: MarkdownTransformerConfig) => () => ({
   type: () => 'String',
   description: 'The content as HTML',
-  resolve: async (parentNode: any) => {
-    if (!parentNode.html) {
-      parentNode.html = await transformContentToHTML(
-        parentNode.raw,
+  resolve: (async (parentNode: any) => {
+    const content = parentNode._content || {};
+    if (!content.html) {
+      content.html = await transformContentToHTML(
+        content.raw,
         config.markdown ?? {}
       );
     }
-    return parentNode.html;
-  },
+    return content.html;
+  }) as GraphQLResolver,
 });

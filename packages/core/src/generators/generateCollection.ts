@@ -1,5 +1,5 @@
 import { defaultsDeep, merge } from 'lodash-es';
-import { LoadedFlatbreadConfig } from '../types';
+import { LoadedFlatbreadConfig, SchemaFragment } from '../types';
 import { getFieldOverrides } from '../utils/fieldOverrides';
 import transformKeys from '../utils/transformKeys';
 
@@ -7,7 +7,7 @@ interface GenerateCollectionArgs<T> {
   collection: string;
   nodes: T[];
   config: LoadedFlatbreadConfig;
-  preknownSchemaFragments: Record<string, any[]>;
+  preknownSchemaFragments: Record<string, SchemaFragment>;
 }
 
 export function generateCollection<T>({
