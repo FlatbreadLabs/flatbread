@@ -7,7 +7,7 @@ import { getMonorepoPublicPackages } from './utils/packageManifest';
 execSync('pnpm run build', { stdio: 'inherit' });
 
 // Start building the npm registry publish command
-let command = 'pnpm publish --access public';
+let command = 'pnpm publish --access public --no-git-checks';
 
 // Get the list of public packages in the monorepo
 const packages = await getMonorepoPublicPackages();
