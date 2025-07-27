@@ -19,21 +19,21 @@ export default defineConfig({
   content: [
     {
       path: 'content/markdown/posts',
-      collection: 'Post',
+      name: 'Post',
       refs: {
         authors: 'Author',
       },
     },
     {
       path: 'content/markdown/posts/[category]/[slug].md',
-      collection: 'PostCategory',
+      name: 'PostCategory',
       refs: {
         authors: 'Author',
       },
     },
     {
       path: 'content/markdown/posts/**/*.md',
-      collection: 'PostCategoryBlob',
+      name: 'PostCategoryBlob',
       refs: {
         authors: 'Author',
       },

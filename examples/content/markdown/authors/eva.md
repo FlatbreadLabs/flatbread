@@ -8,7 +8,7 @@ enjoys:
   - mow mow
   - sleepy time
   - attention
-friend: 2a3e
+friend: Tony
 image: eva.svg
 date_joined: 2002-02-25T16:41:59.558Z
 skills:

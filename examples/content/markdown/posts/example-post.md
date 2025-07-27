@@ -2,8 +2,8 @@
 id: sdfsdf-23423-sdfsd-23444-dfghf
 title: 'Example post of things'
 authors:
-  - 2a3e
-  - 40s3
+  - Tony
+  - Eva
 rating: 74
 ---
 

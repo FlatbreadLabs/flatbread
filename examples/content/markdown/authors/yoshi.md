@@ -7,7 +7,7 @@ enjoys:
   - encroaching upon personal space
   - being concerned
   - smooth jazz
-friend: ab2c
+friend: Daes
 date_joined: 2018-10-25T16:23:59.558Z
 skills:
   sitting: 10

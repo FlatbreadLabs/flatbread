@@ -21,16 +21,16 @@ export type ContentNode = BaseContentNode & {
  * @todo This needs to be typed more strictly.
  */
 export interface FlatbreadConfig {
-  source: Source;
+  source: Source<any>;
   transformer?: Transformer | Transformer[];
-  content: Content;
+  content: CollectionEntry[];
   fieldNameTransform?: (field: string) => string;
 }
 
 export interface LoadedFlatbreadConfig {
-  source: Source;
+  source: Source<any>;
   transformer: Transformer[];
-  content: Content;
+  content: LoadedCollectionEntry[];
   fieldNameTransform: (field: string) => string;
   loaded: {
     extensions: string[];
@@ -53,8 +53,10 @@ export interface Transformer {
    * @param input Node to transform
    */
   parse?: (input: VFile) => EntryNode;
+  id?: string;
   preknownSchemaFragments?: () => Record<string, any>;
   inspect: (input: EntryNode) => string;
+  serialize: (input: EntryNode, ctx: CollectionContext) => VFile;
   extensions: string[];
 }
 
@@ -69,15 +71,36 @@ export type EntryNode = Record<string, any>;
  * The result of an invoked `Source` plugin which contains methods on how to retrieve content nodes in
  * their raw (if coupled with a `Transformer` plugin) or processed form.
  */
-export interface Source {
-  initialize?: (flatbreadConfig: LoadedFlatbreadConfig) => void;
-  fetchByType?: (path: string) => Promise<any[]>;
-  fetch: (
-    allContentTypes: Record<string, any>[]
-  ) => Promise<Record<string, VFile[]>>;
+
+export interface FlatbreadArgs<Context> {
+  addRecord(
+    collection: LoadedCollectionEntry,
+    record: EntryNode,
+    context?: Context
+  ): void;
+  addCreationRequiredFields(
+    collection: LoadedCollectionEntry,
+    fields: string[]
+  ): void;
 }
 
-export type SourcePlugin = (sourceConfig?: Record<string, any>) => Source;
+export interface Source<Context> {
+  initialize?: (flatbreadConfig: LoadedFlatbreadConfig) => void;
+  id?: string;
+  put: (
+    source: VFile,
+    ctx: Context,
+    opts: { parentContext: any; collection: CollectionEntry; record: any }
+  ) => Promise<{ doc: VFile; context: Context }>;
+  fetch: (
+    allContentTypes: LoadedCollectionEntry[],
+    flatbread: FlatbreadArgs<Context>
+  ) => Promise<void>;
+}
+
+export type SourcePlugin<Context> = (
+  sourceConfig?: Record<string, any>
+) => Source<Context>;
 
 /**
  * An override can be used to declare a custom resolve for a field in content
@@ -94,13 +117,35 @@ export interface Override {
   ) => any;
 }
 
+export interface CollectionContext {
+  referenceField: string;
+  collection: string;
+  filename: string;
+  path: string;
+  slug: string;
+  sourcedBy: string;
+  transformedBy: string;
+  reference: string;
+}
+
 /**
- * An array of content descriptions which can be used to retrieve content nodes.
+ * A collection entry which can be used to retrieve content nodes.
  *
  * This is paired with a `Source` (and, *optionally*, a `Transformer`) plugin.
  */
-export type Content = {
-  collection: string;
+
+export interface CollectionEntry {
+  name: string;
+  path: string;
   overrides?: Override[];
-  [key: string]: any;
-}[];
+  refs?: Record<string, string>;
+  referenceField?: string;
+  creationRequiredFields?: string[];
+  defaultTransformer?: string;
+  defaultSource?: string;
+}
+
+export interface LoadedCollectionEntry extends CollectionEntry {
+  referenceField: string;
+  creationRequiredFields: string[];
+}

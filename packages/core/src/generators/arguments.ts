@@ -17,23 +17,13 @@ export const generateArgsForAllItemQuery = (pluralType: string) => ({
  * @param pluralType plural name of the content type
  */
 export const generateArgsForManyItemQuery = (pluralType: string) => ({
-  ids: {
+  references: {
     type: '[String]',
   },
   ...skip(),
   ...limit(pluralType),
   ...order(pluralType, 'ASC'),
   ...sortBy(pluralType),
-});
-
-/**
- * Generates the accepted arguments for a 'single-item' query on a content type.
- *
- */
-export const generateArgsForSingleItemQuery = () => ({
-  id: {
-    type: 'String',
-  },
 });
 
 /**

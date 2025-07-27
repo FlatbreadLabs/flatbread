@@ -19,28 +19,22 @@ export default defineConfig({
   content: [
     {
       path: 'content/markdown/posts',
-      collection: 'Post',
+      name: 'Post',
       refs: {
         authors: 'Author',
       },
     },
     {
       path: 'content/markdown/posts/[category]/[slug].md',
-      collection: 'PostCategory',
-      refs: {
-        authors: 'Author',
-      },
-    },
-    {
-      path: 'content/markdown/posts/**/*.md',
-      collection: 'PostCategoryBlob',
+      name: 'PostCategory',
       refs: {
         authors: 'Author',
       },
     },
     {
       path: 'content/markdown/authors',
-      collection: 'Author',
+      name: 'Author',
+      referenceField: 'name',
       refs: {
         friend: 'Author',
       },
@@ -54,20 +48,18 @@ export default defineConfig({
     },
     {
       path: 'content/yaml/authors',
-      collection: 'YamlAuthor',
+      name: 'YamlAuthor',
       refs: {
         friend: 'YamlAuthor',
       },
     },
     {
       path: 'content/markdown/deeply-nested',
-      collection: 'OverrideTest',
+      name: 'OverrideTest',
       overrides: [
         {
           field: 'deeply.nested',
           type: 'String',
-          test: undefined,
-          test2: null,
           resolve: (source) => String(source).toUpperCase(),
         },
         {
