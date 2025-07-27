@@ -1,8 +1,10 @@
-import { ApolloServer } from 'apollo-server-express';
-import { ApolloServerPluginDrainHttpServer } from 'apollo-server-core';
+import { ApolloServer } from '@apollo/server';
+import { expressMiddleware } from '@as-integrations/express5';
+import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache';
 import express from 'express';
 import http from 'http';
+import cors from 'cors';
 import { generateSchema } from '@flatbread/core';
 import { getConfig } from '../utils/getSchema';
 import { GraphQLSchema } from 'graphql';
@@ -16,6 +18,7 @@ startApolloServer(schema, { port });
 
 async function startApolloServer(schema: GraphQLSchema, { port = 5050 } = {}) {
   const app = express();
+
   const httpServer = http.createServer(app);
   const server = new ApolloServer({
     schema,
@@ -31,7 +34,54 @@ async function startApolloServer(schema: GraphQLSchema, { port = 5050 } = {}) {
     ],
   });
   await server.start();
-  server.applyMiddleware({ app });
+
+  // Add headers for private network access and other CORS requirements BEFORE other middleware
+  app.use((req, res, next) => {
+    // Required for Apollo Studio and other public sites accessing localhost
+    res.header('Access-Control-Allow-Private-Network', 'true');
+    // Set origin to the requesting origin (required when credentials are true)
+    const origin = req.headers.origin || req.headers.referer || '*';
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header(
+      'Access-Control-Allow-Methods',
+      'GET, POST, PUT, DELETE, OPTIONS'
+    );
+    res.header(
+      'Access-Control-Allow-Headers',
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization, apollo-require-preflight'
+    );
+    res.header('Access-Control-Allow-Credentials', 'true');
+
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      res.status(204).send();
+      return;
+    }
+
+    next();
+  });
+
+  // Enable CORS for all routes
+  app.use(
+    cors({
+      origin: true, // Allow all origins for development
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: [
+        'Origin',
+        'X-Requested-With',
+        'Content-Type',
+        'Accept',
+        'Authorization',
+        'apollo-require-preflight',
+      ],
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+    }),
+    express.json(),
+    expressMiddleware(server)
+  );
+
   await new Promise<void>((resolve) => httpServer.listen({ port }, resolve));
 
   communicateReadiness();

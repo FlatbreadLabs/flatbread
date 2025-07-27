@@ -29,7 +29,7 @@ async function launch(port: number, https: boolean): Promise<void> {
     }
   }
   exec(
-    `${cmd} ${https ? 'https' : 'http'}://localhost:${port + GRAPHQL_ENDPOINT}`
+    `${cmd} ${https ? 'https' : 'http'}://localhost:${port}${GRAPHQL_ENDPOINT}`
   );
 }
 
@@ -52,6 +52,7 @@ prog
     orchestrateProcesses({
       corunner: secondaryScript,
       flatbreadPort: port,
+      https,
       packageManager: exec,
     });
     // Say hi for good measure
@@ -88,19 +89,27 @@ function welcome({
     )
   );
 
-  const protocol = https ? 'https:' : 'http:';
-
   Object.values(networkInterfaces()).forEach((interfaces) => {
     if (!interfaces) return;
     interfaces.forEach((details) => {
       if (details.family !== 'IPv4') return;
 
       if (details.internal) {
+        // Always show HTTP endpoint
         console.log(
-          `  ${colors.gray('graphql:')} ${protocol}//${colors.bold(
-            `localhost:${port + GRAPHQL_ENDPOINT}`
+          `  ${colors.gray('graphql:')} http://${colors.bold(
+            `localhost:${port}${GRAPHQL_ENDPOINT}`
           )}`
         );
+
+        // Show HTTPS endpoint if enabled (uses port + 1)
+        if (https) {
+          console.log(
+            `  ${colors.gray('graphql:')} https://${colors.bold(
+              `localhost:${port + 1}${GRAPHQL_ENDPOINT}`
+            )}`
+          );
+        }
       } else {
         if (details.mac === '00:00:00:00:00:00') return;
       }

@@ -66,12 +66,14 @@ export default defineConfig({
         {
           field: 'deeply.nested',
           type: 'String',
+          test: undefined,
+          test2: null,
           resolve: (source) => String(source).toUpperCase(),
         },
         {
           field: 'array[]',
           type: 'String',
-          resolve: (source) => source.map((s: any) => s.toUpperCase()),
+          resolve: (source) => source.map((s) => s.toUpperCase()),
         },
         {
           field: 'array2[]obj',
