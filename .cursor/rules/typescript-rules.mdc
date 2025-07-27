@@ -1,0 +1,42 @@
+---
+description: typescript, .tsx
+alwaysApply: false
+---
+
+# TypeScript Best Practices
+
+## Type Safety & Configuration
+
+- Enable `strict: true` in @tsconfig.json with additional flags:
+  - `noImplicitAny: true`
+  - `strictNullChecks: true`
+  - `strictFunctionTypes: true`
+  - `strictBindCallApply: true`
+  - `strictPropertyInitialization: true`
+  - `noImplicitThis: true`
+  - `alwaysStrict: true`
+  - `exactOptionalPropertyTypes: true`
+- Never use `// @ts-ignore` or `// @ts-expect-error` without explanatory comments
+- Use `--noEmitOnError` compiler flag to prevent generating JS files when TypeScript errors exist
+
+## Type Definitions
+
+- Do not ever use `any`. Ever. If you feel like you have to use `any`, use `unknown` instead.
+- Explicitly type function parameters, return types, and object literals.
+- Please don't ever use Enums. Use a union if you feel tempted to use an Enum.
+- Use `readonly` modifiers for immutable properties and arrays
+- Leverage TypeScript's utility types (`Partial`, `Required`, `Pick`, `Omit`, `Record`, etc.)
+- Use discriminated unions with exhaustiveness checking for type narrowing
+
+## Advanced Patterns
+
+- Implement proper generics with appropriate constraints
+- Use mapped types and conditional types to reduce type duplication
+- Leverage `const` assertions for literal types
+- Implement branded/nominal types for type-level validation
+
+## Code Organization
+
+- Organize types in dedicated files (types.ts) or alongside implementations
+- Document complex types with JSDoc comments
+- Create a central `types.ts` file or a `src/types` directory for shared types
