@@ -1,7 +1,7 @@
 {
-  "configHash": "11ba5725de594165ec652b52f303e09be163db976be07ea89a57d0225bf0b08d",
-  "schemaHash": "afe06762ee126382f56233cf58a26bb570a54f9525c982e5bd22a8303df479bd",
-  "timestamp": 1754026552536,
+  "configHash": "e9258e06d50ad7bd3268c0eceeb6260543d4c107f6c651cb3c989b78b1264e93",
+  "schemaHash": "9300f44a461d30f31e5cea66547e4aa5dd77017c3e938cfa581573bf9a0be5be",
+  "timestamp": 1754028559620,
   "files": [
     "/Users/tonyketcham/Code/Github/personal/flatbread/examples/nextjs/src/generated/graphql.ts"
   ],
@@ -14,7 +14,7 @@
       "typescript-operations",
       "typed-document-node"
     ],
-    "watch": false,
+    "watch": true,
     "cache": true,
     "documents": [],
     "schema": {

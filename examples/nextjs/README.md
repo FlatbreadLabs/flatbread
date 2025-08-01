@@ -1,36 +1,130 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Flatbread Next.js Example with TypeScript Codegen
 
-## Getting Started
+This example demonstrates how to use Flatbread with Next.js and automatic TypeScript type generation.
 
-First, run the development server:
+## 🚀 Quick Start
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Generate TypeScript types from GraphQL schema:**
+   ```bash
+   npx flatbread codegen --documents "src/queries/**/*.graphql" --verbose
+   ```
+
+3. **Start the Flatbread server:**
+   ```bash
+   npx flatbread dev
+   ```
+
+4. **In another terminal, start the Next.js development server:**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open your browser to** `http://localhost:3000`
+
+## 📁 Project Structure
+
+- `flatbread.config.js` - Flatbread configuration
+- `src/generated/graphql.ts` - Auto-generated TypeScript types
+- `src/queries/posts.graphql` - GraphQL queries for type generation
+- `src/lib/graphql.ts` - GraphQL client utilities
+- `src/components/` - React components using generated types
+- `app/page.tsx` - Main page displaying content
+
+## 🏗️ Generated Types
+
+The example uses `@flatbread/codegen` to automatically generate TypeScript types from your Flatbread GraphQL schema. Types are generated based on:
+
+1. **GraphQL Schema** - Generated from your Flatbread configuration
+2. **GraphQL Documents** - Queries defined in `src/queries/`
+
+### Regenerating Types
+
+When you change your Flatbread configuration or GraphQL queries, regenerate types:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npx flatbread codegen --verbose
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Watching for Changes
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+For development, you can watch for changes and auto-regenerate:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npx flatbread codegen --watch --verbose
+```
 
-## Learn More
+## 🎯 Features Demonstrated
 
-To learn more about Next.js, take a look at the following resources:
+- ✅ **Type-Safe GraphQL Queries** - Using generated TypeScript types
+- ✅ **Intelligent Caching** - Avoids regeneration when config unchanged
+- ✅ **Component Composition** - React components with proper typing
+- ✅ **Server-Side Rendering** - Next.js App Router with async data fetching
+- ✅ **Error Handling** - Graceful fallbacks for data loading errors
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📝 GraphQL Queries
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Example queries in `src/queries/posts.graphql`:
 
-## Deploy on Vercel
+- `GetPostCategories` - Fetch all post categories with authors and images
+- `GetAllPosts` - Fetch all posts with basic information
+- `GetAuthors` - Fetch all authors with skills and images
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔧 Configuration
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Flatbread Config (`flatbread.config.js`)
+
+Standard Flatbread configuration with content sources and transformers.
+
+### Codegen Config
+
+You can customize codegen behavior in your `flatbread.config.js`:
+
+```javascript
+export default defineConfig({
+  // ... your existing config
+  codegen: {
+    enabled: true,
+    outputDir: './src/generated',
+    outputFile: 'graphql.ts',
+    documents: ['src/queries/**/*.graphql'],
+    watch: false,
+    cache: true,
+  },
+});
+```
+
+## 🎨 Styling
+
+This example uses Tailwind CSS for styling, similar to the SvelteKit example. The layout features:
+
+- **Split Pane Layout** - JSON output on left, rendered UI on right
+- **PostCard Components** - Displays posts with authors, ratings, and content
+- **Responsive Design** - Works on different screen sizes
+
+## 🚫 Troubleshooting
+
+### "No posts found"
+Make sure the Flatbread server is running on `http://localhost:5057`:
+```bash
+npx flatbread dev
+```
+
+### TypeScript Errors
+Regenerate types if your schema changed:
+```bash
+npx flatbread codegen --clear-cache --verbose
+```
+
+### Network Errors
+Check that your GraphQL endpoint is accessible and CORS is configured properly.
+
+## 📚 Learn More
+
+- [Flatbread Documentation](https://github.com/FlatbreadLabs/flatbread)
+- [GraphQL Code Generator](https://www.the-guild.dev/graphql/codegen)
+- [Next.js Documentation](https://nextjs.org/docs)

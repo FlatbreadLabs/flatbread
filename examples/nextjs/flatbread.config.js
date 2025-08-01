@@ -46,8 +46,8 @@ export default defineConfig({
       },
       overrides: [
         createSvImgField('image', {
-          inputDir: 'static/authorImages',
-          outputDir: 'static/g',
+          inputDir: 'public/authorImages',
+          outputDir: 'public/g',
           srcGenerator: (path) => '/g/' + path,
         }),
       ],

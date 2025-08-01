@@ -1,16 +1,38 @@
 ---
 id: sdfsdf-23423-sdfsd-23444-dfghf
-title: 'Example post of things'
+title: 'The Art of Measuring Cats in Fruit Units'
 authors:
   - 2a3e
   - 40s3
 rating: 74
+category: science
+tags:
+  - cats
+  - measurements
+  - fruit-science
+  - important-research
 ---
 
-# My cat is so little
+# The Art of Measuring Cats in Fruit Units
 
-## she is so small
+## A peer-reviewed study (awaiting peer-review)
 
-### she is in fact
+After extensive research involving ~significant~ ~~questionable~~ **rigorous** methodology, we've determined that cats can indeed be measured in fruit units.
 
-**2 apples tall**
+### Key Findings:
+
+- **Small cats:** 2 apples tall (verified ✅)
+- **Medium cats:** 1.5 pineapples long  
+- **Large cats:** 0.8 watermelons wide
+- **Quantum cats:** Simultaneously all fruits and no fruits
+
+```typescript
+// Revolutionary cat measurement algorithm
+function measureCat(cat: Cat, fruit: Fruit): number {
+  return cat.height / fruit.averageSize;
+}
+```
+
+> "This changes everything we thought we knew about cats and fruit." - Dr. Whiskers, PhD in Applied Feline Sciences
+
+The implications for breakfast planning are **enormous**.

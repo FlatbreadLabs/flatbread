@@ -19,7 +19,7 @@ export default defineConfig({
   content: [
     {
       path: 'content/markdown/posts',
-      collection: 'Post',
+      collection: 'Postz',
       refs: {
         authors: 'Author',
       },
@@ -91,7 +91,7 @@ export default defineConfig({
   // GraphQL TypeScript Code Generation Configuration
   codegen: {
     enabled: true,
-    outputDir: './src/generated',
+    outputDir: './generated',
     outputFile: 'graphql.ts',
     plugins: ['typescript', 'typescript-operations', 'typed-document-node'],
     

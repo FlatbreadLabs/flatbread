@@ -1,0 +1,45 @@
+id: caffeine-researcher
+name: "Dr. Maya Espresso"
+entity: "Human (Caffeine-Powered)"
+bio: "Professional coffee scientist, amateur spreadsheet enthusiast, certified bean whisperer"
+enjoys:
+  - "scientific coffee tasting"
+  - "data visualization"
+  - "converting people to the ways of good coffee"
+  - "late-night research sessions"
+friend: "tony"
+date_joined: "2023-01-15T08:30:00.000Z"
+pronouns: "she/her"
+location: "Portland, OR (where else?)"
+certifications:
+  - "Certified Coffee Cupper (CCC)"
+  - "Data Analysis with Caffeine (DAC)"
+  - "Advanced Spreadsheet Wizardry"
+education: "PhD in Applied Coffee Sciences"
+favorite_technologies:
+  - "Excel (for coffee tracking)"
+  - "Python (for data analysis)"
+  - "Espresso machines (obviously)"
+research_focus:
+  - "caffeine_optimization"
+  - "brewing_methodology"
+  - "taste_profile_mapping"
+skills:
+  sitting: 45
+  breathing: 92
+  liquid_consumption: 200
+  existence: "highly_caffeinated"
+  sports: 15
+  coffee_brewing: 99
+  data_analysis: 95
+  spreadsheet_mastery: 88
+current_projects:
+  - "The Great Coffee Grind Study of 2024"
+  - "Temperature vs Taste: A Longitudinal Analysis"
+  - "Converting Tea Drinkers: A Humanitarian Mission"
+coffee_consumption_daily: "6-8 cups (for science)"
+favorite_brewing_methods:
+  - "pour_over"
+  - "aeropress" 
+  - "french_press"
+  - "anything_that_extracts_caffeine"

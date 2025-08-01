@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "flatbread start --https -- next dev --turbopack",
+    "codegen": "flatbread codegen --watch",
     "build": "flatbread start -- next build",
     "start": "next start",
     "lint": "next lint"

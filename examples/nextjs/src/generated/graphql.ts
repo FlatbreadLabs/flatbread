@@ -28,22 +28,36 @@ export type Author = {
   _filename?: Maybe<Scalars['String']['output']>;
   _path?: Maybe<Scalars['String']['output']>;
   _slug?: Maybe<Scalars['String']['output']>;
+  bio?: Maybe<Scalars['String']['output']>;
+  certifications?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  current_survivors?: Maybe<Scalars['Float']['output']>;
   date_joined?: Maybe<Scalars['Date']['output']>;
   enjoys?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
   entity?: Maybe<Scalars['String']['output']>;
+  favorite_activities?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  favorite_technologies?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
   /** The Author referenced by this Author */
   friend?: Maybe<Author>;
   id?: Maybe<Scalars['String']['output']>;
   image?: Maybe<Svimg>;
+  location?: Maybe<Scalars['String']['output']>;
   name?: Maybe<Scalars['String']['output']>;
+  plant_murder_count?: Maybe<Scalars['Float']['output']>;
+  plant_store_reputation?: Maybe<Scalars['String']['output']>;
+  pronouns?: Maybe<Scalars['String']['output']>;
   skills?: Maybe<Author_Skills>;
 };
 
 export type Author_Skills = {
   __typename?: 'Author_Skills';
   breathing?: Maybe<Scalars['Float']['output']>;
+  debugging?: Maybe<Scalars['Float']['output']>;
   existence?: Maybe<Scalars['String']['output']>;
+  keyboard_walking?: Maybe<Scalars['Float']['output']>;
   liquid_consumption?: Maybe<Scalars['Float']['output']>;
+  meeting_interruption?: Maybe<Scalars['Float']['output']>;
+  optimistic_plant_purchasing?: Maybe<Scalars['Float']['output']>;
+  plant_care?: Maybe<Scalars['Float']['output']>;
   sitting?: Maybe<Scalars['Float']['output']>;
   sports?: Maybe<Scalars['Float']['output']>;
 };
@@ -140,8 +154,15 @@ export type Post = {
   _slug?: Maybe<Scalars['String']['output']>;
   /** All Authors that are referenced by this Post */
   authors?: Maybe<Array<Maybe<Author>>>;
+  category?: Maybe<Scalars['String']['output']>;
+  controversial_opinions?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
   id?: Maybe<Scalars['String']['output']>;
   rating?: Maybe<Scalars['Float']['output']>;
+  research_duration?: Maybe<Scalars['String']['output']>;
+  slurp_factor?: Maybe<Scalars['String']['output']>;
+  soups_tested?: Maybe<Scalars['Float']['output']>;
+  tags?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  temperature_preference?: Maybe<Scalars['String']['output']>;
   title?: Maybe<Scalars['String']['output']>;
 };
 
@@ -161,13 +182,30 @@ export type PostCategory = {
   _filename?: Maybe<Scalars['String']['output']>;
   _path?: Maybe<Scalars['String']['output']>;
   _slug?: Maybe<Scalars['String']['output']>;
+  attempts?: Maybe<Scalars['Float']['output']>;
   /** All Authors that are referenced by this PostCategory */
   authors?: Maybe<Array<Maybe<Author>>>;
+  bread_types_tested?: Maybe<Scalars['Float']['output']>;
+  bug_severity?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  bugs_encountered?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  butter_temperature?: Maybe<Scalars['String']['output']>;
   category?: Maybe<Scalars['String']['output']>;
+  coffee_consumed?: Maybe<Scalars['String']['output']>;
+  current_survivors?: Maybe<Scalars['Float']['output']>;
+  debugging_attempts?: Maybe<Array<Maybe<PostCategory_Debugging_Attempts>>>;
+  difficulty?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['String']['output']>;
+  plant_types_attempted?: Maybe<Array<Maybe<PostCategory_Plant_Types_Attempted>>>;
+  plants_murdered?: Maybe<Scalars['Float']['output']>;
+  precision_level?: Maybe<Scalars['String']['output']>;
   rating?: Maybe<Scalars['Float']['output']>;
+  sanity_level?: Maybe<Scalars['String']['output']>;
   slug?: Maybe<Scalars['String']['output']>;
+  success_rate?: Maybe<Scalars['String']['output']>;
+  time_spent?: Maybe<Scalars['String']['output']>;
   title?: Maybe<Scalars['String']['output']>;
+  toast_settings?: Maybe<PostCategory_Toast_Settings>;
+  watering_schedule?: Maybe<Scalars['String']['output']>;
 };
 
 
@@ -186,11 +224,29 @@ export type PostCategoryBlob = {
   _filename?: Maybe<Scalars['String']['output']>;
   _path?: Maybe<Scalars['String']['output']>;
   _slug?: Maybe<Scalars['String']['output']>;
+  attempts?: Maybe<Scalars['Float']['output']>;
   /** All Authors that are referenced by this PostCategoryBlob */
   authors?: Maybe<Array<Maybe<Author>>>;
+  bread_types_tested?: Maybe<Scalars['Float']['output']>;
+  bug_severity?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  bugs_encountered?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  butter_temperature?: Maybe<Scalars['String']['output']>;
+  category?: Maybe<Scalars['String']['output']>;
+  coffee_consumed?: Maybe<Scalars['String']['output']>;
+  current_survivors?: Maybe<Scalars['Float']['output']>;
+  debugging_attempts?: Maybe<Array<Maybe<PostCategoryBlob_Debugging_Attempts>>>;
+  difficulty?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['String']['output']>;
+  plant_types_attempted?: Maybe<Array<Maybe<PostCategoryBlob_Plant_Types_Attempted>>>;
+  plants_murdered?: Maybe<Scalars['Float']['output']>;
+  precision_level?: Maybe<Scalars['String']['output']>;
   rating?: Maybe<Scalars['Float']['output']>;
+  sanity_level?: Maybe<Scalars['String']['output']>;
+  success_rate?: Maybe<Scalars['String']['output']>;
+  time_spent?: Maybe<Scalars['String']['output']>;
   title?: Maybe<Scalars['String']['output']>;
+  toast_settings?: Maybe<PostCategoryBlob_Toast_Settings>;
+  watering_schedule?: Maybe<Scalars['String']['output']>;
 };
 
 
@@ -199,6 +255,29 @@ export type PostCategoryBlobAuthorsArgs = {
   order?: InputMaybe<Order>;
   skip?: InputMaybe<Scalars['Int']['input']>;
   sortBy?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type PostCategoryBlob_Debugging_Attempts = {
+  __typename?: 'PostCategoryBlob_Debugging_attempts';
+  prayer_to_tech_gods?: Maybe<Scalars['String']['output']>;
+  ritual_coffee_sacrifice?: Maybe<Scalars['String']['output']>;
+  rubber_duck_debugging?: Maybe<Scalars['String']['output']>;
+  stack_overflow_diving?: Maybe<Scalars['String']['output']>;
+};
+
+export type PostCategoryBlob_Plant_Types_Attempted = {
+  __typename?: 'PostCategoryBlob_Plant_types_attempted';
+  bamboo?: Maybe<Scalars['String']['output']>;
+  herbs?: Maybe<Scalars['String']['output']>;
+  snake_plant?: Maybe<Scalars['String']['output']>;
+  succulents?: Maybe<Scalars['String']['output']>;
+};
+
+export type PostCategoryBlob_Toast_Settings = {
+  __typename?: 'PostCategoryBlob_Toast_settings';
+  butter_distribution?: Maybe<Scalars['String']['output']>;
+  crunch_factor?: Maybe<Scalars['String']['output']>;
+  darkness?: Maybe<Scalars['Float']['output']>;
 };
 
 export type PostCategoryBlob__Content = {
@@ -220,6 +299,29 @@ export type PostCategoryBlob__ContentExcerptArgs = {
 
 export type PostCategoryBlob__ContentTimeToReadArgs = {
   speed?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type PostCategory_Debugging_Attempts = {
+  __typename?: 'PostCategory_Debugging_attempts';
+  prayer_to_tech_gods?: Maybe<Scalars['String']['output']>;
+  ritual_coffee_sacrifice?: Maybe<Scalars['String']['output']>;
+  rubber_duck_debugging?: Maybe<Scalars['String']['output']>;
+  stack_overflow_diving?: Maybe<Scalars['String']['output']>;
+};
+
+export type PostCategory_Plant_Types_Attempted = {
+  __typename?: 'PostCategory_Plant_types_attempted';
+  bamboo?: Maybe<Scalars['String']['output']>;
+  herbs?: Maybe<Scalars['String']['output']>;
+  snake_plant?: Maybe<Scalars['String']['output']>;
+  succulents?: Maybe<Scalars['String']['output']>;
+};
+
+export type PostCategory_Toast_Settings = {
+  __typename?: 'PostCategory_Toast_settings';
+  butter_distribution?: Maybe<Scalars['String']['output']>;
+  crunch_factor?: Maybe<Scalars['String']['output']>;
+  darkness?: Maybe<Scalars['Float']['output']>;
 };
 
 export type PostCategory__Content = {
@@ -399,12 +501,23 @@ export type YamlAuthor = {
   _filename?: Maybe<Scalars['String']['output']>;
   _path?: Maybe<Scalars['String']['output']>;
   _slug?: Maybe<Scalars['String']['output']>;
-  date_joined?: Maybe<Scalars['Date']['output']>;
+  bio?: Maybe<Scalars['String']['output']>;
+  certifications?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  coffee_consumption_daily?: Maybe<Scalars['String']['output']>;
+  current_projects?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  date_joined?: Maybe<Scalars['String']['output']>;
+  education?: Maybe<Scalars['String']['output']>;
   enjoys?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  entity?: Maybe<Scalars['String']['output']>;
+  favorite_brewing_methods?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  favorite_technologies?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
   /** The YamlAuthor referenced by this YamlAuthor */
   friend?: Maybe<YamlAuthor>;
   id?: Maybe<Scalars['String']['output']>;
+  location?: Maybe<Scalars['String']['output']>;
   name?: Maybe<Scalars['String']['output']>;
+  pronouns?: Maybe<Scalars['String']['output']>;
+  research_focus?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
   skills?: Maybe<YamlAuthor_Skills>;
 };
 
@@ -412,10 +525,13 @@ export type YamlAuthor_Skills = {
   __typename?: 'YamlAuthor_Skills';
   breathing?: Maybe<Scalars['Float']['output']>;
   cat_pat?: Maybe<Scalars['Float']['output']>;
+  coffee_brewing?: Maybe<Scalars['Float']['output']>;
+  data_analysis?: Maybe<Scalars['Float']['output']>;
   existence?: Maybe<Scalars['String']['output']>;
   liquid_consumption?: Maybe<Scalars['Float']['output']>;
   sitting?: Maybe<Scalars['Float']['output']>;
   sports?: Maybe<Scalars['Float']['output']>;
+  spreadsheet_mastery?: Maybe<Scalars['Float']['output']>;
 };
 
 export type YamlAuthor__Content = {

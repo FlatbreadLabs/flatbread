@@ -14,37 +14,6 @@ pnpm add @flatbread/codegen
 
 This package automatically generates TypeScript types from your Flatbread GraphQL schema, providing type safety for your GraphQL operations. It uses [GraphQL Code Generator](https://www.the-guild.dev/graphql/codegen) under the hood with intelligent caching to avoid unnecessary regeneration.
 
-## 📋 Comparative Analysis
-
-We evaluated 5 different approaches for GraphQL TypeScript code generation:
-
-### 1. GraphQL Code Generator (Chosen Approach)
-- **Pros**: Most mature, extensive plugin ecosystem, great caching, wide community support
-- **Cons**: Larger bundle size, more configuration options
-- **Best for**: Production applications requiring comprehensive type generation
-
-### 2. gql.tada
-- **Pros**: Zero runtime overhead, compile-time type inference, no build step
-- **Cons**: Newer ecosystem, limited plugin support
-- **Best for**: Applications prioritizing bundle size and build performance
-
-### 3. GraphQL Request + React Query
-- **Pros**: Lightweight, flexible, good performance
-- **Cons**: Manual type definition, less automation
-- **Best for**: Simple applications with basic GraphQL needs
-
-### 4. Shopify's graphql-codegen
-- **Pros**: AST-free approach, excellent performance, minimal overhead
-- **Cons**: Limited to specific use cases, smaller ecosystem
-- **Best for**: High-performance applications with simple type needs
-
-### 5. urql + codegen
-- **Pros**: Simple setup, good performance, React-focused
-- **Cons**: Framework-specific, limited server-side support
-- **Best for**: React applications with moderate complexity
-
-**Why we chose GraphQL Code Generator**: It provides the best balance of features, maturity, and flexibility for a library like Flatbread that needs to support various frameworks and use cases.
-
 ## 👩‍🍳 Basic Usage
 
 ### 1. Add codegen configuration to your `flatbread.config.ts`:
@@ -141,7 +110,7 @@ export default defineConfig({
     outputDir: './src/types',
     outputFile: 'schema.generated.ts',
     plugins: ['typescript', 'typescript-operations'],
-    
+
     // Plugin-specific configuration
     pluginConfig: {
       typescript: {
@@ -205,7 +174,7 @@ if (result.success) {
 The package includes intelligent caching to avoid regenerating types when nothing has changed:
 
 - **Configuration Hash**: Tracks changes to your Flatbread configuration
-- **Schema Hash**: Tracks changes to the generated GraphQL schema  
+- **Schema Hash**: Tracks changes to the generated GraphQL schema
 - **Document Hash**: Tracks changes to included GraphQL documents
 
 Types are only regenerated when one of these changes. You can force regeneration by:
@@ -251,13 +220,13 @@ import { GetPostsDocument, type GetPostsQuery } from './generated/graphql';
 
 function Posts() {
   const { data, loading, error } = useQuery<GetPostsQuery>(GetPostsDocument);
-  
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
-  
+
   return (
     <div>
-      {data?.posts.map(post => (
+      {data?.posts.map((post) => (
         <article key={post.id}>
           <h2>{post.title}</h2>
           <p>{post.content}</p>
@@ -296,7 +265,7 @@ import { GetPostsDocument, type GetPostsQuery } from './generated/graphql';
 
 export async function load() {
   const data = await request<GetPostsQuery>(
-    'http://localhost:5050/graphql', 
+    'http://localhost:5050/graphql',
     GetPostsDocument
   );
 
@@ -325,14 +294,17 @@ The package follows a modular architecture:
 ### Common Issues
 
 **Types not regenerating after schema changes**
+
 - Clear the cache: `npx flatbread codegen --clear-cache`
 - Check that your Flatbread config is being properly loaded
 
 **Import errors in generated types**
+
 - Ensure all required packages are installed
 - Check that the output directory is correctly configured
 
 **Performance issues with large schemas**
+
 - Enable caching (default): `cache: true`
 - Consider using fewer plugins if you don't need all features
 - Use `documents` to limit scope to specific operations
@@ -344,6 +316,7 @@ npx flatbread codegen --verbose
 ```
 
 This will show:
+
 - Configuration loading details
 - Schema generation progress
 - Cache hit/miss information

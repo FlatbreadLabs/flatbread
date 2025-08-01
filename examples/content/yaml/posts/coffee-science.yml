@@ -1,0 +1,66 @@
+id: coffee-optimization-study
+title: "Coffee Optimization: A Data-Driven Approach to Caffeine Intake"
+authors:
+  - caffeine-researcher
+  - tony
+rating: 91
+category: science
+study_duration_days: 90
+coffee_cups_consumed: 847
+variables_tested: 15
+statistical_significance: "questionable but enthusiastic"
+methodology: "rigorous (ish)"
+equipment_used:
+  - scales_precision: "0.1g"
+  - timer_accuracy: "to_the_second"
+  - taste_buds: "highly_trained"
+  - spreadsheet_complexity: "unnecessarily_elaborate"
+content: |
+  # Coffee Optimization: A Data-Driven Approach to Caffeine Intake
+
+  ## The most important research of our time
+
+  After 90 days of rigorous testing (drinking a lot of coffee and taking notes), we've developed the ultimate formula for perfect coffee optimization. This study has been peer-reviewed by fellow coffee addicts and approved by our very understanding roommates.
+
+  ### Research Parameters:
+
+  - **Grind sizes tested:** 7 (from "dust" to "small pebbles")
+  - **Water temperatures:** 185°F to 205°F (in 2° increments)
+  - **Brewing times:** 2-6 minutes
+  - **Bean origins:** 12 countries
+  - **Caffeine levels measured:** Every. Single. Cup.
+
+  ### Key Findings:
+
+  1. **Optimal grind:** Medium-fine (like kosher salt, but more caffeinated)
+  2. **Perfect temp:** 195°F (±2°F, this is science, people)
+  3. **Ideal brewing time:** 4 minutes 23 seconds
+  4. **Bean preference:** Ethiopian single-origin (but Colombian is acceptable)
+  5. **Water quality:** Filtered (tap water is for plants, not coffee)
+
+  ### The Formula:
+
+  ```yaml
+  perfect_coffee:
+    beans: 22g_ethiopian_single_origin
+    grind: medium_fine
+    water: 350ml_at_195f
+    brewing_time: 4_minutes_23_seconds
+    consumption_time: within_10_minutes
+    satisfaction_rating: transcendent
+  ```
+
+  ### Unexpected Discoveries:
+
+  - Coffee tastes better when you're not rushing
+  - Expensive equipment doesn't fix bad beans
+  - The best coffee is the one you actually have time to enjoy
+  - Spreadsheets about coffee are almost as satisfying as coffee itself
+
+  ### Conclusion:
+
+  After 847 cups of coffee and countless hours of "research," we've confirmed what coffee lovers have always known: good coffee is worth the effort, but great coffee is about the ritual as much as the result.
+
+  **Confidence level:** 95% (remaining 5% accounts for coffee bias)
+
+  *Next study: "Does ambient music affect coffee taste? A 6-month investigation"*
