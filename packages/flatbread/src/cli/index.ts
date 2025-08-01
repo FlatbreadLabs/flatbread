@@ -5,6 +5,7 @@ import { version } from '../../package.json';
 import { networkInterfaces, release } from 'node:os';
 import orchestrateProcesses from './runner';
 import initConfig from './initConfig';
+import { createCodegenCommand } from '@flatbread/codegen';
 
 const GRAPHQL_ENDPOINT = '/graphql';
 
@@ -62,6 +63,28 @@ prog
 prog
   .command('init', 'Generate a flatbread.config.js file skeleton')
   .action(initConfig);
+
+prog
+  .command('codegen', 'Generate TypeScript types from GraphQL schema')
+  .option('-c, --config <path>', 'Path to Flatbread config file')
+  .option('-o, --output-dir <dir>', 'Output directory for generated types')
+  .option('-f, --output-file <file>', 'Output filename for generated types')
+  .option('-w, --watch', 'Watch for changes and regenerate', false)
+  .option('--clear-cache', 'Clear cache and force regeneration', false)
+  .option('-d, --documents <paths>', 'Additional document paths (comma-separated)')
+  .option('-v, --verbose', 'Enable verbose logging', false)
+  .action(async (options) => {
+    const codegenCommand = createCodegenCommand();
+    await codegenCommand({
+      config: options.config,
+      outputDir: options.outputDir,
+      outputFile: options.outputFile,
+      watch: options.watch,
+      clearCache: options.clearCache,
+      documents: options.documents ? options.documents.split(',').map((d: string) => d.trim()) : undefined,
+      verbose: options.verbose,
+    });
+  });
 
 prog.parse(process.argv, { unknown: (arg) => `Unknown option: ${arg}` });
 

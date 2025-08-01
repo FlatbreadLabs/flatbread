@@ -1,0 +1,25 @@
+{
+  "configHash": "11ba5725de594165ec652b52f303e09be163db976be07ea89a57d0225bf0b08d",
+  "schemaHash": "afe06762ee126382f56233cf58a26bb570a54f9525c982e5bd22a8303df479bd",
+  "timestamp": 1754026552536,
+  "files": [
+    "/Users/tonyketcham/Code/Github/personal/flatbread/examples/nextjs/src/generated/graphql.ts"
+  ],
+  "options": {
+    "enabled": true,
+    "outputDir": "./src/generated",
+    "outputFile": "graphql.ts",
+    "plugins": [
+      "typescript",
+      "typescript-operations",
+      "typed-document-node"
+    ],
+    "watch": false,
+    "cache": true,
+    "documents": [],
+    "schema": {
+      "includeIntrospection": false,
+      "includeDeprecated": true
+    }
+  }
+}

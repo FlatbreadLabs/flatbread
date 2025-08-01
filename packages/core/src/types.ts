@@ -2,6 +2,24 @@ import { GraphQLFieldConfigArgumentMap, GraphQLInputType } from 'graphql';
 import { Maybe } from 'graphql/jsutils/Maybe';
 import type { VFile } from 'vfile';
 
+// Import CodegenOptions type from the codegen package
+// Note: This will be a peer dependency to avoid circular imports
+export type CodegenOptions = {
+  enabled?: boolean;
+  outputDir?: string;
+  outputFile?: string;
+  plugins?: string[];
+  codegenConfig?: Record<string, any>;
+  pluginConfig?: Record<string, Record<string, any>>;
+  watch?: boolean;
+  cache?: boolean;
+  documents?: string[];
+  schema?: {
+    includeIntrospection?: boolean;
+    includeDeprecated?: boolean;
+  };
+};
+
 export type IdentifierField = string | number;
 
 /**
@@ -25,6 +43,10 @@ export interface FlatbreadConfig {
   transformer?: Transformer | Transformer[];
   content: Content;
   fieldNameTransform?: (field: string) => string;
+  /**
+   * Configuration for GraphQL TypeScript code generation
+   */
+  codegen?: CodegenOptions;
 }
 
 export interface LoadedFlatbreadConfig {
@@ -32,6 +54,7 @@ export interface LoadedFlatbreadConfig {
   transformer: Transformer[];
   content: Content;
   fieldNameTransform: (field: string) => string;
+  codegen?: CodegenOptions;
   loaded: {
     extensions: string[];
   };

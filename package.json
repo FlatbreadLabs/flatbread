@@ -37,6 +37,7 @@
   },
   "homepage": "https://github.com/FlatbreadLabs/flatbread#readme",
   "dependencies": {
+    "@flatbread/codegen": "workspace:*",
     "@flatbread/config": "workspace:*",
     "@flatbread/core": "workspace:*",
     "@flatbread/resolver-svimg": "workspace:*",

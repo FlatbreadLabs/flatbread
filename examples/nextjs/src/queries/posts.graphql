@@ -1,0 +1,120 @@
+# Example GraphQL queries that will be included in type generation
+
+query GetAllPosts {
+  allPosts {
+    id
+    title
+    _content {
+      html
+      excerpt
+      timeToRead
+    }
+    authors {
+      id
+      name
+    }
+  }
+}
+
+query GetPostById($id: String!) {
+  Post(id: $id) {
+    id
+    title
+    _content {
+      html
+      excerpt
+      timeToRead
+    }
+    authors {
+      id
+      name
+      friend {
+        id
+        name
+      }
+    }
+  }
+}
+
+query GetPostCategories {
+  allPostCategories(sortBy: "title", order: DESC) {
+    _collection
+    _filename
+    _slug
+    id
+    title
+    category
+    slug
+    rating
+    _content {
+      raw
+      html
+      excerpt
+      timeToRead
+    }
+    authors {
+      _slug
+      id
+      name
+      entity
+      enjoys
+      image {
+        srcset
+        srcsetwebp
+        srcsetavif
+        placeholder
+        aspectratio
+      }
+      friend {
+        name
+        date_joined
+      }
+      date_joined
+      skills {
+        sitting
+        breathing
+        liquid_consumption
+        existence
+        sports
+      }
+    }
+  }
+}
+
+query GetAuthors {
+  allAuthors {
+    id
+    name
+    entity
+    enjoys
+    image {
+      srcset
+      srcsetwebp
+      srcsetavif
+      placeholder
+      aspectratio
+    }
+    date_joined
+    skills {
+      sitting
+      breathing
+      liquid_consumption
+      existence
+      sports
+    }
+  }
+}
+
+fragment PostSummary on Post {
+  id
+  title
+  _content {
+    html
+    excerpt
+    timeToRead
+  }
+  authors {
+    id
+    name
+  }
+}
