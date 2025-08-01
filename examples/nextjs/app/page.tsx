@@ -1,5 +1,5 @@
 import { graphqlFetch, queries } from '../lib/graphql';
-import type { PostCategory } from '../src/generated/graphql';
+import type { PostCategory } from '../generated/graphql';
 import BlogIndex from './components/BlogIndex';
 import QueryPanel from './components/QueryPanel';
 

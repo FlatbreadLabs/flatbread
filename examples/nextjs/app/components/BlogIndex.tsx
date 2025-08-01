@@ -3,7 +3,7 @@
  */
 
 import Link from 'next/link';
-import type { PostCategory } from '../../src/generated/graphql';
+import type { PostCategory } from '../../generated/graphql';
 
 interface BlogIndexProps {
   posts: (PostCategory | null)[];

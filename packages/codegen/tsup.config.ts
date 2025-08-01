@@ -5,5 +5,5 @@ export default defineConfig({
   format: ['esm'],
   dts: true,
   clean: true,
-  external: ['@flatbread/config', '@flatbread/core'],
+  external: ['@flatbread/config', '@flatbread/core', 'chokidar'],
 });

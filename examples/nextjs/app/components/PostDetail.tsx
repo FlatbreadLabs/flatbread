@@ -3,7 +3,7 @@
  */
 
 import Link from 'next/link';
-import type { PostCategory, Author } from '../../src/generated/graphql';
+import type { PostCategory, Author } from '../../generated/graphql';
 
 interface PostDetailProps {
   post: PostCategory;

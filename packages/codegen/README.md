@@ -71,6 +71,49 @@ const posts: Post[] = await request<GetPostsQuery>(`
 `);
 ```
 
+## 👀 Watch Mode
+
+The `--watch` flag enables automatic regeneration of TypeScript types whenever your source files change. This is particularly useful during development to keep your types in sync with your content and schema changes.
+
+### How Watch Mode Works
+
+When you run codegen with `--watch`, it monitors:
+
+1. **Flatbread config files** (`flatbread.config.*`) - Config changes trigger full regeneration
+2. **Content directories** - Changes to your markdown/content files update the schema
+3. **GraphQL documents** - Modifications to `.graphql` files regenerate operation types
+
+```bash
+# Start watch mode
+npx flatbread codegen --watch
+
+# Watch with verbose output
+npx flatbread codegen --watch --verbose
+```
+
+### Example Output
+
+```
+🥯 Flatbread TypeScript Code Generator
+Generating GraphQL schema...
+🔍 Watching for changes...
+Watching patterns: flatbread.config.*, content/posts/**/*.{md,mdx,markdown}, src/**/*.graphql
+✓ Generated TypeScript types: /path/to/src/generated/graphql.ts
+👀 Ready for changes
+
+📝 File changed: content/posts/new-article.md
+🔄 Regenerating schema and types...
+✅ Types regenerated successfully
+```
+
+### Watch Mode Features
+
+- **Intelligent debouncing** - Prevents rapid successive regenerations
+- **Error recovery** - Watch continues even if regeneration fails
+- **Graceful shutdown** - Use `Ctrl+C` to stop watching
+- **Pattern filtering** - Ignores `node_modules`, `.git`, and output directories
+- **Full schema regeneration** - Content changes trigger complete schema rebuild
+
 ## ⚙️ Configuration
 
 ### Basic Configuration

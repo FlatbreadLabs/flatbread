@@ -1,0 +1,50 @@
+{
+  "configHash": "0512d1aba798e5d6671c288ffc1687d66ffad0475561bbb7dd6a1d541dbaa9f0",
+  "schemaHash": "e4537416d11c06631cf69f245b8ed8c001839153821917f978d522ae9eedd6c8",
+  "timestamp": 1754032339395,
+  "files": [
+    "/Users/tonyketcham/Code/Github/personal/flatbread/examples/nextjs/generated/graphql.ts"
+  ],
+  "options": {
+    "enabled": true,
+    "outputDir": "./generated",
+    "outputFile": "graphql.ts",
+    "plugins": [
+      "typescript",
+      "typescript-operations",
+      "typed-document-node"
+    ],
+    "watch": true,
+    "cache": true,
+    "documents": [
+      "./**/*.gql",
+      "./**/*.graphql",
+      "./components/**/*.graphql"
+    ],
+    "schema": {
+      "includeIntrospection": false,
+      "includeDeprecated": true
+    },
+    "pluginConfig": {
+      "typescript": {
+        "enumsAsTypes": true,
+        "scalars": {
+          "DateTime": "Date",
+          "JSON": "Record<string, unknown>"
+        },
+        "skipTypename": false
+      },
+      "typescriptOperations": {
+        "skipTypename": false
+      }
+    },
+    "codegenConfig": {
+      "config": {
+        "namingConvention": "change-case-all#pascalCase",
+        "declarationKind": "interface",
+        "maybeValue": "T | null",
+        "inputMaybeValue": "T | null | undefined"
+      }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 # Example GraphQL queries that will be included in type generation
 
-query GetAllPosts {
-  allPosts {
+query GetAllArticles {
+  allArticles {
     id
     title
     _content {
@@ -17,7 +17,7 @@ query GetAllPosts {
 }
 
 query GetPostById($id: String!) {
-  Post(id: $id) {
+  Article(id: $id) {
     id
     title
     _content {
@@ -105,7 +105,7 @@ query GetAuthors {
   }
 }
 
-fragment PostSummary on Post {
+fragment ArticleSummary on Article {
   id
   title
   _content {

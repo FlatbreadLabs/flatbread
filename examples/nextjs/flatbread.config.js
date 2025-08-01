@@ -19,7 +19,7 @@ export default defineConfig({
   content: [
     {
       path: 'content/markdown/posts',
-      collection: 'Post',
+      collection: 'Article',
       refs: {
         authors: 'Author',
       },
@@ -46,8 +46,8 @@ export default defineConfig({
       },
       overrides: [
         createSvImgField('image', {
-          inputDir: 'public/authorImages',
-          outputDir: 'public/g',
+          inputDir: 'static/authorImages',
+          outputDir: 'static/g',
           srcGenerator: (path) => '/g/' + path,
         }),
       ],
@@ -88,4 +88,49 @@ export default defineConfig({
       ],
     },
   ],
+  // GraphQL TypeScript Code Generation Configuration
+  codegen: {
+    enabled: true,
+    outputDir: './generated',
+    outputFile: 'graphql.ts',
+    plugins: ['typescript', 'typescript-operations', 'typed-document-node'],
+    
+    // Plugin-specific configuration
+    pluginConfig: {
+      typescript: {
+        enumsAsTypes: true,
+        scalars: {
+          DateTime: 'Date',
+          JSON: 'Record<string, unknown>',
+        },
+        skipTypename: false,
+      },
+      typescriptOperations: {
+        skipTypename: false,
+      },
+    },
+
+    // Include any GraphQL documents from your app
+    documents: [
+      './**/*.graphql',
+      './**/*.gql',
+      './components/**/*.graphql',
+    ],
+
+    // Schema transformation options
+    schema: {
+      includeIntrospection: false,
+      includeDeprecated: true,
+    },
+
+    // Custom GraphQL Code Generator configuration (optional)
+    codegenConfig: {
+      config: {
+        namingConvention: 'change-case-all#pascalCase',
+        declarationKind: 'interface',
+        maybeValue: 'T | null',
+        inputMaybeValue: 'T | null | undefined',
+      },
+    },
+  },
 });

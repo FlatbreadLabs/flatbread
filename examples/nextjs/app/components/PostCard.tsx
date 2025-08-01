@@ -2,7 +2,7 @@
  * Post card component using generated GraphQL types
  */
 
-import type { PostCategory, Author } from '../../src/generated/graphql';
+import type { PostCategory, Author } from '../../generated/graphql';
 
 interface PostCardProps {
   post: PostCategory;

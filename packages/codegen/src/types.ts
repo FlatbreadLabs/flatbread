@@ -12,7 +12,7 @@ export interface CodegenOptions {
 
   /**
    * Output directory for generated types
-   * @default './src/generated'
+   * @default './generated'
    */
   outputDir?: string;
 
@@ -83,9 +83,11 @@ export interface CodegenOptions {
 /**
  * Default codegen configuration
  */
-export const DEFAULT_CODEGEN_OPTIONS: Required<Omit<CodegenOptions, 'codegenConfig' | 'pluginConfig'>> = {
+export const DEFAULT_CODEGEN_OPTIONS: Required<
+  Omit<CodegenOptions, 'codegenConfig' | 'pluginConfig'>
+> = {
   enabled: false,
-  outputDir: './src/generated',
+  outputDir: './generated',
   outputFile: 'graphql.ts',
   plugins: ['typescript', 'typescript-operations', 'typed-document-node'],
   watch: false,

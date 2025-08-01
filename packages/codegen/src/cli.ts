@@ -79,14 +79,21 @@ export function createCodegenCommand() {
 
       const schema = await generateSchema({ config: loadedConfig });
 
-      // Prepare codegen options
+      // Prepare codegen options (merge CLI options with config file options)
+      const configCodegen = loadedConfig.codegen || {};
       const codegenOptions: CodegenOptions = {
         enabled: true,
-        outputDir: options.outputDir || './src/generated',
-        outputFile: options.outputFile || 'graphql.ts',
-        watch: options.watch || false,
-        documents: options.documents || [],
+        outputDir:
+          options.outputDir || configCodegen.outputDir || './generated',
+        outputFile:
+          options.outputFile || configCodegen.outputFile || 'graphql.ts',
+        watch: options.watch || configCodegen.watch || false,
+        documents: options.documents || configCodegen.documents || [],
         cache: !options.clearCache,
+        plugins: configCodegen.plugins,
+        pluginConfig: configCodegen.pluginConfig,
+        schema: configCodegen.schema,
+        codegenConfig: configCodegen.codegenConfig,
       };
 
       // Clear cache if requested
@@ -99,7 +106,9 @@ export function createCodegenCommand() {
 
       // Generate types
       if (options.watch) {
+        // Watch mode runs indefinitely until interrupted
         await watchAndGenerate(schema, loadedConfig, codegenOptions);
+        // This will never be reached since watchAndGenerate keeps the process alive
       } else {
         const result = await generateTypes(
           schema,
