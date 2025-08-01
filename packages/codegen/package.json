@@ -6,8 +6,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch src",
-    "test": "vitest",
-    "test:run": "vitest run"
+    "test": "vitest"
   },
   "repository": {
     "type": "git",

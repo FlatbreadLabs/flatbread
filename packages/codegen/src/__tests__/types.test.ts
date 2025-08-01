@@ -5,7 +5,7 @@ describe('types', () => {
   it('should have correct default options', () => {
     expect(DEFAULT_CODEGEN_OPTIONS).toEqual({
       enabled: false,
-      outputDir: './src/generated',
+      outputDir: './generated',
       outputFile: 'graphql.ts',
       plugins: ['typescript', 'typescript-operations', 'typed-document-node'],
       watch: false,
@@ -20,7 +20,7 @@ describe('types', () => {
 
   it('should have all required properties in default options', () => {
     const options = DEFAULT_CODEGEN_OPTIONS;
-    
+
     expect(typeof options.enabled).toBe('boolean');
     expect(typeof options.outputDir).toBe('string');
     expect(typeof options.outputFile).toBe('string');
@@ -36,10 +36,10 @@ describe('types', () => {
   it('should include expected default plugins', () => {
     const expectedPlugins = [
       'typescript',
-      'typescript-operations', 
-      'typed-document-node'
+      'typescript-operations',
+      'typed-document-node',
     ];
-    
+
     expect(DEFAULT_CODEGEN_OPTIONS.plugins).toEqual(expectedPlugins);
   });
 });
