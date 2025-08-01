@@ -6,25 +6,40 @@ import type { CodegenOptions } from './types.js';
  * Generate a hash for the Flatbread configuration
  * This is used to determine if types need to be regenerated
  */
-export function hashConfig(config: LoadedFlatbreadConfig, options: CodegenOptions): string {
-  const configString = JSON.stringify({
-    content: config.content,
-    source: {
-      // Only include non-function properties from source
-      ...(typeof config.source.fetchByType === 'function' ? { fetchByType: 'function' } : {}),
-      ...(typeof config.source.fetch === 'function' ? { fetch: 'function' } : {}),
-      ...(typeof config.source.initialize === 'function' ? { initialize: 'function' } : {}),
+export function hashConfig(
+  config: LoadedFlatbreadConfig,
+  options: CodegenOptions
+): string {
+  const configString = JSON.stringify(
+    {
+      content: config.content,
+      source: {
+        // Only include non-function properties from source
+        ...(typeof config.source.fetchByType === 'function'
+          ? { fetchByType: 'function' }
+          : {}),
+        ...(typeof config.source.fetch === 'function'
+          ? { fetch: 'function' }
+          : {}),
+        ...(typeof config.source.initialize === 'function'
+          ? { initialize: 'function' }
+          : {}),
+      },
+      transformer: config.transformer.map((t) => ({
+        extensions: t.extensions,
+        inspect: 'function',
+        ...(typeof t.parse === 'function' ? { parse: 'function' } : {}),
+        ...(typeof t.preknownSchemaFragments === 'function'
+          ? { preknownSchemaFragments: 'function' }
+          : {}),
+      })),
+      fieldNameTransform: 'function',
+      loaded: config.loaded,
+      codegen: options,
     },
-    transformer: config.transformer.map(t => ({
-      extensions: t.extensions,
-      inspect: 'function',
-      ...(typeof t.parse === 'function' ? { parse: 'function' } : {}),
-      ...(typeof t.preknownSchemaFragments === 'function' ? { preknownSchemaFragments: 'function' } : {}),
-    })),
-    fieldNameTransform: 'function',
-    loaded: config.loaded,
-    codegen: options,
-  }, null, 2);
+    null,
+    2
+  );
 
   return createHash('sha256').update(configString).digest('hex');
 }

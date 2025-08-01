@@ -1,6 +1,6 @@
 /**
  * @flatbread/codegen
- * 
+ *
  * Automatic TypeScript type generation for Flatbread GraphQL schemas
  */
 
@@ -11,9 +11,7 @@ export type {
   CodegenStrategy,
 } from './types.js';
 
-export {
-  DEFAULT_CODEGEN_OPTIONS,
-} from './types.js';
+export { DEFAULT_CODEGEN_OPTIONS } from './types.js';
 
 export {
   generateTypes,
@@ -28,13 +26,6 @@ export {
   hashCodegenInputs,
 } from './hash.js';
 
-export {
-  loadCache,
-  saveCache,
-  isCacheValid,
-  clearCache,
-} from './cache.js';
+export { loadCache, saveCache, isCacheValid, clearCache } from './cache.js';
 
-export {
-  createCodegenCommand,
-} from './cli.js';
+export { createCodegenCommand } from './cli.js';
