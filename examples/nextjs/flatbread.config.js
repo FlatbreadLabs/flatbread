@@ -19,7 +19,7 @@ export default defineConfig({
   content: [
     {
       path: 'content/markdown/posts',
-      collection: 'Article',
+      collection: 'Post',
       refs: {
         authors: 'Author',
       },
@@ -46,8 +46,8 @@ export default defineConfig({
       },
       overrides: [
         createSvImgField('image', {
-          inputDir: 'static/authorImages',
-          outputDir: 'static/g',
+          inputDir: 'public/authorImages',
+          outputDir: 'public/g',
           srcGenerator: (path) => '/g/' + path,
         }),
       ],

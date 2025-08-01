@@ -21,57 +21,6 @@ export interface Scalars {
   JSON: { input: Record<string, unknown>; output: Record<string, unknown>; }
 }
 
-export interface Article {
-  __typename?: 'Article';
-  /** The collection name */
-  _collection?: Maybe<Scalars['String']['output']>;
-  _content?: Maybe<Article__Content>;
-  _filename?: Maybe<Scalars['String']['output']>;
-  _path?: Maybe<Scalars['String']['output']>;
-  _slug?: Maybe<Scalars['String']['output']>;
-  /** All Authors that are referenced by this Article */
-  authors?: Maybe<Array<Maybe<Author>>>;
-  category?: Maybe<Scalars['String']['output']>;
-  controversial_opinions?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
-  id?: Maybe<Scalars['String']['output']>;
-  rating?: Maybe<Scalars['Float']['output']>;
-  research_duration?: Maybe<Scalars['String']['output']>;
-  slurp_factor?: Maybe<Scalars['String']['output']>;
-  soups_tested?: Maybe<Scalars['Float']['output']>;
-  tags?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
-  temperature_preference?: Maybe<Scalars['String']['output']>;
-  title?: Maybe<Scalars['String']['output']>;
-}
-
-
-export interface ArticleAuthorsArgs {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  order?: InputMaybe<Order>;
-  skip?: InputMaybe<Scalars['Int']['input']>;
-  sortBy?: InputMaybe<Scalars['String']['input']>;
-}
-
-export interface Article__Content {
-  __typename?: 'Article__content';
-  /** A plaintext excerpt taken from the main content */
-  excerpt?: Maybe<Scalars['String']['output']>;
-  /** The content as HTML */
-  html?: Maybe<Scalars['String']['output']>;
-  raw?: Maybe<Scalars['String']['output']>;
-  /** How long (in minutes) it would take an average reader to read the main content. */
-  timeToRead?: Maybe<Scalars['Int']['output']>;
-}
-
-
-export interface Article__ContentExcerptArgs {
-  length?: InputMaybe<Scalars['Int']['input']>;
-}
-
-
-export interface Article__ContentTimeToReadArgs {
-  speed?: InputMaybe<Scalars['Int']['input']>;
-}
-
 export interface Author {
   __typename?: 'Author';
   /** The collection name */
@@ -194,6 +143,36 @@ export interface OverrideTest__ContentExcerptArgs {
 
 export interface OverrideTest__ContentTimeToReadArgs {
   speed?: InputMaybe<Scalars['Int']['input']>;
+}
+
+export interface Post {
+  __typename?: 'Post';
+  /** The collection name */
+  _collection?: Maybe<Scalars['String']['output']>;
+  _content?: Maybe<Post__Content>;
+  _filename?: Maybe<Scalars['String']['output']>;
+  _path?: Maybe<Scalars['String']['output']>;
+  _slug?: Maybe<Scalars['String']['output']>;
+  /** All Authors that are referenced by this Post */
+  authors?: Maybe<Array<Maybe<Author>>>;
+  category?: Maybe<Scalars['String']['output']>;
+  controversial_opinions?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  id?: Maybe<Scalars['String']['output']>;
+  rating?: Maybe<Scalars['Float']['output']>;
+  research_duration?: Maybe<Scalars['String']['output']>;
+  slurp_factor?: Maybe<Scalars['String']['output']>;
+  soups_tested?: Maybe<Scalars['Float']['output']>;
+  tags?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  temperature_preference?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+}
+
+
+export interface PostAuthorsArgs {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  order?: InputMaybe<Order>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
 }
 
 export interface PostCategory {
@@ -367,38 +346,8 @@ export interface PostCategory__ContentTimeToReadArgs {
   speed?: InputMaybe<Scalars['Int']['input']>;
 }
 
-export interface Postz {
-  __typename?: 'Postz';
-  /** The collection name */
-  _collection?: Maybe<Scalars['String']['output']>;
-  _content?: Maybe<Postz__Content>;
-  _filename?: Maybe<Scalars['String']['output']>;
-  _path?: Maybe<Scalars['String']['output']>;
-  _slug?: Maybe<Scalars['String']['output']>;
-  /** All Authors that are referenced by this Postz */
-  authors?: Maybe<Array<Maybe<Author>>>;
-  category?: Maybe<Scalars['String']['output']>;
-  controversial_opinions?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
-  id?: Maybe<Scalars['String']['output']>;
-  rating?: Maybe<Scalars['Float']['output']>;
-  research_duration?: Maybe<Scalars['String']['output']>;
-  slurp_factor?: Maybe<Scalars['String']['output']>;
-  soups_tested?: Maybe<Scalars['Float']['output']>;
-  tags?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
-  temperature_preference?: Maybe<Scalars['String']['output']>;
-  title?: Maybe<Scalars['String']['output']>;
-}
-
-
-export interface PostzAuthorsArgs {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  order?: InputMaybe<Order>;
-  skip?: InputMaybe<Scalars['Int']['input']>;
-  sortBy?: InputMaybe<Scalars['String']['input']>;
-}
-
-export interface Postz__Content {
-  __typename?: 'Postz__content';
+export interface Post__Content {
+  __typename?: 'Post__content';
   /** A plaintext excerpt taken from the main content */
   excerpt?: Maybe<Scalars['String']['output']>;
   /** The content as HTML */
@@ -409,33 +358,29 @@ export interface Postz__Content {
 }
 
 
-export interface Postz__ContentExcerptArgs {
+export interface Post__ContentExcerptArgs {
   length?: InputMaybe<Scalars['Int']['input']>;
 }
 
 
-export interface Postz__ContentTimeToReadArgs {
+export interface Post__ContentTimeToReadArgs {
   speed?: InputMaybe<Scalars['Int']['input']>;
 }
 
 export interface Query {
   __typename?: 'Query';
-  /** Find one Article by its ID */
-  Article?: Maybe<Article>;
   /** Find one Author by its ID */
   Author?: Maybe<Author>;
   /** Find one OverrideTest by its ID */
   OverrideTest?: Maybe<OverrideTest>;
+  /** Find one Post by its ID */
+  Post?: Maybe<Post>;
   /** Find one PostCategory by its ID */
   PostCategory?: Maybe<PostCategory>;
   /** Find one PostCategoryBlob by its ID */
   PostCategoryBlob?: Maybe<PostCategoryBlob>;
-  /** Find one Postz by its ID */
-  Postz?: Maybe<Postz>;
   /** Find one YamlAuthor by its ID */
   YamlAuthor?: Maybe<YamlAuthor>;
-  /** Return a set of Articles */
-  allArticles?: Maybe<Array<Maybe<Article>>>;
   /** Return a set of Authors */
   allAuthors?: Maybe<Array<Maybe<Author>>>;
   /** Return a set of OverrideTests */
@@ -444,15 +389,10 @@ export interface Query {
   allPostCategories?: Maybe<Array<Maybe<PostCategory>>>;
   /** Return a set of PostCategoryBlobs */
   allPostCategoryBlobs?: Maybe<Array<Maybe<PostCategoryBlob>>>;
-  /** Return a set of Postzes */
-  allPostzes?: Maybe<Array<Maybe<Postz>>>;
+  /** Return a set of Posts */
+  allPosts?: Maybe<Array<Maybe<Post>>>;
   /** Return a set of YamlAuthors */
   allYamlAuthors?: Maybe<Array<Maybe<YamlAuthor>>>;
-}
-
-
-export interface QueryArticleArgs {
-  id?: InputMaybe<Scalars['String']['input']>;
 }
 
 
@@ -462,6 +402,11 @@ export interface QueryAuthorArgs {
 
 
 export interface QueryOverrideTestArgs {
+  id?: InputMaybe<Scalars['String']['input']>;
+}
+
+
+export interface QueryPostArgs {
   id?: InputMaybe<Scalars['String']['input']>;
 }
 
@@ -476,22 +421,8 @@ export interface QueryPostCategoryBlobArgs {
 }
 
 
-export interface QueryPostzArgs {
-  id?: InputMaybe<Scalars['String']['input']>;
-}
-
-
 export interface QueryYamlAuthorArgs {
   id?: InputMaybe<Scalars['String']['input']>;
-}
-
-
-export interface QueryAllArticlesArgs {
-  filter?: InputMaybe<Scalars['JSON']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  order?: InputMaybe<Order>;
-  skip?: InputMaybe<Scalars['Int']['input']>;
-  sortBy?: InputMaybe<Scalars['String']['input']>;
 }
 
 
@@ -531,7 +462,7 @@ export interface QueryAllPostCategoryBlobsArgs {
 }
 
 
-export interface QueryAllPostzesArgs {
+export interface QueryAllPostsArgs {
   filter?: InputMaybe<Scalars['JSON']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   order?: InputMaybe<Order>;
@@ -624,17 +555,17 @@ export interface YamlAuthor__ContentTimeToReadArgs {
   speed?: InputMaybe<Scalars['Int']['input']>;
 }
 
-export type GetAllArticlesQueryVariables = Exact<{ [key: string]: never; }>;
+export type GetAllPostsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetAllArticlesQuery = { __typename?: 'Query', allArticles?: Array<{ __typename?: 'Article', id?: string | null, title?: string | null, _content?: { __typename?: 'Article__content', html?: string | null, excerpt?: string | null, timeToRead?: number | null } | null, authors?: Array<{ __typename?: 'Author', id?: string | null, name?: string | null } | null> | null } | null> | null };
+export type GetAllPostsQuery = { __typename?: 'Query', allPosts?: Array<{ __typename?: 'Post', id?: string | null, title?: string | null, _content?: { __typename?: 'Post__content', html?: string | null, excerpt?: string | null, timeToRead?: number | null } | null, authors?: Array<{ __typename?: 'Author', id?: string | null, name?: string | null } | null> | null } | null> | null };
 
 export type GetPostByIdQueryVariables = Exact<{
   id: Scalars['String']['input'];
 }>;
 
 
-export type GetPostByIdQuery = { __typename?: 'Query', Article?: { __typename?: 'Article', id?: string | null, title?: string | null, _content?: { __typename?: 'Article__content', html?: string | null, excerpt?: string | null, timeToRead?: number | null } | null, authors?: Array<{ __typename?: 'Author', id?: string | null, name?: string | null, friend?: { __typename?: 'Author', id?: string | null, name?: string | null } | null } | null> | null } | null };
+export type GetPostByIdQuery = { __typename?: 'Query', Post?: { __typename?: 'Post', id?: string | null, title?: string | null, _content?: { __typename?: 'Post__content', html?: string | null, excerpt?: string | null, timeToRead?: number | null } | null, authors?: Array<{ __typename?: 'Author', id?: string | null, name?: string | null, friend?: { __typename?: 'Author', id?: string | null, name?: string | null } | null } | null> | null } | null };
 
 export type GetPostCategoriesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -646,10 +577,10 @@ export type GetAuthorsQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type GetAuthorsQuery = { __typename?: 'Query', allAuthors?: Array<{ __typename?: 'Author', id?: string | null, name?: string | null, entity?: string | null, enjoys?: Array<string | null> | null, date_joined?: any | null, image?: { __typename?: 'Svimg', srcset?: string | null, srcsetwebp?: string | null, srcsetavif?: string | null, placeholder?: string | null, aspectratio?: number | null } | null, skills?: { __typename?: 'Author_Skills', sitting?: number | null, breathing?: number | null, liquid_consumption?: number | null, existence?: string | null, sports?: number | null } | null } | null> | null };
 
-export type ArticleSummaryFragment = { __typename?: 'Article', id?: string | null, title?: string | null, _content?: { __typename?: 'Article__content', html?: string | null, excerpt?: string | null, timeToRead?: number | null } | null, authors?: Array<{ __typename?: 'Author', id?: string | null, name?: string | null } | null> | null };
+export type PostsummaryFragment = { __typename?: 'Post', id?: string | null, title?: string | null, _content?: { __typename?: 'Post__content', html?: string | null, excerpt?: string | null, timeToRead?: number | null } | null, authors?: Array<{ __typename?: 'Author', id?: string | null, name?: string | null } | null> | null };
 
-export const ArticleSummaryFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ArticleSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Article"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"_content"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"html"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"timeToRead"}}]}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<ArticleSummaryFragment, unknown>;
-export const GetAllArticlesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAllArticles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allArticles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"_content"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"html"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"timeToRead"}}]}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<GetAllArticlesQuery, GetAllArticlesQueryVariables>;
-export const GetPostByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetPostById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"Article"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"_content"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"html"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"timeToRead"}}]}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"friend"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetPostByIdQuery, GetPostByIdQueryVariables>;
+export const PostsummaryFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"Postsummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"_content"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"html"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"timeToRead"}}]}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<PostsummaryFragment, unknown>;
+export const GetAllPostsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAllPosts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allPosts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"_content"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"html"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"timeToRead"}}]}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<GetAllPostsQuery, GetAllPostsQueryVariables>;
+export const GetPostByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetPostById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"Post"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"_content"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"html"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"timeToRead"}}]}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"friend"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetPostByIdQuery, GetPostByIdQueryVariables>;
 export const GetPostCategoriesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetPostCategories"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allPostCategories"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"sortBy"},"value":{"kind":"StringValue","value":"title","block":false}},{"kind":"Argument","name":{"kind":"Name","value":"order"},"value":{"kind":"EnumValue","value":"DESC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"_collection"}},{"kind":"Field","name":{"kind":"Name","value":"_filename"}},{"kind":"Field","name":{"kind":"Name","value":"_slug"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"rating"}},{"kind":"Field","name":{"kind":"Name","value":"_content"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"raw"}},{"kind":"Field","name":{"kind":"Name","value":"html"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"timeToRead"}}]}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"_slug"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"entity"}},{"kind":"Field","name":{"kind":"Name","value":"enjoys"}},{"kind":"Field","name":{"kind":"Name","value":"image"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"srcset"}},{"kind":"Field","name":{"kind":"Name","value":"srcsetwebp"}},{"kind":"Field","name":{"kind":"Name","value":"srcsetavif"}},{"kind":"Field","name":{"kind":"Name","value":"placeholder"}},{"kind":"Field","name":{"kind":"Name","value":"aspectratio"}}]}},{"kind":"Field","name":{"kind":"Name","value":"friend"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"date_joined"}}]}},{"kind":"Field","name":{"kind":"Name","value":"date_joined"}},{"kind":"Field","name":{"kind":"Name","value":"skills"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sitting"}},{"kind":"Field","name":{"kind":"Name","value":"breathing"}},{"kind":"Field","name":{"kind":"Name","value":"liquid_consumption"}},{"kind":"Field","name":{"kind":"Name","value":"existence"}},{"kind":"Field","name":{"kind":"Name","value":"sports"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetPostCategoriesQuery, GetPostCategoriesQueryVariables>;
 export const GetAuthorsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAuthors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allAuthors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"entity"}},{"kind":"Field","name":{"kind":"Name","value":"enjoys"}},{"kind":"Field","name":{"kind":"Name","value":"image"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"srcset"}},{"kind":"Field","name":{"kind":"Name","value":"srcsetwebp"}},{"kind":"Field","name":{"kind":"Name","value":"srcsetavif"}},{"kind":"Field","name":{"kind":"Name","value":"placeholder"}},{"kind":"Field","name":{"kind":"Name","value":"aspectratio"}}]}},{"kind":"Field","name":{"kind":"Name","value":"date_joined"}},{"kind":"Field","name":{"kind":"Name","value":"skills"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sitting"}},{"kind":"Field","name":{"kind":"Name","value":"breathing"}},{"kind":"Field","name":{"kind":"Name","value":"liquid_consumption"}},{"kind":"Field","name":{"kind":"Name","value":"existence"}},{"kind":"Field","name":{"kind":"Name","value":"sports"}}]}}]}}]}}]} as unknown as DocumentNode<GetAuthorsQuery, GetAuthorsQueryVariables>;
