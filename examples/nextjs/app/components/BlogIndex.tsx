@@ -3,17 +3,17 @@
  */
 
 import Link from 'next/link';
-import type { PostCategory } from '../../generated/graphql';
+import type { PostCategory, Author } from '../../generated/graphql';
 
 interface BlogIndexProps {
   posts: (PostCategory | null)[];
 }
 
-function AuthorList({ authors }: { authors?: (any | null)[] | null }) {
+function AuthorList({ authors }: { authors?: (Author | null)[] | null }) {
   if (!authors || authors.length === 0) return null;
 
   return (
-    <div className="text-sm text-gray-600 uppercase tracking-wide">
+    <div className="text-sm tracking-wide text-gray-600 uppercase">
       {authors.map((author, index) => {
         if (!author) return null;
         return (
@@ -31,7 +31,7 @@ function CategoryBadge({ category }: { category?: string | null }) {
   if (!category) return null;
   
   return (
-    <span className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-widest bg-black text-white">
+    <span className="inline-block px-3 py-1 text-xs font-bold tracking-widest text-white uppercase bg-black">
       {category}
     </span>
   );
@@ -46,11 +46,11 @@ function RatingBar({ rating }: { rating?: number | null }) {
     <div className="flex items-center gap-2">
       <div className="w-16 h-2 bg-gray-200 border border-black">
         <div 
-          className="h-full bg-black transition-all duration-300"
+          className="h-full transition-all duration-300 bg-black"
           style={{ width: `${percentage}%` }}
         />
       </div>
-      <span className="text-xs font-mono font-bold">{rating}</span>
+      <span className="font-mono text-xs font-bold">{rating}</span>
     </div>
   );
 }
@@ -63,14 +63,14 @@ export default function BlogIndex({ posts }: BlogIndexProps) {
   if (validPosts.length === 0) {
     return (
       <div className="p-8">
-        <div className="border-4 border-black p-8 text-center">
-          <h2 className="text-2xl font-bold uppercase tracking-widest mb-4">
+        <div className="p-8 text-center border-4 border-black">
+          <h2 className="mb-4 text-2xl font-bold tracking-widest uppercase">
             No Posts Found
           </h2>
-          <p className="text-gray-600 mb-4">
+          <p className="mb-4 text-gray-600">
             Start the Flatbread server to load content
           </p>
-          <code className="bg-gray-100 border-2 border-black px-4 py-2 font-mono text-sm">
+          <code className="px-4 py-2 font-mono text-sm bg-gray-100 border-2 border-black">
             npx flatbread dev
           </code>
         </div>
@@ -81,11 +81,11 @@ export default function BlogIndex({ posts }: BlogIndexProps) {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="border-b-2 border-black p-8 bg-white sticky top-0 z-10">
-        <h1 className="text-4xl font-bold uppercase tracking-widest">
+      <header className="sticky top-0 z-10 p-8 bg-white border-b-2 border-black">
+        <h1 className="text-4xl font-bold tracking-widest uppercase">
           Blog
         </h1>
-        <p className="text-gray-600 mt-2 font-mono text-sm">
+        <p className="mt-2 font-mono text-sm text-gray-600">
           {validPosts.length} posts indexed
         </p>
       </header>
@@ -95,7 +95,7 @@ export default function BlogIndex({ posts }: BlogIndexProps) {
         {validPosts.map((post) => (
           <article 
             key={post.id} 
-            className="p-8 hover:bg-gray-50 transition-colors group"
+            className="p-8 transition-colors hover:bg-gray-50 group"
           >
             <div className="flex items-start justify-between gap-8">
               <div className="flex-1 space-y-4">
@@ -115,7 +115,7 @@ export default function BlogIndex({ posts }: BlogIndexProps) {
                 </div>
 
                 {post._content?.excerpt && (
-                  <p className="text-gray-700 leading-relaxed max-w-2xl">
+                  <p className="max-w-2xl leading-relaxed text-gray-700">
                     {post._content.excerpt}
                   </p>
                 )}
@@ -129,7 +129,7 @@ export default function BlogIndex({ posts }: BlogIndexProps) {
                   
                   <Link 
                     href={`/post/${post.id}`}
-                    className="font-bold uppercase tracking-wide hover:text-black transition-colors"
+                    className="font-bold tracking-wide uppercase transition-colors hover:text-black"
                   >
                     Read →
                   </Link>
@@ -145,7 +145,7 @@ export default function BlogIndex({ posts }: BlogIndexProps) {
       </div>
 
       {/* Footer */}
-      <footer className="border-t-2 border-black p-8 bg-gray-50">
+      <footer className="p-8 border-t-2 border-black bg-gray-50">
         <div className="text-center text-gray-600">
           <p className="font-mono text-sm">
             Powered by Flatbread • GraphQL • Next.js
