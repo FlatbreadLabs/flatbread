@@ -253,6 +253,39 @@ The package supports all GraphQL Code Generator plugins, with these defaults:
 - **typescript-operations**: Generates types for GraphQL operations
 - **typed-document-node**: Generates TypedDocumentNode for type-safe operations
 
+### Plugin Dependencies
+
+⚠️ **Important**: Some plugins generate code that imports external packages. You'll need to install these dependencies in your project:
+
+```bash
+# Required for 'typed-document-node' and 'typescript-operations' plugins
+npm install @graphql-typed-document-node/core
+```
+
+### Plugin Presets
+
+To simplify plugin management and avoid dependency issues, you can use predefined presets:
+
+```ts
+export default defineConfig({
+  codegen: {
+    enabled: true,
+    preset: 'basic', // or 'operations' or 'full'
+  },
+});
+```
+
+Available presets:
+
+- **`basic`**: TypeScript types only (no external dependencies)
+  - Uses: `['typescript']`
+- **`operations`**: TypeScript with operations support
+  - Uses: `['typescript', 'typescript-operations']`
+  - Requires: `@graphql-typed-document-node/core`
+- **`full`**: Full featured with typed document nodes (default)
+  - Uses: `['typescript', 'typescript-operations', 'typed-document-node']`
+  - Requires: `@graphql-typed-document-node/core`
+
 ## 🤝 Framework Integration
 
 ### React with Apollo Client
@@ -343,8 +376,30 @@ The package follows a modular architecture:
 
 **Import errors in generated types**
 
-- Ensure all required packages are installed
-- Check that the output directory is correctly configured
+If you see errors like `Cannot find module '@graphql-typed-document-node/core'`:
+
+1. Install the missing dependency:
+
+   ```bash
+   npm install @graphql-typed-document-node/core
+   ```
+
+2. Or use a simpler preset that doesn't require external dependencies:
+
+   ```ts
+   codegen: {
+     enabled: true,
+     preset: 'basic', // Only generates basic TypeScript types
+   }
+   ```
+
+3. Or customize plugins to exclude ones that require dependencies:
+   ```ts
+   codegen: {
+     enabled: true,
+     plugins: ['typescript'], // Only basic types, no external deps
+   }
+   ```
 
 **Performance issues with large schemas**
 
@@ -377,7 +432,3 @@ Check out the `/examples` directory for complete working examples:
 ## 🤝 Contributing
 
 We welcome contributions! Please see the main [Flatbread contributing guide](../../CONTRIBUTING.md) for details.
-
-## 📄 License
-
-MIT © [Tony Ketcham](https://github.com/tonyketcham)

@@ -30,6 +30,7 @@
     "*.d.ts"
   ],
   "dependencies": {
+    "@flatbread/utils": "workspace:*",
     "@graphql-codegen/cli": "^5.0.0",
     "@graphql-codegen/typescript": "^4.1.6",
     "@graphql-codegen/typescript-operations": "^4.2.0",
@@ -50,7 +51,8 @@
   },
   "peerDependencies": {
     "@flatbread/config": "workspace:*",
-    "@flatbread/core": "workspace:*"
+    "@flatbread/core": "workspace:*",
+    "@graphql-typed-document-node/core": "^3.1.0"
   },
   "pnpm": {
     "peerDependencyRules": {

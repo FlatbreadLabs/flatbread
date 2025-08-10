@@ -29,6 +29,16 @@ export interface CodegenOptions {
   plugins?: string[];
 
   /**
+   * Use a predefined plugin preset instead of specifying plugins manually.
+   * When specified, this overrides the plugins option.
+   *
+   * - 'basic': TypeScript types only (no external dependencies)
+   * - 'operations': TypeScript with operations support
+   * - 'full': Full featured with typed document nodes
+   */
+  preset?: 'basic' | 'operations' | 'full';
+
+  /**
    * Custom configuration for GraphQL Code Generator
    * This allows users to override any codegen options
    */
@@ -84,7 +94,7 @@ export interface CodegenOptions {
  * Default codegen configuration
  */
 export const DEFAULT_CODEGEN_OPTIONS: Required<
-  Omit<CodegenOptions, 'codegenConfig' | 'pluginConfig'>
+  Omit<CodegenOptions, 'codegenConfig' | 'pluginConfig' | 'preset'>
 > = {
   enabled: false,
   outputDir: './generated',
@@ -98,6 +108,26 @@ export const DEFAULT_CODEGEN_OPTIONS: Required<
     includeDeprecated: true,
   },
 };
+
+/**
+ * Alternative plugin configurations for different use cases
+ */
+export const PLUGIN_PRESETS = {
+  /**
+   * Basic TypeScript types only (no external dependencies)
+   */
+  basic: ['typescript'],
+
+  /**
+   * TypeScript with operations (requires @graphql-typed-document-node/core)
+   */
+  operations: ['typescript', 'typescript-operations'],
+
+  /**
+   * Full featured with typed document nodes (requires @graphql-typed-document-node/core)
+   */
+  full: ['typescript', 'typescript-operations', 'typed-document-node'],
+} as const;
 
 /**
  * Supported codegen strategies

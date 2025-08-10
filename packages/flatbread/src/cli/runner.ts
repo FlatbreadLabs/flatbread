@@ -3,10 +3,10 @@
  * Learned about this thanks to: https://stackoverflow.com/a/48050020/12368615
  */
 import { fork, spawn } from 'node:child_process';
-import { basename, resolve } from 'node:path';
-import { findUpSync } from 'find-up';
+import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import colors from 'kleur';
+import { getRunCommand } from '@flatbread/utils';
 
 export interface OrchestraOptions {
   corunner: string;
@@ -28,7 +28,7 @@ export default function orchestrateProcesses({
   https = false,
   packageManager = null,
 }: OrchestraOptions) {
-  const pkgManager = packageManager || detectPkgManager(process.cwd());
+  const pkgManager = packageManager || getRunCommand(process.cwd());
 
   // Try to resolve the server module path
   let serverModulePath = resolveServerModulePath(pkgManager);
@@ -152,28 +152,4 @@ function findNodeModulesFlatbread(startDir: string): string | null {
   }
 
   return null;
-}
-
-/**
- * Map of lock files to the command for running a script
- * with that respective package manager.
- */
-const lockToRunner: Record<string, string> = {
-  'pnpm-lock.yaml': 'pnpm',
-  'yarn.lock': 'yarn',
-  'package-lock.json': 'npm run',
-  'bun.lockb': 'bun run',
-};
-
-/**
- * Detect the package manager used within the current working directory.
- *
- * Inspired by [@antfu/ni](https://github.com/antfu/ni)
- *
- * @param cwd The directory to search for a lock file
- * @returns The package manager command to run the script
- */
-function detectPkgManager(cwd?: string) {
-  const result = findUpSync(Object.keys(lockToRunner), { cwd });
-  return result ? lockToRunner[basename(result)] : null;
 }

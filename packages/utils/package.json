@@ -1,0 +1,41 @@
+{
+  "name": "@flatbread/utils",
+  "version": "1.0.0-alpha.1",
+  "description": "Shared utilities for Flatbread packages",
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch src",
+    "test": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FlatbreadLabs/flatbread.git",
+    "directory": "packages/utils"
+  },
+  "homepage": "https://github.com/FlatbreadLabs/flatbread/tree/main/packages/utils#readme",
+  "author": "Tony Ketcham <ketcham.dev@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/FlatbreadLabs/flatbread/issues"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "*.d.ts"
+  ],
+  "dependencies": {
+    "find-up": "^6.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "16.11.47",
+    "tsup": "6.2.1",
+    "typescript": "4.7.4",
+    "vitest": "^0.34.6"
+  }
+}

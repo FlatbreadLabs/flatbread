@@ -21,7 +21,7 @@ export default async function Home() {
   const data = await getData();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="relative min-h-screen bg-white">
       <div className="grid min-h-screen grid-cols-12">
         {/* Main Content */}
         <main className="col-span-8 border-r-2 border-black">
@@ -29,12 +29,10 @@ export default async function Home() {
         </main>
         
         {/* Query Panel */}
-        <aside className="col-span-4 bg-gray-50">
           <QueryPanel 
             query={queries.GET_POST_CATEGORIES}
             data={data}
           />
-        </aside>
       </div>
     </div>
   );

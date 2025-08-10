@@ -7,10 +7,55 @@ import kleur from 'kleur';
 import chokidar from 'chokidar';
 import { generateSchema } from '@flatbread/core';
 import type { LoadedFlatbreadConfig } from '@flatbread/core';
+import { generateInstallCommand } from '@flatbread/utils';
 import type { CodegenOptions, CodegenResult, CodegenCache } from './types.js';
-import { DEFAULT_CODEGEN_OPTIONS } from './types.js';
+import { DEFAULT_CODEGEN_OPTIONS, PLUGIN_PRESETS } from './types.js';
 import { hashCodegenInputs, hashSchema } from './hash.js';
 import { loadCache, saveCache, isCacheValid } from './cache.js';
+
+/**
+ * Map of plugins to their required peer dependencies
+ */
+const PLUGIN_DEPENDENCIES: Record<string, string[]> = {
+  'typed-document-node': ['@graphql-typed-document-node/core'],
+  'typescript-operations': ['@graphql-typed-document-node/core'],
+};
+
+/**
+ * Check if required dependencies are available for the given plugins.
+ * Logs warnings for missing dependencies but doesn't fail the build.
+ *
+ * @param plugins Array of plugin names
+ */
+function checkPluginDependencies(plugins: string[]): void {
+  const missingDeps = new Set<string>();
+
+  for (const plugin of plugins) {
+    const requiredDeps = PLUGIN_DEPENDENCIES[plugin];
+    if (!requiredDeps) continue;
+
+    for (const dep of requiredDeps) {
+      try {
+        require.resolve(dep);
+      } catch {
+        missingDeps.add(dep);
+      }
+    }
+  }
+
+  if (missingDeps.size > 0) {
+    const missingDepsArray = Array.from(missingDeps);
+    const installCommand = generateInstallCommand(missingDepsArray);
+    console.warn(
+      kleur.yellow(
+        `⚠️  Warning: Some GraphQL codegen plugins require dependencies that aren't installed:\n` +
+          `   Missing: ${missingDepsArray.join(', ')}\n` +
+          `   Install them with: ${installCommand}\n` +
+          `   Or remove the corresponding plugins from your codegen config.`
+      )
+    );
+  }
+}
 
 /**
  * Generate TypeScript types from a GraphQL schema using GraphQL Code Generator
@@ -22,6 +67,11 @@ export async function generateTypes(
 ): Promise<CodegenResult> {
   // Merge with default options
   const mergedOptions = { ...DEFAULT_CODEGEN_OPTIONS, ...options };
+
+  // Apply preset if specified (overrides plugins option)
+  if (mergedOptions.preset) {
+    mergedOptions.plugins = [...PLUGIN_PRESETS[mergedOptions.preset]];
+  }
 
   if (!mergedOptions.enabled) {
     return {
@@ -58,6 +108,9 @@ export async function generateTypes(
   }
 
   try {
+    // Check for missing plugin dependencies
+    checkPluginDependencies(mergedOptions.plugins);
+
     console.log(
       kleur.blue('Generating TypeScript types from GraphQL schema...')
     );
@@ -233,6 +286,8 @@ export async function watchAndGenerate(
     '**/node_modules/**',
     '**/.git/**',
     '**/dist/**',
+    '**/build/**',
+    '**/generated/**',
     '**/.flatbread-codegen-cache.json',
   ];
   if (options.outputDir) {
