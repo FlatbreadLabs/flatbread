@@ -55,7 +55,7 @@
   },
   "devDependencies": {
     "@types/cors": "2.8.12",
-    "@types/express": "4.17.13",
+    "@types/express": "4.17.23",
     "@types/gradient-string": "1.1.2",
     "@types/node": "16.11.47",
     "@types/sade": "1.7.4",
