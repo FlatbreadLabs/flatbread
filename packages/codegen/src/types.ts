@@ -48,10 +48,10 @@ export interface CodegenOptions {
    * Plugin-specific configuration
    */
   pluginConfig?: {
-    typescript?: Record<string, any>;
-    typescriptOperations?: Record<string, any>;
-    typedDocumentNode?: Record<string, any>;
-    [pluginName: string]: Record<string, any> | undefined;
+    typescript?: Record<string, unknown>;
+    typescriptOperations?: Record<string, unknown>;
+    typedDocumentNode?: Record<string, unknown>;
+    [pluginName: string]: Record<string, unknown> | undefined;
   };
 
   /**

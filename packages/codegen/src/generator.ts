@@ -98,14 +98,27 @@ export async function generateTypes(
           config: {
             skipTypename: false,
             enumsAsTypes: true,
-            scalars: {
-              DateTime: 'string',
-              Date: 'string',
-              JSON: 'Record<string, any>',
-              Upload: 'File',
-              ...mergedOptions.pluginConfig?.typescript?.scalars,
-            },
-            ...mergedOptions.pluginConfig?.typescript,
+            // Apply TypeScript plugin config with a safe deep-merge for `scalars`
+            // so user-provided scalars extend (not replace) defaults.
+            ...((): Record<string, unknown> => {
+              const {
+                scalars: userScalars,
+                defaultScalarType,
+                ...typescriptRest
+              } = mergedOptions.pluginConfig?.typescript ?? {};
+              return {
+                // Ensure unmapped scalars become `unknown` instead of `any`
+                defaultScalarType: defaultScalarType ?? 'unknown',
+                ...typescriptRest,
+                scalars: {
+                  DateTime: 'string',
+                  Date: 'string',
+                  JSON: 'Record<string, unknown>',
+                  Upload: 'File',
+                  ...(userScalars as Record<string, unknown> | undefined),
+                },
+              };
+            })(),
             ...mergedOptions.pluginConfig?.typescriptOperations,
             ...mergedOptions.pluginConfig?.typedDocumentNode,
           },

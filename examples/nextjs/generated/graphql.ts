@@ -16,7 +16,7 @@ export interface Scalars {
   Int: { input: number; output: number; }
   /** The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](https://en.wikipedia.org/wiki/IEEE_floating_point). */
   Float: { input: number; output: number; }
-  Date: { input: any; output: any; }
+  Date: { input: string; output: string; }
   /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
   JSON: { input: Record<string, unknown>; output: Record<string, unknown>; }
 }
@@ -570,12 +570,12 @@ export type GetPostByIdQuery = { __typename?: 'Query', Post?: { __typename?: 'Po
 export type GetPostCategoriesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetPostCategoriesQuery = { __typename?: 'Query', allPostCategories?: Array<{ __typename?: 'PostCategory', _collection?: string | null, _filename?: string | null, _slug?: string | null, id?: string | null, title?: string | null, category?: string | null, slug?: string | null, rating?: number | null, _content?: { __typename?: 'PostCategory__content', raw?: string | null, html?: string | null, excerpt?: string | null, timeToRead?: number | null } | null, authors?: Array<{ __typename?: 'Author', _slug?: string | null, id?: string | null, name?: string | null, entity?: string | null, enjoys?: Array<string | null> | null, date_joined?: any | null, image?: { __typename?: 'Svimg', srcset?: string | null, srcsetwebp?: string | null, srcsetavif?: string | null, placeholder?: string | null, aspectratio?: number | null } | null, friend?: { __typename?: 'Author', name?: string | null, date_joined?: any | null } | null, skills?: { __typename?: 'Author_Skills', sitting?: number | null, breathing?: number | null, liquid_consumption?: number | null, existence?: string | null, sports?: number | null } | null } | null> | null } | null> | null };
+export type GetPostCategoriesQuery = { __typename?: 'Query', allPostCategories?: Array<{ __typename?: 'PostCategory', _collection?: string | null, _filename?: string | null, _slug?: string | null, id?: string | null, title?: string | null, category?: string | null, slug?: string | null, rating?: number | null, _content?: { __typename?: 'PostCategory__content', raw?: string | null, html?: string | null, excerpt?: string | null, timeToRead?: number | null } | null, authors?: Array<{ __typename?: 'Author', _slug?: string | null, id?: string | null, name?: string | null, entity?: string | null, enjoys?: Array<string | null> | null, date_joined?: string | null, image?: { __typename?: 'Svimg', srcset?: string | null, srcsetwebp?: string | null, srcsetavif?: string | null, placeholder?: string | null, aspectratio?: number | null } | null, friend?: { __typename?: 'Author', name?: string | null, date_joined?: string | null } | null, skills?: { __typename?: 'Author_Skills', sitting?: number | null, breathing?: number | null, liquid_consumption?: number | null, existence?: string | null, sports?: number | null } | null } | null> | null } | null> | null };
 
 export type GetAuthorsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetAuthorsQuery = { __typename?: 'Query', allAuthors?: Array<{ __typename?: 'Author', id?: string | null, name?: string | null, entity?: string | null, enjoys?: Array<string | null> | null, date_joined?: any | null, image?: { __typename?: 'Svimg', srcset?: string | null, srcsetwebp?: string | null, srcsetavif?: string | null, placeholder?: string | null, aspectratio?: number | null } | null, skills?: { __typename?: 'Author_Skills', sitting?: number | null, breathing?: number | null, liquid_consumption?: number | null, existence?: string | null, sports?: number | null } | null } | null> | null };
+export type GetAuthorsQuery = { __typename?: 'Query', allAuthors?: Array<{ __typename?: 'Author', id?: string | null, name?: string | null, entity?: string | null, enjoys?: Array<string | null> | null, date_joined?: string | null, image?: { __typename?: 'Svimg', srcset?: string | null, srcsetwebp?: string | null, srcsetavif?: string | null, placeholder?: string | null, aspectratio?: number | null } | null, skills?: { __typename?: 'Author_Skills', sitting?: number | null, breathing?: number | null, liquid_consumption?: number | null, existence?: string | null, sports?: number | null } | null } | null> | null };
 
 export type PostsummaryFragment = { __typename?: 'Post', id?: string | null, title?: string | null, _content?: { __typename?: 'Post__content', html?: string | null, excerpt?: string | null, timeToRead?: number | null } | null, authors?: Array<{ __typename?: 'Author', id?: string | null, name?: string | null } | null> | null };
 
