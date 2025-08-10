@@ -97,11 +97,3 @@ export function generateInstallCommand(
   const installCommand = getInstallCommand(cwd);
   return `${installCommand} ${packages.join(' ')}`;
 }
-
-/**
- * Legacy function for backward compatibility.
- * @deprecated Use detectPackageManager().runCommand instead
- */
-export function detectPkgManager(cwd?: string): string | null {
-  return getRunCommand(cwd);
-}
