@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/codegen",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "Automatic TypeScript type generation for Flatbread GraphQL schemas",
   "type": "module",
   "scripts": {

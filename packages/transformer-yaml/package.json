@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/transformer-yaml",
-  "version": "1.0.0-alpha.7",
+  "version": "1.0.0-alpha.8",
   "description": "Convert YAML files to an in-memory JSON model",
   "type": "module",
   "repository": {

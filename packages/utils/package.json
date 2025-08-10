@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/utils",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "Shared utilities for Flatbread packages",
   "type": "module",
   "scripts": {
