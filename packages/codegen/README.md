@@ -40,7 +40,9 @@ export default defineConfig({
 });
 ```
 
-### 2. Generate types:
+### 2. Add `.flatbread-codegen-cache.json` to your `.gitignore`.
+
+### 3. Generate types:
 
 ```bash
 # Generate types once
@@ -53,7 +55,7 @@ npx flatbread codegen --watch
 npx flatbread codegen --clear-cache
 ```
 
-### 3. Use generated types in your application:
+### 4. Use generated types in your application:
 
 ```ts
 import type { Post, GetPostsQuery } from './generated/graphql';
