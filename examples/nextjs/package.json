@@ -10,7 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@graphql-typed-document-node/core": "^3.1.0",
+    "@graphql-typed-document-node/core": "^3.2.0",
     "next": "15.4.4",
     "react": "19.1.0",
     "react-dom": "19.1.0"
@@ -18,12 +18,12 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@tailwindcss/postcss": "^4.1.11",
-    "@types/node": "^20.19.9",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "eslint": "^9.32.0",
+    "@types/node": "^20.19.10",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "eslint": "^9.33.0",
     "eslint-config-next": "15.4.4",
     "tailwindcss": "^4.1.11",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.2"
   }
 }

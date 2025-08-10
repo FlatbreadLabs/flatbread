@@ -31,20 +31,20 @@
   ],
   "dependencies": {
     "@flatbread/utils": "workspace:*",
-    "@graphql-codegen/cli": "^5.0.0",
+    "@graphql-codegen/cli": "^5.0.7",
+    "@graphql-codegen/typed-document-node": "^2.3.13",
     "@graphql-codegen/typescript": "^4.1.6",
-    "@graphql-codegen/typescript-operations": "^4.2.0",
-    "@graphql-codegen/typed-document-node": "^2.3.0",
-    "@graphql-typed-document-node/core": "^3.1.0",
+    "@graphql-codegen/typescript-operations": "^4.6.1",
+    "@graphql-typed-document-node/core": "^3.2.0",
+    "chokidar": "^3.6.0",
+    "fs-extra": "^11.3.1",
     "graphql": "16.5.0",
-    "fs-extra": "^11.1.0",
-    "kleur": "^4.1.5",
-    "chokidar": "^3.5.3"
+    "kleur": "^4.1.5"
   },
   "devDependencies": {
+    "@types/chokidar": "^2.1.7",
     "@types/fs-extra": "11.0.1",
     "@types/node": "16.11.47",
-    "@types/chokidar": "^2.1.3",
     "tsup": "6.2.1",
     "typescript": "4.7.4",
     "vitest": "^0.34.6"
