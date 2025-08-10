@@ -245,11 +245,38 @@ export async function watchAndGenerate(
 
   console.log(kleur.blue('🔍 Watching for changes...'));
 
-  // Initial generation
-  await generateTypes(schema, config, options);
+  // Maintain a mutable set of options that can be refreshed when the config changes
+  let currentOptions: CodegenOptions = { ...options };
+
+  // Helper to derive effective codegen options from the latest config
+  const deriveOptionsFromConfig = (
+    loadedConfig: LoadedFlatbreadConfig,
+    previous: CodegenOptions
+  ): CodegenOptions => {
+    const cfg = loadedConfig.codegen || {};
+    return {
+      // Always enable in watch
+      enabled: true,
+      // Prefer latest config for dynamic fields changed via config
+      outputDir: cfg.outputDir ?? DEFAULT_CODEGEN_OPTIONS.outputDir,
+      outputFile: cfg.outputFile ?? DEFAULT_CODEGEN_OPTIONS.outputFile,
+      documents: cfg.documents ?? [],
+      plugins: cfg.plugins ?? previous.plugins,
+      pluginConfig: cfg.pluginConfig ?? previous.pluginConfig,
+      schema: cfg.schema ?? previous.schema,
+      codegenConfig: cfg.codegenConfig ?? previous.codegenConfig,
+      // Preserve runtime flags
+      watch: true,
+      cache: previous.cache,
+      preset: previous.preset,
+    };
+  };
+
+  // Initial generation using the current options
+  await generateTypes(schema, config, currentOptions);
 
   // Set up file watchers
-  const patterns = getWatchPatterns(config, options);
+  const patterns = getWatchPatterns(config, currentOptions);
   console.log(kleur.dim(`Watching patterns: ${patterns.join(', ')}`));
 
   const ignored = [
@@ -295,6 +322,8 @@ export async function watchAndGenerate(
           if (configResult.config) {
             currentConfig = initializeConfig(configResult.config);
             console.log(kleur.dim('🔧 Configuration reloaded'));
+            // Refresh codegen options from the updated config so changes like outputFile/outputDir/documents are applied
+            currentOptions = deriveOptionsFromConfig(currentConfig, currentOptions);
           }
         } catch (error) {
           console.warn(
@@ -311,7 +340,7 @@ export async function watchAndGenerate(
       const newSchema = await generateSchema({ config: currentConfig });
 
       // Generate types with the new schema
-      const result = await generateTypes(newSchema, currentConfig, options);
+      const result = await generateTypes(newSchema, currentConfig, currentOptions);
 
       if (result.success) {
         console.log(kleur.green('✅ Types regenerated successfully'));

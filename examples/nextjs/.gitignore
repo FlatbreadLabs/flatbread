@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+.flatbread-codegen-cache.json
 
 # debug
 npm-debug.log*
