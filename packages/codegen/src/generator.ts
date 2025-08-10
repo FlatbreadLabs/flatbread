@@ -2,6 +2,7 @@ import { generate } from '@graphql-codegen/cli';
 import { printSchema, type GraphQLSchema } from 'graphql';
 import { join, resolve } from 'path';
 import { ensureDir } from 'fs-extra';
+import { existsSync } from 'fs';
 import kleur from 'kleur';
 // @ts-ignore - chokidar types will be available after npm install
 import chokidar from 'chokidar';
@@ -12,49 +13,17 @@ import type { CodegenOptions, CodegenResult, CodegenCache } from './types.js';
 import { DEFAULT_CODEGEN_OPTIONS, PLUGIN_PRESETS } from './types.js';
 import { hashCodegenInputs, hashSchema } from './hash.js';
 import { loadCache, saveCache, isCacheValid } from './cache.js';
+import {
+  checkPluginDependencies,
+  formatMissingDepsWarning,
+} from './dependencyCheck.js';
 
-/**
- * Map of plugins to their required peer dependencies
- */
-const PLUGIN_DEPENDENCIES: Record<string, string[]> = {
-  'typed-document-node': ['@graphql-typed-document-node/core'],
-  'typescript-operations': ['@graphql-typed-document-node/core'],
-};
-
-/**
- * Check if required dependencies are available for the given plugins.
- * Logs warnings for missing dependencies but doesn't fail the build.
- *
- * @param plugins Array of plugin names
- */
-function checkPluginDependencies(plugins: string[]): void {
-  const missingDeps = new Set<string>();
-
-  for (const plugin of plugins) {
-    const requiredDeps = PLUGIN_DEPENDENCIES[plugin];
-    if (!requiredDeps) continue;
-
-    for (const dep of requiredDeps) {
-      try {
-        require.resolve(dep);
-      } catch {
-        missingDeps.add(dep);
-      }
-    }
-  }
-
-  if (missingDeps.size > 0) {
-    const missingDepsArray = Array.from(missingDeps);
-    const installCommand = generateInstallCommand(missingDepsArray);
-    console.warn(
-      kleur.yellow(
-        `⚠️  Warning: Some GraphQL codegen plugins require dependencies that aren't installed:\n` +
-          `   Missing: ${missingDepsArray.join(', ')}\n` +
-          `   Install them with: ${installCommand}\n` +
-          `   Or remove the corresponding plugins from your codegen config.`
-      )
-    );
-  }
+function emitMissingDepsWarning(missingDeps: string[]) {
+  if (missingDeps.length === 0) return;
+  const installCommand = generateInstallCommand(missingDeps);
+  console.warn(
+    kleur.yellow(formatMissingDepsWarning(missingDeps, installCommand))
+  );
 }
 
 /**
@@ -109,7 +78,8 @@ export async function generateTypes(
 
   try {
     // Check for missing plugin dependencies
-    checkPluginDependencies(mergedOptions.plugins);
+    const missingDeps = checkPluginDependencies(mergedOptions.plugins);
+    emitMissingDepsWarning(missingDeps);
 
     console.log(
       kleur.blue('Generating TypeScript types from GraphQL schema...')
