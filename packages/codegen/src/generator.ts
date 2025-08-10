@@ -323,7 +323,10 @@ export async function watchAndGenerate(
             currentConfig = initializeConfig(configResult.config);
             console.log(kleur.dim('🔧 Configuration reloaded'));
             // Refresh codegen options from the updated config so changes like outputFile/outputDir/documents are applied
-            currentOptions = deriveOptionsFromConfig(currentConfig, currentOptions);
+            currentOptions = deriveOptionsFromConfig(
+              currentConfig,
+              currentOptions
+            );
           }
         } catch (error) {
           console.warn(
@@ -340,7 +343,11 @@ export async function watchAndGenerate(
       const newSchema = await generateSchema({ config: currentConfig });
 
       // Generate types with the new schema
-      const result = await generateTypes(newSchema, currentConfig, currentOptions);
+      const result = await generateTypes(
+        newSchema,
+        currentConfig,
+        currentOptions
+      );
 
       if (result.success) {
         console.log(kleur.green('✅ Types regenerated successfully'));
