@@ -86,7 +86,7 @@ export function isOracleTask(task: RawTask): boolean {
 export const DEFAULT_MODEL_MAP: ModelMap = {
   HIGH: "gpt-5.3-codex",
   MED: "composer-2",
-  LOW: "auto-low",
+  LOW: "gpt-5.4-mini-low",
 };
 
 export function parseDAG(raw: unknown): DAG {

@@ -26,7 +26,7 @@
 
 import { readdir, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 import type { DAG, RawTask } from './dag.js';
 
@@ -149,16 +149,17 @@ const NEUTRALIZING_CUES = [
 const BACKTICK_RE = /`([^`\n]+)`/g;
 
 export async function loadWorkspaceFacts(cwd: string): Promise<WorkspaceFacts> {
+  const workspaceRoot = resolveWorkspaceRoot(cwd);
   const facts: WorkspaceFacts = {
     packageNames: new Set(),
     scriptsByPackage: new Map(),
     packageDirs: new Set(),
     packageNameByDir: new Map(),
-    cwd,
+    cwd: workspaceRoot,
   };
 
   for (const parent of ['packages', 'examples']) {
-    const parentAbs = join(cwd, parent);
+    const parentAbs = join(workspaceRoot, parent);
     if (!existsSync(parentAbs)) continue;
     const entries = await readdir(parentAbs, { withFileTypes: true });
     for (const entry of entries) {
@@ -189,6 +190,16 @@ export async function loadWorkspaceFacts(cwd: string): Promise<WorkspaceFacts> {
   }
 
   return facts;
+}
+
+function resolveWorkspaceRoot(cwd: string): string {
+  let current = resolve(cwd);
+  while (true) {
+    if (existsSync(join(current, 'pnpm-workspace.yaml'))) return current;
+    const parent = dirname(current);
+    if (parent === current) return resolve(cwd);
+    current = parent;
+  }
 }
 
 export function runDryCheck(dag: DAG, facts: WorkspaceFacts): DryCheckReport {

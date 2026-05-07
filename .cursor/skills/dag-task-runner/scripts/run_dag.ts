@@ -34,7 +34,7 @@
  *   --full-output-dir <path> Full per-task transcripts as `${taskId}.md`
  *                             (relative to --cwd unless absolute). Canvas
  *                             text stays capped; this captures the raw stream.
- *   --findings-dir <path>    JSON sidecars per (non-oracle) task as
+ *   --findings-dir <path>    JSON sidecars per task as
  *                             `${taskId}.findings.json` (or
  *                             `${taskId}.iter<n>.findings.json` for
  *                             convergence re-runs). Schema:
@@ -42,7 +42,11 @@
  *                                sections }`. When set, `--converge-on`
  *                             reads sidecars instead of re-parsing live
  *                             `resultText`. Relative paths resolve against
- *                             --cwd; oracle tasks are excluded.
+ *                             --cwd. Oracle tasks are included — their
+ *                             standardized `## Pass` / `## Command` /
+ *                             `## Exit code` / `## Stdout (tail)` /
+ *                             `## Stderr (tail)` headings round-trip
+ *                             through the same parser as regular tasks.
  *   --checkpoint-dir <path>  Directory for `kind: 'pause'` sentinel files
  *                             (default `.dag-runner/` under --cwd).
  *   --converge-on <task-id>  After the main DAG run, parse the named task's
@@ -110,8 +114,11 @@ interface CliArgs {
   fullOutputDir?: string;
   /**
    * When set, the runner emits per-task JSON sidecars summarizing each
-   * non-oracle task's parsed `## Heading` sections. Convergence loop reads
-   * these sidecars instead of re-parsing `resultText` when both flags are on.
+   * task's parsed `## Heading` sections — including `kind: 'oracle'`,
+   * which uses the same heading shape (`## Pass`, `## Command`, `## Exit
+   * code`, `## Stdout (tail)`, `## Stderr (tail)`) and rides through the
+   * same extractor. Convergence loop reads these sidecars instead of
+   * re-parsing `resultText` when both flags are on.
    */
   findingsDir?: string;
   debounceMs: number;
@@ -559,18 +566,19 @@ async function main(): Promise<void> {
 
   /**
    * Wraps `runOne` so a `--findings-dir` JSON sidecar is written after every
-   * non-oracle task completes. Sidecar errors are logged but never escalated
-   * — losing a sidecar must not abort the rest of the DAG.
+   * task completes — including `kind: 'oracle'`, whose `resultText` already
+   * follows the same `## Heading` pattern (`## Pass`, `## Command`, `## Exit
+   * code`, `## Stdout (tail)`, `## Stderr (tail)`) and so flows through the
+   * same `parseSections` extractor without a parallel implementation.
+   * Sidecar errors are logged but never escalated — losing a sidecar must
+   * not abort the rest of the DAG.
    */
   const dispatchTask = async (
     task: RawTask,
     overrides?: Partial<RunTaskOptions>
   ): Promise<void> => {
     await runOne(task, overrides);
-    if (
-      findingsAbsoluteDir !== undefined &&
-      effectiveTaskKind(task) !== 'oracle'
-    ) {
+    if (findingsAbsoluteDir !== undefined) {
       const ts = stateById.get(task.id);
       if (ts) {
         try {
@@ -617,8 +625,19 @@ async function main(): Promise<void> {
     const budgetHits = state.tasks.filter(
       (t) => t.status === 'BUDGET-EXCEEDED'
     );
+    // Errors win over budget hits because a hard ERROR is a louder signal
+    // than a budget overflow — wrappers keying on `runOutcome` should still
+    // see `'FAILED'` when any task crashed, even if convergence also burned
+    // through `--max-iterations`. When the run only tripped budget ceilings
+    // (the `--converge-on` exhaustion path or `dag.budget.maxTokensTotal`
+    // via `BudgetExceededError`), surface that distinctly so wrappers can
+    // branch on `BUDGET_EXCEEDED` without parsing log output.
     state.runOutcome =
-      errors.length > 0 || budgetHits.length > 0 ? 'FAILED' : 'SUCCESS';
+      errors.length > 0
+        ? 'FAILED'
+        : budgetHits.length > 0
+          ? 'BUDGET_EXCEEDED'
+          : 'SUCCESS';
     if (errors.length > 0 || budgetHits.length > 0) {
       const parts: string[] = [];
       if (errors.length > 0) {
@@ -675,10 +694,12 @@ async function main(): Promise<void> {
   } catch (err) {
     if (err instanceof BudgetExceededError) {
       // Halt the entire run: mark unfinished tasks as ERROR with a budget
-      // note, set runOutcome FAILED + clear runMessage, finalize the canvas,
-      // and exit with the dedicated EXIT_BUDGET_EXCEEDED so wrapper scripts
-      // can branch on this case without parsing log output.
-      await markRunTerminated(state, err.message, 'FAILED');
+      // note, set runOutcome BUDGET_EXCEEDED, finalize the canvas, and exit
+      // with the dedicated EXIT_BUDGET_EXCEEDED so wrapper scripts can
+      // branch on this case without parsing log output. Mirrors the
+      // `--converge-on` exhaustion path so both budget-overflow surfaces
+      // expose the same `runOutcome` enum value.
+      await markRunTerminated(state, err.message, 'BUDGET_EXCEEDED');
       writer.schedule(structuredCloneState(state));
       await writer.flush();
       finalized = true;
@@ -1215,12 +1236,13 @@ async function runConvergenceLoop(
       return;
     }
 
-    if (ancestorIds.size === 0) {
-      console.log(
-        `[dag-runner] converge-on ${convergeOn}: has issues but no ancestors to re-run — exiting loop`
-      );
-      return;
-    }
+    // No early-exit when `ancestorIds` is empty. `reExecIds` always contains
+    // the convergence task itself, so the re-execution rank is non-empty and
+    // the convergence task gets re-run with its own previous output stitched
+    // in as `extraContext`. This lets a single-task convergence DAG still
+    // reach the post-loop `BUDGET-EXCEEDED` branch instead of bailing here
+    // and leaving the convergence task in `FINISHED` despite the failing
+    // findings.
 
     // Enforce `budget.maxIterations` BEFORE starting the next re-run. The
     // convergence task's `iteration` counter advances by 1 per re-run; if
@@ -1283,9 +1305,53 @@ async function runConvergenceLoop(
     }
   }
 
-  console.log(
-    `[dag-runner] converge-on ${convergeOn}: exhausted --max-iterations=${maxIterations}; convergence task may still report issues`
+  // CLI --max-iterations exhausted. Re-parse the convergence task's latest
+  // output (preferring the post-run sidecar over live `resultText`, same as
+  // the loop body) and, if blockers / high-severity findings are still
+  // present, surface this as a budget-style terminal state on the
+  // convergence task. The existing main-run tally then bumps `runOutcome`
+  // to `'FAILED'` and the process exits with `EXIT_BUDGET_EXCEEDED` (4) —
+  // matching how `--budget` enforcement signals overflow today.
+  const finalSidecarText =
+    findingsDir !== undefined
+      ? await readFindingsSidecarAsText(
+          findingsDir,
+          convergeOn,
+          convergeTs.iteration ?? 0
+        )
+      : null;
+  const finalFindings = extractConvergenceFindings(
+    finalSidecarText ?? convergeTs.resultText
   );
+  if (finalFindings.hasIssues) {
+    const now = Date.now();
+    convergeTs.status = 'BUDGET-EXCEEDED';
+    convergeTs.finishedAt = now;
+    convergeTs.errorMessage = `Convergence loop exhausted --max-iterations=${maxIterations}; ${finalFindings.blockerLines.length} blocker(s), ${finalFindings.highSeverityLines.length} high-severity finding(s) still present`;
+    writer.schedule(structuredCloneState(state));
+    // Re-emit the convergence task's sidecar so downstream consumers see
+    // the terminal `BUDGET-EXCEEDED` status instead of the
+    // `FINISHED` snapshot taken by `dispatchTask` mid-loop. Failures here
+    // are logged but never escalated — the canvas + exit code remain
+    // authoritative.
+    if (findingsDir !== undefined) {
+      try {
+        await writeFindingsSidecar(findingsDir, convergeTs);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(
+          `[dag-runner] findings sidecar re-write failed for ${convergeOn} after BUDGET-EXCEEDED: ${msg}`
+        );
+      }
+    }
+    console.log(
+      `[dag-runner] converge-on ${convergeOn}: BUDGET-EXCEEDED — exhausted --max-iterations=${maxIterations} with ${finalFindings.blockerLines.length} blocker(s), ${finalFindings.highSeverityLines.length} high-severity finding(s)`
+    );
+  } else {
+    console.log(
+      `[dag-runner] converge-on ${convergeOn}: clean after ${maxIterations} re-iteration(s)`
+    );
+  }
 }
 
 function skipTask(
@@ -1315,7 +1381,7 @@ function skipTask(
 async function markRunTerminated(
   state: RunState,
   message: string,
-  outcome: 'FAILED' | 'INTERRUPTED'
+  outcome: 'FAILED' | 'INTERRUPTED' | 'BUDGET_EXCEEDED'
 ): Promise<void> {
   const now = Date.now();
   state.runOutcome = outcome;
@@ -1332,7 +1398,11 @@ async function markRunTerminated(
       continue;
     task.status = 'ERROR';
     task.errorMessage =
-      outcome === 'INTERRUPTED' ? 'Runner interrupted' : 'Runner terminated';
+      outcome === 'INTERRUPTED'
+        ? 'Runner interrupted'
+        : outcome === 'BUDGET_EXCEEDED'
+          ? 'Run halted: token budget exceeded'
+          : 'Runner terminated';
     task.finishedAt = now;
     if (task.startedAt !== undefined) {
       task.durationMs = now - task.startedAt;

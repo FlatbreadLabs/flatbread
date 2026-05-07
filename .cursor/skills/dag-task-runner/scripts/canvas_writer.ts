@@ -62,7 +62,21 @@ export interface RunState {
   title: string;
   startedAt: number;
   finishedAt?: number;
-  runOutcome?: "SUCCESS" | "FAILED" | "INTERRUPTED";
+  /**
+   * Aggregate outcome of the entire run.
+   *
+   * - `SUCCESS` — every task finished cleanly.
+   * - `FAILED` — at least one task ended in `ERROR`.
+   * - `INTERRUPTED` — the runner caught a fatal signal (SIGINT/SIGTERM/SIGHUP).
+   * - `BUDGET_EXCEEDED` — a budget ceiling was crossed: either the
+   *   `--converge-on` loop exhausted `--max-iterations` with the convergence
+   *   task still reporting blockers, OR `dag.budget.maxTokensTotal` was
+   *   exceeded. Both paths exit with `EXIT_BUDGET_EXCEEDED` (4) so
+   *   wrappers can branch on budget overflows without parsing logs. Hyphen
+   *   form (`BUDGET-EXCEEDED`) is reserved for the per-task `TaskStatus`;
+   *   the run-level field uses underscores to match the rest of this enum.
+   */
+  runOutcome?: "SUCCESS" | "FAILED" | "INTERRUPTED" | "BUDGET_EXCEEDED";
   runMessage?: string;
   tasks: TaskState[];
 }
@@ -217,7 +231,7 @@ interface RunState {
   title: string;
   startedAt: number;
   finishedAt?: number;
-  runOutcome?: 'SUCCESS' | 'FAILED' | 'INTERRUPTED';
+  runOutcome?: 'SUCCESS' | 'FAILED' | 'INTERRUPTED' | 'BUDGET_EXCEEDED';
   runMessage?: string;
   tasks: TaskState[];
 }`;
@@ -746,11 +760,15 @@ export default function DagRun(): JSX.Element {
       ? 'INTERRUPTED'
       : STATE.runOutcome === 'FAILED'
         ? 'FAILED'
-        : isFinal
-          ? 'COMPLETE'
-          : 'RUNNING';
+        : STATE.runOutcome === 'BUDGET_EXCEEDED'
+          ? 'BUDGET-EXCEEDED'
+          : isFinal
+            ? 'COMPLETE'
+            : 'RUNNING';
   const statusTone =
-    STATE.runOutcome === 'INTERRUPTED' || STATE.runOutcome === 'FAILED'
+    STATE.runOutcome === 'INTERRUPTED' ||
+    STATE.runOutcome === 'FAILED' ||
+    STATE.runOutcome === 'BUDGET_EXCEEDED'
       ? 'danger'
       : isFinal
         ? 'success'

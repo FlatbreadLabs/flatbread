@@ -35,7 +35,7 @@
       "id": "diag-cli",
       "depends_on": [],
       "complexity": "MED",
-      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files.\n\nDiagnose `packages/flatbread/src/cli/index.ts` and the GraphQL server wiring for the proposed change: <FILL IN>. Capture `flatbread start` behavior, codegen invocation, `/graphql` endpoint, port `5057` (HTTP) and `5058` (HTTPS sibling at `packages/flatbread/src/cli/index.ts:128-135`). Reference files as `path/to/file.ts:line`."
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files.\n\nDiagnose `packages/flatbread/src/cli/index.ts` and the GraphQL server wiring for the proposed change: <FILL IN>. Capture the Flatbread start command behavior, codegen invocation, `/graphql` endpoint, port `5057` (HTTP) and `5058` (HTTPS sibling at `packages/flatbread/src/cli/index.ts:128-135`). Reference files as `path/to/file.ts:line`."
     },
     {
       "id": "diag-examples",
@@ -141,7 +141,7 @@
       "id": "verify-cli",
       "depends_on": ["impl-cli", "verify-codegen"],
       "complexity": "MED",
-      "subtask_prompt": "You are acting as `flatbread-adversarial-reviewer`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Blockers`, `## High-severity findings`, `## Medium-severity findings`, `## Low-severity findings`, `## Residual risk`, `## Recommended next DAG tasks`.\n\nSmoke-test `flatbread start` and the `/graphql` endpoint on port `5057` (HTTP) and `5058` (HTTPS). This task is the sole port-5057 occupant of its rank — no other task may bind that port concurrently. Stop the server before exit so `browser-verify` can take the port. If anything fails, populate `## Recommended next DAG tasks` with `id` + one-line subtask_prompt sketches."
+      "subtask_prompt": "You are acting as `flatbread-adversarial-reviewer`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Blockers`, `## High-severity findings`, `## Medium-severity findings`, `## Low-severity findings`, `## Residual risk`, `## Recommended next DAG tasks`.\n\nSmoke-test `pnpm --filter nextjs dev` and the `/graphql` endpoint on port `5057` (HTTP) and `5058` (HTTPS). This task is the sole port-5057 occupant of its rank — no other task may bind that port concurrently. Stop the server before exit so `browser-verify` can take the port. If anything fails, populate `## Recommended next DAG tasks` with `id` + one-line subtask_prompt sketches."
     },
     {
       "id": "browser-verify",

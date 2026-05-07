@@ -1,12 +1,12 @@
 /**
  * `--findings-dir <path>` JSON sidecar writer + reader.
  *
- * After every non-oracle task finishes, the runner parses the task's final
- * `resultText` for `## Heading` blocks and writes a `<taskId>.findings.json`
- * (or `<taskId>.iter<n>.findings.json` once the convergence loop has bumped
- * the task's iteration past the original run). The schema is intentionally
- * tiny so downstream tools can lift findings into review surfaces without
- * re-implementing the prose parser:
+ * After every task finishes — including `kind: 'oracle'` — the runner parses
+ * the task's final `resultText` for `## Heading` blocks and writes a
+ * `<taskId>.findings.json` (or `<taskId>.iter<n>.findings.json` once the
+ * convergence loop has bumped the task's iteration past the original run).
+ * The schema is intentionally tiny so downstream tools can lift findings
+ * into review surfaces without re-implementing the prose parser:
  *
  *     {
  *       "taskId": "verify-codegen",
@@ -24,10 +24,16 @@
  * live `resultText` when `--findings-dir` is set on the same run, because the
  * sidecar is captured at task completion instead of mid-stream.
  *
- * Oracle tasks are deliberately excluded — their `resultText` is composed of
- * inline `## Pass: true` style headers whose values would round-trip to
- * empty-bodied sections, which is misleading. Oracle pass/fail surfaces
- * through `TaskState.status` and the canvas already.
+ * Oracle tasks ride the same code path: their standardized `## Pass: <bool>`
+ * / `## Command: <cmd>` / `## Exit code: <N>` / `## Stdout (tail):` /
+ * `## Stderr (tail):` headings round-trip through `parseSections` with the
+ * inline value preserved as part of the heading key (e.g. `"Pass: true"`)
+ * for the value-bearing rows and the bounded tail captured as the section
+ * body for the trailing two rows. Consumers that already know they are
+ * looking at an oracle sidecar can split on `": "` to recover key/value;
+ * generic consumers see the same `Record<string, string>` schema as
+ * regular tasks. `TaskState.status` (`FINISHED` vs `ERROR`) remains the
+ * authoritative pass/fail signal — sidecar `sections` are diagnostic.
  */
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
