@@ -1,5 +1,5 @@
 {
-  "title": "Flatbread Flow PMF Audit",
+  "title": "Flatbread Flow PMF Audit (no sub-sub-agents)",
   "models": {
     "HIGH": "claude-opus-4-7",
     "MED": "gpt-5.5",
@@ -10,42 +10,42 @@
       "id": "map-current-flow",
       "depends_on": [],
       "complexity": "MED",
-      "subtask_prompt": "Audit the Flatbread repository from the perspective of product flow and technical architecture. Map the current end-to-end flow: how developers define data sources, schemas, generated APIs/types, querying, examples, and runtime usage. Focus especially on where GraphQL is central or required. Read repo docs and source as needed. Do not edit files. Return: (1) concise flow map, (2) key files/packages with filepath references, (3) evidence of GraphQL coupling, (4) any obvious friction in the current developer path."
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files (frontmatter `readonly: true` is advisory in DAG runs). Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.\n\nMap the current end-to-end flow: how developers define content models, sources, transformers, generated APIs/types, querying, examples, and runtime usage. Distinguish where GraphQL is structurally required vs. one of several interfaces. Read repo docs and source as needed. For `## Current contract` capture: data source config shape, root query naming, ID/ref semantics, filter capabilities, generated TypeScript shape, CLI behavior, and obvious developer-path friction. Reference files as `path/to/file.ts:line`."
     },
     {
-      "id": "relational-flat-file-needs",
+      "id": "relational-content-needs",
       "depends_on": [],
       "complexity": "MED",
-      "subtask_prompt": "Independently audit what a developer who wants to store relational data in flat files would need from Flatbread. Compare those needs against what the repo appears to provide today. Consider schema definition, tables/records, foreign keys/references, joins, constraints, migrations/evolution, indexes, query ergonomics, write/update workflows, type safety, import/export, local-first workflows, and deployment. Do not edit files. Return prioritized needs, current support level, gaps, and filepath evidence where possible."
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files. Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.\n\nIndependently audit what a developer who wants Git-native relational content would need from Flatbread. Stay in Flatbread's vocabulary (`Content`, `BaseContentNode`, `Source`, `Transformer`, `Override` per `packages/core/src/types.ts`) — do NOT import database vocabulary like tables/foreign keys/joins/constraints/indexes/import-export. Compare needs against what the repo provides today: content collections, refs between collections, query/filter ergonomics, type safety, validation, the local edit/query loop, codegen, and example integration. Map needs to the schema's headings: `## Current contract` is what exists today, `## Proposed contract` is what would close the highest-leverage gaps, `## Migration impact` is what users would have to change, `## Validation plan` is how to prove each gap closure works."
     },
     {
       "id": "docs-onboarding-audit",
       "depends_on": [],
       "complexity": "LOW",
-      "subtask_prompt": "Audit the repository docs, examples, tests, package scripts, and README/onboarding path for a first-time developer. Focus on whether the product promise is obvious for relational flat-file storage, whether the first success path is short, and where the developer would hit GraphQL-specific concepts. Do not edit files. Return a concise onboarding/doc gap analysis with concrete references to files and commands if found."
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files. Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.\n\nAudit the repository docs, examples, tests, package scripts, and README/onboarding path for a first-time developer. Focus on whether the relational content promise is obvious, whether the first success path is short, and where the developer is forced into GraphQL-specific concepts before they get value. `## Current contract` is the documented promise + steps; `## Proposed contract` is what the docs should promise instead; `## Migration impact` is the docs/example surface area to touch."
     },
     {
       "id": "market-positioning-audit",
       "depends_on": [],
       "complexity": "MED",
-      "subtask_prompt": "Using the repo as the primary evidence plus general product reasoning, audit Flatbread's likely product-market fit for developers who want relational data stored in flat files. Think about adjacent alternatives such as SQLite, Prisma/Drizzle, ORMs, Airtable/Notion-like data, CMS/content layers, embedded databases, and static-site data pipelines. Do not browse unless available by default and do not edit files. Return the strongest ICP hypotheses, competing jobs-to-be-done, differentiation risks, and opportunities."
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files. Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.\n\nUsing the repo as the primary evidence plus general product reasoning, audit Flatbread's likely product-market fit for developers who want Git-native relational content for TypeScript apps. Consider adjacent alternatives: Contentlayer, Velite, Keystatic, MDX-based content layers, Sanity/Contentful-style headless CMSes, Astro Content Collections, and (only when honest) embedded databases like SQLite. `## Current contract` is the implicit positioning today; `## Proposed contract` is the sharpest defensible positioning; `## Migration impact` is what the README/landing copy would need to say."
     },
     {
       "id": "synthesize-pmf-gaps",
       "depends_on": [
         "map-current-flow",
-        "relational-flat-file-needs",
+        "relational-content-needs",
         "docs-onboarding-audit",
         "market-positioning-audit"
       ],
       "complexity": "HIGH",
-      "subtask_prompt": "Synthesize upstream audit findings into a prioritized product-market-fit gap report for Flatbread, specifically for developers who want to store relational data in flat files. Call out the core being limited to GraphQL if supported by evidence. For each gap include: severity, evidence, why it matters for PMF, and the product implication. Keep it direct and actionable. Do not edit files."
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner` operating as the rank-2 merge node. Follow its output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.\n\nSynthesize upstream audit findings into a prioritized PMF gap report. Call out GraphQL coupling honestly only when upstream evidence supports it. For each gap include: severity (P0/P1/P2), evidence (file refs from upstream), product implication, and the contract change it implies.\n\nIMPORTANT for survival under the 2000-char downstream stitch: keep `## Current contract` to a single 1-2 line summary so the gap table at the top of `## Proposed contract` lands within the first 2000 chars for `recommend-roadmap`."
     },
     {
       "id": "recommend-roadmap",
       "depends_on": ["synthesize-pmf-gaps"],
       "complexity": "HIGH",
-      "subtask_prompt": "Based on the synthesized PMF gaps, recommend a concise product direction and roadmap for Flatbread to better serve developers storing relational data in flat files. Include a sharper positioning statement, 3-5 product primitives to add or clarify, near-term experiments, and what not to build yet. Do not edit files."
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner` producing a roadmap recommendation. Follow its output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.\n\nBased on the synthesized PMF gaps, recommend a concise product direction and roadmap. Output a sharper positioning statement, 3-5 product primitives to add or clarify (each with file/package anchor), near-term experiments, and what not to build yet. `## Migration impact` should map each recommendation to the affected packages so a follow-up `flatbread-major-migration` DAG (template at `.cursor/skills/dag-task-runner/examples/flatbread/dag-schema-migration.json`) can be authored from this output without re-deriving scope."
     }
   ]
 }

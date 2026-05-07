@@ -61,3 +61,45 @@ Treat breaking work as a coordinated monorepo release across `flatbread`, `@flat
 - Do not publish breaking prereleases as accidental `latest`.
 - Add migration docs before release approval.
 - Confirm rollback and package coordination before publishing.
+
+## Default DAG Shape
+
+When this skill is run under `dag-task-runner`, use the topology in `flatbread-flow-agentic-workflows.md` ("DAG Topology" section). The canonical schema-migration shape — express the DAG via `depends_on` only; the runner computes ranks via Kahn topo-sort. The shape below is what `tsx run_dag.ts --init-only` produces for the starter template (21 tasks across 7 ranks):
+
+```
+rank 1  diag-schema, diag-resolvers, diag-types, diag-codegen, diag-cli,
+        diag-examples, diag-docs, diag-transformers, diag-source-plugins,
+        diag-config                                                 (planner; read-only)
+rank 2  contract-synth                                              (planner; merge)
+        — Human Checkpoint 1 — schema contract approval —
+rank 3  impl-core, impl-docs                                        (executor; depends_on contract-synth)
+rank 4  impl-codegen, impl-cli, verify-schema-snap, verify-readme   (executor + reviewer; depends_on impl-core / impl-docs)
+rank 5  impl-examples, verify-codegen                               (executor + reviewer; depends_on impl-codegen)
+rank 6  verify-cli                                                  (reviewer; binds port 5057, depends_on impl-cli + verify-codegen)
+rank 7  browser-verify                                              (browser-verifier; binds port 5057, depends_on impl-examples + verify-cli)
+```
+
+Two ranks bind port `5057` (`verify-cli`, `browser-verify`); they must remain on distinct ranks. A starter JSON lives at `.cursor/skills/dag-task-runner/examples/flatbread/dag-schema-migration.json`. Edit task contents and `depends_on`, then re-run `--init-only` to confirm the rank shape didn't regress.
+
+### Safe parallel cuts
+
+Same-rank-safe (do not write the same files):
+
+- All read-only diagnosis tasks.
+- `packages/transformer-*` that don't extend shared core types.
+- `docs/`, `README.md`, package READMEs, migration notes, changelog.
+- All validation tasks (each owns a different command).
+
+Must serialize (`depends_on` chain, never share a rank):
+
+- `schema.ts` → `arguments.ts` → `types.ts` inside `packages/core`.
+- `packages/core` → `packages/codegen`.
+- `packages/codegen` → `examples/nextjs/**/generated*`.
+- Any task running `flatbread start` against port `5057`.
+
+### DAG handoff requirements
+
+- Every task prompt must start with `You are acting as <agent-name>. Follow its responsibilities and output schema.` AND paste the agent's `## Output Schema For DAG Handoff` heading list verbatim. The runner only forwards `apiKey`/`model`/`cwd` to `Agent.create` (`run_dag.ts:482-486`), so `.cursor/agents/*` system prompts do not propagate.
+- The PMF framing line is mandatory only for tasks that touch positioning, README, docs, examples, or roadmap. Strip it from pure mechanical tasks (`diag-schema`, `diag-resolvers`, `diag-types`, `impl-codegen`, `verify-codegen`, etc.) — every line costs tokens in every prompt.
+- For tasks that need to "stay in scope", add a one-liner reminder that `readonly: true` and `tools:` frontmatter are advisory; reinforce `Do not edit files.` in the prompt body.
+- Subagent output must lead with the agent's `## Output Schema For DAG Handoff` headings. Group multi-file references (e.g. `packages/core/src/{generators,resolvers,types}.ts`) so the executor's `## Files changed` survives the 1800-char window.

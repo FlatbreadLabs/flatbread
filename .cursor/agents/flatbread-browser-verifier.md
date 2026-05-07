@@ -34,3 +34,18 @@ Return:
 - Mismatches between docs, generated files, and runtime behavior.
 - Screenshots or browser notes when available.
 - Residual risk if a browser check could not run.
+
+## Output Schema For DAG Handoff
+
+When invoked inside a DAG task, keep the response under ~1800 chars and lead with these exact `##` headings so downstream reviewer/parent tasks can find verification status after the 2000-char upstream stitch cap:
+
+```
+## Commands run
+## Routes checked
+## Observed behavior
+## Mismatches
+## Screenshots
+## Residual risk
+```
+
+`## Commands run` and `## Routes checked` are bullet lists. `## Mismatches` is the load-bearing section: each bullet is `expected (source) ↔ observed (route/file) — impact`. If the browser CLI was not available, `## Residual risk` must lead with `BROWSER UNAVAILABLE` so the parent can re-queue.

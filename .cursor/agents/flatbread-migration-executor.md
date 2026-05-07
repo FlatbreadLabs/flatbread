@@ -35,3 +35,18 @@ Return:
 - Checks run and results.
 - Checks not run and residual risk.
 - Any required human release approval.
+
+## Output Schema For DAG Handoff
+
+When invoked inside a DAG task, keep the response under ~1800 chars and lead with these exact `##` headings so downstream verifier/reviewer tasks can find them after the 2000-char upstream stitch cap:
+
+```
+## Files changed
+## Contract implemented
+## Checks run
+## Checks skipped
+## Residual risk
+## Release gate state
+```
+
+`## Files changed` must be a flat bullet list of `path/to/file.ts` paths. **Group adjacent siblings under brace expansion** to fit in the 1800-char budget — e.g. `packages/core/src/{generators/schema.ts,resolvers/arguments.ts,types.ts}` instead of three separate bullets. A real schema migration easily hits 25+ files; ungrouped lists overflow and starve the other five sections. `## Checks run` and `## Checks skipped` should each list `command → outcome` pairs so the next task can re-run only what it needs to.
