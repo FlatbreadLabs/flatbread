@@ -2,28 +2,58 @@
  * Entry point. Reads a DAG JSON file, runs each task as a Cursor SDK local
  * subagent in topological order, and writes live status into a `.canvas.tsx`.
  *
- * Two modes:
+ * Modes:
  *
- *   --init-only   Write the initial all-PENDING canvas to disk and exit.
- *                 Use this from the parent agent BEFORE launching the runner
- *                 so the canvas file exists and is clickable in chat.
+ *   --init-only        Write the initial all-PENDING canvas to disk and exit.
+ *                      Use this from the parent agent BEFORE launching the
+ *                      runner so the canvas file exists and is clickable in
+ *                      chat. Does not require `CURSOR_API_KEY`.
  *
- *   (default)     Run the DAG end-to-end. Reuses an existing canvas file at
- *                 the same path if one exists, otherwise creates it.
+ *   --dry-check-cmds   Walk every `subtask_prompt`, regex-extract shell
+ *                      commands, validate them against the workspace, print
+ *                      a structured report, exit 0 clean / 1 dirty. Does
+ *                      not require `CURSOR_API_KEY` and does not mutate the
+ *                      canvas file.
+ *
+ *   (default)          Run the DAG end-to-end. Reuses an existing canvas
+ *                      file at the same path if one exists, otherwise
+ *                      creates it.
  *
  * Path selection (in order of precedence):
  *   --canvas-path <abs-path>           Full canvas path (preferred for parent-managed flow).
  *   --canvas <name> [--canvases-dir]   Compose path from a name + dir.
  *
  * Other options:
- *   --cwd <dir>            Working dir each subagent operates in (default: process.cwd()).
- *   --models-file <path>   Optional JSON complexity -> model override map.
- *   --debounce <ms>        Canvas write debounce (default: 200).
- *   --task-timeout-ms <ms>   Per-task timeout guard (default: 20m).
+ *   --cwd <dir>              Working dir each subagent operates in (default: process.cwd()).
+ *   --models-file <path>     Optional JSON complexity -> model override map.
+ *   --debounce <ms>          Canvas write debounce (default: 200).
+ *   --task-timeout-ms <ms>   Per-task timeout guard (default: 20m). Also
+ *                            bounds how long a `kind: 'pause'` task waits
+ *                            for sentinel removal before it errors out.
  *   --stream-publish-ms <ms> Throttle live stream publishes (default: 500ms).
  *   --full-output-dir <path> Full per-task transcripts as `${taskId}.md`
  *                             (relative to --cwd unless absolute). Canvas
  *                             text stays capped; this captures the raw stream.
+ *   --findings-dir <path>    JSON sidecars per (non-oracle) task as
+ *                             `${taskId}.findings.json` (or
+ *                             `${taskId}.iter<n>.findings.json` for
+ *                             convergence re-runs). Schema:
+ *                             `{ taskId, iteration, status, durationMs,
+ *                                sections }`. When set, `--converge-on`
+ *                             reads sidecars instead of re-parsing live
+ *                             `resultText`. Relative paths resolve against
+ *                             --cwd; oracle tasks are excluded.
+ *   --checkpoint-dir <path>  Directory for `kind: 'pause'` sentinel files
+ *                             (default `.dag-runner/` under --cwd).
+ *   --converge-on <task-id>  After the main DAG run, parse the named task's
+ *                             `resultText` for `## Blockers` /
+ *                             `## High-severity findings`. If non-empty,
+ *                             re-execute the entire upstream ancestor
+ *                             subtree with the convergence task's latest
+ *                             result appended as context, then re-execute
+ *                             the convergence task. Loop until clean or
+ *                             --max-iterations is reached.
+ *   --max-iterations <N>     Convergence iteration ceiling (default: 3).
  */
 
 import { Agent } from '@cursor/sdk';
@@ -41,25 +71,61 @@ import {
   createModelResolver,
   validateModelMap,
 } from './dag.js';
-import type { ModelMapOverride, RawTask } from './dag.js';
+import type {
+  DAG,
+  DAGBudget,
+  ModelMapOverride,
+  RawTask,
+  TaskKind,
+} from './dag.js';
 import {
   CanvasWriter,
   initialRunState,
   type RunState,
   type TaskState,
 } from './canvas_writer.js';
+import {
+  formatDryCheckReport,
+  loadWorkspaceFacts,
+  runDryCheck,
+} from './dry_check_cmds.js';
+import { runPauseTask } from './pause_task.js';
+import { runOracleTask } from './oracle_task.js';
+import {
+  readFindingsSidecarAsText,
+  writeFindingsSidecar,
+} from './findings_sidecar.js';
+import {
+  buildConvergenceContext,
+  extractConvergenceFindings,
+  transitiveAncestors,
+} from './converge_loop.js';
 
 interface CliArgs {
   dag: string;
+  /** Empty in `--dry-check-cmds` mode (no canvas is written). */
   canvasPath: string;
   cwd: string;
   modelsFile?: string;
   fullOutputDir?: string;
+  /**
+   * When set, the runner emits per-task JSON sidecars summarizing each
+   * non-oracle task's parsed `## Heading` sections. Convergence loop reads
+   * these sidecars instead of re-parsing `resultText` when both flags are on.
+   */
+  findingsDir?: string;
   debounceMs: number;
   taskTimeoutMs: number;
   streamPublishMs: number;
   streamIdleTimeoutMs: number;
   initOnly: boolean;
+  dryCheckCmds: boolean;
+  /** Absolute dir for `kind: 'pause'` sentinel files. Defaults to `<cwd>/.dag-runner`. */
+  checkpointDir: string;
+  /** When set, the runner re-executes ancestors after the named task to converge on a clean review. */
+  convergeOn?: string;
+  /** Convergence iteration ceiling (default 3). */
+  maxIterations: number;
 }
 
 interface RunnerTaskRun {
@@ -91,19 +157,26 @@ function parseArgs(argv: string[]): CliArgs {
   if (!args.dag) throw new Error('--dag <path> is required');
 
   const cwd = args.cwd ?? process.cwd();
-  let canvasPath = args['canvas-path'];
-  if (!canvasPath) {
-    if (!args.canvas) {
-      throw new Error(
-        'Provide either --canvas-path <abs-path> or --canvas <name>'
-      );
+  const initOnly = args['init-only'] === 'true';
+  const dryCheckCmds = args['dry-check-cmds'] === 'true';
+
+  // --canvas-path / --canvas are not required in --dry-check-cmds mode (we
+  // never touch the canvas file). Other modes still require a canvas target.
+  let canvasPath = args['canvas-path'] ?? '';
+  if (!dryCheckCmds) {
+    if (!canvasPath) {
+      if (!args.canvas) {
+        throw new Error(
+          'Provide either --canvas-path <abs-path> or --canvas <name>'
+        );
+      }
+      const canvasesDir = args['canvases-dir'] ?? defaultCanvasesDir(cwd);
+      const stem = args.canvas.replace(/\.canvas\.tsx$/, '');
+      canvasPath = join(canvasesDir, `${stem}.canvas.tsx`);
     }
-    const canvasesDir = args['canvases-dir'] ?? defaultCanvasesDir(cwd);
-    const stem = args.canvas.replace(/\.canvas\.tsx$/, '');
-    canvasPath = join(canvasesDir, `${stem}.canvas.tsx`);
-  }
-  if (!canvasPath.endsWith('.canvas.tsx')) {
-    canvasPath = canvasPath.replace(/\.tsx$/, '') + '.canvas.tsx';
+    if (!canvasPath.endsWith('.canvas.tsx')) {
+      canvasPath = canvasPath.replace(/\.tsx$/, '') + '.canvas.tsx';
+    }
   }
 
   const debounceMs = parsePositiveInt(args.debounce, 200, '--debounce');
@@ -122,8 +195,23 @@ function parseArgs(argv: string[]): CliArgs {
     DEFAULT_STREAM_IDLE_TIMEOUT_MS,
     '--stream-idle-timeout-ms'
   );
-  const initOnly = args['init-only'] === 'true';
+  const maxIterations = parsePositiveInt(
+    args['max-iterations'],
+    DEFAULT_MAX_ITERATIONS,
+    '--max-iterations'
+  );
   const fullOutputRaw = args['full-output-dir'];
+  const findingsRaw = args['findings-dir'];
+  const checkpointRaw = args['checkpoint-dir'];
+  const checkpointDir = isAbsolute(checkpointRaw ?? '')
+    ? (checkpointRaw as string)
+    : resolve(cwd, checkpointRaw ?? '.dag-runner');
+  const convergeRaw = args['converge-on'];
+  const convergeOn =
+    convergeRaw !== undefined && convergeRaw !== '' && convergeRaw !== 'true'
+      ? convergeRaw
+      : undefined;
+
   return {
     dag: args.dag,
     canvasPath,
@@ -135,11 +223,21 @@ function parseArgs(argv: string[]): CliArgs {
       fullOutputRaw !== 'true'
         ? fullOutputRaw
         : undefined,
+    findingsDir:
+      findingsRaw !== undefined &&
+      findingsRaw !== '' &&
+      findingsRaw !== 'true'
+        ? findingsRaw
+        : undefined,
     debounceMs,
     taskTimeoutMs,
     streamPublishMs,
     streamIdleTimeoutMs,
     initOnly,
+    dryCheckCmds,
+    checkpointDir,
+    convergeOn,
+    maxIterations,
   };
 }
 
@@ -247,6 +345,20 @@ function defaultCanvasesDir(cwd: string): string {
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
 
+  // --dry-check-cmds: short-circuit before any SDK / canvas / API-key work.
+  // The contract here is "given a DAG file and a workspace, would these
+  // shell commands actually run?" — pure parse + filesystem inspection.
+  if (args.dryCheckCmds) {
+    const dagPath = resolveAgainstCwd(args.dag, args.cwd);
+    const dryRaw = JSON.parse(await readFile(dagPath, 'utf8'));
+    const dryDag = parseDAG(dryRaw);
+    const facts = await loadWorkspaceFacts(args.cwd);
+    const report = runDryCheck(dryDag, facts);
+    console.log(formatDryCheckReport(report));
+    process.exitCode = report.isDirty ? 1 : 0;
+    return;
+  }
+
   if (!args.initOnly) {
     ensureCursorRipgrepPathEnv();
   }
@@ -278,6 +390,12 @@ async function main(): Promise<void> {
   );
   const ranks = computeRanks(dag);
 
+  if (args.convergeOn && !dag.tasks.some((t) => t.id === args.convergeOn)) {
+    throw new Error(
+      `--converge-on "${args.convergeOn}" is not a task id in DAG "${dag.title}"`
+    );
+  }
+
   const fullOutputAbsoluteDir =
     args.fullOutputDir !== undefined
       ? resolveAgainstCwd(args.fullOutputDir, args.cwd)
@@ -285,6 +403,15 @@ async function main(): Promise<void> {
   if (fullOutputAbsoluteDir && !args.initOnly) {
     await mkdir(fullOutputAbsoluteDir, { recursive: true });
     console.log(`[dag-runner] full-output-dir → ${fullOutputAbsoluteDir}`);
+  }
+
+  const findingsAbsoluteDir =
+    args.findingsDir !== undefined
+      ? resolveAgainstCwd(args.findingsDir, args.cwd)
+      : undefined;
+  if (findingsAbsoluteDir && !args.initOnly) {
+    await mkdir(findingsAbsoluteDir, { recursive: true });
+    console.log(`[dag-runner] findings-dir → ${findingsAbsoluteDir}`);
   }
 
   const state = initialRunState(dag, modelForComplexity);
@@ -366,6 +493,98 @@ async function main(): Promise<void> {
   process.on('SIGTERM', onSignal);
   process.on('SIGHUP', onSignal);
 
+  const baseRunOptions: RunTaskOptions = {
+    taskTimeoutMs: args.taskTimeoutMs,
+    streamPublishMs: args.streamPublishMs,
+    streamIdleTimeoutMs: args.streamIdleTimeoutMs,
+    fullOutputAbsoluteDir,
+    framing: dag.framing,
+  };
+
+  const runOne = (
+    task: RawTask,
+    overrides?: Partial<RunTaskOptions>
+  ): Promise<void> => {
+    const failedDeps = task.depends_on.filter((depId) => {
+      const dep = stateById.get(depId);
+      return dep !== undefined && dep.status === 'ERROR';
+    });
+    if (failedDeps.length > 0) {
+      return skipTask(
+        task,
+        stateById,
+        state,
+        writer,
+        failedDeps,
+        fullOutputAbsoluteDir
+      );
+    }
+    if (effectiveTaskKind(task) === 'pause') {
+      const ts = stateById.get(task.id)!;
+      return runPauseTask(
+        task,
+        ts,
+        {
+          checkpointDir: args.checkpointDir,
+          taskTimeoutMs: overrides?.taskTimeoutMs ?? args.taskTimeoutMs,
+        },
+        {
+          state,
+          writer,
+          cloneState: structuredCloneState,
+        }
+      );
+    }
+    if (effectiveTaskKind(task) === 'oracle') {
+      const ts = stateById.get(task.id)!;
+      return runOracleTask(
+        task,
+        ts,
+        {
+          cwd: args.cwd,
+          taskTimeoutMs: overrides?.taskTimeoutMs ?? args.taskTimeoutMs,
+        },
+        {
+          state,
+          writer,
+          cloneState: structuredCloneState,
+        }
+      );
+    }
+    return runTask(task, stateById, state, writer, args.cwd, {
+      ...baseRunOptions,
+      ...(overrides ?? {}),
+    });
+  };
+
+  /**
+   * Wraps `runOne` so a `--findings-dir` JSON sidecar is written after every
+   * non-oracle task completes. Sidecar errors are logged but never escalated
+   * — losing a sidecar must not abort the rest of the DAG.
+   */
+  const dispatchTask = async (
+    task: RawTask,
+    overrides?: Partial<RunTaskOptions>
+  ): Promise<void> => {
+    await runOne(task, overrides);
+    if (
+      findingsAbsoluteDir !== undefined &&
+      effectiveTaskKind(task) !== 'oracle'
+    ) {
+      const ts = stateById.get(task.id);
+      if (ts) {
+        try {
+          await writeFindingsSidecar(findingsAbsoluteDir, ts);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error(
+            `[dag-runner] findings sidecar write failed for ${task.id}: ${msg}`
+          );
+        }
+      }
+    }
+  };
+
   try {
     for (let rankIdx = 0; rankIdx < ranks.length; rankIdx++) {
       const rank = ranks[rankIdx];
@@ -374,39 +593,43 @@ async function main(): Promise<void> {
           .map((t) => t.id)
           .join(', ')}`
       );
-      await Promise.all(
-        rank.map((task) => {
-          const failedDeps = task.depends_on.filter((depId) => {
-            const dep = stateById.get(depId);
-            return dep !== undefined && dep.status === 'ERROR';
-          });
-          if (failedDeps.length > 0) {
-            return skipTask(
-              task,
-              stateById,
-              state,
-              writer,
-              failedDeps,
-              fullOutputAbsoluteDir
-            );
-          }
-          return runTask(task, stateById, state, writer, args.cwd, {
-            taskTimeoutMs: args.taskTimeoutMs,
-            streamPublishMs: args.streamPublishMs,
-            streamIdleTimeoutMs: args.streamIdleTimeoutMs,
-            fullOutputAbsoluteDir,
-          });
-        })
-      );
+      await Promise.all(rank.map((task) => dispatchTask(task)));
+      enforceTokenBudget(state, dag.budget);
+    }
+
+    if (args.convergeOn) {
+      await runConvergenceLoop({
+        convergeOn: args.convergeOn,
+        maxIterations: args.maxIterations,
+        dag,
+        ranks,
+        stateById,
+        dispatchTask,
+        writer,
+        state,
+        findingsDir: findingsAbsoluteDir,
+        budget: dag.budget,
+      });
     }
 
     state.finishedAt = Date.now();
     const errors = state.tasks.filter((t) => t.status === 'ERROR');
-    state.runOutcome = errors.length > 0 ? 'FAILED' : 'SUCCESS';
-    if (errors.length > 0) {
-      state.runMessage = `Some tasks failed: ${errors
-        .map((e) => e.id)
-        .join(', ')}`;
+    const budgetHits = state.tasks.filter(
+      (t) => t.status === 'BUDGET-EXCEEDED'
+    );
+    state.runOutcome =
+      errors.length > 0 || budgetHits.length > 0 ? 'FAILED' : 'SUCCESS';
+    if (errors.length > 0 || budgetHits.length > 0) {
+      const parts: string[] = [];
+      if (errors.length > 0) {
+        parts.push(`failed: ${errors.map((e) => e.id).join(', ')}`);
+      }
+      if (budgetHits.length > 0) {
+        parts.push(
+          `budget exceeded: ${budgetHits.map((b) => b.id).join(', ')}`
+        );
+      }
+      state.runMessage = parts.join(' · ');
     }
     writer.schedule(structuredCloneState(state));
     await writer.flush();
@@ -420,14 +643,29 @@ async function main(): Promise<void> {
       );
     }
 
+    const succeeded =
+      state.tasks.length - errors.length - budgetHits.length;
     console.log(
-      `[dag-runner] done — ${state.tasks.length - errors.length}/${
-        state.tasks.length
-      } succeeded in ${formatMs(state.finishedAt - state.startedAt)}`
+      `[dag-runner] done — ${succeeded}/${state.tasks.length} succeeded in ${formatMs(
+        state.finishedAt - state.startedAt
+      )}`
     );
     if (errors.length > 0) {
       console.log(`[dag-runner] errors: ${errors.map((e) => e.id).join(', ')}`);
       process.exitCode = 1;
+    }
+    if (budgetHits.length > 0) {
+      console.log(
+        `[dag-runner] budget-exceeded: ${budgetHits
+          .map((b) => b.id)
+          .join(', ')}`
+      );
+      // Distinct from the generic ERROR exit (1) so wrapper scripts can
+      // branch on budget. We only upgrade `0`; a prior ERROR-driven `1`
+      // wins because the user almost certainly wants the louder failure.
+      if (!process.exitCode) {
+        process.exitCode = EXIT_BUDGET_EXCEEDED;
+      }
     }
     if (fullOutputAbsoluteDir) {
       console.log(
@@ -435,6 +673,18 @@ async function main(): Promise<void> {
       );
     }
   } catch (err) {
+    if (err instanceof BudgetExceededError) {
+      // Halt the entire run: mark unfinished tasks as ERROR with a budget
+      // note, set runOutcome FAILED + clear runMessage, finalize the canvas,
+      // and exit with the dedicated EXIT_BUDGET_EXCEEDED so wrapper scripts
+      // can branch on this case without parsing log output.
+      await markRunTerminated(state, err.message, 'FAILED');
+      writer.schedule(structuredCloneState(state));
+      await writer.flush();
+      finalized = true;
+      console.error(`[dag-runner] ${err.message}`);
+      process.exit(EXIT_BUDGET_EXCEEDED);
+    }
     const msg = err instanceof Error ? err.message : String(err);
     await markRunTerminated(state, `Runner failed: ${msg}`, 'FAILED');
     writer.schedule(structuredCloneState(state));
@@ -475,9 +725,23 @@ async function runTask(
   writer.schedule(structuredCloneState(state));
 
   const upstreamContext = buildUpstreamContext(task, stateById);
-  const stitched = upstreamContext
-    ? `${upstreamContext}\n\n---\n\n${task.subtask_prompt}`
-    : task.subtask_prompt;
+  const promptParts: string[] = [];
+  if (upstreamContext) promptParts.push(upstreamContext);
+  if (options.extraContext && options.extraContext.trim() !== '') {
+    promptParts.push(options.extraContext.trim());
+  }
+  promptParts.push(task.subtask_prompt);
+  const stitchedBody = promptParts.join('\n\n---\n\n');
+  // DAG-level `framing` is prepended verbatim before the upstream-context /
+  // extra-context / subtask-prompt stitch so every task in the DAG inherits
+  // the same product framing without authors having to repeat it. Only
+  // `kind: 'task'` reaches this code path; pause + oracle tasks dispatch
+  // through their own runners and intentionally ignore framing.
+  const framing =
+    options.framing && options.framing.trim() !== ''
+      ? options.framing.trimEnd() + '\n\n'
+      : '';
+  const stitched = framing + stitchedBody;
 
   const agent = await Agent.create({
     apiKey: process.env.CURSOR_API_KEY!,
@@ -639,6 +903,23 @@ interface RunTaskOptions {
   streamPublishMs: number;
   streamIdleTimeoutMs: number;
   fullOutputAbsoluteDir?: string;
+  /**
+   * Stitched in BETWEEN the upstream-context block and the task's own
+   * `subtask_prompt`. Used by `--converge-on` re-runs to inject the latest
+   * adversarial-reviewer findings so re-executed ancestors can address them.
+   */
+  extraContext?: string;
+  /**
+   * DAG-level `framing` string. When set, prepended verbatim with `\n\n` to
+   * the stitched prompt of every `kind: 'task'` invocation before the agent
+   * is called. Pause and oracle tasks ignore framing (they never run an LLM).
+   */
+  framing?: string;
+}
+
+/** Single source of truth for the "undefined kind === task" rule. */
+function effectiveTaskKind(task: RawTask): TaskKind {
+  return task.kind ?? 'task';
 }
 
 /** Cap on per-task `resultText` size — applies to live streaming and final state. */
@@ -655,6 +936,58 @@ const WAIT_AFTER_STREAM_GRACE_MS = 15 * 1000;
 const UPSTREAM_SNIPPET_CAP = 2000;
 /** Raised listener ceiling to avoid false-positive AbortSignal warnings from SDK internals. */
 const ABORT_SIGNAL_LISTENER_LIMIT = 100;
+/** Default cap on `--converge-on` re-execution attempts after the initial run. */
+const DEFAULT_MAX_ITERATIONS = 3;
+/**
+ * Process exit code reserved for `dag.budget.maxTokensTotal` enforcement.
+ * Exit `0` is success, `1` is generic failure (existing behavior),
+ * `130` / `143` are signal-driven (existing behavior); `4` is the new
+ * "halt because the run blew its token budget" code so wrapper scripts
+ * can distinguish budget-driven halts from genuine errors.
+ */
+const EXIT_BUDGET_EXCEEDED = 4;
+
+/** Sentinel error used to unwind the rank loop when `dag.budget.maxTokensTotal` is exceeded. */
+class BudgetExceededError extends Error {
+  readonly tokensUsed: number;
+  readonly tokensLimit: number;
+  constructor(tokensUsed: number, tokensLimit: number) {
+    super(
+      `Token budget exceeded: ${tokensUsed} tokens used > maxTokensTotal=${tokensLimit}`
+    );
+    this.name = 'BudgetExceededError';
+    this.tokensUsed = tokensUsed;
+    this.tokensLimit = tokensLimit;
+  }
+}
+
+function totalTokensUsed(state: RunState): number {
+  let total = 0;
+  for (const t of state.tasks) {
+    total += (t.inputTokens ?? 0) + (t.outputTokens ?? 0);
+  }
+  return total;
+}
+
+/**
+ * Throws `BudgetExceededError` when the cumulative `inputTokens +
+ * outputTokens` across every task in `state` has crossed
+ * `dag.budget.maxTokensTotal`. Called after each rank's `Promise.all`
+ * completes (so all tasks in the rank have finalized usage numbers).
+ *
+ * Pause + oracle tasks contribute 0 tokens — they have no LLM usage —
+ * which is intentional: their cost is wall-clock, not tokens.
+ */
+function enforceTokenBudget(
+  state: RunState,
+  budget: DAGBudget | undefined
+): void {
+  if (budget?.maxTokensTotal === undefined) return;
+  const used = totalTokensUsed(state);
+  if (used > budget.maxTokensTotal) {
+    throw new BudgetExceededError(used, budget.maxTokensTotal);
+  }
+}
 
 class TimeoutError extends Error {
   constructor(message: string) {
@@ -801,6 +1134,160 @@ async function writeRunIndexMarkdown(
   await writeFile(join(dir, '_index.md'), lines.join('\n'), 'utf8');
 }
 
+interface RunConvergenceLoopOptions {
+  convergeOn: string;
+  maxIterations: number;
+  dag: DAG;
+  ranks: RawTask[][];
+  stateById: Map<string, TaskState>;
+  dispatchTask: (
+    task: RawTask,
+    overrides?: Partial<RunTaskOptions>
+  ) => Promise<void>;
+  writer: CanvasWriter;
+  state: RunState;
+  /**
+   * When set, the loop reads the convergence task's `findings-dir` JSON
+   * sidecar instead of re-parsing live `resultText`. Falls back to the live
+   * text on missing/malformed sidecars so a stale findings dir cannot wedge
+   * the loop.
+   */
+  findingsDir?: string;
+  /**
+   * DAG-level budget. `budget.maxIterations` adds a soft cap on top of the
+   * `--max-iterations` CLI flag — the loop aborts and marks the convergence
+   * task `BUDGET-EXCEEDED` when the next re-run would push the convergence
+   * task's iteration past this value. `budget.maxTokensTotal` is enforced
+   * after every rank's `Promise.all` (same as the main run loop) and halts
+   * the entire run via `BudgetExceededError`.
+   */
+  budget?: DAGBudget;
+}
+
+/**
+ * Implements the `--converge-on` re-execution loop. Iteration 0 happened in
+ * the main rank loop. Each subsequent iteration:
+ *
+ *   1. Parses the convergence task's current `resultText` for `## Blockers`
+ *      and `## High-severity findings`. If both sections are empty, exit.
+ *   2. Resets the convergence task and every transitive ancestor back to
+ *      `PENDING` and bumps their `iteration` counter.
+ *   3. Re-executes the affected subset of the DAG in the original
+ *      topological order, threading the convergence task's previous
+ *      `resultText` into ancestor prompts as `extraContext`.
+ *   4. Re-executes the convergence task itself.
+ */
+async function runConvergenceLoop(
+  opts: RunConvergenceLoopOptions
+): Promise<void> {
+  const { convergeOn, maxIterations, dag, ranks, stateById, dispatchTask, writer, state, findingsDir, budget } = opts;
+  const convergeTs = stateById.get(convergeOn);
+  if (!convergeTs) {
+    // Defensive — main() already validates this, but the loop must not crash.
+    console.error(
+      `[dag-runner] --converge-on "${convergeOn}" not found in state; skipping convergence loop`
+    );
+    return;
+  }
+
+  const ancestorIds = transitiveAncestors(convergeOn, dag);
+  const reExecIds = new Set<string>([...ancestorIds, convergeOn]);
+  // Filter the original ranks to just the re-executed tasks. Drop empty
+  // ranks. Order is preserved → topological correctness is preserved.
+  const reExecRanks: RawTask[][] = ranks
+    .map((rank) => rank.filter((t) => reExecIds.has(t.id)))
+    .filter((rank) => rank.length > 0);
+
+  for (let iter = 1; iter <= maxIterations; iter++) {
+    // Prefer the findings-dir JSON sidecar when one was written for the most
+    // recent run of the convergence task; the sidecar is captured at task
+    // completion, so it survives the streaming buffer churn that can occasionally
+    // truncate live `resultText` mid-section. Falls back to live text on miss.
+    const sidecarText =
+      findingsDir !== undefined
+        ? await readFindingsSidecarAsText(findingsDir, convergeOn, convergeTs.iteration ?? 0)
+        : null;
+    const findings = extractConvergenceFindings(sidecarText ?? convergeTs.resultText);
+    if (!findings.hasIssues) {
+      console.log(
+        `[dag-runner] converge-on ${convergeOn}: clean — no Blockers / High-severity findings after ${iter - 1} re-iteration(s)`
+      );
+      return;
+    }
+
+    if (ancestorIds.size === 0) {
+      console.log(
+        `[dag-runner] converge-on ${convergeOn}: has issues but no ancestors to re-run — exiting loop`
+      );
+      return;
+    }
+
+    // Enforce `budget.maxIterations` BEFORE starting the next re-run. The
+    // convergence task's `iteration` counter advances by 1 per re-run; if
+    // the next re-run would push it past the budgeted ceiling, we abort
+    // here and surface that on the canvas via the new BUDGET-EXCEEDED
+    // status. The CLI `--max-iterations` flag is enforced by the loop
+    // header above; the budget is an additional, DAG-author-controlled
+    // ceiling that can be tighter than the runner default.
+    if (
+      budget?.maxIterations !== undefined &&
+      iter > budget.maxIterations
+    ) {
+      const now = Date.now();
+      convergeTs.status = 'BUDGET-EXCEEDED';
+      convergeTs.finishedAt = now;
+      convergeTs.errorMessage = `Convergence iteration ${iter} would exceed budget.maxIterations=${budget.maxIterations}`;
+      writer.schedule(structuredCloneState(state));
+      console.log(
+        `[dag-runner] converge-on ${convergeOn}: BUDGET-EXCEEDED — iteration ${iter} would exceed budget.maxIterations=${budget.maxIterations}`
+      );
+      return;
+    }
+
+    console.log(
+      `[dag-runner] converge iteration ${iter}/${maxIterations}: ${findings.blockerLines.length} blocker(s), ${findings.highSeverityLines.length} high-severity finding(s) — re-running ${reExecIds.size} task(s)`
+    );
+
+    const convergenceContext = buildConvergenceContext(
+      convergeOn,
+      iter,
+      convergeTs.resultText
+    );
+
+    // Reset state on every re-executed task. We deliberately do not clear
+    // resultText here — leaving the previous result visible avoids a "blink
+    // to empty" UX in the canvas while re-execution is still ramping up.
+    for (const id of reExecIds) {
+      const ts = stateById.get(id);
+      if (!ts) continue;
+      ts.iteration = (ts.iteration ?? 0) + 1;
+      ts.status = 'PENDING';
+      ts.startedAt = undefined;
+      ts.finishedAt = undefined;
+      ts.durationMs = undefined;
+      ts.errorMessage = undefined;
+      ts.inputTokens = undefined;
+      ts.outputTokens = undefined;
+    }
+    writer.schedule(structuredCloneState(state));
+
+    for (const rank of reExecRanks) {
+      await Promise.all(
+        rank.map((task) =>
+          dispatchTask(task, { extraContext: convergenceContext })
+        )
+      );
+      // Mirror the main run loop's budget check so re-execution can also
+      // halt the entire run via BudgetExceededError → exit code 4.
+      enforceTokenBudget(state, budget);
+    }
+  }
+
+  console.log(
+    `[dag-runner] converge-on ${convergeOn}: exhausted --max-iterations=${maxIterations}; convergence task may still report issues`
+  );
+}
+
 function skipTask(
   task: RawTask,
   stateById: Map<string, TaskState>,
@@ -835,7 +1322,14 @@ async function markRunTerminated(
   state.runMessage = message;
   state.finishedAt = now;
   for (const task of state.tasks) {
-    if (task.status === 'FINISHED' || task.status === 'ERROR') continue;
+    // BUDGET-EXCEEDED is a terminal status the convergence loop sets
+    // explicitly; do not stomp it into a generic ERROR on shutdown.
+    if (
+      task.status === 'FINISHED' ||
+      task.status === 'ERROR' ||
+      task.status === 'BUDGET-EXCEEDED'
+    )
+      continue;
     task.status = 'ERROR';
     task.errorMessage =
       outcome === 'INTERRUPTED' ? 'Runner interrupted' : 'Runner terminated';
@@ -862,7 +1356,7 @@ function buildUpstreamContext(
     if (!dep) continue;
     const status = dep.status;
     const snippet = dep.resultText
-      ? truncate(dep.resultText, UPSTREAM_SNIPPET_CAP)
+      ? truncateUpstreamSnippet(dep.resultText, UPSTREAM_SNIPPET_CAP)
       : dep.errorMessage
       ? `(failed: ${dep.errorMessage})`
       : '(no output)';
@@ -871,6 +1365,111 @@ function buildUpstreamContext(
     lines.push('');
   }
   return lines.join('\n');
+}
+
+/**
+ * Section-aware truncation for upstream parent results stitched into a
+ * downstream prompt.
+ *
+ * The runner used to slice `resultText` at `UPSTREAM_SNIPPET_CAP`, which
+ * could decapitate the most actionable section (e.g. `## Proposed contract`)
+ * mid-sentence whenever earlier sections were verbose. This helper instead:
+ *
+ *   1. Parses the text into `## Heading` blocks (`### …` and below stay
+ *      attached to their parent).
+ *   2. If fewer than 2 `## ` headings are present (unstructured output),
+ *      falls back to the existing `slice(…)` truncate so we never make
+ *      legacy / freeform output worse.
+ *   3. Otherwise drops whole sections in `SECTION_DROP_PRIORITY` order
+ *      (`Current contract` first, `Proposed contract` last) until the
+ *      rendered text fits within the cap. The leading section in the
+ *      original document is *always* preserved — it is the parent task's
+ *      primary output (`## Proposed contract`, `## Files changed`, etc.)
+ *      and dropping it would defeat the whole context-stitching pattern.
+ *   4. If sections we are willing to drop are exhausted and the text still
+ *      exceeds the cap, slices the remaining rendered text as a last
+ *      resort. This guarantees we always return something that fits.
+ *
+ * Section name comparisons are case-insensitive and trim-tolerant; only
+ * the names listed in `SECTION_DROP_PRIORITY` are eligible to be dropped.
+ * Any other heading (e.g. agent-specific sections like `## Files changed`,
+ * `## Blockers`) is treated as preserve-by-default for safety.
+ */
+function truncateUpstreamSnippet(text: string, cap: number): string {
+  if (text.length <= cap) return text;
+  const sections = parseUpstreamSections(text);
+  if (sections.length < 2) return truncate(text, cap);
+  // Walk the drop priority list once. Each pass that succeeds rebuilds the
+  // rendered text and re-checks the cap; we stop as soon as we fit.
+  const kept = sections.slice();
+  for (const dropTarget of SECTION_DROP_PRIORITY) {
+    if (renderUpstreamSections(kept).length <= cap) break;
+    // Preserve index 0 (the leading section) regardless of name match.
+    const idx = kept.findIndex(
+      (s, i) => i > 0 && s.normalized === dropTarget
+    );
+    if (idx === -1) continue;
+    kept.splice(idx, 1);
+  }
+  const rendered = renderUpstreamSections(kept);
+  if (rendered.length <= cap) return rendered;
+  return truncate(rendered, cap);
+}
+
+interface UpstreamSection {
+  /** Original heading text minus the leading `## `, trimmed. */
+  heading: string;
+  /** Lower-cased trimmed heading for drop-priority comparisons. */
+  normalized: string;
+  /** Body lines below the heading (sub-headings stay attached). */
+  bodyLines: string[];
+}
+
+/**
+ * Drop priority used by `truncateUpstreamSnippet`. Last entry is the last
+ * one we will give up — i.e. `## Proposed contract` is the highest-value
+ * section and is preserved as long as anything else can be dropped first.
+ */
+const SECTION_DROP_PRIORITY: readonly string[] = [
+  'current contract',
+  'validation plan',
+  'human checkpoints',
+  'migration impact',
+  'proposed contract',
+];
+
+/** Mirrors converge_loop's heading regex: `## …` only, never `### …`. */
+const UPSTREAM_HEADING_RE = /^##(?!#)\s*(.+?)\s*$/;
+
+function parseUpstreamSections(text: string): UpstreamSection[] {
+  const sections: UpstreamSection[] = [];
+  const lines = text.split(/\r?\n/);
+  let current: UpstreamSection | null = null;
+  for (const line of lines) {
+    const m = UPSTREAM_HEADING_RE.exec(line);
+    if (m) {
+      if (current) sections.push(current);
+      const heading = m[1].trim();
+      current = {
+        heading,
+        normalized: heading.toLowerCase(),
+        bodyLines: [],
+      };
+    } else if (current) {
+      current.bodyLines.push(line);
+    }
+    // Lines before the first `## ` heading are intentionally dropped — the
+    // section-aware truncate only applies to outputs that lead with a
+    // heading; freeform preludes fall through to `truncate()`.
+  }
+  if (current) sections.push(current);
+  return sections;
+}
+
+function renderUpstreamSections(sections: UpstreamSection[]): string {
+  return sections
+    .map((s) => `## ${s.heading}\n${s.bodyLines.join('\n')}`.trimEnd())
+    .join('\n\n');
 }
 
 function truncate(s: string, n: number): string {

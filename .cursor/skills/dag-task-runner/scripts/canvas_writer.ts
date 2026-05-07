@@ -10,9 +10,15 @@
 
 import { writeFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
-import type { Complexity, DAG } from "./dag.js";
+import type { Complexity, DAG, TaskKind } from "./dag.js";
 
-export type TaskStatus = "PENDING" | "RUNNING" | "FINISHED" | "ERROR";
+export type TaskStatus =
+  | "PENDING"
+  | "RUNNING"
+  | "FINISHED"
+  | "ERROR"
+  | "AWAITING_APPROVAL"
+  | "BUDGET-EXCEEDED";
 
 export interface TaskState {
   id: string;
@@ -21,6 +27,16 @@ export interface TaskState {
   subtask_prompt: string;
   status: TaskStatus;
   model: string;
+  /** `'task'` (default), `'pause'`, or `'oracle'`. Undefined is normalized to `'task'`. */
+  kind?: TaskKind;
+  /**
+   * Shell command for `kind: 'oracle'` tasks. Surfaced in the canvas so the
+   * gate's pass/fail criterion is visible without reading the result body.
+   * Undefined for every other kind.
+   */
+  command?: string;
+  /** Regex source the oracle's output is matched against (defaults to `.*`). */
+  expect?: string;
   startedAt?: number;
   finishedAt?: number;
   resultText?: string;
@@ -28,6 +44,18 @@ export interface TaskState {
   inputTokens?: number;
   outputTokens?: number;
   durationMs?: number;
+  /**
+   * Convergence-loop re-execution counter. 0/undefined = original run; bumped
+   * by 1 each time `--converge-on` re-runs this task to address upstream
+   * reviewer findings.
+   */
+  iteration?: number;
+  /**
+   * Absolute path to the sentinel file the runner created for a `kind: 'pause'`
+   * task. Set when status === `AWAITING_APPROVAL`; persisted afterwards so the
+   * canvas can show "approved by removing <path>".
+   */
+  checkpointPath?: string;
 }
 
 export interface RunState {
@@ -50,6 +78,14 @@ export function initialRunState(dag: DAG, modelFor: (c: Complexity) => string): 
       subtask_prompt: t.subtask_prompt,
       status: "PENDING",
       model: modelFor(t.complexity),
+      // Normalize undefined kind → 'task' so downstream consumers (canvas
+      // template, runner dispatcher) never have to ?? again.
+      kind: t.kind ?? "task",
+      // Surface oracle-only fields so the canvas can render the gate's
+      // command / expectation without reading the streamed result body.
+      ...(t.kind === "oracle"
+        ? { command: t.command, expect: t.expect }
+        : {}),
     })),
   };
 }
@@ -146,8 +182,15 @@ import {
 } from 'cursor/canvas';
 import { useEffect, useMemo, useState } from 'react';
 
-type TaskStatus = 'PENDING' | 'RUNNING' | 'FINISHED' | 'ERROR';
+type TaskStatus =
+  | 'PENDING'
+  | 'RUNNING'
+  | 'FINISHED'
+  | 'ERROR'
+  | 'AWAITING_APPROVAL'
+  | 'BUDGET-EXCEEDED';
 type Complexity = 'HIGH' | 'MED' | 'LOW';
+type TaskKind = 'task' | 'pause' | 'oracle';
 
 interface TaskState {
   id: string;
@@ -156,6 +199,9 @@ interface TaskState {
   subtask_prompt: string;
   status: TaskStatus;
   model: string;
+  kind?: TaskKind;
+  command?: string;
+  expect?: string;
   startedAt?: number;
   finishedAt?: number;
   resultText?: string;
@@ -163,6 +209,8 @@ interface TaskState {
   inputTokens?: number;
   outputTokens?: number;
   durationMs?: number;
+  iteration?: number;
+  checkpointPath?: string;
 }
 
 interface RunState {
@@ -178,6 +226,12 @@ const BODY = String.raw`const NODE_W = 200;
 const NODE_H = 64;
 const SCROLL_STORAGE_KEY = 'dag-task-runner:scroll-y';
 const COMPLETED_DOT_COLOR = '#22c55e';
+const AWAITING_DOT_COLOR = '#f59e0b';
+const BUDGET_DOT_COLOR = '#ef4444';
+
+function effectiveKind(t: TaskState): TaskKind {
+  return t.kind ?? 'task';
+}
 
 function pillToneFor(status: TaskStatus): 'neutral' | 'info' | 'success' | 'warning' {
   switch (status) {
@@ -188,6 +242,10 @@ function pillToneFor(status: TaskStatus): 'neutral' | 'info' | 'success' | 'warn
     case 'FINISHED':
       return 'success';
     case 'ERROR':
+      return 'warning';
+    case 'AWAITING_APPROVAL':
+      return 'warning';
+    case 'BUDGET-EXCEEDED':
       return 'warning';
   }
 }
@@ -315,6 +373,10 @@ function DAGGraph({
         return theme.fill.secondary;
       case 'ERROR':
         return theme.fill.secondary;
+      case 'AWAITING_APPROVAL':
+        return theme.fill.secondary;
+      case 'BUDGET-EXCEEDED':
+        return theme.fill.secondary;
     }
   }
 
@@ -328,6 +390,10 @@ function DAGGraph({
         return COMPLETED_DOT_COLOR;
       case 'ERROR':
         return theme.stroke.primary;
+      case 'AWAITING_APPROVAL':
+        return AWAITING_DOT_COLOR;
+      case 'BUDGET-EXCEEDED':
+        return BUDGET_DOT_COLOR;
     }
   }
 
@@ -341,6 +407,10 @@ function DAGGraph({
         return '●';
       case 'ERROR':
         return '×';
+      case 'AWAITING_APPROVAL':
+        return '⏸';
+      case 'BUDGET-EXCEEDED':
+        return '⊘';
     }
   }
 
@@ -354,6 +424,10 @@ function DAGGraph({
         return COMPLETED_DOT_COLOR;
       case 'ERROR':
         return theme.text.primary;
+      case 'AWAITING_APPROVAL':
+        return AWAITING_DOT_COLOR;
+      case 'BUDGET-EXCEEDED':
+        return BUDGET_DOT_COLOR;
     }
   }
 
@@ -432,7 +506,11 @@ function DAGGraph({
               fontSize={10.5}
               fill={theme.text.secondary}
             >
-              {t.complexity} · {t.model}
+              {effectiveKind(t) === 'pause'
+                ? 'human checkpoint'
+                : effectiveKind(t) === 'oracle'
+                  ? 'oracle gate'
+                  : t.complexity + ' · ' + t.model}
             </text>
             <text
               x={12}
@@ -441,10 +519,17 @@ function DAGGraph({
               fill={theme.text.tertiary}
             >
               {t.status === 'FINISHED' || t.status === 'ERROR'
-                ? formatDuration(t.durationMs)
+                ? (effectiveKind(t) === 'oracle'
+                    ? (t.status === 'FINISHED' ? 'pass · ' : 'fail · ') + formatDuration(t.durationMs)
+                    : formatDuration(t.durationMs)) +
+                  ((t.iteration ?? 0) > 0 ? ' · iter ' + t.iteration : '')
                 : t.status === 'RUNNING'
-                  ? 'running…'
-                  : 'pending'}
+                  ? 'running…' + ((t.iteration ?? 0) > 0 ? ' · iter ' + t.iteration : '')
+                  : t.status === 'AWAITING_APPROVAL'
+                    ? 'awaiting approval'
+                    : t.status === 'BUDGET-EXCEEDED'
+                      ? 'budget exceeded' + ((t.iteration ?? 0) > 0 ? ' · iter ' + t.iteration : '')
+                      : 'pending'}
             </text>
           </g>
         );
@@ -485,21 +570,70 @@ function TaskList({
             <CardBody>
               <Stack gap={8}>
                 <Text tone="secondary" size="small">
-                  Model {t.model}
+                  {effectiveKind(t) === 'pause'
+                    ? 'Human checkpoint'
+                    : effectiveKind(t) === 'oracle'
+                      ? 'Oracle gate (deterministic — no model)'
+                      : 'Model ' + t.model}
                   {t.depends_on.length > 0 ? ' · depends on ' + t.depends_on.join(', ') : ''}
                   {t.durationMs !== undefined ? ' · ' + formatDuration(t.durationMs) : ''}
                   {t.inputTokens !== undefined || t.outputTokens !== undefined
                     ? ' · ' + (t.inputTokens ?? 0) + ' in / ' + (t.outputTokens ?? 0) + ' out tokens'
                     : ''}
+                  {(t.iteration ?? 0) > 0 ? ' · iteration ' + t.iteration : ''}
                 </Text>
-                <Text size="small">
-                  <Text as="span" weight="semibold">Prompt: </Text>
-                  {t.subtask_prompt}
-                </Text>
+                {effectiveKind(t) === 'pause' && t.checkpointPath ? (
+                  <Stack gap={4}>
+                    <Text size="small" weight="semibold">
+                      {t.status === 'AWAITING_APPROVAL' ? 'Pending approval — delete this file to release the gate:' : 'Approved checkpoint:'}
+                    </Text>
+                    <pre
+                      style={{
+                        margin: 0,
+                        padding: 8,
+                        borderRadius: 6,
+                        background: theme.bg.elevated,
+                        border: '1px solid ' + (t.status === 'AWAITING_APPROVAL' ? AWAITING_DOT_COLOR : theme.stroke.tertiary),
+                        color: theme.text.primary,
+                        fontSize: 12,
+                        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-all',
+                      }}
+                    >
+                      rm '{t.checkpointPath}'
+                    </pre>
+                  </Stack>
+                ) : null}
+                {effectiveKind(t) === 'oracle' ? (
+                  <Stack gap={4}>
+                    <Text size="small">
+                      <Text as="span" weight="semibold">Command: </Text>
+                      <Text as="span">{t.command ?? '(no command)'}</Text>
+                    </Text>
+                    <Text size="small">
+                      <Text as="span" weight="semibold">Expect: </Text>
+                      <Text as="span">/{t.expect ?? '.*'}/</Text>
+                    </Text>
+                  </Stack>
+                ) : (
+                  <Text size="small">
+                    <Text as="span" weight="semibold">{effectiveKind(t) === 'pause' ? 'Description: ' : 'Prompt: '}</Text>
+                    {t.subtask_prompt || (effectiveKind(t) === 'pause' ? '(no description)' : '')}
+                  </Text>
+                )}
                 {t.resultText ? (
                   <Stack gap={4}>
                     <Text size="small" weight="semibold">
-                      {t.status === 'RUNNING' ? 'Streaming output' : 'Result'}
+                      {t.status === 'RUNNING'
+                        ? 'Streaming output'
+                        : t.status === 'AWAITING_APPROVAL'
+                          ? 'Pause status'
+                          : effectiveKind(t) === 'oracle'
+                            ? t.status === 'FINISHED'
+                              ? 'Oracle pass'
+                              : 'Oracle fail'
+                            : 'Result'}
                     </Text>
                     <pre
                       style={{
@@ -579,10 +713,31 @@ export default function DagRun(): JSX.Element {
   const counts = STATE.tasks.reduce(
     (acc, t) => {
       acc.total += 1;
-      acc[t.status.toLowerCase() as 'pending' | 'running' | 'finished' | 'error'] += 1;
+      switch (t.status) {
+        case 'PENDING':
+          acc.pending += 1;
+          break;
+        case 'RUNNING':
+          acc.running += 1;
+          break;
+        case 'FINISHED':
+          acc.finished += 1;
+          break;
+        case 'ERROR':
+          acc.error += 1;
+          break;
+        case 'AWAITING_APPROVAL':
+          acc.awaiting += 1;
+          break;
+        case 'BUDGET-EXCEEDED':
+          // Surfaced via the per-task pill / glyph; bucketed under errored
+          // here so the 6-column summary grid stays stable.
+          acc.error += 1;
+          break;
+      }
       return acc;
     },
-    { total: 0, pending: 0, running: 0, finished: 0, error: 0 },
+    { total: 0, pending: 0, running: 0, finished: 0, error: 0, awaiting: 0 },
   );
   const tokens = totalTokens(STATE);
   const isFinal = STATE.finishedAt !== undefined;
@@ -623,10 +778,11 @@ export default function DagRun(): JSX.Element {
         ) : null}
       </Stack>
 
-      <Grid columns={5} gap={12}>
+      <Grid columns={6} gap={12}>
         <Stat value={String(counts.total)} label="Total" />
         <Stat value={String(counts.pending)} label="Pending" />
         <Stat value={String(counts.running)} label="Running" tone={counts.running > 0 ? 'info' : undefined} />
+        <Stat value={String(counts.awaiting)} label="Awaiting" tone={counts.awaiting > 0 ? 'warning' : undefined} />
         <Stat value={String(counts.finished)} label="Finished" tone={counts.finished > 0 ? 'success' : undefined} />
         <Stat value={String(counts.error)} label="Errored" tone={counts.error > 0 ? 'danger' : undefined} />
       </Grid>

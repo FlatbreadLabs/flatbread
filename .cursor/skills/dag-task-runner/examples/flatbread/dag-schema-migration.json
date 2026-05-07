@@ -1,5 +1,6 @@
 {
   "title": "Flatbread schema-breaking migration (no sub-sub-agents; pause at human checkpoint after contract-synth)",
+  "framing": "Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.",
   "models": {
     "HIGH": "claude-opus-4-7",
     "MED": "gpt-5.5",
@@ -40,13 +41,13 @@
       "id": "diag-examples",
       "depends_on": [],
       "complexity": "MED",
-      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files. Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.\n\nDiagnose `examples/nextjs` for the proposed change: <FILL IN>. Capture which generated GraphQL documents and types the example consumes, which queries would need to change, and which README/docs snippets would drift. Note: `examples/nextjs/package.json:7` defines `pnpm codegen` as `flatbread codegen --watch` (hangs in DAG runs); list non-`--watch` invocations instead."
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files.\n\nDiagnose `examples/nextjs` for the proposed change: <FILL IN>. Capture which generated GraphQL documents and types the example consumes, which queries would need to change, and which README/docs snippets would drift. Note: `examples/nextjs/package.json:7` defines `pnpm codegen` as `flatbread codegen --watch` (hangs in DAG runs); list non-`--watch` invocations instead."
     },
     {
       "id": "diag-docs",
       "depends_on": [],
       "complexity": "LOW",
-      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files. Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.\n\nDiagnose `README.md` and each `packages/*/README.md` for the proposed change: <FILL IN>. List every snippet, command, or claim that would no longer be true. Reference files as `path/to/file.md:line`."
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files.\n\nDiagnose `README.md` and each `packages/*/README.md` for the proposed change: <FILL IN>. List every snippet, command, or claim that would no longer be true. Reference files as `path/to/file.md:line`."
     },
     {
       "id": "diag-transformers",
@@ -81,19 +82,24 @@
         "diag-config"
       ],
       "complexity": "HIGH",
-      "subtask_prompt": "You are acting as `flatbread-architecture-planner` operating as the rank-2 contract synthesis node. Follow its output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.\n\nMerge upstream diagnoses into a single before/after contract for IDs, refs, filters, root query names, generated TypeScript, config shape, transformer/source contracts, and CLI behavior. `## Proposed contract` must lead with an executor-actionable diff (changed file paths grouped by directory, changed export/type names, changed CLI flags) before any prose. `## Human checkpoints` must explicitly call out Schema Contract approval before any executor runs.\n\nIMPORTANT for survival under the 2000-char downstream stitch: keep `## Current contract` to a single 1-2 line summary so the executor-actionable diff at the top of `## Proposed contract` lands within the first 2000 chars for every downstream `impl-*` task.\n\n*** HUMAN CHECKPOINT — pause the runner here. The implementation ranks below should only execute after a human approves the synthesized contract. ***"
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner` operating as the rank-2 contract synthesis node. Follow its output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`.\n\nMerge upstream diagnoses into a single before/after contract for IDs, refs, filters, root query names, generated TypeScript, config shape, transformer/source contracts, and CLI behavior. `## Proposed contract` must lead with the literal markdown table `| field | before | after | breaking? | files_to_change |` as the first content under the heading, followed by executor-actionable details (changed file paths grouped by directory, changed export/type names, changed CLI flags) before any prose. `## Human checkpoints` must explicitly call out Schema Contract approval before any executor runs.\n\nIMPORTANT for survival under the 2000-char downstream stitch: keep `## Current contract` to a single 1-2 line summary so the executor-actionable diff at the top of `## Proposed contract` lands within the first 2000 chars for every downstream `impl-*` task."
+    },
+    {
+      "id": "wait-contract-approval",
+      "depends_on": ["contract-synth"],
+      "kind": "pause"
     },
     {
       "id": "impl-core",
-      "depends_on": ["contract-synth"],
+      "depends_on": ["wait-contract-approval"],
       "complexity": "HIGH",
       "subtask_prompt": "You are acting as `flatbread-migration-executor`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Files changed`, `## Contract implemented`, `## Checks run`, `## Checks skipped`, `## Residual risk`, `## Release gate state`. Group multi-file references under brace expansion (e.g. `packages/core/src/{generators/schema.ts,resolvers/arguments.ts,types.ts}`).\n\nImplement the contract from `contract-synth` exactly. Do not expand scope. Touch only `packages/core/src/**`. Serialize edits in this order inside this single task: schema.ts → arguments.ts → types.ts. Run `pnpm --filter @flatbread/core build` to confirm the package compiles (note: `packages/core/package.json` has no `test` script as of this writing) and lint edited files. Record the build outcome under `## Checks run`."
     },
     {
       "id": "impl-docs",
-      "depends_on": ["contract-synth"],
+      "depends_on": ["wait-contract-approval"],
       "complexity": "MED",
-      "subtask_prompt": "You are acting as `flatbread-migration-executor`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Files changed`, `## Contract implemented`, `## Checks run`, `## Checks skipped`, `## Residual risk`, `## Release gate state`. Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.\n\nUpdate `README.md`, every `packages/*/README.md`, and any migration notes the contract requires. Touch only `*.md` files — no code edits. Group changes under brace expansion in `## Files changed`."
+      "subtask_prompt": "You are acting as `flatbread-migration-executor`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Files changed`, `## Contract implemented`, `## Checks run`, `## Checks skipped`, `## Residual risk`, `## Release gate state`.\n\nUpdate `README.md`, every `packages/*/README.md`, and any migration notes the contract requires. Touch only `*.md` files — no code edits. Group changes under brace expansion in `## Files changed`."
     },
     {
       "id": "impl-codegen",
@@ -111,7 +117,7 @@
       "id": "impl-examples",
       "depends_on": ["impl-codegen"],
       "complexity": "LOW",
-      "subtask_prompt": "You are acting as `flatbread-migration-executor`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Files changed`, `## Contract implemented`, `## Checks run`, `## Checks skipped`, `## Residual risk`, `## Release gate state`. Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.\n\nRegenerate `examples/nextjs` GraphQL artifacts via `pnpm --filter nextjs exec flatbread codegen` (the `--filter` is required because `flatbread.config.js` only exists at `examples/nextjs/flatbread.config.js`; `loadConfig` does not search up). Do NOT use `pnpm codegen`, which is `--watch` per `examples/nextjs/package.json:7` and would hang the DAG node. Update any example source file whose imports or queries broke. Group generated paths under brace expansion in `## Files changed`."
+      "subtask_prompt": "You are acting as `flatbread-migration-executor`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Files changed`, `## Contract implemented`, `## Checks run`, `## Checks skipped`, `## Residual risk`, `## Release gate state`.\n\nRegenerate `examples/nextjs` GraphQL artifacts via `pnpm --filter nextjs exec flatbread codegen` (the `--filter` is required because `flatbread.config.js` only exists at `examples/nextjs/flatbread.config.js`; `loadConfig` does not search up). Do NOT use `pnpm codegen`, which is `--watch` per `examples/nextjs/package.json:7` and would hang the DAG node. Update any example source file whose imports or queries broke. Group generated paths under brace expansion in `## Files changed`."
     },
     {
       "id": "verify-schema-snap",
@@ -129,7 +135,7 @@
       "id": "verify-readme",
       "depends_on": ["impl-docs"],
       "complexity": "LOW",
-      "subtask_prompt": "You are acting as `flatbread-adversarial-reviewer`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Blockers`, `## High-severity findings`, `## Medium-severity findings`, `## Low-severity findings`, `## Residual risk`, `## Recommended next DAG tasks`. Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.\n\nDiff every README example and command against actual runtime behavior implied by the synthesized contract. Flag stale snippets, broken links, and any positioning drift. If anything fails, populate `## Recommended next DAG tasks` with `id` + one-line subtask_prompt sketches."
+      "subtask_prompt": "You are acting as `flatbread-adversarial-reviewer`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Blockers`, `## High-severity findings`, `## Medium-severity findings`, `## Low-severity findings`, `## Residual risk`, `## Recommended next DAG tasks`.\n\nDiff every README example and command against actual runtime behavior implied by the synthesized contract. Flag stale snippets, broken links, and any positioning drift. If anything fails, populate `## Recommended next DAG tasks` with `id` + one-line subtask_prompt sketches."
     },
     {
       "id": "verify-cli",
@@ -141,7 +147,7 @@
       "id": "browser-verify",
       "depends_on": ["impl-examples", "verify-cli"],
       "complexity": "MED",
-      "subtask_prompt": "You are acting as `flatbread-browser-verifier`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Commands run`, `## Routes checked`, `## Observed behavior`, `## Mismatches`, `## Screenshots`, `## Residual risk`. Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.\n\nRun `pnpm browser:doctor` first to fail fast if the browser CLI is unavailable. Start the example dev server in the background: `pnpm --filter nextjs dev` (binds port `5057` HTTP, `5058` HTTPS per `packages/flatbread/src/cli/index.ts:128-135`); the upstream `verify-cli` task already stopped its server before exit, so the port is free. Wait for the server to come up before driving `pnpm exec agent-browser`. Verify documented queries and rendered example pages still match READMEs. Tear the dev server down before completing the task. If the browser CLI is unavailable, your `## Residual risk` MUST lead with `BROWSER UNAVAILABLE` so the parent re-queues. This is the terminal release-gate node."
+      "subtask_prompt": "You are acting as `flatbread-browser-verifier`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Commands run`, `## Routes checked`, `## Observed behavior`, `## Mismatches`, `## Screenshots`, `## Residual risk`.\n\nRun `pnpm browser:doctor` first to fail fast if the browser CLI is unavailable. Start the example dev server in the background: `pnpm --filter nextjs dev` (binds port `5057` HTTP, `5058` HTTPS per `packages/flatbread/src/cli/index.ts:128-135`); the upstream `verify-cli` task already stopped its server before exit, so the port is free. Wait for the server to come up before driving `pnpm exec agent-browser`. Verify documented queries and rendered example pages still match READMEs. Tear the dev server down before completing the task. If the browser CLI is unavailable, your `## Residual risk` MUST lead with `BROWSER UNAVAILABLE` so the parent re-queues. This is the terminal release-gate node."
     }
   ]
 }
