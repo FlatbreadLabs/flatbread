@@ -65,7 +65,7 @@ Schema-breaking work is blocked until all relevant checks are accounted for:
 - GraphQL schema snapshots or equivalent before/after inspection.
 - Generated TypeScript output for `packages/codegen` and `examples/nextjs`.
 - CLI codegen and server behavior, including `flatbread start`, `/graphql`, and port `5057` where applicable.
-- Example app behavior for Next.js and any touched framework example.
+- Example app behavior for Next.js and any touched framework example, preferably verified with `pnpm exec agent-browser`.
 - README and package README examples.
 - Version train across `flatbread`, `@flatbread/core`, `@flatbread/config`, `@flatbread/codegen`, transformers, and examples.
 - Dist-tag strategy for prereleases; do not accidentally publish breaking prereleases as `latest`.
@@ -78,7 +78,7 @@ Use focused agents when the task is large enough to benefit from separation:
 - `flatbread-architecture-planner`: read-only contract diagnosis and implementation plan.
 - `flatbread-adversarial-reviewer`: review planned or completed changes for regressions and missing validation.
 - `flatbread-migration-executor`: implement approved migration steps only after a contract exists.
-- `flatbread-browser-verifier`: verify examples and dev loop behavior from a user-facing browser perspective.
+- `flatbread-browser-verifier`: verify examples and dev loop behavior from a user-facing browser perspective using the repo-pinned `agent-browser` CLI.
 
 For schema-breaking work, use the `flatbread-major-migration` project skill and follow its checkpoints.
 

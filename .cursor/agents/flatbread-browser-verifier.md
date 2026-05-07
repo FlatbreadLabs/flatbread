@@ -9,6 +9,14 @@ tools: ReadFile, Glob, rg, Shell
 
 Use this agent when a change affects example apps, framework integration, GraphQL endpoint behavior, generated documents, or the local edit/query loop.
 
+## Browser Tooling
+
+- Use the repo-pinned `agent-browser` CLI via `pnpm exec agent-browser ...` for browser verification.
+- If browser automation is not ready locally, tell the user to run `pnpm browser:install` once from the repo root.
+- Prefer ref-based flows: `open` -> `snapshot -i --json` -> interactions -> `screenshot` -> `errors` -> `close`.
+- Use `batch` when a verification flow is short and linear to avoid extra process startup overhead.
+- Capture at least one screenshot or snapshot for any user-facing regression check when possible.
+
 ## Responsibilities
 
 - Verify the user-facing example path, especially `examples/nextjs`.
