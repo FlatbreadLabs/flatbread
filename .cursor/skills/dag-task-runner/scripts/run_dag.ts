@@ -58,6 +58,16 @@
  *                             the convergence task. Loop until clean or
  *                             --max-iterations is reached.
  *   --max-iterations <N>     Convergence iteration ceiling (default: 3).
+ *   --state-path <path>      Persist resumable runner state after each rank.
+ *                             Defaults to `.dag-runner/run-state.json` when
+ *                             --restart-on-runner-change is enabled.
+ *   --resume-state <path>    Resume from a previously persisted state file.
+ *   --restart-on-runner-change
+ *                             Detect edits to runner runtime files after rank
+ *                             boundaries / convergence re-runs, persist state,
+ *                             mark the canvas RESTARTING_RUNNER, and exit 75
+ *                             so `run_dag_supervisor.ts` can relaunch under the
+ *                             newly edited source.
  */
 
 import { Agent } from '@cursor/sdk';
@@ -68,6 +78,7 @@ import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
 import {
   parseDAG,
@@ -104,6 +115,16 @@ import {
   extractConvergenceFindings,
   transitiveAncestors,
 } from './converge_loop.js';
+import {
+  EXIT_RUNNER_RESTART,
+  changedRunnerRuntimeFiles,
+  readPersistedRunState,
+  snapshotRunnerRuntimeFiles,
+  writePersistedRunState,
+  type RunnerFileSnapshot,
+} from './self_hosting.js';
+
+const SCRIPTS_DIR = dirname(fileURLToPath(import.meta.url));
 
 interface CliArgs {
   dag: string;
@@ -133,6 +154,12 @@ interface CliArgs {
   convergeOn?: string;
   /** Convergence iteration ceiling (default 3). */
   maxIterations: number;
+  /** Optional resumable state path. If omitted, no state file is written. */
+  statePath?: string;
+  /** Load prior `RunState` from this path before executing ranks. */
+  resumeState?: string;
+  /** Exit 75 after persisting state when runner runtime files change. */
+  restartOnRunnerChange: boolean;
 }
 
 interface RunnerTaskRun {
@@ -218,6 +245,21 @@ function parseArgs(argv: string[]): CliArgs {
     convergeRaw !== undefined && convergeRaw !== '' && convergeRaw !== 'true'
       ? convergeRaw
       : undefined;
+  const restartOnRunnerChange = args['restart-on-runner-change'] === 'true';
+  const resumeStateRaw = args['resume-state'];
+  const resumeState =
+    resumeStateRaw !== undefined &&
+    resumeStateRaw !== '' &&
+    resumeStateRaw !== 'true'
+      ? resumeStateRaw
+      : undefined;
+  const statePathRaw = args['state-path'];
+  const statePath =
+    statePathRaw !== undefined && statePathRaw !== '' && statePathRaw !== 'true'
+      ? statePathRaw
+      : restartOnRunnerChange
+      ? resumeState ?? '.dag-runner/run-state.json'
+      : undefined;
 
   return {
     dag: args.dag,
@@ -231,9 +273,7 @@ function parseArgs(argv: string[]): CliArgs {
         ? fullOutputRaw
         : undefined,
     findingsDir:
-      findingsRaw !== undefined &&
-      findingsRaw !== '' &&
-      findingsRaw !== 'true'
+      findingsRaw !== undefined && findingsRaw !== '' && findingsRaw !== 'true'
         ? findingsRaw
         : undefined,
     debounceMs,
@@ -245,6 +285,9 @@ function parseArgs(argv: string[]): CliArgs {
     checkpointDir,
     convergeOn,
     maxIterations,
+    statePath,
+    resumeState,
+    restartOnRunnerChange,
   };
 }
 
@@ -349,6 +392,64 @@ function defaultCanvasesDir(cwd: string): string {
   return join(homedir(), '.cursor', 'projects', slug, 'canvases');
 }
 
+async function loadResumedRunState(
+  statePath: string,
+  dag: DAG,
+  modelForComplexity: (c: RawTask['complexity']) => string
+): Promise<RunState> {
+  const persisted = await readPersistedRunState(statePath);
+  const state = persisted.state;
+  const expectedIds = new Set(dag.tasks.map((t) => t.id));
+  const actualIds = new Set(state.tasks.map((t) => t.id));
+  const missing = [...expectedIds].filter((id) => !actualIds.has(id));
+  const extra = [...actualIds].filter((id) => !expectedIds.has(id));
+  if (missing.length > 0 || extra.length > 0) {
+    throw new Error(
+      `Resume state ${statePath} does not match DAG tasks. Missing: ${
+        missing.join(', ') || '(none)'
+      }; extra: ${extra.join(', ') || '(none)'}`
+    );
+  }
+
+  const taskById = new Map(dag.tasks.map((task) => [task.id, task]));
+  for (const ts of state.tasks) {
+    const task = taskById.get(ts.id)!;
+    // Refresh static task metadata from the current DAG/source snapshot while
+    // preserving execution fields (status, timings, result text, iteration).
+    ts.depends_on = task.depends_on;
+    ts.complexity = task.complexity;
+    ts.subtask_prompt = task.subtask_prompt;
+    ts.model = modelForComplexity(task.complexity);
+    ts.kind = task.kind ?? 'task';
+    ts.command = task.kind === 'oracle' ? task.command : undefined;
+    ts.expect = task.kind === 'oracle' ? task.expect : undefined;
+    if (ts.status === 'RUNNING') {
+      // A persisted RUNNING task means the previous process died mid-task.
+      // This restart mode only guarantees clean boundary restarts; re-queue
+      // the task rather than pretending the in-flight work completed.
+      ts.status = 'PENDING';
+      ts.startedAt = undefined;
+      ts.finishedAt = undefined;
+      ts.durationMs = undefined;
+      ts.errorMessage =
+        'Re-queued after runner restart while task was RUNNING.';
+    }
+  }
+
+  if (state.runOutcome === 'RESTARTING_RUNNER') {
+    state.runOutcome = undefined;
+    state.runMessage = `Resumed from ${statePath} after runner restart.`;
+    state.finishedAt = undefined;
+  }
+  return state;
+}
+
+function isResumeTerminalStatus(status: TaskState['status']): boolean {
+  return (
+    status === 'FINISHED' || status === 'ERROR' || status === 'BUDGET-EXCEEDED'
+  );
+}
+
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
 
@@ -421,10 +522,24 @@ async function main(): Promise<void> {
     console.log(`[dag-runner] findings-dir → ${findingsAbsoluteDir}`);
   }
 
-  const state = initialRunState(dag, modelForComplexity);
+  const statePathAbsolute =
+    args.statePath !== undefined
+      ? resolveAgainstCwd(args.statePath, args.cwd)
+      : undefined;
+  const resumeStateAbsolute =
+    args.resumeState !== undefined
+      ? resolveAgainstCwd(args.resumeState, args.cwd)
+      : undefined;
+  const state =
+    resumeStateAbsolute !== undefined
+      ? await loadResumedRunState(resumeStateAbsolute, dag, modelForComplexity)
+      : initialRunState(dag, modelForComplexity);
   const stateById = new Map<string, TaskState>(
     state.tasks.map((t) => [t.id, t])
   );
+  const runnerSnapshot = args.restartOnRunnerChange
+    ? await snapshotRunnerRuntimeFiles(SCRIPTS_DIR)
+    : undefined;
 
   const writer = new CanvasWriter(args.canvasPath, args.debounceMs);
   let finalized = false;
@@ -434,11 +549,18 @@ async function main(): Promise<void> {
     `[dag-runner] DAG "${dag.title}" — ${dag.tasks.length} tasks across ${ranks.length} rank(s)`
   );
   console.log(`[dag-runner] canvas → ${args.canvasPath}`);
+  if (resumeStateAbsolute) {
+    console.log(`[dag-runner] resumed state ← ${resumeStateAbsolute}`);
+  }
+  if (statePathAbsolute) {
+    console.log(`[dag-runner] state-path → ${statePathAbsolute}`);
+  }
 
   // Always write the initial all-PENDING canvas first. This is what the parent
   // agent surfaces as a clickable path before any subagent runs.
   writer.schedule(structuredCloneState(state));
   await writer.flush();
+  await persistState('initial state');
 
   if (args.initOnly) {
     console.log('[dag-runner] --init-only: initial canvas written, exiting');
@@ -470,6 +592,31 @@ async function main(): Promise<void> {
       `Runner interrupted by ${signal}`
     );
   };
+
+  async function persistState(reason: string): Promise<void> {
+    if (statePathAbsolute === undefined) return;
+    await writePersistedRunState(statePathAbsolute, state, reason);
+  }
+
+  async function maybeRestartAfterRunnerChange(
+    boundary: string
+  ): Promise<void> {
+    if (!args.restartOnRunnerChange || runnerSnapshot === undefined) return;
+    const changed = await changedRunnerRuntimeFiles(runnerSnapshot);
+    if (changed.length === 0) return;
+    state.runOutcome = 'RESTARTING_RUNNER';
+    state.runMessage = `Runner runtime files changed after ${boundary}; supervisor should restart from persisted state. Changed: ${changed.join(
+      ', '
+    )}`;
+    writer.schedule(structuredCloneState(state));
+    await writer.flush();
+    await persistState(`runner source changed after ${boundary}`);
+    console.log(
+      `[dag-runner] runner source changed after ${boundary}; persisted state and exiting ${EXIT_RUNNER_RESTART}`
+    );
+    console.log(`[dag-runner] changed runner files: ${changed.join(', ')}`);
+    process.exit(EXIT_RUNNER_RESTART);
+  }
 
   async function failAndExit(
     exitCode: number,
@@ -596,15 +743,32 @@ async function main(): Promise<void> {
   try {
     for (let rankIdx = 0; rankIdx < ranks.length; rankIdx++) {
       const rank = ranks[rankIdx];
+      const runnableRank = rank.filter((task) => {
+        const ts = stateById.get(task.id);
+        return ts === undefined || !isResumeTerminalStatus(ts.status);
+      });
+      if (runnableRank.length === 0) {
+        console.log(
+          `[dag-runner] rank ${rankIdx + 1}/${ranks.length}: ${rank
+            .map((t) => t.id)
+            .join(', ')} (already complete; skipping)`
+        );
+        continue;
+      }
       console.log(
-        `[dag-runner] rank ${rankIdx + 1}/${ranks.length}: ${rank
+        `[dag-runner] rank ${rankIdx + 1}/${ranks.length}: ${runnableRank
           .map((t) => t.id)
           .join(', ')}`
       );
-      await Promise.all(rank.map((task) => dispatchTask(task)));
+      await Promise.all(runnableRank.map((task) => dispatchTask(task)));
       enforceTokenBudget(state, dag.budget);
+      writer.schedule(structuredCloneState(state));
+      await writer.flush();
+      await persistState(`completed rank ${rankIdx + 1}/${ranks.length}`);
+      await maybeRestartAfterRunnerChange(`rank ${rankIdx + 1}`);
     }
 
+    await maybeRestartAfterRunnerChange('main ranks before convergence');
     if (args.convergeOn) {
       await runConvergenceLoop({
         convergeOn: args.convergeOn,
@@ -617,6 +781,14 @@ async function main(): Promise<void> {
         state,
         findingsDir: findingsAbsoluteDir,
         budget: dag.budget,
+        afterIteration: async (iteration: number) => {
+          writer.schedule(structuredCloneState(state));
+          await writer.flush();
+          await persistState(`completed convergence iteration ${iteration}`);
+          await maybeRestartAfterRunnerChange(
+            `convergence iteration ${iteration}`
+          );
+        },
       });
     }
 
@@ -636,8 +808,8 @@ async function main(): Promise<void> {
       errors.length > 0
         ? 'FAILED'
         : budgetHits.length > 0
-          ? 'BUDGET_EXCEEDED'
-          : 'SUCCESS';
+        ? 'BUDGET_EXCEEDED'
+        : 'SUCCESS';
     if (errors.length > 0 || budgetHits.length > 0) {
       const parts: string[] = [];
       if (errors.length > 0) {
@@ -662,12 +834,11 @@ async function main(): Promise<void> {
       );
     }
 
-    const succeeded =
-      state.tasks.length - errors.length - budgetHits.length;
+    const succeeded = state.tasks.length - errors.length - budgetHits.length;
     console.log(
-      `[dag-runner] done — ${succeeded}/${state.tasks.length} succeeded in ${formatMs(
-        state.finishedAt - state.startedAt
-      )}`
+      `[dag-runner] done — ${succeeded}/${
+        state.tasks.length
+      } succeeded in ${formatMs(state.finishedAt - state.startedAt)}`
     );
     if (errors.length > 0) {
       console.log(`[dag-runner] errors: ${errors.map((e) => e.id).join(', ')}`);
@@ -1128,9 +1299,7 @@ async function persistTaskMarkdownFile(
     fullAssistantText.trim() === ''
       ? '\n\n## Agent output\n\n_(empty — downstream may depend on logs / status above.)_\n'
       : `\n\n## Agent output\n\n${fullAssistantText}\n`;
-  const md = `# \`${ts.id}\`\n\n${meta}\n\n## Subtask prompt\n\n${
-    ts.subtask_prompt
-  }${err}${outSection}`;
+  const md = `# \`${ts.id}\`\n\n${meta}\n\n## Subtask prompt\n\n${ts.subtask_prompt}${err}${outSection}`;
   await writeFile(join(dir, `${ts.id}.md`), md, 'utf8');
 }
 
@@ -1147,8 +1316,7 @@ async function writeRunIndexMarkdown(
     '| Task | Status | Transcript |',
     '|------|--------|-------------|',
     ...tasks.map(
-      (t) =>
-        `| ${t.id} | ${t.status} | [${t.id}.md](./${t.id}.md) |`
+      (t) => `| ${t.id} | ${t.status} | [${t.id}.md](./${t.id}.md) |`
     ),
     '',
   ];
@@ -1183,6 +1351,8 @@ interface RunConvergenceLoopOptions {
    * the entire run via `BudgetExceededError`.
    */
   budget?: DAGBudget;
+  /** Called after each completed re-execution iteration; used by self-hosting restarts. */
+  afterIteration?: (iteration: number) => Promise<void>;
 }
 
 /**
@@ -1201,7 +1371,19 @@ interface RunConvergenceLoopOptions {
 async function runConvergenceLoop(
   opts: RunConvergenceLoopOptions
 ): Promise<void> {
-  const { convergeOn, maxIterations, dag, ranks, stateById, dispatchTask, writer, state, findingsDir, budget } = opts;
+  const {
+    convergeOn,
+    maxIterations,
+    dag,
+    ranks,
+    stateById,
+    dispatchTask,
+    writer,
+    state,
+    findingsDir,
+    budget,
+    afterIteration,
+  } = opts;
   const convergeTs = stateById.get(convergeOn);
   if (!convergeTs) {
     // Defensive — main() already validates this, but the loop must not crash.
@@ -1226,12 +1408,20 @@ async function runConvergenceLoop(
     // truncate live `resultText` mid-section. Falls back to live text on miss.
     const sidecarText =
       findingsDir !== undefined
-        ? await readFindingsSidecarAsText(findingsDir, convergeOn, convergeTs.iteration ?? 0)
+        ? await readFindingsSidecarAsText(
+            findingsDir,
+            convergeOn,
+            convergeTs.iteration ?? 0
+          )
         : null;
-    const findings = extractConvergenceFindings(sidecarText ?? convergeTs.resultText);
+    const findings = extractConvergenceFindings(
+      sidecarText ?? convergeTs.resultText
+    );
     if (!findings.hasIssues) {
       console.log(
-        `[dag-runner] converge-on ${convergeOn}: clean — no Blockers / High-severity findings after ${iter - 1} re-iteration(s)`
+        `[dag-runner] converge-on ${convergeOn}: clean — no Blockers / High-severity findings after ${
+          iter - 1
+        } re-iteration(s)`
       );
       return;
     }
@@ -1251,10 +1441,7 @@ async function runConvergenceLoop(
     // status. The CLI `--max-iterations` flag is enforced by the loop
     // header above; the budget is an additional, DAG-author-controlled
     // ceiling that can be tighter than the runner default.
-    if (
-      budget?.maxIterations !== undefined &&
-      iter > budget.maxIterations
-    ) {
+    if (budget?.maxIterations !== undefined && iter > budget.maxIterations) {
       const now = Date.now();
       convergeTs.status = 'BUDGET-EXCEEDED';
       convergeTs.finishedAt = now;
@@ -1303,6 +1490,7 @@ async function runConvergenceLoop(
       // halt the entire run via BudgetExceededError → exit code 4.
       enforceTokenBudget(state, budget);
     }
+    await afterIteration?.(iter);
   }
 
   // CLI --max-iterations exhausted. Re-parse the convergence task's latest
@@ -1401,8 +1589,8 @@ async function markRunTerminated(
       outcome === 'INTERRUPTED'
         ? 'Runner interrupted'
         : outcome === 'BUDGET_EXCEEDED'
-          ? 'Run halted: token budget exceeded'
-          : 'Runner terminated';
+        ? 'Run halted: token budget exceeded'
+        : 'Runner terminated';
     task.finishedAt = now;
     if (task.startedAt !== undefined) {
       task.durationMs = now - task.startedAt;
@@ -1475,9 +1663,7 @@ function truncateUpstreamSnippet(text: string, cap: number): string {
   for (const dropTarget of SECTION_DROP_PRIORITY) {
     if (renderUpstreamSections(kept).length <= cap) break;
     // Preserve index 0 (the leading section) regardless of name match.
-    const idx = kept.findIndex(
-      (s, i) => i > 0 && s.normalized === dropTarget
-    );
+    const idx = kept.findIndex((s, i) => i > 0 && s.normalized === dropTarget);
     if (idx === -1) continue;
     kept.splice(idx, 1);
   }

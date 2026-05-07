@@ -8,17 +8,17 @@
  * the rendered template is identical.
  */
 
-import { writeFile, mkdir } from "node:fs/promises";
-import { dirname } from "node:path";
-import type { Complexity, DAG, TaskKind } from "./dag.js";
+import { writeFile, mkdir } from 'node:fs/promises';
+import { dirname } from 'node:path';
+import type { Complexity, DAG, TaskKind } from './dag.js';
 
 export type TaskStatus =
-  | "PENDING"
-  | "RUNNING"
-  | "FINISHED"
-  | "ERROR"
-  | "AWAITING_APPROVAL"
-  | "BUDGET-EXCEEDED";
+  | 'PENDING'
+  | 'RUNNING'
+  | 'FINISHED'
+  | 'ERROR'
+  | 'AWAITING_APPROVAL'
+  | 'BUDGET-EXCEEDED';
 
 export interface TaskState {
   id: string;
@@ -75,13 +75,24 @@ export interface RunState {
    *   wrappers can branch on budget overflows without parsing logs. Hyphen
    *   form (`BUDGET-EXCEEDED`) is reserved for the per-task `TaskStatus`;
    *   the run-level field uses underscores to match the rest of this enum.
+   * - `RESTARTING_RUNNER` — runner runtime files changed mid-run; the
+   *   supervisor should relaunch the runner from persisted state so the next
+   *   process executes the newly edited source.
    */
-  runOutcome?: "SUCCESS" | "FAILED" | "INTERRUPTED" | "BUDGET_EXCEEDED";
+  runOutcome?:
+    | 'SUCCESS'
+    | 'FAILED'
+    | 'INTERRUPTED'
+    | 'BUDGET_EXCEEDED'
+    | 'RESTARTING_RUNNER';
   runMessage?: string;
   tasks: TaskState[];
 }
 
-export function initialRunState(dag: DAG, modelFor: (c: Complexity) => string): RunState {
+export function initialRunState(
+  dag: DAG,
+  modelFor: (c: Complexity) => string
+): RunState {
   return {
     title: dag.title,
     startedAt: Date.now(),
@@ -90,16 +101,14 @@ export function initialRunState(dag: DAG, modelFor: (c: Complexity) => string): 
       depends_on: t.depends_on,
       complexity: t.complexity,
       subtask_prompt: t.subtask_prompt,
-      status: "PENDING",
+      status: 'PENDING',
       model: modelFor(t.complexity),
       // Normalize undefined kind → 'task' so downstream consumers (canvas
       // template, runner dispatcher) never have to ?? again.
-      kind: t.kind ?? "task",
+      kind: t.kind ?? 'task',
       // Surface oracle-only fields so the canvas can render the gate's
       // command / expectation without reading the streamed result body.
-      ...(t.kind === "oracle"
-        ? { command: t.command, expect: t.expect }
-        : {}),
+      ...(t.kind === 'oracle' ? { command: t.command, expect: t.expect } : {}),
     })),
   };
 }
@@ -118,7 +127,7 @@ export class CanvasWriter {
 
   constructor(
     private readonly canvasPath: string,
-    private readonly debounceMs: number = 200,
+    private readonly debounceMs: number = 200
   ) {}
 
   schedule(state: RunState): void {
@@ -142,7 +151,9 @@ export class CanvasWriter {
     }
     const snapshot = this.pending;
     this.pending = null;
-    const targetWriteSeq = snapshot ? this.enqueueWrite(snapshot) : this.writeSeq;
+    const targetWriteSeq = snapshot
+      ? this.enqueueWrite(snapshot)
+      : this.writeSeq;
     await this.inFlight;
     if (targetWriteSeq > 0 && this.lastFailedWriteSeq === targetWriteSeq) {
       throw this.lastWriteError;
@@ -168,7 +179,7 @@ export class CanvasWriter {
   private async writeNow(state: RunState): Promise<void> {
     const source = renderCanvasSource(state);
     await mkdir(dirname(this.canvasPath), { recursive: true });
-    await writeFile(this.canvasPath, source, "utf8");
+    await writeFile(this.canvasPath, source, 'utf8');
   }
 }
 
@@ -231,7 +242,12 @@ interface RunState {
   title: string;
   startedAt: number;
   finishedAt?: number;
-  runOutcome?: 'SUCCESS' | 'FAILED' | 'INTERRUPTED' | 'BUDGET_EXCEEDED';
+  runOutcome?:
+    | 'SUCCESS'
+    | 'FAILED'
+    | 'INTERRUPTED'
+    | 'BUDGET_EXCEEDED'
+    | 'RESTARTING_RUNNER';
   runMessage?: string;
   tasks: TaskState[];
 }`;
@@ -762,14 +778,18 @@ export default function DagRun(): JSX.Element {
         ? 'FAILED'
         : STATE.runOutcome === 'BUDGET_EXCEEDED'
           ? 'BUDGET-EXCEEDED'
-          : isFinal
-            ? 'COMPLETE'
-            : 'RUNNING';
+          : STATE.runOutcome === 'RESTARTING_RUNNER'
+            ? 'RESTARTING RUNNER'
+            : isFinal
+              ? 'COMPLETE'
+              : 'RUNNING';
   const statusTone =
     STATE.runOutcome === 'INTERRUPTED' ||
     STATE.runOutcome === 'FAILED' ||
     STATE.runOutcome === 'BUDGET_EXCEEDED'
       ? 'danger'
+      : STATE.runOutcome === 'RESTARTING_RUNNER'
+        ? 'warning'
       : isFinal
         ? 'success'
         : 'info';
