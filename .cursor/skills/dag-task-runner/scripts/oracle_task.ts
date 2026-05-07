@@ -1,10 +1,17 @@
 /**
  * Runtime for `kind: 'oracle'` DAG tasks. No LLM, no Cursor SDK agent — the
  * runner spawns `task.command` through a shell, captures stdout + stderr, and
- * decides pass/fail by applying `task.expect` (regex, defaults to `'.*'`) to
- * the combined output. Pass criteria intentionally hinges on the regex per the
- * P1 contract: a default oracle (`expect: '.*'`) ALWAYS passes; users opt
- * into stricter behavior by supplying a deliberate regex.
+ * decides pass/fail.
+ *
+ * Pass predicate: `exit code === 0` AND combined stdout/stderr matches
+ * `task.expect` (regex, defaults to `'.*'`). Exit-code-zero is REQUIRED by
+ * default because an oracle's job is "did this command succeed" — the prior
+ * "regex-only" contract silently green-lit `&&`-chained commands that exited
+ * non-zero (e.g. `cd && tsc` where `cd` succeeded but `tsc` was missing) just
+ * because the default `.*` regex happened to match the error output. If you
+ * genuinely want to gate solely on output regardless of exit code (e.g. for
+ * an asserting `grep`), set the optional `allowNonZeroExit: true` field on
+ * the task.
  *
  * Result text shape (rendered by `formatOracleResult` and consumed by both
  * the canvas template and the `--findings-dir` JSON sidecar):
@@ -100,9 +107,14 @@ export async function runOracleTask(
   const tailStderr = tail(outcome.stderr, ORACLE_TAIL_CAP);
   const combined = `${outcome.stdout}\n${outcome.stderr}`;
   const matched = expectRegex.test(combined);
-  // Per P1 contract, pass = regex match. Exit code is reported but not part
-  // of the pass predicate so users can author oracles around either signal.
-  const pass = matched && !outcome.timedOut;
+  // Default contract: an oracle passes iff the command exited 0 AND its
+  // combined output matches `expect`. The exit-code requirement is the
+  // critical safety property — without it, `&&`-chained commands silently
+  // green-light their own failures by matching the default `.*` against
+  // their error text. Users who genuinely need to assert on output of a
+  // failing command set `allowNonZeroExit: true`.
+  const exitOk = task.allowNonZeroExit === true || outcome.exitCode === 0;
+  const pass = matched && !outcome.timedOut && exitOk;
 
   ts.finishedAt = Date.now();
   ts.durationMs = ts.finishedAt - (ts.startedAt ?? ts.finishedAt);
@@ -119,9 +131,13 @@ export async function runOracleTask(
     ts.status = 'FINISHED';
   } else {
     ts.status = 'ERROR';
-    ts.errorMessage = outcome.timedOut
-      ? `Oracle ${task.id} timed out after ${options.taskTimeoutMs}ms`
-      : `Oracle ${task.id} expectation /${expectSrc}/ did not match command output`;
+    if (outcome.timedOut) {
+      ts.errorMessage = `Oracle ${task.id} timed out after ${options.taskTimeoutMs}ms`;
+    } else if (!exitOk) {
+      ts.errorMessage = `Oracle ${task.id} command exited ${outcome.exitCode} (set allowNonZeroExit: true to permit non-zero exits)`;
+    } else {
+      ts.errorMessage = `Oracle ${task.id} expectation /${expectSrc}/ did not match command output`;
+    }
   }
   deps.writer.schedule(deps.cloneState(deps.state));
 

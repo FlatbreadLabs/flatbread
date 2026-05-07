@@ -46,10 +46,22 @@ export interface RawTask {
   command?: string;
   /**
    * Optional for `kind: 'oracle'`. Regex applied to the command's combined
-   * stdout/stderr; a match means pass. Defaults to `'.*'` (any output, even
-   * empty, passes). Rejected on every other kind.
+   * stdout/stderr; a match is required for pass. Defaults to `'.*'` (any
+   * output, even empty, matches). Rejected on every other kind.
+   *
+   * Note: by default the pass predicate ALSO requires `exit code === 0`.
+   * Set `allowNonZeroExit: true` to opt out of that requirement (only useful
+   * when asserting on the output of an intentionally failing command).
    */
   expect?: string;
+  /**
+   * Optional for `kind: 'oracle'`. When `true`, an oracle passes on regex
+   * match alone, regardless of the command's exit code. Defaults to `false`
+   * — exit 0 is required by default because the historical regex-only
+   * contract silently passed `&&`-chained commands that exited non-zero.
+   * Rejected on every other kind.
+   */
+  allowNonZeroExit?: boolean;
 }
 
 export interface DAG {
@@ -83,10 +95,30 @@ export function isOracleTask(task: RawTask): boolean {
   return task.kind === "oracle";
 }
 
+/**
+ * Model IDs are validated at runtime by the Cursor SDK (NOT the `cursor-agent`
+ * CLI). The two catalogs differ: the CLI exposes reasoning-effort suffixes
+ * like `gpt-5.4-low` and `claude-opus-4-7-thinking-medium`; the SDK only
+ * accepts base slugs and rejects suffixed variants with
+ * `ConfigurationError: Cannot use this model`.
+ *
+ * The defaults below were cross-checked against the SDK's own error-message
+ * catalog (which `assertModelIdInList` enumerates verbatim) on 2026-05-07:
+ *
+ *   default, composer-2, composer-1.5, gpt-5.3-codex, claude-sonnet-4-6,
+ *   gpt-5.5, claude-opus-4-7, gpt-5.4, claude-opus-4-6, claude-opus-4-5,
+ *   gpt-5.2, gemini-3.1-pro, gpt-5.4-mini, gpt-5.4-nano, claude-haiku-4-5,
+ *   gpt-5.3-codex-spark, grok-4.3, claude-sonnet-4-5, gpt-5.2-codex,
+ *   gpt-5.1-codex-max, gpt-5.1, gemini-3-flash, gpt-5.1-codex-mini,
+ *   claude-sonnet-4, gpt-5-mini, gemini-2.5-flash, kimi-k2.5
+ *
+ * To re-validate: trigger any LOW task with a deliberately-bad model id and
+ * read the SDK's error-message catalog; do NOT trust `cursor-agent --list-models`.
+ */
 export const DEFAULT_MODEL_MAP: ModelMap = {
-  HIGH: "gpt-5.3-codex",
+  HIGH: "claude-opus-4-7",
   MED: "composer-2",
-  LOW: "gpt-5.4-mini-low",
+  LOW: "gpt-5.4-nano",
 };
 
 export function parseDAG(raw: unknown): DAG {
@@ -194,6 +226,11 @@ function validateTask(raw: unknown, index: number): RawTask {
         `tasks[${index}] (id="${id}") is kind="pause" and must not set expect (only kind="oracle" matches output).`,
       );
     }
+    if (t.allowNonZeroExit !== undefined) {
+      throw new Error(
+        `tasks[${index}] (id="${id}") is kind="pause" and must not set allowNonZeroExit (only kind="oracle" runs a command).`,
+      );
+    }
     let subtask_prompt = "";
     if (t.subtask_prompt !== undefined) {
       if (typeof t.subtask_prompt !== "string") {
@@ -250,6 +287,15 @@ function validateTask(raw: unknown, index: number): RawTask {
       }
       expect = t.expect;
     }
+    let allowNonZeroExit = false;
+    if (t.allowNonZeroExit !== undefined) {
+      if (typeof t.allowNonZeroExit !== "boolean") {
+        throw new Error(
+          `tasks[${index}].allowNonZeroExit must be a boolean when set on an oracle task.`,
+        );
+      }
+      allowNonZeroExit = t.allowNonZeroExit;
+    }
     return {
       id,
       depends_on: dedupedDepends,
@@ -258,6 +304,7 @@ function validateTask(raw: unknown, index: number): RawTask {
       kind: "oracle",
       command: t.command,
       expect,
+      allowNonZeroExit,
     };
   }
 
@@ -269,6 +316,11 @@ function validateTask(raw: unknown, index: number): RawTask {
   if (t.expect !== undefined) {
     throw new Error(
       `tasks[${index}] (id="${id}") is kind="task" and must not set expect (only kind="oracle" matches output).`,
+    );
+  }
+  if (t.allowNonZeroExit !== undefined) {
+    throw new Error(
+      `tasks[${index}] (id="${id}") is kind="task" and must not set allowNonZeroExit (only kind="oracle" runs a command).`,
     );
   }
   const complexity = t.complexity;
