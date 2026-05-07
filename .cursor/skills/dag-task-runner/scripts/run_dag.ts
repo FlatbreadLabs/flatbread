@@ -21,29 +21,40 @@
  *   --debounce <ms>        Canvas write debounce (default: 200).
  *   --task-timeout-ms <ms>   Per-task timeout guard (default: 20m).
  *   --stream-publish-ms <ms> Throttle live stream publishes (default: 500ms).
+ *   --full-output-dir <path> Full per-task transcripts as `${taskId}.md`
+ *                             (relative to --cwd unless absolute). Canvas
+ *                             text stays capped; this captures the raw stream.
  */
 
-import { Agent } from "@cursor/sdk";
-import { setMaxListeners } from "node:events";
-import { readFile } from "node:fs/promises";
-import { homedir } from "node:os";
-import { join } from "node:path";
-import process from "node:process";
+import { Agent } from '@cursor/sdk';
+import { existsSync } from 'node:fs';
+import { setMaxListeners } from 'node:events';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import { homedir } from 'node:os';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
+import process from 'node:process';
 
-import { parseDAG, computeRanks, createModelResolver, validateModelMap } from "./dag.js";
-import type { ModelMapOverride, RawTask } from "./dag.js";
+import {
+  parseDAG,
+  computeRanks,
+  createModelResolver,
+  validateModelMap,
+} from './dag.js';
+import type { ModelMapOverride, RawTask } from './dag.js';
 import {
   CanvasWriter,
   initialRunState,
   type RunState,
   type TaskState,
-} from "./canvas_writer.js";
+} from './canvas_writer.js';
 
 interface CliArgs {
   dag: string;
   canvasPath: string;
   cwd: string;
   modelsFile?: string;
+  fullOutputDir?: string;
   debounceMs: number;
   taskTimeoutMs: number;
   streamPublishMs: number;
@@ -67,54 +78,63 @@ function parseArgs(argv: string[]): CliArgs {
   const args: Record<string, string> = {};
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (!a.startsWith("--")) continue;
+    if (!a.startsWith('--')) continue;
     const key = a.slice(2);
     const next = argv[i + 1];
-    if (next && !next.startsWith("--")) {
+    if (next && !next.startsWith('--')) {
       args[key] = next;
       i++;
     } else {
-      args[key] = "true";
+      args[key] = 'true';
     }
   }
-  if (!args.dag) throw new Error("--dag <path> is required");
+  if (!args.dag) throw new Error('--dag <path> is required');
 
   const cwd = args.cwd ?? process.cwd();
-  let canvasPath = args["canvas-path"];
+  let canvasPath = args['canvas-path'];
   if (!canvasPath) {
     if (!args.canvas) {
-      throw new Error("Provide either --canvas-path <abs-path> or --canvas <name>");
+      throw new Error(
+        'Provide either --canvas-path <abs-path> or --canvas <name>'
+      );
     }
-    const canvasesDir = args["canvases-dir"] ?? defaultCanvasesDir(cwd);
-    const stem = args.canvas.replace(/\.canvas\.tsx$/, "");
+    const canvasesDir = args['canvases-dir'] ?? defaultCanvasesDir(cwd);
+    const stem = args.canvas.replace(/\.canvas\.tsx$/, '');
     canvasPath = join(canvasesDir, `${stem}.canvas.tsx`);
   }
-  if (!canvasPath.endsWith(".canvas.tsx")) {
-    canvasPath = canvasPath.replace(/\.tsx$/, "") + ".canvas.tsx";
+  if (!canvasPath.endsWith('.canvas.tsx')) {
+    canvasPath = canvasPath.replace(/\.tsx$/, '') + '.canvas.tsx';
   }
 
-  const debounceMs = parsePositiveInt(args.debounce, 200, "--debounce");
+  const debounceMs = parsePositiveInt(args.debounce, 200, '--debounce');
   const taskTimeoutMs = parsePositiveInt(
-    args["task-timeout-ms"],
+    args['task-timeout-ms'],
     DEFAULT_TASK_TIMEOUT_MS,
-    "--task-timeout-ms",
+    '--task-timeout-ms'
   );
   const streamPublishMs = parsePositiveInt(
-    args["stream-publish-ms"],
+    args['stream-publish-ms'],
     DEFAULT_STREAM_PUBLISH_MS,
-    "--stream-publish-ms",
+    '--stream-publish-ms'
   );
   const streamIdleTimeoutMs = parsePositiveInt(
-    args["stream-idle-timeout-ms"],
+    args['stream-idle-timeout-ms'],
     DEFAULT_STREAM_IDLE_TIMEOUT_MS,
-    "--stream-idle-timeout-ms",
+    '--stream-idle-timeout-ms'
   );
-  const initOnly = args["init-only"] === "true";
+  const initOnly = args['init-only'] === 'true';
+  const fullOutputRaw = args['full-output-dir'];
   return {
     dag: args.dag,
     canvasPath,
     cwd,
-    modelsFile: args["models-file"],
+    modelsFile: args['models-file'],
+    fullOutputDir:
+      fullOutputRaw !== undefined &&
+      fullOutputRaw !== '' &&
+      fullOutputRaw !== 'true'
+        ? fullOutputRaw
+        : undefined,
     debounceMs,
     taskTimeoutMs,
     streamPublishMs,
@@ -123,7 +143,11 @@ function parseArgs(argv: string[]): CliArgs {
   };
 }
 
-function parsePositiveInt(raw: string | undefined, fallback: number, flag: string): number {
+function parsePositiveInt(
+  raw: string | undefined,
+  fallback: number,
+  flag: string
+): number {
   if (raw === undefined) return fallback;
   const n = Number(raw);
   if (!Number.isSafeInteger(n) || n <= 0) {
@@ -137,27 +161,99 @@ interface ModelOverrideSources {
   fileModels: ModelMapOverride | undefined;
 }
 
-function mergeModelOverrides({ dagModels, fileModels }: ModelOverrideSources): ModelMapOverride {
+function mergeModelOverrides({
+  dagModels,
+  fileModels,
+}: ModelOverrideSources): ModelMapOverride {
   return { ...(dagModels ?? {}), ...(fileModels ?? {}) };
+}
+
+/** Relative --dag / --models-file paths are resolved against --cwd, not process.cwd() (pnpm --dir … can differ). */
+function resolveAgainstCwd(rawPath: string, cwd: string): string {
+  return isAbsolute(rawPath) ? rawPath : resolve(cwd, rawPath);
+}
+
+/** Optional platform package bundled with `@cursor/sdk` (`prepare:rg`); required for local agent ignore maps. */
+function cursorSdkRipgrepBundlePackage(): string | undefined {
+  const { platform, arch } = process;
+  if (platform === 'darwin') {
+    return arch === 'arm64'
+      ? '@cursor/sdk-darwin-arm64'
+      : arch === 'x64'
+      ? '@cursor/sdk-darwin-x64'
+      : undefined;
+  }
+  if (platform === 'linux') {
+    return arch === 'arm64'
+      ? '@cursor/sdk-linux-arm64'
+      : arch === 'x64'
+      ? '@cursor/sdk-linux-x64'
+      : undefined;
+  }
+  if (platform === 'win32' && arch === 'x64') {
+    return '@cursor/sdk-win32-x64';
+  }
+  return undefined;
+}
+
+/** Local SDK agents call `configureRipgrepPath` from an absolute env var; CLI runs must set this. */
+function ensureCursorRipgrepPathEnv(): void {
+  const configured = process.env.CURSOR_RIPGREP_PATH;
+  if (
+    configured &&
+    configured.length > 0 &&
+    isAbsolute(configured) &&
+    existsSync(configured)
+  ) {
+    return;
+  }
+
+  const bundlePkg = cursorSdkRipgrepBundlePackage();
+  if (!bundlePkg) {
+    console.warn(
+      '[dag-runner] No bundled ripgrep target for platform; set CURSOR_RIPGREP_PATH to an absolute `rg` path if local agents fail.'
+    );
+    return;
+  }
+
+  const req = createRequire(import.meta.url);
+  try {
+    const pkgDir = dirname(req.resolve(`${bundlePkg}/package.json`));
+    const rgName = process.platform === 'win32' ? 'rg.exe' : 'rg';
+    const rgPath = join(pkgDir, 'bin', rgName);
+    if (existsSync(rgPath)) {
+      process.env.CURSOR_RIPGREP_PATH = rgPath;
+      return;
+    }
+  } catch {
+    // Optional dependency missing for this OS/arch — user can set CURSOR_RIPGREP_PATH.
+  }
+  console.warn(
+    `[dag-runner] Could not resolve bundled ripgrep from ${bundlePkg}. Install optional @cursor deps or export CURSOR_RIPGREP_PATH=/absolute/path/to/rg`
+  );
 }
 
 /** Mirrors the canvas skill's path scheme. */
 function defaultCanvasesDir(cwd: string): string {
   const slug = cwd
-    .replace(/^\//, "")
-    .replace(/\/+$/, "")
-    .split("/")
-    .map((seg) => seg.replace(/[^A-Za-z0-9._-]/g, "-"))
-    .join("-");
-  return join(homedir(), ".cursor", "projects", slug, "canvases");
+    .replace(/^\//, '')
+    .replace(/\/+$/, '')
+    .split('/')
+    .map((seg) => seg.replace(/[^A-Za-z0-9._-]/g, '-'))
+    .join('-');
+  return join(homedir(), '.cursor', 'projects', slug, 'canvases');
 }
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
 
+  if (!args.initOnly) {
+    ensureCursorRipgrepPathEnv();
+  }
+
   if (!args.initOnly && !process.env.CURSOR_API_KEY) {
     throw new Error(
-      "CURSOR_API_KEY is not set. Export it or `set -a && source .env && set +a` first.",
+      'CURSOR_API_KEY is not set. Export it or `set -a && source .env && set +a` first.'
     );
   }
 
@@ -165,30 +261,44 @@ async function main(): Promise<void> {
   // Raising the process default prevents noisy MaxListenersExceeded warnings.
   setMaxListeners(ABORT_SIGNAL_LISTENER_LIMIT);
 
-  const raw = JSON.parse(await readFile(args.dag, "utf8"));
+  const dagPath = resolveAgainstCwd(args.dag, args.cwd);
+  const raw = JSON.parse(await readFile(dagPath, 'utf8'));
   const dag = parseDAG(raw);
   const fileModels =
     args.modelsFile === undefined
       ? undefined
       : validateModelMap(
-          JSON.parse(await readFile(args.modelsFile, "utf8")),
-          `--models-file ${args.modelsFile}`,
+          JSON.parse(
+            await readFile(resolveAgainstCwd(args.modelsFile, args.cwd), 'utf8')
+          ),
+          `--models-file ${args.modelsFile}`
         );
   const modelForComplexity = createModelResolver(
-    mergeModelOverrides({ dagModels: dag.models, fileModels }),
+    mergeModelOverrides({ dagModels: dag.models, fileModels })
   );
   const ranks = computeRanks(dag);
 
+  const fullOutputAbsoluteDir =
+    args.fullOutputDir !== undefined
+      ? resolveAgainstCwd(args.fullOutputDir, args.cwd)
+      : undefined;
+  if (fullOutputAbsoluteDir && !args.initOnly) {
+    await mkdir(fullOutputAbsoluteDir, { recursive: true });
+    console.log(`[dag-runner] full-output-dir → ${fullOutputAbsoluteDir}`);
+  }
+
   const state = initialRunState(dag, modelForComplexity);
   const stateById = new Map<string, TaskState>(
-    state.tasks.map((t) => [t.id, t]),
+    state.tasks.map((t) => [t.id, t])
   );
 
   const writer = new CanvasWriter(args.canvasPath, args.debounceMs);
   let finalized = false;
   let interrupting = false;
 
-  console.log(`[dag-runner] DAG "${dag.title}" — ${dag.tasks.length} tasks across ${ranks.length} rank(s)`);
+  console.log(
+    `[dag-runner] DAG "${dag.title}" — ${dag.tasks.length} tasks across ${ranks.length} rank(s)`
+  );
   console.log(`[dag-runner] canvas → ${args.canvasPath}`);
 
   // Always write the initial all-PENDING canvas first. This is what the parent
@@ -197,7 +307,7 @@ async function main(): Promise<void> {
   await writer.flush();
 
   if (args.initOnly) {
-    console.log("[dag-runner] --init-only: initial canvas written, exiting");
+    console.log('[dag-runner] --init-only: initial canvas written, exiting');
     return;
   }
 
@@ -213,18 +323,24 @@ async function main(): Promise<void> {
   const onUncaughtException = (err: Error): void => {
     const msg = err?.stack ?? err?.message ?? String(err);
     console.error(`[dag-runner] uncaught exception: ${msg}`);
-    void failAndExit(1, "FAILED", `Runner crashed: ${err.message}`);
+    void failAndExit(1, 'FAILED', `Runner crashed: ${err.message}`);
   };
   const onSignal = (signal: NodeJS.Signals): void => {
-    const exitCode = signal === "SIGINT" ? 130 : 143;
-    console.error(`[dag-runner] received ${signal}; finalizing canvas before exit`);
-    void failAndExit(exitCode, "INTERRUPTED", `Runner interrupted by ${signal}`);
+    const exitCode = signal === 'SIGINT' ? 130 : 143;
+    console.error(
+      `[dag-runner] received ${signal}; finalizing canvas before exit`
+    );
+    void failAndExit(
+      exitCode,
+      'INTERRUPTED',
+      `Runner interrupted by ${signal}`
+    );
   };
 
   async function failAndExit(
     exitCode: number,
-    outcome: "FAILED" | "INTERRUPTED",
-    message: string,
+    outcome: 'FAILED' | 'INTERRUPTED',
+    message: string
   ): Promise<void> {
     if (interrupting) return;
     interrupting = true;
@@ -233,85 +349,111 @@ async function main(): Promise<void> {
       writer.schedule(structuredCloneState(state));
       await writer.flush();
     } catch (flushErr) {
-      const flushMsg = flushErr instanceof Error ? flushErr.message : String(flushErr);
-      console.error(`[dag-runner] failed to flush canvas during shutdown: ${flushMsg}`);
+      const flushMsg =
+        flushErr instanceof Error ? flushErr.message : String(flushErr);
+      console.error(
+        `[dag-runner] failed to flush canvas during shutdown: ${flushMsg}`
+      );
     } finally {
       finalized = true;
       process.exit(exitCode);
     }
   }
 
-  process.on("unhandledRejection", onUnhandledRejection);
-  process.on("uncaughtException", onUncaughtException);
-  process.on("SIGINT", onSignal);
-  process.on("SIGTERM", onSignal);
-  process.on("SIGHUP", onSignal);
+  process.on('unhandledRejection', onUnhandledRejection);
+  process.on('uncaughtException', onUncaughtException);
+  process.on('SIGINT', onSignal);
+  process.on('SIGTERM', onSignal);
+  process.on('SIGHUP', onSignal);
 
   try {
     for (let rankIdx = 0; rankIdx < ranks.length; rankIdx++) {
       const rank = ranks[rankIdx];
       console.log(
-        `[dag-runner] rank ${rankIdx + 1}/${ranks.length}: ${rank.map((t) => t.id).join(", ")}`,
+        `[dag-runner] rank ${rankIdx + 1}/${ranks.length}: ${rank
+          .map((t) => t.id)
+          .join(', ')}`
       );
       await Promise.all(
         rank.map((task) => {
           const failedDeps = task.depends_on.filter((depId) => {
             const dep = stateById.get(depId);
-            return dep !== undefined && dep.status === "ERROR";
+            return dep !== undefined && dep.status === 'ERROR';
           });
           if (failedDeps.length > 0) {
-            skipTask(task, stateById, state, writer, failedDeps);
-            return Promise.resolve();
+            return skipTask(
+              task,
+              stateById,
+              state,
+              writer,
+              failedDeps,
+              fullOutputAbsoluteDir
+            );
           }
-          return runTask(
-            task,
-            stateById,
-            state,
-            writer,
-            args.cwd,
-            {
-              taskTimeoutMs: args.taskTimeoutMs,
-              streamPublishMs: args.streamPublishMs,
-              streamIdleTimeoutMs: args.streamIdleTimeoutMs,
-            },
-          );
-        }),
+          return runTask(task, stateById, state, writer, args.cwd, {
+            taskTimeoutMs: args.taskTimeoutMs,
+            streamPublishMs: args.streamPublishMs,
+            streamIdleTimeoutMs: args.streamIdleTimeoutMs,
+            fullOutputAbsoluteDir,
+          });
+        })
       );
     }
 
     state.finishedAt = Date.now();
-    const errors = state.tasks.filter((t) => t.status === "ERROR");
-    state.runOutcome = errors.length > 0 ? "FAILED" : "SUCCESS";
+    const errors = state.tasks.filter((t) => t.status === 'ERROR');
+    state.runOutcome = errors.length > 0 ? 'FAILED' : 'SUCCESS';
     if (errors.length > 0) {
-      state.runMessage = `Some tasks failed: ${errors.map((e) => e.id).join(", ")}`;
+      state.runMessage = `Some tasks failed: ${errors
+        .map((e) => e.id)
+        .join(', ')}`;
     }
     writer.schedule(structuredCloneState(state));
     await writer.flush();
     finalized = true;
 
+    if (fullOutputAbsoluteDir) {
+      await writeRunIndexMarkdown(
+        fullOutputAbsoluteDir,
+        dag.title,
+        state.tasks
+      );
+    }
+
     console.log(
-      `[dag-runner] done — ${state.tasks.length - errors.length}/${state.tasks.length} succeeded in ${formatMs(state.finishedAt - state.startedAt)}`,
+      `[dag-runner] done — ${state.tasks.length - errors.length}/${
+        state.tasks.length
+      } succeeded in ${formatMs(state.finishedAt - state.startedAt)}`
     );
     if (errors.length > 0) {
-      console.log(`[dag-runner] errors: ${errors.map((e) => e.id).join(", ")}`);
+      console.log(`[dag-runner] errors: ${errors.map((e) => e.id).join(', ')}`);
       process.exitCode = 1;
+    }
+    if (fullOutputAbsoluteDir) {
+      console.log(
+        `[dag-runner] full transcripts + index (_index.md) → ${fullOutputAbsoluteDir}`
+      );
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    await markRunTerminated(state, `Runner failed: ${msg}`, "FAILED");
+    await markRunTerminated(state, `Runner failed: ${msg}`, 'FAILED');
     writer.schedule(structuredCloneState(state));
     await writer.flush();
     finalized = true;
     throw err;
   } finally {
-    process.off("unhandledRejection", onUnhandledRejection);
-    process.off("uncaughtException", onUncaughtException);
-    process.off("SIGINT", onSignal);
-    process.off("SIGTERM", onSignal);
-    process.off("SIGHUP", onSignal);
+    process.off('unhandledRejection', onUnhandledRejection);
+    process.off('uncaughtException', onUncaughtException);
+    process.off('SIGINT', onSignal);
+    process.off('SIGTERM', onSignal);
+    process.off('SIGHUP', onSignal);
     if (!finalized && !interrupting) {
       // Defensive fallback: if control flow exits unexpectedly, reflect this in-canvas.
-      await markRunTerminated(state, "Runner exited before finalization", "FAILED");
+      await markRunTerminated(
+        state,
+        'Runner exited before finalization',
+        'FAILED'
+      );
       writer.schedule(structuredCloneState(state));
       await writer.flush();
     }
@@ -324,11 +466,11 @@ async function runTask(
   state: RunState,
   writer: CanvasWriter,
   cwd: string,
-  options: RunTaskOptions,
+  options: RunTaskOptions
 ): Promise<void> {
   const { taskTimeoutMs, streamPublishMs, streamIdleTimeoutMs } = options;
   const ts = stateById.get(task.id)!;
-  ts.status = "RUNNING";
+  ts.status = 'RUNNING';
   ts.startedAt = Date.now();
   writer.schedule(structuredCloneState(state));
 
@@ -345,6 +487,8 @@ async function runTask(
 
   let run: RunnerTaskRun | undefined;
   const buffer = new BoundedTextBuffer(STREAM_CAP);
+  /** Uncapped capture for `--full-output-dir` (canvas still uses bounded buffer). */
+  const fullStreamChunks: string[] = [];
   let lastPublishAt = 0;
   const publishIfDue = (force = false): void => {
     const now = Date.now();
@@ -360,9 +504,14 @@ async function runTask(
     run = (await agent.send(stitched)) as RunnerTaskRun;
     const iterator = run.stream()[Symbol.asyncIterator]();
     while (true) {
-      const timeoutForNext = Math.min(deadline - Date.now(), streamIdleTimeoutMs);
+      const timeoutForNext = Math.min(
+        deadline - Date.now(),
+        streamIdleTimeoutMs
+      );
       if (timeoutForNext <= 0) {
-        throw new TimeoutError(`Task ${task.id} exceeded deadline of ${formatMs(taskTimeoutMs)}`);
+        throw new TimeoutError(
+          `Task ${task.id} exceeded deadline of ${formatMs(taskTimeoutMs)}`
+        );
       }
       const next = await withTimeout(
         iterator.next(),
@@ -371,19 +520,22 @@ async function runTask(
           taskId: task.id,
           timeoutMs: timeoutForNext,
           streamIdleTimeoutMs,
-        }),
+        })
       );
       if (next.done) break;
       const event = next.value as {
         type?: string;
         message?: { content?: Array<{ type?: string; text?: string }> };
       };
-      if (event.type === "assistant") {
+      if (event.type === 'assistant') {
         let appended = false;
-        const blocks = Array.isArray(event.message?.content) ? event.message.content : [];
+        const blocks = Array.isArray(event.message?.content)
+          ? event.message.content
+          : [];
         for (const block of blocks) {
-          if (block.type === "text" && typeof block.text === "string") {
+          if (block.type === 'text' && typeof block.text === 'string') {
             buffer.append(block.text);
+            fullStreamChunks.push(block.text);
             appended = true;
           }
         }
@@ -399,20 +551,27 @@ async function runTask(
           usage?: { inputTokens?: number; outputTokens?: number };
         }
       | undefined;
-    const waitGraceMs = Math.min(deadline - Date.now(), WAIT_AFTER_STREAM_GRACE_MS);
+    const waitGraceMs = Math.min(
+      deadline - Date.now(),
+      WAIT_AFTER_STREAM_GRACE_MS
+    );
     if (waitGraceMs <= 0) {
-      throw new TimeoutError(`Task ${task.id} exceeded deadline of ${formatMs(taskTimeoutMs)}`);
+      throw new TimeoutError(
+        `Task ${task.id} exceeded deadline of ${formatMs(taskTimeoutMs)}`
+      );
     }
     try {
       result = await withTimeout(
         run.wait(),
         waitGraceMs,
-        `Task ${task.id} did not finalize within ${formatMs(waitGraceMs)} after stream completion`,
+        `Task ${task.id} did not finalize within ${formatMs(
+          waitGraceMs
+        )} after stream completion`
       );
     } catch (waitErr) {
       if (
         isTimeoutError(waitErr) &&
-        run.status !== "running" &&
+        run.status !== 'running' &&
         run.status !== undefined
       ) {
         // Fallback for cases where run stream is done but wait() is stuck on local executor close.
@@ -429,16 +588,17 @@ async function runTask(
     }
 
     ts.finishedAt = Date.now();
-    ts.durationMs = result.durationMs ?? ts.finishedAt - (ts.startedAt ?? ts.finishedAt);
+    ts.durationMs =
+      result.durationMs ?? ts.finishedAt - (ts.startedAt ?? ts.finishedAt);
     ts.inputTokens = result.usage?.inputTokens;
     ts.outputTokens = result.usage?.outputTokens;
     const rendered = buffer.render().trim();
     if (rendered) ts.resultText = rendered;
 
-    if (result.status === "finished") {
-      ts.status = "FINISHED";
+    if (result.status === 'finished') {
+      ts.status = 'FINISHED';
     } else {
-      ts.status = "ERROR";
+      ts.status = 'ERROR';
       ts.errorMessage = `Run ${result.status}`;
     }
   } catch (err) {
@@ -447,15 +607,24 @@ async function runTask(
     }
     ts.finishedAt = Date.now();
     ts.durationMs = ts.finishedAt - (ts.startedAt ?? ts.finishedAt);
-    ts.status = "ERROR";
+    ts.status = 'ERROR';
     ts.errorMessage = err instanceof Error ? err.message : String(err);
     const rendered = buffer.render().trim();
     if (rendered) ts.resultText = rendered;
   } finally {
-    if (run && run.status === "running") {
+    if (run && run.status === 'running') {
       await bestEffortCancel(run, task.id);
     }
     publishIfDue(true);
+    const fullDir = options.fullOutputAbsoluteDir;
+    if (fullDir) {
+      await persistTaskMarkdownFile(
+        fullDir,
+        state.title,
+        ts,
+        fullStreamChunks.join('')
+      );
+    }
     try {
       await (agent as unknown as AsyncDisposable)[Symbol.asyncDispose]();
     } catch {
@@ -469,6 +638,7 @@ interface RunTaskOptions {
   taskTimeoutMs: number;
   streamPublishMs: number;
   streamIdleTimeoutMs: number;
+  fullOutputAbsoluteDir?: string;
 }
 
 /** Cap on per-task `resultText` size — applies to live streaming and final state. */
@@ -489,7 +659,7 @@ const ABORT_SIGNAL_LISTENER_LIMIT = 100;
 class TimeoutError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "TimeoutError";
+    this.name = 'TimeoutError';
   }
 }
 
@@ -510,7 +680,9 @@ function streamWaitTimeoutMessage({
 }: StreamWaitTimeoutMessageOptions): string {
   const effectiveTimeout = formatMs(timeoutMs);
   if (timeoutMs < streamIdleTimeoutMs) {
-    return `Task ${taskId} produced no stream events within ${effectiveTimeout} before the task deadline (configured stream idle timeout: ${formatMs(streamIdleTimeoutMs)})`;
+    return `Task ${taskId} produced no stream events within ${effectiveTimeout} before the task deadline (configured stream idle timeout: ${formatMs(
+      streamIdleTimeoutMs
+    )})`;
   }
   return `Task ${taskId} produced no stream events within ${effectiveTimeout}`;
 }
@@ -518,14 +690,17 @@ function streamWaitTimeoutMessage({
 async function withTimeout<T>(
   promise: Promise<T>,
   timeoutMs: number,
-  timeoutMessage: string,
+  timeoutMessage: string
 ): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
   try {
     return await Promise.race([
       promise,
       new Promise<T>((_, reject) => {
-        timer = setTimeout(() => reject(new TimeoutError(timeoutMessage)), timeoutMs);
+        timer = setTimeout(
+          () => reject(new TimeoutError(timeoutMessage)),
+          timeoutMs
+        );
       }),
     ]);
   } finally {
@@ -535,19 +710,22 @@ async function withTimeout<T>(
 
 async function bestEffortCancel(
   run: { cancel?: () => Promise<void> | void },
-  taskId: string,
+  taskId: string
 ): Promise<void> {
-  if (typeof run.cancel !== "function") return;
+  if (typeof run.cancel !== 'function') return;
   try {
     await run.cancel();
   } catch (cancelErr) {
-    const msg = cancelErr instanceof Error ? cancelErr.message : String(cancelErr);
-    console.error(`[dag-runner] failed to cancel timed-out task ${taskId}: ${msg}`);
+    const msg =
+      cancelErr instanceof Error ? cancelErr.message : String(cancelErr);
+    console.error(
+      `[dag-runner] failed to cancel timed-out task ${taskId}: ${msg}`
+    );
   }
 }
 
 class BoundedTextBuffer {
-  private data = "";
+  private data = '';
   private droppedChars = 0;
 
   constructor(private readonly cap: number) {}
@@ -567,36 +745,100 @@ class BoundedTextBuffer {
   }
 }
 
+async function persistTaskMarkdownFile(
+  dir: string,
+  dagTitle: string,
+  ts: TaskState,
+  fullAssistantText: string
+): Promise<void> {
+  const meta = [
+    `- **DAG:** ${dagTitle}`,
+    `- **Model:** ${ts.model}`,
+    `- **Complexity:** ${ts.complexity}`,
+    `- **Status:** ${ts.status}`,
+    ...(ts.durationMs !== undefined
+      ? [`- **Duration (ms):** ${ts.durationMs}`]
+      : []),
+    ...(ts.inputTokens !== undefined
+      ? [`- **Input tokens:** ${ts.inputTokens}`]
+      : []),
+    ...(ts.outputTokens !== undefined
+      ? [`- **Output tokens:** ${ts.outputTokens}`]
+      : []),
+  ].join('\n');
+  const err =
+    ts.errorMessage !== undefined
+      ? `\n\n## Error / notes\n\n${ts.errorMessage}\n`
+      : '';
+  const outSection =
+    fullAssistantText.trim() === ''
+      ? '\n\n## Agent output\n\n_(empty — downstream may depend on logs / status above.)_\n'
+      : `\n\n## Agent output\n\n${fullAssistantText}\n`;
+  const md = `# \`${ts.id}\`\n\n${meta}\n\n## Subtask prompt\n\n${
+    ts.subtask_prompt
+  }${err}${outSection}`;
+  await writeFile(join(dir, `${ts.id}.md`), md, 'utf8');
+}
+
+async function writeRunIndexMarkdown(
+  dir: string,
+  dagTitle: string,
+  tasks: TaskState[]
+): Promise<void> {
+  const lines = [
+    '# DAG run — transcript index',
+    '',
+    `**${dagTitle}**`,
+    '',
+    '| Task | Status | Transcript |',
+    '|------|--------|-------------|',
+    ...tasks.map(
+      (t) =>
+        `| ${t.id} | ${t.status} | [${t.id}.md](./${t.id}.md) |`
+    ),
+    '',
+  ];
+  await writeFile(join(dir, '_index.md'), lines.join('\n'), 'utf8');
+}
+
 function skipTask(
   task: RawTask,
   stateById: Map<string, TaskState>,
   state: RunState,
   writer: CanvasWriter,
   failedDeps: string[],
-): void {
+  fullOutputAbsoluteDir?: string
+): Promise<void> {
   const ts = stateById.get(task.id)!;
   const now = Date.now();
-  ts.status = "ERROR";
+  ts.status = 'ERROR';
   ts.finishedAt = now;
   ts.durationMs = 0;
-  ts.errorMessage = `Skipped: upstream task(s) ${failedDeps.join(", ")} failed`;
-  console.log(`[dag-runner] skipping ${task.id} — upstream ${failedDeps.join(", ")} failed`);
+  ts.errorMessage = `Skipped: upstream task(s) ${failedDeps.join(', ')} failed`;
+  console.log(
+    `[dag-runner] skipping ${task.id} — upstream ${failedDeps.join(
+      ', '
+    )} failed`
+  );
   writer.schedule(structuredCloneState(state));
+  if (!fullOutputAbsoluteDir) return Promise.resolve();
+  return persistTaskMarkdownFile(fullOutputAbsoluteDir, state.title, ts, '');
 }
 
 async function markRunTerminated(
   state: RunState,
   message: string,
-  outcome: "FAILED" | "INTERRUPTED",
+  outcome: 'FAILED' | 'INTERRUPTED'
 ): Promise<void> {
   const now = Date.now();
   state.runOutcome = outcome;
   state.runMessage = message;
   state.finishedAt = now;
   for (const task of state.tasks) {
-    if (task.status === "FINISHED" || task.status === "ERROR") continue;
-    task.status = "ERROR";
-    task.errorMessage = outcome === "INTERRUPTED" ? "Runner interrupted" : "Runner terminated";
+    if (task.status === 'FINISHED' || task.status === 'ERROR') continue;
+    task.status = 'ERROR';
+    task.errorMessage =
+      outcome === 'INTERRUPTED' ? 'Runner interrupted' : 'Runner terminated';
     task.finishedAt = now;
     if (task.startedAt !== undefined) {
       task.durationMs = now - task.startedAt;
@@ -608,10 +850,13 @@ async function markRunTerminated(
 
 function buildUpstreamContext(
   task: RawTask,
-  stateById: Map<string, TaskState>,
+  stateById: Map<string, TaskState>
 ): string {
-  if (task.depends_on.length === 0) return "";
-  const lines: string[] = ["Upstream task results (for context — do not re-do this work):", ""];
+  if (task.depends_on.length === 0) return '';
+  const lines: string[] = [
+    'Upstream task results (for context — do not re-do this work):',
+    '',
+  ];
   for (const depId of task.depends_on) {
     const dep = stateById.get(depId);
     if (!dep) continue;
@@ -619,18 +864,18 @@ function buildUpstreamContext(
     const snippet = dep.resultText
       ? truncate(dep.resultText, UPSTREAM_SNIPPET_CAP)
       : dep.errorMessage
-        ? `(failed: ${dep.errorMessage})`
-        : "(no output)";
+      ? `(failed: ${dep.errorMessage})`
+      : '(no output)';
     lines.push(`### ${depId} [${status}]`);
     lines.push(snippet);
-    lines.push("");
+    lines.push('');
   }
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 function truncate(s: string, n: number): string {
   if (s.length <= n) return s;
-  return s.slice(0, n - 1) + "…";
+  return s.slice(0, n - 1) + '…';
 }
 
 function formatMs(ms: number): string {
@@ -648,6 +893,10 @@ function structuredCloneState(state: RunState): RunState {
 }
 
 main().catch((err) => {
-  console.error(`[dag-runner] fatal: ${err instanceof Error ? err.stack ?? err.message : err}`);
+  console.error(
+    `[dag-runner] fatal: ${
+      err instanceof Error ? err.stack ?? err.message : err
+    }`
+  );
   process.exit(1);
 });

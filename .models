@@ -1,5 +1,5 @@
 {
-  "HIGH": "claude-opus-4-7-thinking-max",
-  "MED": "gpt-5.5-medium",
-  "LOW": "gpt-5.4-mini-medium"
+  "HIGH": "claude-opus-4-7",
+  "MED": "gpt-5.5",
+  "LOW": "gpt-5.4-mini"
 }

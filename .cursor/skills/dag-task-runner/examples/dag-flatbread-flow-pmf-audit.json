@@ -1,0 +1,51 @@
+{
+  "title": "Flatbread Flow PMF Audit",
+  "models": {
+    "HIGH": "claude-opus-4-7",
+    "MED": "gpt-5.5",
+    "LOW": "gpt-5.4-mini"
+  },
+  "tasks": [
+    {
+      "id": "map-current-flow",
+      "depends_on": [],
+      "complexity": "MED",
+      "subtask_prompt": "Audit the Flatbread repository from the perspective of product flow and technical architecture. Map the current end-to-end flow: how developers define data sources, schemas, generated APIs/types, querying, examples, and runtime usage. Focus especially on where GraphQL is central or required. Read repo docs and source as needed. Do not edit files. Return: (1) concise flow map, (2) key files/packages with filepath references, (3) evidence of GraphQL coupling, (4) any obvious friction in the current developer path."
+    },
+    {
+      "id": "relational-flat-file-needs",
+      "depends_on": [],
+      "complexity": "MED",
+      "subtask_prompt": "Independently audit what a developer who wants to store relational data in flat files would need from Flatbread. Compare those needs against what the repo appears to provide today. Consider schema definition, tables/records, foreign keys/references, joins, constraints, migrations/evolution, indexes, query ergonomics, write/update workflows, type safety, import/export, local-first workflows, and deployment. Do not edit files. Return prioritized needs, current support level, gaps, and filepath evidence where possible."
+    },
+    {
+      "id": "docs-onboarding-audit",
+      "depends_on": [],
+      "complexity": "LOW",
+      "subtask_prompt": "Audit the repository docs, examples, tests, package scripts, and README/onboarding path for a first-time developer. Focus on whether the product promise is obvious for relational flat-file storage, whether the first success path is short, and where the developer would hit GraphQL-specific concepts. Do not edit files. Return a concise onboarding/doc gap analysis with concrete references to files and commands if found."
+    },
+    {
+      "id": "market-positioning-audit",
+      "depends_on": [],
+      "complexity": "MED",
+      "subtask_prompt": "Using the repo as the primary evidence plus general product reasoning, audit Flatbread's likely product-market fit for developers who want relational data stored in flat files. Think about adjacent alternatives such as SQLite, Prisma/Drizzle, ORMs, Airtable/Notion-like data, CMS/content layers, embedded databases, and static-site data pipelines. Do not browse unless available by default and do not edit files. Return the strongest ICP hypotheses, competing jobs-to-be-done, differentiation risks, and opportunities."
+    },
+    {
+      "id": "synthesize-pmf-gaps",
+      "depends_on": [
+        "map-current-flow",
+        "relational-flat-file-needs",
+        "docs-onboarding-audit",
+        "market-positioning-audit"
+      ],
+      "complexity": "HIGH",
+      "subtask_prompt": "Synthesize upstream audit findings into a prioritized product-market-fit gap report for Flatbread, specifically for developers who want to store relational data in flat files. Call out the core being limited to GraphQL if supported by evidence. For each gap include: severity, evidence, why it matters for PMF, and the product implication. Keep it direct and actionable. Do not edit files."
+    },
+    {
+      "id": "recommend-roadmap",
+      "depends_on": ["synthesize-pmf-gaps"],
+      "complexity": "HIGH",
+      "subtask_prompt": "Based on the synthesized PMF gaps, recommend a concise product direction and roadmap for Flatbread to better serve developers storing relational data in flat files. Include a sharper positioning statement, 3-5 product primitives to add or clarify, near-term experiments, and what not to build yet. Do not edit files."
+    }
+  ]
+}
