@@ -1,0 +1,13 @@
+---
+description: Flatbread PMF workflow guardrails for product, docs, examples, and API work
+globs: ["**/*.md", "packages/**/*.ts", "examples/**/*"]
+alwaysApply: false
+---
+
+# Flatbread PMF Workflow
+
+- Position Flatbread as Git-native relational content for TypeScript apps, backed by flat files.
+- Treat GraphQL as one interface, not the whole product identity.
+- Prioritize relation modeling, validation, type safety, generated APIs, and the local edit/query loop.
+- Keep README examples, package docs, examples, generated artifacts, and CLI behavior in sync when developer-facing contracts change.
+- Avoid database-replacement framing unless writes, constraints, migrations, import/export, and release guarantees are deliberately in scope.
