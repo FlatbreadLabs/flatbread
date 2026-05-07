@@ -4,6 +4,10 @@
   "description": "Eat your relational markdown data and query it, too, with GraphQL inside damn near any framework (statement awaiting peer-review).",
   "main": "index.js",
   "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20.19"
+  },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "browser:install": "pnpm exec agent-browser install",
@@ -19,12 +23,16 @@
     "lint": "pnpm lint:prettier",
     "lint:fix": "pnpm lint:fix:prettier",
     "lint:fix:prettier": "pretty-quick --staged",
+    "typecheck": "pnpm --filter @flatbread/proof typecheck",
     "play": "cd examples/nextjs && pnpm dev",
     "play:build": "pnpm build && cd examples/nextjs && pnpm build",
-    "prepublish:ci": "pnpm -r update",
+    "prepublish:ci": "pnpm install --frozen-lockfile && pnpm build:types",
     "publish:ci": "esno scripts/publish.ts",
     "bump": "esno scripts/bumpVersions.ts",
-    "test": "ava",
+    "test:ava": "ava",
+    "test:vitest": "pnpm --filter @flatbread/codegen --filter @flatbread/utils test",
+    "test": "pnpm build && pnpm test:ava && pnpm test:vitest",
+    "verify": "pnpm lint && pnpm typecheck && pnpm build && pnpm test",
     "dev:test": "ava --watch --verbose",
     "prepare": "husky install"
   },

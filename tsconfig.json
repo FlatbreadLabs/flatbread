@@ -14,6 +14,7 @@
       "@flatbread/core": ["./packages/core/src/index.ts"],
       "@flatbread/config": ["./packages/config/src/index.ts"],
       "@flatbread/proof": ["./packages/proof/src/index.ts"],
+      "@flatbread/utils": ["./packages/utils/src/index.ts"],
       "@flatbread/source-filesystem": [
         "./packages/source-filesystem/src/index.ts"
       ],
