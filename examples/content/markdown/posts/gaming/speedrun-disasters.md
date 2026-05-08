@@ -2,8 +2,8 @@
 id: gaming-fails-2024
 title: 'When Speedruns Go Spectacularly Wrong'
 authors:
-  - ushi
-  - yoshi
+  - 1111
+  - r3c6
 rating: 92
 category: gaming
 difficulty: legendary

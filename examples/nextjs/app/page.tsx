@@ -1,4 +1,5 @@
 import { graphqlFetch, queries } from '../lib/graphql';
+import { getAuthorsViaReadApi, getPostsAuthorsAndTagsViaReadApi } from '../lib/read';
 import type { PostCategory } from '../generated/graphql';
 import BlogIndex from './components/BlogIndex';
 import QueryPanel from './components/QueryPanel';
@@ -18,7 +19,32 @@ async function getData(): Promise<GetPostCategoriesResponse> {
 }
 
 export default async function Home() {
-  const data = await getData();
+  const [data, readApiResults] = await Promise.all([
+    getData(),
+    Promise.allSettled([
+      getPostsAuthorsAndTagsViaReadApi(),
+      getAuthorsViaReadApi(),
+    ]),
+  ]);
+  const [readApiPostsResult, readApiAuthorsResult] = readApiResults;
+  const readApiError =
+    readApiPostsResult.status === 'rejected' ||
+    readApiAuthorsResult.status === 'rejected'
+      ? {
+          posts:
+            readApiPostsResult.status === 'rejected'
+              ? String(readApiPostsResult.reason)
+              : undefined,
+          authors:
+            readApiAuthorsResult.status === 'rejected'
+              ? String(readApiAuthorsResult.reason)
+              : undefined,
+        }
+      : undefined;
+  const readApiPosts =
+    readApiPostsResult.status === 'fulfilled' ? readApiPostsResult.value : [];
+  const readApiAuthors =
+    readApiAuthorsResult.status === 'fulfilled' ? readApiAuthorsResult.value : [];
 
   return (
     <div className="relative min-h-screen bg-white">
@@ -31,7 +57,7 @@ export default async function Home() {
         {/* Query Panel */}
           <QueryPanel 
             query={queries.GET_POST_CATEGORIES}
-            data={data}
+            data={{ ...data, readApiAuthors, readApiError, readApiPosts }}
           />
       </div>
     </div>

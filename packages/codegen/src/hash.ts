@@ -2,6 +2,8 @@ import { createHash } from 'crypto';
 import type { LoadedFlatbreadConfig } from '@flatbread/core';
 import type { CodegenOptions } from './types.js';
 
+export const CODEGEN_OUTPUT_VERSION = 2;
+
 /**
  * Generate a hash for the Flatbread configuration
  * This is used to determine if types need to be regenerated
@@ -36,6 +38,7 @@ export function hashConfig(
       fieldNameTransform: 'function',
       loaded: config.loaded,
       codegen: options,
+      outputVersion: CODEGEN_OUTPUT_VERSION,
     },
     null,
     2
