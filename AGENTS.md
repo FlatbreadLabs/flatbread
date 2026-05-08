@@ -8,21 +8,29 @@ Flatbread is a Git-native relational content layer for TypeScript/JavaScript app
 
 ### Key commands
 
-- **Install**: `pnpm install` (enforces pnpm via `preinstall` script)
-- **Build**: `pnpm build` (builds all packages except examples via tsup)
-- **Lint**: `pnpm lint` (runs prettier)
-- **Tests**: `pnpm test` (ava tests) and `pnpm -F @flatbread/utils exec vitest run` / `pnpm -F @flatbread/codegen exec vitest run` (vitest tests — use `run` flag to avoid watch mode)
-- **Dev server**: `cd examples/nextjs && npx flatbread start -- next dev --turbopack` (GraphQL on port 5057, Next.js on port 3000)
+See `CONTRIBUTING.md` for full details. Quick reference:
+
+- **Install**: `pnpm install`
+- **Build**: `pnpm build`
+- **Lint**: `pnpm lint` (prettier)
+- **Typecheck**: `pnpm typecheck`
+- **Test**: `pnpm test` (builds, then runs ava + vitest suites)
+- **Full verify**: `pnpm verify` (lint + typecheck + build + test)
+- **Dev server**: `pnpm play` (GraphQL on port 5057, Next.js on port 3000)
+
+### Mergify Stacks
+
+The repo uses Mergify stacks for PR management. The `mergify-cli` is installed via `pip install mergify-cli` (included in the update script). Key points:
+
+- Use `mergify stack push` instead of `git push` on feature branches (the `.husky/pre-push` hook will remind you).
+- The commit-msg hook (`.husky/commit-msg`) auto-appends a `Change-Id` trailer for stack tracking.
+- See `.agents/skills/mergify-stack/SKILL.md` for the full workflow.
 
 ### Gotchas
 
-- **pnpm v10 blocks native build scripts by default.** After `pnpm install`, you must manually run postinstall scripts for native packages. The critical ones are:
-  - `node node_modules/.pnpm/esbuild@0.15.1/node_modules/esbuild/install.js` (and other esbuild versions: 0.13.15, 0.14.54, 0.18.20, 0.21.5)
-  - `cd node_modules/.pnpm/sharp@0.30.7/node_modules/sharp && npm run install` (and versions 0.31.3, 0.34.3)
-  - `node node_modules/.pnpm/@swc+core@1.13.3/node_modules/@swc/core/postinstall.js`
-  - `cd node_modules/.pnpm/@tailwindcss+oxide@4.1.11/node_modules/@tailwindcss/oxide && node scripts/install.js`
-  - Version numbers may change over time; check the pnpm install warning output for the exact list of blocked packages.
+- **Native build scripts are approved in `pnpm-workspace.yaml`.** The `onlyBuiltDependencies` list allows esbuild, sharp, @swc/core, etc. to run their postinstall scripts automatically during `pnpm install`.
 - **Vitest packages run in watch mode by default.** Always use `vitest run` (not bare `vitest`) to get a single run and exit.
 - **`flatbread` CLI is not on PATH.** Use `npx flatbread` when running from a shell. The `pnpm play` script from the root handles this automatically.
-- **Build before test.** All packages must be built (`pnpm build`) before running tests or starting dev servers.
+- **Build before test.** All packages must be built (`pnpm build`) before running tests or starting dev servers. `pnpm test` handles this automatically.
 - **The Next.js example `dev` script uses `--https`.** This requires an SSL certificate. In headless/CI environments, run without `--https`: `npx flatbread start -- next dev --turbopack`.
+- **Full local CI parity check:** `pnpm verify` runs lint, typecheck, build, and all tests.
