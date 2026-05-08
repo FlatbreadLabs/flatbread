@@ -473,7 +473,10 @@ function isResumeTerminalStatus(status: TaskState['status']): boolean {
 }
 
 function taskModelSelection(ts: TaskState): ModelSelection {
-  return ts.modelSelection ?? normalizeModelSelection(ts.model, `task ${ts.id} model`);
+  return (
+    ts.modelSelection ??
+    normalizeModelSelection(ts.model, `task ${ts.id} model`)
+  );
 }
 
 async function main(): Promise<void> {
@@ -532,7 +535,9 @@ async function main(): Promise<void> {
     for (const complexity of COMPLEXITY_KEYS) {
       modelForComplexity(complexity);
     }
-    console.log('[proof] validated model selections against Cursor.models.list()');
+    console.log(
+      '[proof] validated model selections against Cursor.models.list()'
+    );
   }
   const ranks = computeRanks(dag);
 
