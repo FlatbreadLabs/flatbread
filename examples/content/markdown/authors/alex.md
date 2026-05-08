@@ -8,7 +8,7 @@ enjoys:
   - buying plants optimistically
   - researching why plants died
   - apologizing to houseplants
-friend: tony
+friend: 2a3e
 image: eva.svg  # placeholder until we get alex.svg
 date_joined: 2023-08-12T14:30:00.000Z
 pronouns: they/them

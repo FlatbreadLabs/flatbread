@@ -22,6 +22,7 @@ import {
   normalizeIdentifier,
   normalizeOptionalIdentifier,
 } from '../utils/ids';
+import { validateCollectionReferences } from '../utils/references';
 import { generateCollection } from './generateCollection';
 
 interface RootQueries {
@@ -61,6 +62,7 @@ export async function generateSchema(
     config
   );
   validateCollectionIdentifiers(allContentNodesJSON);
+  validateCollectionReferences(allContentNodesJSON, config.content);
 
   const preknownSchemaFragments = fetchPreknownSchemaFragments(config);
 
