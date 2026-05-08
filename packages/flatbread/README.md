@@ -30,7 +30,7 @@ Turn flat files in Git into typed, relational content for your TypeScript app. *
 
 **GraphQL:** In the default toolkit, GraphQL is a common **read interface** for the content graph—schema generation and codegen are how many apps reach the data, not the definition of the product. More detail: [docs/positioning.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/positioning.md).
 
-**Glossary:** Quick definitions for **collection**, **relation**, **ID**, **cardinality**, **validation**, and **query interface** (GraphQL as one read path, not the whole product)—see [docs/glossary.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md).
+**Glossary:** Quick definitions for **collection**, **relation**, **ID**, **cardinality**, **validation**, **query interface**, and how the **generated GraphQL schema / operation types** map to those terms (GraphQL as one read path, not the whole product)—see [docs/glossary.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md).
 
 For contributing to this monorepo, use Node 20.19+ with pnpm 10.33.x. Runtime support for published packages is tracked by each package's own metadata.
 
@@ -75,6 +75,44 @@ examples/content/markdown/authors/   # Author collection
 
 The Next example points `flatbread.config.js` at `content/markdown/...` **relative to `examples/nextjs`**, where `content` is the symlink to `../content`.
 
+**Backing files for posts, authors, and tags (this example):**
+
+| What        | Where it lives                                                                                                                           | Glossary terms                                                                                                                                                                         |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Posts**   | `examples/content/markdown/posts/*.md` — one **record** per file                                                                         | [Collection](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#collection), [Record](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#record) |
+| **Authors** | `examples/content/markdown/authors/*.md` — one **record** per file                                                                       | Same; **IDs** in frontmatter wire **relations**                                                                                                                                        |
+| **Tags**    | The `tags:` YAML list **in each post’s frontmatter** (facet metadata on that **Post**). There is **no** `markdown/tags/` directory here. | [Tag (facet) vs `Tag` collection](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#tag-facet-vs-tag-collection)                                                   |
+
+### Traceability: same relation model (files, config, query interface)
+
+The table below ties the **Git-native** model to the default **GraphQL** read layer without implying GraphQL is the product’s whole identity—GraphQL is one [**query interface**](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#query-interface); files and config remain the source of truth.
+
+| Layer                                     | You see…                                                                                                                         | Glossary                                                                                                                                                                                                                                                                                                         |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Files**                                 | `authors:` ids in a post file match `id:` in author files; `tags:` is a string list on the post                                  | [Relation](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#relation), [ID](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#id), [Tag (facet) vs `Tag` collection](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#tag-facet-vs-tag-collection) |
+| **`flatbread.config.js`**                 | `content` entries with `collection: 'Post' \| 'Author'` and `refs: { authors: 'Author' }`                                        | [Collection](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#collection), [Relation](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#relation)                                                                                                                       |
+| **Generated GraphQL schema + codegen TS** | `allPosts { tags authors { id name } }` — **refs** resolve to **`Author`** objects; **`tags`** stays a scalar list on **`Post`** | [Generated schema and operation types (GraphQL)](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#generated-schema-and-operation-types-graphql), [Cardinality](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#cardinality)                                           |
+
+**Illustrative query result** (same **relation model** as [`examples/content/markdown/posts/example-post.md`](https://github.com/FlatbreadLabs/flatbread/blob/main/examples/content/markdown/posts/example-post.md): authors `2a3e` / `40s3`, **tags** from frontmatter). Values are from that file and its resolved **authors**; the shape matches the **`GetPostsAuthorsAndTags`** operation in **§3** after you include **`tags`** and **`authors`** in your **`.graphql`** document (see also `queries/posts.graphql`, which you can extend the same way):
+
+```json
+{
+  "allPosts": [
+    {
+      "id": "sdfsdf-23423-sdfsd-23444-dfghf",
+      "title": "The Art of Measuring Cats in Fruit Units",
+      "tags": ["cats", "measurements", "fruit-science", "important-research"],
+      "authors": [
+        { "id": "2a3e", "name": "Tony" },
+        { "id": "40s3", "name": "Eva" }
+      ]
+    }
+  ]
+}
+```
+
+Add **`tags`** (and any other fields) to your **`.graphql`** documents and rerun codegen so operations and `generated/graphql.ts` stay aligned with the files—snippets in docs are **illustrative** until your checked-in queries match.
+
 ### 3 · Run it from the repo root
 
 Prerequisites: **Node 20.19+**, **pnpm 10.33.x** (see [CONTRIBUTING.md](CONTRIBUTING.md)).
@@ -108,7 +146,7 @@ query GetPostsAuthorsAndTags {
 }
 ```
 
-After codegen, your app imports types from **`./generated/graphql`**. The **result shape** of that operation is typed (for example **`GetPostsAuthorsAndTagsQuery`**)—relations resolve to **`Author`** objects while **`tags`** stay a **string array** on **`Post`**, matching the file metadata.
+After codegen, your app imports types from **`./generated/graphql`**. The **result shape** of that operation is typed (for example **`GetPostsAuthorsAndTagsQuery`**)—relations resolve to **`Author`** objects while **`tags`** stay a **string array** on **`Post`**, matching the file metadata—the same row as the [illustrative JSON](#traceability-same-relation-model-files-config-query-interface) under **Traceability**.
 
 Default filesystem + markdown wiring uses the bundled [`source-filesystem`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/source-filesystem) and [`transformer-markdown`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/transformer-markdown) plugins (`flatbread` re-exports them).
 
