@@ -1,0 +1,14 @@
+#!/bin/sh
+# Mergify CLI Hook Wrapper
+# This file is managed by mergify-cli. You can add custom logic below the marker.
+
+# Skip if this is a recursive call from the post-commit safety net amend
+[ -n "$MERGIFY_POST_COMMIT_RUNNING" ] && exit 0
+
+MERGIFY_HOOKS_DIR="$(dirname "$0")/mergify-hooks"
+if [ -f "$MERGIFY_HOOKS_DIR/post-commit.sh" ]; then
+    "$MERGIFY_HOOKS_DIR/post-commit.sh" "$@" || exit $?
+fi
+
+# --- USER CUSTOM LOGIC BELOW ---
+# Add your custom hook logic here (preserved during upgrades)

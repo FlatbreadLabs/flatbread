@@ -31,6 +31,7 @@
 ### 📦 API
 
 #### Configuration
+
 ```ts
 interface CodegenOptions {
   enabled?: boolean;
@@ -50,6 +51,7 @@ interface CodegenOptions {
 ```
 
 #### Core Functions
+
 - `generateTypes()` - Generate TypeScript types from GraphQL schema
 - `generateTypesWithDocuments()` - Include GraphQL documents in generation
 - `watchAndGenerate()` - Watch mode for automatic regeneration
@@ -57,6 +59,7 @@ interface CodegenOptions {
 - `loadCache()` / `saveCache()` - Cache management
 
 #### CLI Commands
+
 ```bash
 npx flatbread codegen                    # Generate types
 npx flatbread codegen --watch            # Watch mode
@@ -119,6 +122,7 @@ npx flatbread codegen --verbose          # Detailed logging
 ### 🏃‍♂️ Getting Started
 
 1. Add to your `flatbread.config.ts`:
+
 ```ts
 export default defineConfig({
   // ... your existing config
@@ -131,11 +135,13 @@ export default defineConfig({
 ```
 
 2. Generate types:
+
 ```bash
 npx flatbread codegen
 ```
 
 3. Use in your app:
+
 ```ts
 import type { Post, GetPostsQuery } from './generated/graphql';
 ```
@@ -143,6 +149,6 @@ import type { Post, GetPostsQuery } from './generated/graphql';
 ### 🔮 Future Plans
 
 - **gql.tada Integration**: Support for compile-time type inference
-- **Custom Strategies**: Plugin system for alternative codegen approaches  
+- **Custom Strategies**: Plugin system for alternative codegen approaches
 - **IDE Integration**: VS Code extension for seamless development experience
 - **Performance Monitoring**: Built-in performance metrics and optimization suggestions

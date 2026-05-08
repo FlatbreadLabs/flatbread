@@ -1,0 +1,13 @@
+---
+description: Required checkpoints for Flatbread schema-breaking migrations
+globs: ["packages/core/src/generators/schema.ts", "packages/core/src/resolvers/arguments.ts", "packages/core/src/types.ts", "packages/codegen/**/*.ts", "packages/flatbread/src/cli/index.ts", "examples/**/*"]
+alwaysApply: false
+---
+
+# Flatbread Schema Migration Checkpoints
+
+- Before changing schema generation, resolver arguments, or shared types, write a before/after contract for IDs, refs, filters, root query names, generated TypeScript, config shape, CLI behavior, and examples.
+- Escalate for human approval when changes alter IDs, refs, filters, query names, generated TypeScript, config shape, publish scripts, or example app behavior.
+- Validate CLI, codegen, generated GraphQL documents/types, README examples, and `examples/nextjs` for schema/API changes.
+- Treat breaking work as a coordinated monorepo release across `flatbread`, `@flatbread/core`, `@flatbread/config`, `@flatbread/codegen`, transformers, and examples.
+- Do not publish breaking prereleases as accidental `latest`; document migration notes and rollback before release approval.
