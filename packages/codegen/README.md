@@ -1,8 +1,8 @@
 # @flatbread/codegen 🏗️
 
-> Automatic TypeScript type generation for Flatbread GraphQL schemas
+> TypeScript generation for Flatbread read interfaces
 
-Flatbread treats repo files as **relational, Git-tracked content** for TypeScript apps; GraphQL is a common **read interface**. Codegen keeps operations typed against the schema Flatbread derives from your config.
+Flatbread treats repo files as **relational, Git-tracked content** for TypeScript apps; GraphQL is one **read interface** over the typed model Flatbread derives from flat files and config. Codegen keeps GraphQL operations typed and emits model-derived TypeScript helpers for collection-shaped reads.
 
 ## 💾 Install
 
@@ -14,7 +14,9 @@ pnpm add @flatbread/codegen
 
 ## 🎯 Overview
 
-This package automatically generates TypeScript types from your Flatbread GraphQL schema, providing type safety for your GraphQL operations. It uses [GraphQL Code Generator](https://www.the-guild.dev/graphql/codegen) under the hood with intelligent caching to avoid unnecessary regeneration.
+This package generates TypeScript from the Flatbread model so apps can read typed content through the interface that fits the call site. It uses [GraphQL Code Generator](https://www.the-guild.dev/graphql/codegen) under the hood for schema and operation types, and also emits a prototype generated TypeScript read API derived from your configured collections, fields, and refs.
+
+For the canonical posts/authors/tags walkthrough and the contract for choosing GraphQL versus the generated TypeScript read API, see the root [Quickstart](../../README.md#quickstart-posts-authors-and-tags) and [Choosing a read interface](../../README.md#choosing-a-read-interface).
 
 ## 👩‍🍳 Basic Usage
 
@@ -48,16 +50,18 @@ export default defineConfig({
 
 ```bash
 # Generate types once
-npx flatbread codegen
+pnpm exec flatbread codegen
 
 # Watch for changes and regenerate
-npx flatbread codegen --watch
+pnpm exec flatbread codegen --watch
 
 # Force regeneration (clear cache)
-npx flatbread codegen --clear-cache
+pnpm exec flatbread codegen --clear-cache
 ```
 
-### 4. Use generated types in your application:
+### 4. Use the generated output in your application:
+
+Use **GraphQL operations** when you want explicit documents, custom selections, GraphQL clients, persisted operations, or direct access to the GraphQL endpoint:
 
 ```ts
 import type { Post, GetPostsQuery } from './generated/graphql';
@@ -73,6 +77,21 @@ const posts: Post[] = await request<GetPostsQuery>(`
     }
   }
 `);
+```
+
+Use the prototype **generated TypeScript read API** when you want collection-shaped helpers for common reads from the configured content model. In the canonical Next.js example, `createFlatbreadReadApi()` reads posts, authors, and tags with a generated default selection while executing through the GraphQL layer:
+
+```ts
+import { createFlatbreadReadApi } from './generated/graphql';
+import { graphqlFetch } from './lib/graphql';
+
+const read = createFlatbreadReadApi(
+  async <TData>(source: string, variables?: Record<string, unknown>) =>
+    graphqlFetch<TData>(source, variables)
+);
+const posts = await read.Post.all();
+const authorNames = posts[0]?.authors?.map((author) => author.name);
+const tags = posts[0]?.tags;
 ```
 
 ## 👀 Watch Mode (watch-only)
