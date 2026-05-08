@@ -17,6 +17,11 @@ import {
   Transformer,
 } from '../types';
 import { map } from '../utils/map';
+import {
+  getNodeIdentifier,
+  normalizeIdentifier,
+  normalizeOptionalIdentifier,
+} from '../utils/ids';
 import { generateCollection } from './generateCollection';
 
 interface RootQueries {
@@ -55,6 +60,7 @@ export async function generateSchema(
     allContentNodes,
     config
   );
+  validateCollectionIdentifiers(allContentNodesJSON);
 
   const preknownSchemaFragments = fetchPreknownSchemaFragments(config);
 
@@ -114,10 +120,20 @@ export async function generateSchema(
       type: () => schema,
       description: `Find one ${type} by its ID`,
       args: generateArgsForSingleItemQuery(),
-      resolve: (rp: Record<string, any>) =>
-        cloneDeep(allContentNodesJSON[type]).find(
-          (node: EntryNode) => node.id === rp.args.id
-        ),
+      resolve: (rp: Record<string, any>) => {
+        const idToFind = normalizeOptionalIdentifier(
+          rp.args.id,
+          `${type} query argument "id"`
+        );
+
+        if (idToFind === undefined) {
+          return undefined;
+        }
+
+        return cloneDeep(allContentNodesJSON[type]).find(
+          (node: EntryNode) => getNodeIdentifier(node, type) === idToFind
+        );
+      },
     });
 
     schema.addResolver({
@@ -126,10 +142,12 @@ export async function generateSchema(
       description: `Find many ${pluralType} by their IDs`,
       args: generateArgsForManyItemQuery(pluralType),
       resolve: (rp: Record<string, any>) => {
-        const idsToFind = rp.args.ids ?? [];
+        const idsToFind = (rp.args.ids ?? []).map((id: unknown): string =>
+          normalizeIdentifier(id, `${type} query argument "ids"`)
+        );
         const matches =
           cloneDeep(allContentNodesJSON[type])?.filter((node: EntryNode) =>
-            idsToFind?.includes(node.id)
+            idsToFind?.includes(getNodeIdentifier(node, type))
           ) ?? [];
         return resolveQueryArgs(matches, rp.args, config, {
           type: {
@@ -239,6 +257,47 @@ const fetchPreknownSchemaFragments = (
     {}
   );
 };
+
+function validateCollectionIdentifiers(
+  allContentNodesJSON: Record<string, EntryNode[]>
+): void {
+  const errors: string[] = [];
+
+  Object.entries(allContentNodesJSON).forEach(([collection, nodes]) => {
+    const seen = new Map<string, EntryNode>();
+
+    nodes.forEach((node) => {
+      try {
+        const normalizedId = getNodeIdentifier(node, collection);
+        const existing = seen.get(normalizedId);
+
+        if (existing) {
+          errors.push(
+            `${collection} record id "${normalizedId}" is duplicated after normalization${sourceContext(
+              existing
+            )}${sourceContext(node)}`
+          );
+        } else {
+          seen.set(normalizedId, node);
+        }
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : String(error));
+      }
+    });
+  });
+
+  if (errors.length > 0) {
+    throw new Error(
+      `Flatbread found ${errors.length} invalid record ID${
+        errors.length === 1 ? '' : 's'
+      }:\n${errors.map((message) => `- ${message}`).join('\n')}`
+    );
+  }
+}
+
+function sourceContext(node: EntryNode): string {
+  return typeof node._path === 'string' ? ` (${node._path})` : '';
+}
 
 function getTransformerExtensionMap(transformer: Transformer[]) {
   const transformerMap = new Map();

@@ -19,6 +19,17 @@ test('Sift for nodes with name equal to "foo"', (t) => {
   t.deepEqual(nodes.filter(sift({ name: { eq: 'foo' } })), [nodes[0]]);
 });
 
+test('Sift normalizes ID filters before strict comparison', (t) => {
+  t.deepEqual(nodes.filter(sift({ id: { eq: '1' } })), [nodes[0]]);
+});
+
+test('Sift rejects invalid ID filter comparators', (t) => {
+  t.throws(() => nodes.filter(sift({ id: { eq: '' } })), {
+    message:
+      'filter id comparator "eq" must be a non-empty string or finite number identifier.',
+  });
+});
+
 test('Sift for nodes with nested object "child" having age greater than or equal to 18', (t) => {
   t.deepEqual(nodes.filter(sift({ child: { age: { gte: 18 } } })), [
     nodes[0],

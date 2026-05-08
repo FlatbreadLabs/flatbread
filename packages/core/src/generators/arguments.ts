@@ -18,7 +18,7 @@ export const generateArgsForAllItemQuery = (pluralType: string) => ({
  */
 export const generateArgsForManyItemQuery = (pluralType: string) => ({
   ids: {
-    type: '[String]',
+    type: '[ID]',
   },
   ...skip(),
   ...limit(pluralType),
@@ -32,7 +32,7 @@ export const generateArgsForManyItemQuery = (pluralType: string) => ({
  */
 export const generateArgsForSingleItemQuery = () => ({
   id: {
-    type: 'String',
+    type: 'ID',
   },
 });
 
