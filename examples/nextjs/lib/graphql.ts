@@ -2,7 +2,7 @@
  * GraphQL client utilities for Flatbread
  */
 
-export interface GraphQLResponse<T = any> {
+export interface GraphQLResponse<T = unknown> {
   data?: T;
   errors?: Array<{
     message: string;
@@ -17,9 +17,9 @@ export interface GraphQLResponse<T = any> {
 /**
  * Simple GraphQL client for fetching data from Flatbread
  */
-export async function graphqlFetch<T = any>(
+export async function graphqlFetch<T = unknown>(
   query: string,
-  variables?: Record<string, any>,
+  variables?: Record<string, unknown>,
   endpoint: string = 'http://localhost:5057/graphql'
 ): Promise<T> {
   const response = await fetch(endpoint, {

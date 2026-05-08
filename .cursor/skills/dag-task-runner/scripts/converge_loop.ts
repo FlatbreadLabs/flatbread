@@ -147,7 +147,9 @@ export function buildConvergenceContext(
   const trimmed = (resultText ?? '').trim();
   const body = trimmed === '' ? '(empty result text)' : trimmed;
   return [
-    `Convergence feedback from "${convergeTaskId}" (iteration ${iteration - 1}):`,
+    `Convergence feedback from "${convergeTaskId}" (iteration ${
+      iteration - 1
+    }):`,
     '',
     body,
   ].join('\n');

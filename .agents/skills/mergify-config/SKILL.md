@@ -19,11 +19,13 @@ mergify config simulate PULL_REQUEST_URL             # Simulate actions on a PR
 ## Configuration File Detection
 
 Mergify CLI auto-detects the configuration file from standard locations:
+
 - `.mergify.yml`
 - `.mergify/config.yml`
 - `.github/mergify.yml`
 
 Override with `--config-file` / `-f`:
+
 ```bash
 mergify config -f path/to/config.yml validate
 ```
@@ -41,10 +43,12 @@ mergify config -f .mergify.yml validate
 ```
 
 **Output:**
+
 - If valid: prints a success message and exits with code 0
 - If invalid: prints the number of errors and each error's path and message, then exits with code 1
 
 **Use in CI:**
+
 ```yaml
 - name: Validate Mergify config
   run: mergify config validate
@@ -59,9 +63,11 @@ mergify config simulate https://github.com/owner/repo/pull/123
 ```
 
 **Required arguments:**
+
 - `PULL_REQUEST_URL` -- Full GitHub URL of the pull request to simulate against
 
 **Options:**
+
 - `--token` / `-t` (env: `MERGIFY_TOKEN` or `GITHUB_TOKEN`) -- Authentication token
 - `--api-url` / `-u` (env: `MERGIFY_API_URL`) -- Mergify API URL (default: `https://api.mergify.com`)
 
@@ -83,23 +89,23 @@ with all available pages and their descriptions.
 
 Fetch the pages relevant to the user's request before writing any configuration:
 
-| Topic | URL |
-|-------|-----|
-| File format and structure | `https://docs.mergify.com/configuration/file-format` |
-| Conditions syntax and attributes | `https://docs.mergify.com/configuration/conditions` |
-| Data types (duration, templates) | `https://docs.mergify.com/configuration/data-types` |
-| Configuration sharing and reuse | `https://docs.mergify.com/configuration/sharing` |
-| Workflow automation overview | `https://docs.mergify.com/workflow` |
-| All available actions | `https://docs.mergify.com/workflow/actions` |
-| Writing your first rule | `https://docs.mergify.com/workflow/writing-your-first-rule` |
-| Merge queue rules | `https://docs.mergify.com/merge-queue/rules` |
-| Merge queue setup | `https://docs.mergify.com/merge-queue/setup` |
-| Queue priority rules | `https://docs.mergify.com/merge-queue/priority` |
-| Merge protections | `https://docs.mergify.com/merge-protections/setup` |
-| Custom protection rules | `https://docs.mergify.com/merge-protections/custom-rules` |
-| Merge protection examples | `https://docs.mergify.com/merge-protections/examples` |
-| Commands and restrictions | `https://docs.mergify.com/commands` |
-| JSON Schema | `https://docs.mergify.com/mergify-configuration-schema.json` |
+| Topic                            | URL                                                          |
+| -------------------------------- | ------------------------------------------------------------ |
+| File format and structure        | `https://docs.mergify.com/configuration/file-format`         |
+| Conditions syntax and attributes | `https://docs.mergify.com/configuration/conditions`          |
+| Data types (duration, templates) | `https://docs.mergify.com/configuration/data-types`          |
+| Configuration sharing and reuse  | `https://docs.mergify.com/configuration/sharing`             |
+| Workflow automation overview     | `https://docs.mergify.com/workflow`                          |
+| All available actions            | `https://docs.mergify.com/workflow/actions`                  |
+| Writing your first rule          | `https://docs.mergify.com/workflow/writing-your-first-rule`  |
+| Merge queue rules                | `https://docs.mergify.com/merge-queue/rules`                 |
+| Merge queue setup                | `https://docs.mergify.com/merge-queue/setup`                 |
+| Queue priority rules             | `https://docs.mergify.com/merge-queue/priority`              |
+| Merge protections                | `https://docs.mergify.com/merge-protections/setup`           |
+| Custom protection rules          | `https://docs.mergify.com/merge-protections/custom-rules`    |
+| Merge protection examples        | `https://docs.mergify.com/merge-protections/examples`        |
+| Commands and restrictions        | `https://docs.mergify.com/commands`                          |
+| JSON Schema                      | `https://docs.mergify.com/mergify-configuration-schema.json` |
 
 For individual actions (assign, backport, close, comment, copy, dismiss_reviews,
 edit, github_actions, label, merge, queue, rebase, request_reviews, review,
@@ -118,6 +124,7 @@ squash, update), fetch the specific action page at
 ## Common Patterns
 
 ### Test config changes before pushing
+
 ```bash
 # Edit your .mergify.yml locally, then:
 mergify config validate
@@ -126,6 +133,7 @@ mergify config simulate https://github.com/myorg/myrepo/pull/42
 ```
 
 ### CI validation gate
+
 ```yaml
 jobs:
   validate-mergify:

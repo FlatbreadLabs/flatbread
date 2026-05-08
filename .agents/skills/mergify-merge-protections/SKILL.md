@@ -7,11 +7,11 @@ description: Use Mergify merge protections to control when PRs merge — PR depe
 
 Merge protections control when PRs are allowed to merge:
 
-| Protection | Scope | How |
-|------------|-------|-----|
-| **Depends-On** | Per-PR dependency chain | `Depends-On:` header in PR body |
-| **Merge-After** | Per-PR time gate | `Merge-After:` header in PR body |
-| **Scheduled Freezes** | Repository-wide or conditional | CLI commands (`mergify freeze`) |
+| Protection            | Scope                          | How                              |
+| --------------------- | ------------------------------ | -------------------------------- |
+| **Depends-On**        | Per-PR dependency chain        | `Depends-On:` header in PR body  |
+| **Merge-After**       | Per-PR time gate               | `Merge-After:` header in PR body |
+| **Scheduled Freezes** | Repository-wide or conditional | CLI commands (`mergify freeze`)  |
 
 `Depends-On` and `Merge-After` are built-in — just add the header to the PR description (or commit message body when using `mergify stack push`) and Mergify enforces them automatically, no `.mergify.yml` configuration needed. Freezes are managed via CLI commands.
 
@@ -40,7 +40,7 @@ All three formats are supported — use `#NNN` for same-repo, full URL or `org/r
 
 ### With `mergify stack push`
 
-The stack tool **automatically** adds `Depends-On: #NNN` between consecutive PRs in a stack. For dependencies *outside* the stack (cross-repo or unrelated PRs), add the header manually to the **commit message body** — it will be copied to the PR description on push.
+The stack tool **automatically** adds `Depends-On: #NNN` between consecutive PRs in a stack. For dependencies _outside_ the stack (cross-repo or unrelated PRs), add the header manually to the **commit message body** — it will be copied to the PR description on push.
 
 ### When to suggest
 
@@ -108,6 +108,7 @@ mergify freeze delete FREEZE_ID           # Delete a freeze
 ## Authentication
 
 All commands require a Mergify or GitHub token:
+
 - `--token` / `-t` (env: `MERGIFY_TOKEN` or `GITHUB_TOKEN`) -- defaults to `gh auth token`
 - `--repository` / `-r` -- Repository full name (auto-detected from git remote)
 - `--api-url` / `-u` (env: `MERGIFY_API_URL`) -- Mergify API URL (default: `https://api.mergify.com`)
@@ -142,10 +143,12 @@ mergify freeze create \
 ```
 
 **Required options:**
+
 - `--reason` -- Human-readable reason for the freeze
 - `--timezone` -- IANA timezone name (e.g., `Europe/Paris`, `US/Eastern`, `UTC`)
 
 **Optional options:**
+
 - `--start` -- Start time in ISO 8601 format (default: now)
 - `--end` -- End time in ISO 8601 format (default: no end, emergency freeze)
 - `--condition` / `-c` -- Matching condition (repeatable, e.g., `-c 'base=main'`)
@@ -193,6 +196,7 @@ If the freeze is currently active, a `--reason` for deletion is required.
 ## Common Patterns
 
 ### Emergency freeze during an incident
+
 ```bash
 # Stop all merges immediately
 mergify freeze create \
@@ -205,7 +209,9 @@ mergify freeze delete FREEZE_UUID --reason "Incident #1234 resolved"
 ```
 
 ### Recurring deployment window
+
 Create the freeze before each deployment window and delete it after:
+
 ```bash
 mergify freeze create \
   --reason "Deploy window" \
@@ -215,6 +221,7 @@ mergify freeze create \
 ```
 
 ### Freeze with exceptions for critical fixes
+
 ```bash
 mergify freeze create \
   --reason "Sprint freeze" \

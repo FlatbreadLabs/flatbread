@@ -71,7 +71,10 @@ prog
   .option('-f, --output-file <file>', 'Output filename for generated types')
   .option('-w, --watch', 'Watch for changes and regenerate', false)
   .option('--clear-cache', 'Clear cache and force regeneration', false)
-  .option('-d, --documents <paths>', 'Additional document paths (comma-separated)')
+  .option(
+    '-d, --documents <paths>',
+    'Additional document paths (comma-separated)'
+  )
   .option('-v, --verbose', 'Enable verbose logging', false)
   .action(async (options) => {
     const codegenCommand = createCodegenCommand();
@@ -81,7 +84,9 @@ prog
       outputFile: options.outputFile,
       watch: options.watch,
       clearCache: options.clearCache,
-      documents: options.documents ? options.documents.split(',').map((d: string) => d.trim()) : undefined,
+      documents: options.documents
+        ? options.documents.split(',').map((d: string) => d.trim())
+        : undefined,
       verbose: options.verbose,
     });
   });

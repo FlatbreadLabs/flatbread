@@ -178,7 +178,9 @@ export async function loadWorkspaceFacts(cwd: string): Promise<WorkspaceFacts> {
         facts.packageNameByDir.set(entry.name, name);
         const scripts: Record<string, string> = {};
         if (raw.scripts && typeof raw.scripts === 'object') {
-          for (const [k, v] of Object.entries(raw.scripts as Record<string, unknown>)) {
+          for (const [k, v] of Object.entries(
+            raw.scripts as Record<string, unknown>
+          )) {
             if (typeof v === 'string') scripts[k] = v;
           }
         }
@@ -289,7 +291,8 @@ function validateCommand(
     raw = {
       ...base,
       verdict: 'OK',
-      reason: 'No workspace-specific check; verb not in pnpm/flatbread risk family.',
+      reason:
+        'No workspace-specific check; verb not in pnpm/flatbread risk family.',
     };
   }
 
@@ -354,7 +357,10 @@ function validatePnpmCommand(
 
   // Validate filter target if provided.
   if (filterPkg !== null) {
-    if (!facts.packageNames.has(filterPkg) && !facts.packageDirs.has(filterDir ?? filterPkg)) {
+    if (
+      !facts.packageNames.has(filterPkg) &&
+      !facts.packageDirs.has(filterDir ?? filterPkg)
+    ) {
       return {
         ...base,
         verdict: 'DIRTY',
@@ -371,13 +377,15 @@ function validatePnpmCommand(
         verdict: 'DIRTY',
         reason:
           `\`pnpm exec flatbread ${flatbreadSub}\` runs from the workspace root, where no flatbread.config.js exists; ` +
-          'flatbread\'s loadConfig does not search up. Use `pnpm --filter <pkg> exec flatbread …` from an example dir instead.',
+          "flatbread's loadConfig does not search up. Use `pnpm --filter <pkg> exec flatbread …` from an example dir instead.",
       };
     }
     return {
       ...base,
       verdict: 'OK',
-      reason: `pnpm --filter ${filterPkg ?? dirArg} exec flatbread ${flatbreadSub}: filter targets a workspace package containing a flatbread.config.js.`,
+      reason: `pnpm --filter ${
+        filterPkg ?? dirArg
+      } exec flatbread ${flatbreadSub}: filter targets a workspace package containing a flatbread.config.js.`,
     };
   }
 
@@ -390,15 +398,32 @@ function validatePnpmCommand(
         ...base,
         verdict: 'DIRTY',
         reason:
-          `\`pnpm ${filterPkg ? `--filter ${filterPkg} ` : ''}${sub}\` resolves to a long-running script ` +
-          `(\`${hangScripts.get(sub)}\`) defined on package "${target}". This would hang the DAG node.`,
+          `\`pnpm ${
+            filterPkg ? `--filter ${filterPkg} ` : ''
+          }${sub}\` resolves to a long-running script ` +
+          `(\`${hangScripts.get(
+            sub
+          )}\`) defined on package "${target}". This would hang the DAG node.`,
       };
     }
 
     if (filterPkg !== null) {
       const scripts = facts.scriptsByPackage.get(filterPkg);
       // `exec`, `dlx`, `add`, `install` etc. are pnpm built-ins — skip script validation for those.
-      const builtins = new Set(['exec', 'dlx', 'add', 'install', 'remove', 'run', 'test', 'build', 'lint', 'why', 'list', 'recursive']);
+      const builtins = new Set([
+        'exec',
+        'dlx',
+        'add',
+        'install',
+        'remove',
+        'run',
+        'test',
+        'build',
+        'lint',
+        'why',
+        'list',
+        'recursive',
+      ]);
       if (
         scripts &&
         !builtins.has(sub) &&
@@ -432,7 +457,10 @@ function validatePnpmCommand(
  * flagged here unless their preceding prompt context lacks a "background"
  * cue (which `isNeutralized` already handles upstream).
  */
-function scriptsThatHang(facts: WorkspaceFacts, filterPkg: string | null): Map<string, string> {
+function scriptsThatHang(
+  facts: WorkspaceFacts,
+  filterPkg: string | null
+): Map<string, string> {
   const out = new Map<string, string>();
   const scopes = filterPkg
     ? [facts.scriptsByPackage.get(filterPkg) ?? {}]
@@ -475,6 +503,10 @@ export function formatDryCheckReport(report: DryCheckReport): string {
     }
   }
 
-  lines.push(`[dry-check-cmds] verdict: ${report.isDirty ? 'DIRTY (exit 1)' : 'CLEAN (exit 0)'}`);
+  lines.push(
+    `[dry-check-cmds] verdict: ${
+      report.isDirty ? 'DIRTY (exit 1)' : 'CLEAN (exit 0)'
+    }`
+  );
   return lines.join('\n');
 }

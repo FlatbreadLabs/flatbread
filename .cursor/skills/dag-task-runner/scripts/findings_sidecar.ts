@@ -149,5 +149,7 @@ export async function readFindingsSidecarAsText(
   if (!sidecar) return null;
   const entries = Object.entries(sidecar.sections);
   if (entries.length === 0) return '';
-  return entries.map(([heading, body]) => `## ${heading}\n${body}`).join('\n\n');
+  return entries
+    .map(([heading, body]) => `## ${heading}\n${body}`)
+    .join('\n\n');
 }

@@ -32,7 +32,10 @@ export interface PauseTaskDeps {
 
 const DEFAULT_PAUSE_POLL_MS = 2000;
 
-export function checkpointPathFor(checkpointDir: string, taskId: string): string {
+export function checkpointPathFor(
+  checkpointDir: string,
+  taskId: string
+): string {
   return join(checkpointDir, `pending-checkpoint-${taskId}`);
 }
 
@@ -114,7 +117,9 @@ function sleep(ms: number): Promise<void> {
 }
 
 function renderSentinelBody(task: RawTask, sentinelPath: string): string {
-  const description = task.subtask_prompt?.trim() ? task.subtask_prompt.trim() : '(no description provided)';
+  const description = task.subtask_prompt?.trim()
+    ? task.subtask_prompt.trim()
+    : '(no description provided)';
   return [
     '# Pending DAG checkpoint',
     '',
@@ -137,7 +142,9 @@ function renderSentinelBody(task: RawTask, sentinelPath: string): string {
 }
 
 function renderAwaitingResultText(task: RawTask, sentinelPath: string): string {
-  const description = task.subtask_prompt?.trim() ? task.subtask_prompt.trim() : '(no description provided)';
+  const description = task.subtask_prompt?.trim()
+    ? task.subtask_prompt.trim()
+    : '(no description provided)';
   return [
     'AWAITING HUMAN APPROVAL.',
     '',
@@ -152,6 +159,11 @@ function renderAwaitingResultText(task: RawTask, sentinelPath: string): string {
   ].join('\n');
 }
 
-function renderApprovedResultText(sentinelPath: string, finishedAt: number): string {
-  return `Approved by human. Sentinel removed at ${new Date(finishedAt).toISOString()} (${sentinelPath}).`;
+function renderApprovedResultText(
+  sentinelPath: string,
+  finishedAt: number
+): string {
+  return `Approved by human. Sentinel removed at ${new Date(
+    finishedAt
+  ).toISOString()} (${sentinelPath}).`;
 }

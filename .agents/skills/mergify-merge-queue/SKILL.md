@@ -44,18 +44,18 @@ Use `mergify queue show <PR_NUMBER>` to check why a PR is stuck or how it's prog
 
 ## Queue States
 
-| State | Meaning |
-|-------|---------|
-| `running` | Batch is actively running CI |
-| `preparing` | Batch is being set up |
-| `bisecting` | Batch failed, bisecting to find the culprit |
-| `failed` | CI failed for this batch |
-| `merged` | PRs in this batch have been merged |
-| `waiting_for_merge` | CI passed, waiting for GitHub to merge |
-| `waiting_for_previous_batches` | Blocked on earlier batches completing |
-| `waiting_for_batch` | Waiting to be picked up into a batch |
-| `waiting_schedule` | Outside the configured merge schedule |
-| `frozen` | Queue is paused |
+| State                          | Meaning                                     |
+| ------------------------------ | ------------------------------------------- |
+| `running`                      | Batch is actively running CI                |
+| `preparing`                    | Batch is being set up                       |
+| `bisecting`                    | Batch failed, bisecting to find the culprit |
+| `failed`                       | CI failed for this batch                    |
+| `merged`                       | PRs in this batch have been merged          |
+| `waiting_for_merge`            | CI passed, waiting for GitHub to merge      |
+| `waiting_for_previous_batches` | Blocked on earlier batches completing       |
+| `waiting_for_batch`            | Waiting to be picked up into a batch        |
+| `waiting_schedule`             | Outside the configured merge schedule       |
+| `frozen`                       | Queue is paused                             |
 
 ## Pausing and Unpausing
 
@@ -73,14 +73,17 @@ mergify queue unpause
 ## Troubleshooting
 
 **PR not entering the queue:**
+
 - Check that the PR's merge conditions are met: `mergify queue show <PR_NUMBER> -v`
 - Look at the conditions section for unmet requirements
 
 **PR stuck in queue:**
+
 - Check CI state: `mergify queue show <PR_NUMBER>`
 - If checks are failing, inspect the failing checks with `-v`
 - If the queue is paused, check who paused it: `mergify queue status`
 
 **Queue moving slowly:**
+
 - Check for failing batches that trigger bisection: `mergify queue status`
 - Bisecting batches test PRs individually, which is slower than batch merging

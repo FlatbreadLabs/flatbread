@@ -4,7 +4,7 @@
  * The DAG file shape is intentionally tiny — see ../examples/example_dag.json.
  */
 
-export type Complexity = "HIGH" | "MED" | "LOW";
+export type Complexity = 'HIGH' | 'MED' | 'LOW';
 export type ModelMap = Record<Complexity, string>;
 export type ModelMapOverride = Partial<ModelMap>;
 
@@ -22,7 +22,7 @@ export type ModelMapOverride = Partial<ModelMap>;
  *   defaults to `'.*'`). `complexity`, `subtask_prompt`, and any explicit
  *   `model` field are rejected at parse time because no model is invoked.
  */
-export type TaskKind = "task" | "pause" | "oracle";
+export type TaskKind = 'task' | 'pause' | 'oracle';
 
 export interface RawTask {
   id: string;
@@ -77,22 +77,22 @@ export interface DAGBudget {
   maxTokensTotal?: number;
 }
 
-const COMPLEXITY_VALUES = new Set<Complexity>(["HIGH", "MED", "LOW"]);
-const COMPLEXITY_KEYS = ["HIGH", "MED", "LOW"] as const satisfies readonly Complexity[];
-const TASK_KIND_VALUES = new Set<TaskKind>(["task", "pause", "oracle"]);
+const COMPLEXITY_VALUES = new Set<Complexity>(['HIGH', 'MED', 'LOW']);
+const COMPLEXITY_KEYS: readonly Complexity[] = ['HIGH', 'MED', 'LOW'] as const;
+const TASK_KIND_VALUES = new Set<TaskKind>(['task', 'pause', 'oracle']);
 /** Synthetic placeholder so non-LLM tasks (pause, oracle) satisfy the existing structural type. The runner must branch on `kind` before consuming this. */
-const NON_LLM_SYNTHETIC_COMPLEXITY: Complexity = "LOW";
+const NON_LLM_SYNTHETIC_COMPLEXITY: Complexity = 'LOW';
 /** Default `expect` regex for `kind: 'oracle'` — any output (even empty) matches. */
-const DEFAULT_ORACLE_EXPECT = ".*";
+const DEFAULT_ORACLE_EXPECT = '.*';
 
 /** Type guard — pause tasks must be detected by `kind` before any model-bound code path runs. */
 export function isPauseTask(task: RawTask): boolean {
-  return task.kind === "pause";
+  return task.kind === 'pause';
 }
 
 /** Type guard — oracle tasks must be detected by `kind` before any model-bound code path runs. */
 export function isOracleTask(task: RawTask): boolean {
-  return task.kind === "oracle";
+  return task.kind === 'oracle';
 }
 
 /**
@@ -116,21 +116,21 @@ export function isOracleTask(task: RawTask): boolean {
  * read the SDK's error-message catalog; do NOT trust `cursor-agent --list-models`.
  */
 export const DEFAULT_MODEL_MAP: ModelMap = {
-  HIGH: "claude-opus-4-7",
-  MED: "composer-2",
-  LOW: "gpt-5.4-nano",
+  HIGH: 'claude-opus-4-7',
+  MED: 'composer-2',
+  LOW: 'gpt-5.4-nano',
 };
 
 export function parseDAG(raw: unknown): DAG {
-  if (!raw || typeof raw !== "object") {
-    throw new Error("DAG file must be a JSON object.");
+  if (!raw || typeof raw !== 'object') {
+    throw new Error('DAG file must be a JSON object.');
   }
   const obj = raw as Record<string, unknown>;
-  if (typeof obj.title !== "string" || obj.title.trim() === "") {
-    throw new Error("DAG.title must be a non-empty string.");
+  if (typeof obj.title !== 'string' || obj.title.trim() === '') {
+    throw new Error('DAG.title must be a non-empty string.');
   }
   if (!Array.isArray(obj.tasks) || obj.tasks.length === 0) {
-    throw new Error("DAG.tasks must be a non-empty array.");
+    throw new Error('DAG.tasks must be a non-empty array.');
   }
 
   const tasks: RawTask[] = obj.tasks.map((t, i) => validateTask(t, i));
@@ -154,88 +154,99 @@ export function parseDAG(raw: unknown): DAG {
 
   detectCycle(tasks);
 
-  const models = obj.models === undefined ? undefined : validateModelMap(obj.models, "DAG.models");
-  const framing = obj.framing === undefined ? undefined : validateFraming(obj.framing);
-  const budget = obj.budget === undefined ? undefined : validateBudget(obj.budget);
+  const models =
+    obj.models === undefined
+      ? undefined
+      : validateModelMap(obj.models, 'DAG.models');
+  const framing =
+    obj.framing === undefined ? undefined : validateFraming(obj.framing);
+  const budget =
+    obj.budget === undefined ? undefined : validateBudget(obj.budget);
 
   return { title: obj.title, models, framing, budget, tasks };
 }
 
 function validateFraming(raw: unknown): string {
-  if (typeof raw !== "string") {
-    throw new Error("DAG.framing must be a string when set.");
+  if (typeof raw !== 'string') {
+    throw new Error('DAG.framing must be a string when set.');
   }
   return raw;
 }
 
 function validateBudget(raw: unknown): DAGBudget {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-    throw new Error("DAG.budget must be a JSON object when set.");
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error('DAG.budget must be a JSON object when set.');
   }
   const obj = raw as Record<string, unknown>;
   const budget: DAGBudget = {};
   if (obj.maxIterations !== undefined) {
-    validateBudgetNumber(obj.maxIterations, "DAG.budget.maxIterations");
+    validateBudgetNumber(obj.maxIterations, 'DAG.budget.maxIterations');
     budget.maxIterations = obj.maxIterations;
   }
   if (obj.maxTokensTotal !== undefined) {
-    validateBudgetNumber(obj.maxTokensTotal, "DAG.budget.maxTokensTotal");
+    validateBudgetNumber(obj.maxTokensTotal, 'DAG.budget.maxTokensTotal');
     budget.maxTokensTotal = obj.maxTokensTotal;
   }
   return budget;
 }
 
-function validateBudgetNumber(raw: unknown, label: string): asserts raw is number {
-  if (typeof raw !== "number" || !Number.isSafeInteger(raw) || raw < 0) {
+function validateBudgetNumber(
+  raw: unknown,
+  label: string
+): asserts raw is number {
+  if (typeof raw !== 'number' || !Number.isSafeInteger(raw) || raw < 0) {
     throw new Error(`${label} must be a non-negative integer when set.`);
   }
 }
 
 function validateTask(raw: unknown, index: number): RawTask {
-  if (!raw || typeof raw !== "object") {
+  if (!raw || typeof raw !== 'object') {
     throw new Error(`tasks[${index}] must be an object.`);
   }
   const t = raw as Record<string, unknown>;
 
   const id = t.id;
-  if (typeof id !== "string" || id.trim() === "") {
+  if (typeof id !== 'string' || id.trim() === '') {
     throw new Error(`tasks[${index}].id must be a non-empty string.`);
   }
 
   const kind = resolveTaskKind(t.kind, index);
 
   const depends_on = t.depends_on ?? [];
-  if (!Array.isArray(depends_on) || depends_on.some((d) => typeof d !== "string")) {
+  if (
+    !Array.isArray(depends_on) ||
+    depends_on.some((d) => typeof d !== 'string')
+  ) {
     throw new Error(`tasks[${index}].depends_on must be an array of strings.`);
   }
   const dedupedDepends = [...new Set(depends_on as string[])];
 
-  if (kind === "pause") {
+  if (kind === 'pause') {
     if (t.complexity !== undefined) {
       throw new Error(
-        `tasks[${index}] (id="${id}") is kind="pause" and must not set complexity (no LLM is invoked).`,
+        `tasks[${index}] (id="${id}") is kind="pause" and must not set complexity (no LLM is invoked).`
       );
     }
     if (t.command !== undefined) {
       throw new Error(
-        `tasks[${index}] (id="${id}") is kind="pause" and must not set command (only kind="oracle" runs a shell command).`,
+        `tasks[${index}] (id="${id}") is kind="pause" and must not set command (only kind="oracle" runs a shell command).`
       );
     }
     if (t.expect !== undefined) {
       throw new Error(
-        `tasks[${index}] (id="${id}") is kind="pause" and must not set expect (only kind="oracle" matches output).`,
+        `tasks[${index}] (id="${id}") is kind="pause" and must not set expect (only kind="oracle" matches output).`
       );
     }
     if (t.allowNonZeroExit !== undefined) {
       throw new Error(
-        `tasks[${index}] (id="${id}") is kind="pause" and must not set allowNonZeroExit (only kind="oracle" runs a command).`,
+        `tasks[${index}] (id="${id}") is kind="pause" and must not set allowNonZeroExit (only kind="oracle" runs a command).`
       );
     }
-    let subtask_prompt = "";
+    let subtask_prompt = '';
     if (t.subtask_prompt !== undefined) {
-      if (typeof t.subtask_prompt !== "string") {
+      if (typeof t.subtask_prompt !== 'string') {
         throw new Error(
-          `tasks[${index}].subtask_prompt must be a string when set on a pause task.`,
+          `tasks[${index}].subtask_prompt must be a string when set on a pause task.`
         );
       }
       subtask_prompt = t.subtask_prompt;
@@ -245,36 +256,36 @@ function validateTask(raw: unknown, index: number): RawTask {
       depends_on: dedupedDepends,
       complexity: NON_LLM_SYNTHETIC_COMPLEXITY,
       subtask_prompt,
-      kind: "pause",
+      kind: 'pause',
     };
   }
 
-  if (kind === "oracle") {
+  if (kind === 'oracle') {
     if (t.complexity !== undefined) {
       throw new Error(
-        `tasks[${index}] (id="${id}") is kind="oracle" and must not set complexity (no LLM is invoked).`,
+        `tasks[${index}] (id="${id}") is kind="oracle" and must not set complexity (no LLM is invoked).`
       );
     }
     if (t.subtask_prompt !== undefined) {
       throw new Error(
-        `tasks[${index}] (id="${id}") is kind="oracle" and must not set subtask_prompt (oracle tasks run a shell command, not an LLM prompt).`,
+        `tasks[${index}] (id="${id}") is kind="oracle" and must not set subtask_prompt (oracle tasks run a shell command, not an LLM prompt).`
       );
     }
     if (t.model !== undefined) {
       throw new Error(
-        `tasks[${index}] (id="${id}") is kind="oracle" and must not set model (no model is invoked).`,
+        `tasks[${index}] (id="${id}") is kind="oracle" and must not set model (no model is invoked).`
       );
     }
-    if (typeof t.command !== "string" || t.command.trim() === "") {
+    if (typeof t.command !== 'string' || t.command.trim() === '') {
       throw new Error(
-        `tasks[${index}] (id="${id}") is kind="oracle" and requires a non-empty string command.`,
+        `tasks[${index}] (id="${id}") is kind="oracle" and requires a non-empty string command.`
       );
     }
     let expect: string = DEFAULT_ORACLE_EXPECT;
     if (t.expect !== undefined) {
-      if (typeof t.expect !== "string") {
+      if (typeof t.expect !== 'string') {
         throw new Error(
-          `tasks[${index}].expect must be a string when set on an oracle task.`,
+          `tasks[${index}].expect must be a string when set on an oracle task.`
         );
       }
       try {
@@ -282,16 +293,18 @@ function validateTask(raw: unknown, index: number): RawTask {
       } catch (err) {
         const reason = err instanceof Error ? err.message : String(err);
         throw new Error(
-          `tasks[${index}].expect must be a valid regex (got ${JSON.stringify(t.expect)}: ${reason}).`,
+          `tasks[${index}].expect must be a valid regex (got ${JSON.stringify(
+            t.expect
+          )}: ${reason}).`
         );
       }
       expect = t.expect;
     }
     let allowNonZeroExit = false;
     if (t.allowNonZeroExit !== undefined) {
-      if (typeof t.allowNonZeroExit !== "boolean") {
+      if (typeof t.allowNonZeroExit !== 'boolean') {
         throw new Error(
-          `tasks[${index}].allowNonZeroExit must be a boolean when set on an oracle task.`,
+          `tasks[${index}].allowNonZeroExit must be a boolean when set on an oracle task.`
         );
       }
       allowNonZeroExit = t.allowNonZeroExit;
@@ -300,8 +313,8 @@ function validateTask(raw: unknown, index: number): RawTask {
       id,
       depends_on: dedupedDepends,
       complexity: NON_LLM_SYNTHETIC_COMPLEXITY,
-      subtask_prompt: "",
-      kind: "oracle",
+      subtask_prompt: '',
+      kind: 'oracle',
       command: t.command,
       expect,
       allowNonZeroExit,
@@ -310,43 +323,52 @@ function validateTask(raw: unknown, index: number): RawTask {
 
   if (t.command !== undefined) {
     throw new Error(
-      `tasks[${index}] (id="${id}") is kind="task" and must not set command (only kind="oracle" runs a shell command).`,
+      `tasks[${index}] (id="${id}") is kind="task" and must not set command (only kind="oracle" runs a shell command).`
     );
   }
   if (t.expect !== undefined) {
     throw new Error(
-      `tasks[${index}] (id="${id}") is kind="task" and must not set expect (only kind="oracle" matches output).`,
+      `tasks[${index}] (id="${id}") is kind="task" and must not set expect (only kind="oracle" matches output).`
     );
   }
   if (t.allowNonZeroExit !== undefined) {
     throw new Error(
-      `tasks[${index}] (id="${id}") is kind="task" and must not set allowNonZeroExit (only kind="oracle" runs a command).`,
+      `tasks[${index}] (id="${id}") is kind="task" and must not set allowNonZeroExit (only kind="oracle" runs a command).`
     );
   }
   const complexity = t.complexity;
-  if (typeof complexity !== "string" || !COMPLEXITY_VALUES.has(complexity as Complexity)) {
-    throw new Error(`tasks[${index}].complexity must be one of HIGH | MED | LOW.`);
+  if (
+    typeof complexity !== 'string' ||
+    !COMPLEXITY_VALUES.has(complexity as Complexity)
+  ) {
+    throw new Error(
+      `tasks[${index}].complexity must be one of HIGH | MED | LOW.`
+    );
   }
   const subtask_prompt = t.subtask_prompt;
-  if (typeof subtask_prompt !== "string" || subtask_prompt.trim() === "") {
-    throw new Error(`tasks[${index}].subtask_prompt must be a non-empty string.`);
+  if (typeof subtask_prompt !== 'string' || subtask_prompt.trim() === '') {
+    throw new Error(
+      `tasks[${index}].subtask_prompt must be a non-empty string.`
+    );
   }
   return {
     id,
     depends_on: dedupedDepends,
     complexity: complexity as Complexity,
     subtask_prompt,
-    kind: "task",
+    kind: 'task',
   };
 }
 
 function resolveTaskKind(raw: unknown, index: number): TaskKind {
-  if (raw === undefined) return "task";
-  if (typeof raw === "string" && TASK_KIND_VALUES.has(raw as TaskKind)) {
+  if (raw === undefined) return 'task';
+  if (typeof raw === 'string' && TASK_KIND_VALUES.has(raw as TaskKind)) {
     return raw as TaskKind;
   }
   throw new Error(
-    `tasks[${index}].kind must be one of 'task' | 'pause' | 'oracle' when set (got ${JSON.stringify(raw)}).`,
+    `tasks[${index}].kind must be one of 'task' | 'pause' | 'oracle' when set (got ${JSON.stringify(
+      raw
+    )}).`
   );
 }
 
@@ -388,7 +410,7 @@ function detectCycle(tasks: RawTask[]): void {
       const cColor = color.get(child) ?? WHITE;
       if (cColor === GRAY) {
         const cycleStart = path.indexOf(child);
-        const cycle = [...path.slice(cycleStart), child].join(" -> ");
+        const cycle = [...path.slice(cycleStart), child].join(' -> ');
         throw new Error(`Cycle detected: ${cycle}`);
       }
       if (cColor === WHITE) {
@@ -436,13 +458,16 @@ export function computeRanks(dag: DAG): RawTask[][] {
 
   const placed = ranks.reduce((n, r) => n + r.length, 0);
   if (placed !== dag.tasks.length) {
-    throw new Error("Topological sort failed — DAG contains a cycle.");
+    throw new Error('Topological sort failed — DAG contains a cycle.');
   }
   return ranks;
 }
 
-export function validateModelMap(raw: unknown, label = "model map"): ModelMapOverride {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+export function validateModelMap(
+  raw: unknown,
+  label = 'model map'
+): ModelMapOverride {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     throw new Error(`${label} must be a JSON object.`);
   }
   const obj = raw as Record<string, unknown>;
@@ -451,7 +476,7 @@ export function validateModelMap(raw: unknown, label = "model map"): ModelMapOve
     if (!COMPLEXITY_VALUES.has(key as Complexity)) {
       throw new Error(`${label} contains unknown complexity key: ${key}`);
     }
-    if (typeof value !== "string" || value.trim() === "") {
+    if (typeof value !== 'string' || value.trim() === '') {
       throw new Error(`${label}.${key} must be a non-empty string.`);
     }
     models[key as Complexity] = value.trim();
@@ -459,7 +484,9 @@ export function validateModelMap(raw: unknown, label = "model map"): ModelMapOve
   return models;
 }
 
-export function createModelResolver(overrides: ModelMapOverride = {}): (c: Complexity) => string {
+export function createModelResolver(
+  overrides: ModelMapOverride = {}
+): (c: Complexity) => string {
   const models: ModelMap = { ...DEFAULT_MODEL_MAP, ...overrides };
   return (c: Complexity): string => {
     if (!COMPLEXITY_KEYS.includes(c)) {

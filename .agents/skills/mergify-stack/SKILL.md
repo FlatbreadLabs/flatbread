@@ -8,10 +8,12 @@ description: Use Mergify stacks for git push, commit, branch, and PR creation. A
 ## Stack Philosophy
 
 A branch is a stack. Keep stacks short and focused:
+
 - A stack should only contain commits that **depend on each other**
 - Rationale: longer stacks take longer to merge
 
 **Proactive stack management:**
+
 - If an existing stack can be split into independent stacks, offer to do so
 - When asked to do something new: if it can be done on a separate branch, either do so or ask if in doubt
 - Default to creating a new branch for unrelated changes
@@ -20,7 +22,7 @@ A branch is a stack. Keep stacks short and focused:
 
 - **Push**: Use `mergify stack push` (never `git push`)
 - **Fixes**: Use `git commit --amend` (never create new commits to fix issues)
-- **Amend notes**: When amending a commit that already has a PR (i.e. has been pushed), attach a `mergify stack note` BEFORE `mergify stack push` to record *why* the commit was amended. The note appears in the PR's "Revision history" comment and JSON marker, so reviewers can see the reason without diffing.
+- **Amend notes**: When amending a commit that already has a PR (i.e. has been pushed), attach a `mergify stack note` BEFORE `mergify stack push` to record _why_ the commit was amended. The note appears in the PR's "Revision history" comment and JSON marker, so reviewers can see the reason without diffing.
 - **Mid-stack fixes**: Stash any local changes first (`git stash -u`), then use `git rebase -i` to edit the specific commit, amend it, continue rebase, then `mergify stack push`, then `git stash pop`
 - **Reordering**: Stash any local changes first (`git stash -u`), then use `mergify stack reorder` (list all commits in desired order) or `mergify stack move` (move a single commit) instead of manual `git rebase -i` — non-interactive and avoids `GIT_SEQUENCE_EDITOR` quoting issues
 - **Fixup**: Stash any local changes first (`git stash -u`), then use `mergify stack fixup <SHA>...` to fold a commit into its parent (drops the listed commit's message). Non-interactive — never use `git rebase -i` for this.
@@ -34,18 +36,18 @@ A branch is a stack. Keep stacks short and focused:
 
 ## Common Mistakes
 
-| Wrong | Right | Why |
-|-------|-------|-----|
-| `git push` | `mergify stack push` | Git push bypasses stack management and breaks PR relationships |
-| New commit to fix lint/typo | `git commit --amend` (HEAD) or `git commit --fixup <SHA>` + `git rebase --autosquash` (mid-stack) | Each commit = a PR; fix commits create unwanted extra PRs |
-| `gh pr edit --title "..."` | Edit the commit message, then `mergify stack push` | PR title/body are overwritten from commit messages on every push |
-| `gh pr merge` or `gh pr close` | PR lifecycle is fully managed — do nothing | PR lifecycle is fully managed by the stack tool |
-| `git commit` on `main` | `mergify stack new <name>` first | `mergify stack push` will fail on the default branch |
-| `git rebase -i` to fixup a commit | `mergify stack fixup <SHA>` | Non-interactive — works inside LLM/agent sessions; no editor spawned |
-| `git rebase -i` to squash commits | `mergify stack squash A B into X [-m "..."]` | Non-interactive — works inside LLM/agent sessions; no editor spawned |
-| Deferring lint fixes to a later commit | Include the fix in the commit that caused it | Each commit runs CI independently; later commits won't save earlier ones |
-| Rebase/reorder/checkout/sync with dirty worktree | `git stash -u` first, then `git stash pop` after | Uncommitted changes are lost or cause conflicts during these operations |
-| Amending a pushed commit with no explanation | `mergify stack note -m "why"` before `mergify stack push` | The reason is recorded in the PR's Revision history table and JSON marker, so reviewers don't need to diff to understand the change |
+| Wrong                                            | Right                                                                                             | Why                                                                                                                                 |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `git push`                                       | `mergify stack push`                                                                              | Git push bypasses stack management and breaks PR relationships                                                                      |
+| New commit to fix lint/typo                      | `git commit --amend` (HEAD) or `git commit --fixup <SHA>` + `git rebase --autosquash` (mid-stack) | Each commit = a PR; fix commits create unwanted extra PRs                                                                           |
+| `gh pr edit --title "..."`                       | Edit the commit message, then `mergify stack push`                                                | PR title/body are overwritten from commit messages on every push                                                                    |
+| `gh pr merge` or `gh pr close`                   | PR lifecycle is fully managed — do nothing                                                        | PR lifecycle is fully managed by the stack tool                                                                                     |
+| `git commit` on `main`                           | `mergify stack new <name>` first                                                                  | `mergify stack push` will fail on the default branch                                                                                |
+| `git rebase -i` to fixup a commit                | `mergify stack fixup <SHA>`                                                                       | Non-interactive — works inside LLM/agent sessions; no editor spawned                                                                |
+| `git rebase -i` to squash commits                | `mergify stack squash A B into X [-m "..."]`                                                      | Non-interactive — works inside LLM/agent sessions; no editor spawned                                                                |
+| Deferring lint fixes to a later commit           | Include the fix in the commit that caused it                                                      | Each commit runs CI independently; later commits won't save earlier ones                                                            |
+| Rebase/reorder/checkout/sync with dirty worktree | `git stash -u` first, then `git stash pop` after                                                  | Uncommitted changes are lost or cause conflicts during these operations                                                             |
+| Amending a pushed commit with no explanation     | `mergify stack note -m "why"` before `mergify stack push`                                         | The reason is recorded in the PR's Revision history table and JSON marker, so reviewers don't need to diff to understand the change |
 
 ## Commands
 
@@ -79,7 +81,7 @@ Use `mergify stack list` to see which commits have been pushed, which PRs they m
 
 ## Amend Notes
 
-`mergify stack note` records *why* a commit was amended. The note travels with the stack:
+`mergify stack note` records _why_ a commit was amended. The note travels with the stack:
 
 - Stored locally under `refs/notes/mergify/stack` against the commit SHA.
 - Pushed automatically by `mergify stack push` (alongside the commit refspecs, with `--force-with-lease`).
@@ -125,6 +127,7 @@ git stash -u                # Stash tracked + untracked changes if any
 ```
 
 **Operations that require this check:**
+
 - `git rebase -i` (mid-stack fixes)
 - `mergify stack reorder` / `mergify stack move`
 - `mergify stack fixup`
