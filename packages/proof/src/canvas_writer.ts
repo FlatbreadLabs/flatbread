@@ -233,6 +233,16 @@ type TaskStatus =
 type Complexity = 'HIGH' | 'MED' | 'LOW';
 type TaskKind = 'task' | 'pause' | 'oracle';
 
+interface ModelParameterValue {
+  id: string;
+  value: string;
+}
+
+interface ModelSelection {
+  id: string;
+  params?: ModelParameterValue[];
+}
+
 interface TaskState {
   id: string;
   depends_on: string[];
@@ -240,6 +250,7 @@ interface TaskState {
   subtask_prompt: string;
   status: TaskStatus;
   model: string;
+  modelSelection?: ModelSelection;
   kind?: TaskKind;
   command?: string;
   expect?: string;

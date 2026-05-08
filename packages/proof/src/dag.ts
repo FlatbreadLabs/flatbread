@@ -631,9 +631,9 @@ export function resolveModelSelectionFromCatalog(
   if (!catalogItem) {
     const ids = catalog.map((model) => model.id).sort();
     throw new Error(
-      `${label} uses unknown Cursor SDK model "${selection.id}". Known models:\n  ${ids.join(
-        '\n  '
-      )}`
+      `${label} uses unknown Cursor SDK model "${
+        selection.id
+      }". Known models:\n  ${ids.join('\n  ')}`
     );
   }
 
@@ -661,7 +661,9 @@ export function resolveModelSelectionFromCatalog(
   }
 
   const params = chosenVariant.params.map((param) => ({ ...param }));
-  return params.length > 0 ? { id: selection.id, params } : { id: selection.id };
+  return params.length > 0
+    ? { id: selection.id, params }
+    : { id: selection.id };
 }
 
 function validateRequestedParams(
@@ -678,7 +680,9 @@ function validateRequestedParams(
     if (!definition) {
       const supported = [...definitions.keys()].sort();
       throw new Error(
-        `${label} ${selection.id} does not support param "${param.id}". Supported params: ${
+        `${label} ${selection.id} does not support param "${
+          param.id
+        }". Supported params: ${
           supported.length > 0 ? supported.join(', ') : '(none)'
         }`
       );
@@ -686,9 +690,9 @@ function validateRequestedParams(
     const allowed = new Set(definition.values.map((value) => value.value));
     if (!allowed.has(param.value)) {
       throw new Error(
-        `${label} ${selection.id} param "${param.id}" does not support value "${param.value}". Supported values: ${[
-          ...allowed,
-        ].join(', ')}`
+        `${label} ${selection.id} param "${param.id}" does not support value "${
+          param.value
+        }". Supported values: ${[...allowed].join(', ')}`
       );
     }
   }
@@ -752,9 +756,7 @@ function scoreVariant(
   return score;
 }
 
-function formatVariants(
-  variants: ReadonlyArray<ModelCatalogVariant>
-): string {
+function formatVariants(variants: ReadonlyArray<ModelCatalogVariant>): string {
   return variants
     .map((variant) => {
       const params = variant.params
