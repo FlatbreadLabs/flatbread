@@ -2,8 +2,8 @@
 id: toast-manifesto-2024
 title: 'A Manifesto on the Perfect Toast: An Engineering Approach'
 authors:
-  - daes
-  - eva
+  - ab2c
+  - 40s3
 rating: 88
 category: food
 precision_level: unnecessary

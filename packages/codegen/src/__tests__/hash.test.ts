@@ -4,6 +4,7 @@ import {
   hashSchema,
   hashDocuments,
   hashCodegenInputs,
+  CODEGEN_OUTPUT_VERSION,
 } from '../hash.js';
 import type { LoadedFlatbreadConfig } from '@flatbread/core';
 import type { CodegenOptions } from '../types.js';
@@ -43,6 +44,10 @@ describe('hash functions', () => {
 
     expect(hash1).toBe(hash2);
     expect(hash1).toHaveLength(64); // SHA256 hex length
+  });
+
+  it('should expose a cache-busting output version', () => {
+    expect(CODEGEN_OUTPUT_VERSION).toBeGreaterThan(0);
   });
 
   it('should generate different hashes for different configurations', () => {

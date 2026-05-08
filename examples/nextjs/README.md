@@ -25,7 +25,7 @@ This example is the repo’s **default first success path**: **relational Git-ba
    pnpm exec flatbread codegen --verbose
    ```
 
-   Add or edit **`.graphql`** files under `queries/` (or globs in config), then rerun codegen so **`tags`**, **`authors`**, and other fields stay in sync.
+   Add or edit **`.graphql`** files under `queries/` (or globs in config), then rerun codegen so **`tags`**, **`authors`**, and other fields stay in sync. Codegen also emits a prototype **generated TypeScript read API** in `generated/graphql.ts`; see `lib/read.ts` for the posts/authors/tags example that calls `createFlatbreadReadApi()`.
 
 4. **Serve the GraphQL read interface alongside Next** (**there is no `flatbread dev`** — use **`flatbread start`**):
 
@@ -100,6 +100,26 @@ Force regeneration (clear cache):
 ```bash
 pnpm exec flatbread codegen --clear-cache --verbose
 ```
+
+## Generated TypeScript read API prototype
+
+The demo still keeps GraphQL available, but `flatbread codegen` now also emits typed helpers from the configured content model:
+
+- `createFlatbreadReadApi(execute)` — builds collection readers with generated default selections.
+- `FlatbreadRecord<'Post'>` — typed record for a configured collection.
+- `FlatbreadRelationTarget<'Post', 'authors'>` — typed relation result (`ReadonlyArray<Author>` for this example).
+
+`lib/read.ts` wires those helpers to this app's existing `graphqlFetch` client:
+
+```typescript
+import { getPostsAuthorsAndTagsViaReadApi } from './lib/read';
+
+const posts = await getPostsAuthorsAndTagsViaReadApi();
+const authorNames = posts[0]?.authors?.map((author) => author.name);
+const tags = posts[0]?.tags;
+```
+
+That path queries **posts**, **authors**, and **tags** through the generated TypeScript API while the GraphQL endpoint remains the underlying read interface. The lower-level generated methods still accept an optional GraphQL selection string for experimentation, but the canonical example uses the generated default selection so the call site does not hand-write a GraphQL document.
 
 ## Troubleshooting
 

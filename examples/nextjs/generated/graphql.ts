@@ -8,6 +8,7 @@ export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> =
 export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
 /** All built-in and custom scalars, mapped to their actual values */
 export interface Scalars {
+  /** The `ID` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as `"4"`) or integer (such as `4`) input value will be accepted as an ID. */
   ID: { input: string; output: string; }
   /** The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text. */
   String: { input: string; output: string; }
@@ -397,32 +398,32 @@ export interface Query {
 
 
 export interface QueryAuthorArgs {
-  id?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['ID']['input']>;
 }
 
 
 export interface QueryOverrideTestArgs {
-  id?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['ID']['input']>;
 }
 
 
 export interface QueryPostArgs {
-  id?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['ID']['input']>;
 }
 
 
 export interface QueryPostCategoryArgs {
-  id?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['ID']['input']>;
 }
 
 
 export interface QueryPostCategoryBlobArgs {
-  id?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['ID']['input']>;
 }
 
 
 export interface QueryYamlAuthorArgs {
-  id?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['ID']['input']>;
 }
 
 
@@ -561,7 +562,7 @@ export type GetAllPostsQueryVariables = Exact<{ [key: string]: never; }>;
 export type GetAllPostsQuery = { __typename?: 'Query', allPosts?: Array<{ __typename?: 'Post', id?: string | null, title?: string | null, _content?: { __typename?: 'Post__content', html?: string | null, excerpt?: string | null, timeToRead?: number | null } | null, authors?: Array<{ __typename?: 'Author', id?: string | null, name?: string | null } | null> | null } | null> | null };
 
 export type GetPostByIdQueryVariables = Exact<{
-  id: Scalars['String']['input'];
+  id: Scalars['ID']['input'];
 }>;
 
 
@@ -581,6 +582,176 @@ export type PostsummaryFragment = { __typename?: 'Post', id?: string | null, tit
 
 export const PostsummaryFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"Postsummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"_content"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"html"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"timeToRead"}}]}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<PostsummaryFragment, unknown>;
 export const GetAllPostsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAllPosts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allPosts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"_content"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"html"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"timeToRead"}}]}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<GetAllPostsQuery, GetAllPostsQueryVariables>;
-export const GetPostByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetPostById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"Post"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"_content"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"html"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"timeToRead"}}]}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"friend"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetPostByIdQuery, GetPostByIdQueryVariables>;
+export const GetPostByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetPostById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"Post"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"_content"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"html"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"timeToRead"}}]}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"friend"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetPostByIdQuery, GetPostByIdQueryVariables>;
 export const GetPostCategoriesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetPostCategories"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allPostCategories"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"sortBy"},"value":{"kind":"StringValue","value":"title","block":false}},{"kind":"Argument","name":{"kind":"Name","value":"order"},"value":{"kind":"EnumValue","value":"DESC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"_collection"}},{"kind":"Field","name":{"kind":"Name","value":"_filename"}},{"kind":"Field","name":{"kind":"Name","value":"_slug"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"rating"}},{"kind":"Field","name":{"kind":"Name","value":"_content"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"raw"}},{"kind":"Field","name":{"kind":"Name","value":"html"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"timeToRead"}}]}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"_slug"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"entity"}},{"kind":"Field","name":{"kind":"Name","value":"enjoys"}},{"kind":"Field","name":{"kind":"Name","value":"image"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"srcset"}},{"kind":"Field","name":{"kind":"Name","value":"srcsetwebp"}},{"kind":"Field","name":{"kind":"Name","value":"srcsetavif"}},{"kind":"Field","name":{"kind":"Name","value":"placeholder"}},{"kind":"Field","name":{"kind":"Name","value":"aspectratio"}}]}},{"kind":"Field","name":{"kind":"Name","value":"friend"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"date_joined"}}]}},{"kind":"Field","name":{"kind":"Name","value":"date_joined"}},{"kind":"Field","name":{"kind":"Name","value":"skills"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sitting"}},{"kind":"Field","name":{"kind":"Name","value":"breathing"}},{"kind":"Field","name":{"kind":"Name","value":"liquid_consumption"}},{"kind":"Field","name":{"kind":"Name","value":"existence"}},{"kind":"Field","name":{"kind":"Name","value":"sports"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetPostCategoriesQuery, GetPostCategoriesQueryVariables>;
 export const GetAuthorsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAuthors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allAuthors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"entity"}},{"kind":"Field","name":{"kind":"Name","value":"enjoys"}},{"kind":"Field","name":{"kind":"Name","value":"image"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"srcset"}},{"kind":"Field","name":{"kind":"Name","value":"srcsetwebp"}},{"kind":"Field","name":{"kind":"Name","value":"srcsetavif"}},{"kind":"Field","name":{"kind":"Name","value":"placeholder"}},{"kind":"Field","name":{"kind":"Name","value":"aspectratio"}}]}},{"kind":"Field","name":{"kind":"Name","value":"date_joined"}},{"kind":"Field","name":{"kind":"Name","value":"skills"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sitting"}},{"kind":"Field","name":{"kind":"Name","value":"breathing"}},{"kind":"Field","name":{"kind":"Name","value":"liquid_consumption"}},{"kind":"Field","name":{"kind":"Name","value":"existence"}},{"kind":"Field","name":{"kind":"Name","value":"sports"}}]}}]}}]}}]} as unknown as DocumentNode<GetAuthorsQuery, GetAuthorsQueryVariables>;
+
+/* @flatbread/content-model-types:start */
+/**
+ * Flatbread content model types generated from flatbread.config.*.
+ * These describe configured collections and refs before any GraphQL operation documents are required.
+ */
+export type FlatbreadCollectionName = "Post" | "PostCategory" | "PostCategoryBlob" | "Author" | "YamlAuthor" | "OverrideTest";
+
+export type FlatbreadRecordByCollection = {
+  "Post": Post;
+  "PostCategory": PostCategory;
+  "PostCategoryBlob": PostCategoryBlob;
+  "Author": Author;
+  "YamlAuthor": YamlAuthor;
+  "OverrideTest": OverrideTest;
+};
+
+export type FlatbreadRelationTargetByCollection = {
+  "Post": {
+    "authors": { target: "Author"; cardinality: "many"; };
+  };
+  "PostCategory": {
+    "authors": { target: "Author"; cardinality: "many"; };
+  };
+  "PostCategoryBlob": {
+    "authors": { target: "Author"; cardinality: "many"; };
+  };
+  "Author": {
+    "friend": { target: "Author"; cardinality: "one"; };
+  };
+  "YamlAuthor": {
+    "friend": { target: "YamlAuthor"; cardinality: "one"; };
+  };
+  "OverrideTest": {};
+};
+
+export type FlatbreadRecord<
+  Collection extends FlatbreadCollectionName,
+> = FlatbreadRecordByCollection[Collection];
+
+export type FlatbreadRelationTarget<
+  Collection extends FlatbreadCollectionName,
+  Field extends keyof FlatbreadRelationTargetByCollection[Collection],
+> = FlatbreadRecord<
+  Extract<
+    FlatbreadRelationTargetCollection<Collection, Field>,
+    FlatbreadCollectionName
+  >
+> extends infer TargetRecord
+  ? FlatbreadRelationCardinality<Collection, Field> extends 'many'
+    ? ReadonlyArray<TargetRecord | null> | null
+    : TargetRecord | null
+  : never;
+
+export type FlatbreadRelationTargetCollection<
+  Collection extends FlatbreadCollectionName,
+  Field extends keyof FlatbreadRelationTargetByCollection[Collection],
+> = FlatbreadRelationTargetByCollection[Collection][Field] extends {
+  target: infer Target;
+}
+  ? Target
+  : never;
+
+export type FlatbreadRelationCardinality<
+  Collection extends FlatbreadCollectionName,
+  Field extends keyof FlatbreadRelationTargetByCollection[Collection],
+> = FlatbreadRelationTargetByCollection[Collection][Field] extends {
+  cardinality: infer Cardinality;
+}
+  ? Cardinality
+  : never;
+
+export type FlatbreadReadableCollectionName = "Post" | "PostCategory" | "PostCategoryBlob" | "Author" | "YamlAuthor" | "OverrideTest";
+
+export type FlatbreadGraphQLExecutor = <TData>(
+  source: string,
+  variables?: Record<string, unknown>,
+) => Promise<TData>;
+
+/**
+ * Experimental generated read API over the Flatbread content model.
+ *
+ * The API owns collection names, root query names, IDs, and result typing. The
+ * current prototype still accepts a GraphQL selection string for fields; invalid
+ * or drifting selections are runtime GraphQL errors, not type errors.
+ */
+export type FlatbreadReadApi = {
+  "Post": {
+    all(selection?: string): Promise<ReadonlyArray<Partial<FlatbreadRecord<"Post">>>>;
+    find(id: string | number, selection?: string): Promise<Partial<FlatbreadRecord<"Post">> | null>;
+  };
+  "PostCategory": {
+    all(selection?: string): Promise<ReadonlyArray<Partial<FlatbreadRecord<"PostCategory">>>>;
+    find(id: string | number, selection?: string): Promise<Partial<FlatbreadRecord<"PostCategory">> | null>;
+  };
+  "PostCategoryBlob": {
+    all(selection?: string): Promise<ReadonlyArray<Partial<FlatbreadRecord<"PostCategoryBlob">>>>;
+    find(id: string | number, selection?: string): Promise<Partial<FlatbreadRecord<"PostCategoryBlob">> | null>;
+  };
+  "Author": {
+    all(selection?: string): Promise<ReadonlyArray<Partial<FlatbreadRecord<"Author">>>>;
+    find(id: string | number, selection?: string): Promise<Partial<FlatbreadRecord<"Author">> | null>;
+  };
+  "YamlAuthor": {
+    all(selection?: string): Promise<ReadonlyArray<Partial<FlatbreadRecord<"YamlAuthor">>>>;
+    find(id: string | number, selection?: string): Promise<Partial<FlatbreadRecord<"YamlAuthor">> | null>;
+  };
+  "OverrideTest": {
+    all(selection?: string): Promise<ReadonlyArray<Partial<FlatbreadRecord<"OverrideTest">>>>;
+    find(id: string | number, selection?: string): Promise<Partial<FlatbreadRecord<"OverrideTest">> | null>;
+  };
+};
+
+const flatbreadReadApiQueries = {
+  "Post": { all: "allPosts", find: "Post", idType: "ID", selection: "_filename\n_path\n_slug\nid\ntitle\nauthors { _filename\n_path\n_slug\nid\nname\nentity\nbio\nenjoys\ndate_joined\npronouns\nlocation\nfavorite_technologies\nplant_murder_count\ncurrent_survivors\nplant_store_reputation\nfavorite_activities\ncertifications\n_collection }\nrating\n_content { raw\nhtml\nexcerpt\ntimeToRead }\ncategory\ntags\nresearch_duration\nsoups_tested\ntemperature_preference\nslurp_factor\ncontroversial_opinions\n_collection" },
+  "PostCategory": { all: "allPostCategories", find: "PostCategory", idType: "ID", selection: "_filename\n_path\n_slug\ncategory\nslug\nid\ntitle\nauthors { _filename\n_path\n_slug\nid\nname\nentity\nbio\nenjoys\ndate_joined\npronouns\nlocation\nfavorite_technologies\nplant_murder_count\ncurrent_survivors\nplant_store_reputation\nfavorite_activities\ncertifications\n_collection }\nrating\n_content { raw\nhtml\nexcerpt\ntimeToRead }\nprecision_level\nbread_types_tested\nbutter_temperature\ntoast_settings { darkness\ncrunch_factor\nbutter_distribution }\ndifficulty\nattempts\nbugs_encountered\nplants_murdered\nsuccess_rate\ncurrent_survivors\nwatering_schedule\nplant_types_attempted { succulents\nherbs\nsnake_plant\nbamboo }\ntime_spent\ncoffee_consumed\nsanity_level\nbug_severity\ndebugging_attempts { rubber_duck_debugging\nstack_overflow_diving\nprayer_to_tech_gods\nritual_coffee_sacrifice }\n_collection" },
+  "PostCategoryBlob": { all: "allPostCategoryBlobs", find: "PostCategoryBlob", idType: "ID", selection: "_filename\n_path\n_slug\nid\ntitle\nauthors { _filename\n_path\n_slug\nid\nname\nentity\nbio\nenjoys\ndate_joined\npronouns\nlocation\nfavorite_technologies\nplant_murder_count\ncurrent_survivors\nplant_store_reputation\nfavorite_activities\ncertifications\n_collection }\nrating\n_content { raw\nhtml\nexcerpt\ntimeToRead }\ncategory\nprecision_level\nbread_types_tested\nbutter_temperature\ntoast_settings { darkness\ncrunch_factor\nbutter_distribution }\ndifficulty\nattempts\nbugs_encountered\nplants_murdered\nsuccess_rate\ncurrent_survivors\nwatering_schedule\nplant_types_attempted { succulents\nherbs\nsnake_plant\nbamboo }\ntime_spent\ncoffee_consumed\nsanity_level\nbug_severity\ndebugging_attempts { rubber_duck_debugging\nstack_overflow_diving\nprayer_to_tech_gods\nritual_coffee_sacrifice }\n_collection" },
+  "Author": { all: "allAuthors", find: "Author", idType: "ID", selection: "image { srcset\nsrcsetwebp\nsrcsetavif\nplaceholder\naspectratio }\n_filename\n_path\n_slug\nid\nname\nentity\nbio\nenjoys\nfriend { _filename\n_path\n_slug\nid\nname\nentity\nbio\nenjoys\ndate_joined\npronouns\nlocation\nfavorite_technologies\nplant_murder_count\ncurrent_survivors\nplant_store_reputation\nfavorite_activities\ncertifications\n_collection }\ndate_joined\npronouns\nlocation\nfavorite_technologies\nskills { sitting\nbreathing\nliquid_consumption\nexistence\nsports\nplant_care\ndebugging\noptimistic_plant_purchasing\nkeyboard_walking\nmeeting_interruption }\nplant_murder_count\ncurrent_survivors\nplant_store_reputation\n_content { raw\nhtml\nexcerpt\ntimeToRead }\nfavorite_activities\ncertifications\n_collection" },
+  "YamlAuthor": { all: "allYamlAuthors", find: "YamlAuthor", idType: "ID", selection: "_filename\n_path\n_slug\nid\nname\nentity\nbio\nenjoys\nfriend { _filename\n_path\n_slug\nid\nname\nentity\nbio\nenjoys\ndate_joined\npronouns\nlocation\ncertifications\neducation\nfavorite_technologies\nresearch_focus\ncurrent_projects\ncoffee_consumption_daily\nfavorite_brewing_methods\n_collection }\ndate_joined\npronouns\nlocation\ncertifications\neducation\nfavorite_technologies\nresearch_focus\nskills { sitting\nbreathing\nliquid_consumption\nexistence\nsports\ncoffee_brewing\ndata_analysis\nspreadsheet_mastery\ncat_pat }\ncurrent_projects\ncoffee_consumption_daily\nfavorite_brewing_methods\n_content { html\nexcerpt\ntimeToRead }\n_collection" },
+  "OverrideTest": { all: "allOverrideTests", find: "OverrideTest", idType: "ID", selection: "deeply { nested }\narray\narray2 { obj }\n_filename\n_path\n_slug\nid\ntitle\n_content { raw\nhtml\nexcerpt\ntimeToRead }\n_collection" }
+} as const;
+
+export function createFlatbreadReadApi(
+  execute: FlatbreadGraphQLExecutor,
+): FlatbreadReadApi {
+  return Object.fromEntries(
+    Object.entries(flatbreadReadApiQueries).map(([collection, queries]) => [
+      collection,
+      {
+        all: async (selection = queries.selection) => {
+          const readSelection = normalizeFlatbreadReadSelection(selection);
+          const operationName = flatbreadReadApiOperationName(collection, 'All');
+          const data = await execute<Record<string, ReadonlyArray<unknown>>>(
+            `query ${operationName} { ${queries.all} { ${readSelection} } }`,
+          );
+          return data[queries.all] ?? [];
+        },
+        find: async (id: string | number, selection = queries.selection) => {
+          const readSelection = normalizeFlatbreadReadSelection(selection);
+          const operationName = flatbreadReadApiOperationName(collection, 'Find');
+          const data = await execute<Record<string, unknown | null>>(
+            `query ${operationName}($id: ${queries.idType}) { ${queries.find}(id: $id) { ${readSelection} } }`,
+            { id },
+          );
+          return data[queries.find] ?? null;
+        },
+      },
+    ]),
+  ) as FlatbreadReadApi;
+}
+
+function normalizeFlatbreadReadSelection(selection: string): string {
+  const normalized = selection.trim();
+  if (!normalized) {
+    throw new Error('Flatbread read API selection must not be empty.');
+  }
+  return normalized;
+}
+
+function flatbreadReadApiOperationName(
+  collection: string,
+  action: string,
+): string {
+  const safeCollection = collection.replace(/[^A-Za-z0-9_]/g, '_');
+  const suffix = safeCollection && !/^\d/.test(safeCollection)
+    ? safeCollection
+    : `_${safeCollection || 'Collection'}`;
+  return `FlatbreadRead_${suffix}_${action}`;
+}
+/* @flatbread/content-model-types:end */
