@@ -12,6 +12,13 @@ See also: [Flatbread positioning](./positioning.md); [PMF decision rubric](./pmf
 
 How many related items a field connects—whether a relation resolves to **one** related entry or **many** (for example, a single author versus a list of tag strings on a post). Cardinality shapes how the graph is exposed to your app (including generated GraphQL fields); it does **not** imply a SQL-style database engine.
 
+Current relation cardinality rules are intentionally small:
+
+- **One-to-one:** a `refs` field whose content value is a single ID (`author: 2a3e`) resolves to one related record.
+- **One-to-many:** a `refs` field whose content value is a list of IDs (`authors: [2a3e, 40s3]`) resolves to a list of related records.
+- **Many-to-many:** model each side as one-to-many lists when both collections need to point at each other; Flatbread does not infer a hidden join table or reciprocal edge.
+- **Unsupported / invalid:** booleans, objects, nested arrays, and other non-ID shapes in a `refs` field fail validation before schema use instead of silently resolving to `null`.
+
 ### Tag (facet) vs `Tag` collection
 
 A **facet** is metadata stored on a record (often a **YAML list of strings** such as `tags: [a, b]` on a post). It becomes a **scalar list** in the read interface and is **not** the same as **`refs`** resolving to another collection. A **`Tag` collection** means one file per tag (or equivalent) and **`refs`** from **`Post`** → **`Tag`** so tag entries are **normalized records** in the graph—use that when tags need shared descriptions, stable ids, or relational edges of their own.
