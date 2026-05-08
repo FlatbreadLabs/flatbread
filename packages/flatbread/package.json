@@ -63,12 +63,5 @@
     "tsup": "6.2.1",
     "typescript": "4.7.4",
     "vfile": "5.3.4"
-  },
-  "pnpm": {
-    "peerDependencyRules": {
-      "allowedVersions": {
-        "graphql": "^16.0.1"
-      }
-    }
   }
 }

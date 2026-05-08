@@ -53,12 +53,5 @@
     "@flatbread/config": "workspace:*",
     "@flatbread/core": "workspace:*",
     "@graphql-typed-document-node/core": "^3.1.0"
-  },
-  "pnpm": {
-    "peerDependencyRules": {
-      "allowedVersions": {
-        "graphql": "^16.0.1"
-      }
-    }
   }
 }
