@@ -31,7 +31,7 @@ Keep recommendations aligned with `flatbread-flow-pmf-audit.md` and `flatbread-f
 
 ## Output Schema For DAG Handoff
 
-When invoked inside a DAG task (the `dag-task-runner` skill), keep the response under ~1800 chars and lead with these exact `##` headings so downstream tasks can find them after the 2000-char upstream stitch cap:
+When invoked inside a DAG task (the `proof` skill / `@flatbread/proof` package), keep the response under ~1800 chars and lead with these exact `##` headings so downstream tasks can find them after the 2000-char upstream stitch cap:
 
 ```
 ## Current contract
