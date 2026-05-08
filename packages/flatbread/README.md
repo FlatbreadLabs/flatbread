@@ -38,6 +38,8 @@ Turn flat files in Git into typed, relational content for your TypeScript app. *
 
 **Ownership and exit:** Raw files, Git history, JSON/CSV exports, GraphQL introspection, and generated TypeScript all fit one portability story in [docs/data-ownership.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/data-ownership.md).
 
+**Roadmap:** Current keep/kill/iterate decisions from validation work live in [docs/roadmap.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/roadmap.md).
+
 For contributing to this monorepo, use Node 20.19+ with pnpm 10.33.x. Runtime support for published packages is tracked by each package's own metadata.
 
 Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://www.gatsbyjs.com/)) anything, this project harnesses a plugin architecture to be easily customizable to fit your use cases.
