@@ -36,12 +36,14 @@ This example is the repo’s **default first success path**: **relational Git-ba
 
 ### Scripts in this package
 
-| Script           | Purpose                                                                                   |
-|------------------|-------------------------------------------------------------------------------------------|
-| `pnpm dev`       | **`flatbread start`** + Next dev (HTTPS). GraphQL on **5057**, Next on **3000**.          |
-| `pnpm build`     | **`flatbread start`** wrapping **`next build`** so schema/codegen paths resolve during build. |
-| `pnpm start`     | **`next start` only** — production Next; does **not** run Flatbread unless you arrange it. |
-| `pnpm run codegen` | **Watch-only:** `flatbread codegen --watch` — regenerate types when config, content, or documents change. |
+| Script                                    | Purpose                                                                                             |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                                | **`flatbread start`** + Next dev (HTTPS). GraphQL on **5057**, Next on **3000**.                    |
+| `pnpm build`                              | **`flatbread start`** wrapping **`next build`** so schema/codegen paths resolve during build.       |
+| `pnpm start`                              | **`next start` only** — production Next; does **not** run Flatbread unless you arrange it.          |
+| `pnpm run codegen`                        | **Watch-only:** `flatbread codegen --watch` — regenerate types when config/content/documents change. |
+| `pnpm run demo:watch-query`               | Watch `example-post.md` and print updated posts/authors/tags query results.                         |
+| `pnpm run demo:edit` / `demo:restore`     | Edit and restore the watched post title for the demo loop.                                          |
 
 ### Watch-only codegen
 
@@ -55,6 +57,17 @@ For the full loader/schema/codegen/framework boundary contract, see
 [`docs/local-dev-loop.md`](../../docs/local-dev-loop.md). In short: codegen can
 watch content/config/document files, but the running GraphQL server still needs
 a restart for schema or content changes today.
+
+To see a Markdown/YAML edit/query loop without manually restarting a server, run
+the focused demo watcher:
+
+```bash
+pnpm run demo:watch-query
+```
+
+Then run `pnpm run demo:edit`; the terminal prints updated Markdown
+posts/authors/tags and YAML author query results. Full walkthrough:
+[`docs/edit-file-see-query-update-demo.md`](../../docs/edit-file-see-query-update-demo.md).
 
 ## Content path
 
