@@ -29,8 +29,8 @@ This example is the repo’s **default first success path**: **relational Git-ba
 
 4. **Serve the GraphQL read interface alongside Next** (**there is no `flatbread dev`** — use **`flatbread start`**):
 
-   - **Default (local HTTPS for Next):** `pnpm dev` — runs `flatbread start --https -- next dev --turbopack`.
-   - **Headless / no HTTPS** (e.g. agents, CI): `pnpm exec flatbread start -- next dev --turbopack`.
+   - **Recommended / headless-safe:** `pnpm exec flatbread start -- next dev --turbopack`.
+   - **Package shortcut:** `pnpm dev` — currently passes `--https` for local convenience, but the Flatbread GraphQL endpoint remains documented as HTTP on `5057`.
 
 5. Open **[http://localhost:3000](http://localhost:3000)** for the app. Flatbread defaults to **`http://localhost:5057/graphql`** (not the Next port).
 
@@ -50,6 +50,11 @@ For iterative work, run the watcher in a second terminal:
 ```bash
 pnpm run codegen
 ```
+
+For the full loader/schema/codegen/framework boundary contract, see
+[`docs/local-dev-loop.md`](../../docs/local-dev-loop.md). In short: codegen can
+watch content/config/document files, but the running GraphQL server still needs
+a restart for schema or content changes today.
 
 ## Content path
 
