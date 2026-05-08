@@ -43,13 +43,6 @@ export async function generateSchema(
     throw new Error('Config is not defined');
   }
 
-  // Let's see if we have a cached version of the schema. If so, short-circuit and return it.
-  const cachedSchema = checkCacheForSchema(config);
-
-  if (cachedSchema) {
-    return cachedSchema;
-  }
-
   // Invoke initialize function if it exists and provide loaded config
   config.source.initialize?.(config);
 
@@ -63,6 +56,19 @@ export async function generateSchema(
   );
   validateCollectionIdentifiers(allContentNodesJSON);
   validateCollectionReferences(allContentNodesJSON, config.content);
+
+  // Content validation must run before returning a cached schema because the
+  // cache key is derived from config, while invalid IDs/refs live in content.
+  const cachedSchema = checkCacheForSchema(config);
+
+  if (cachedSchema) {
+    return cachedSchema;
+  }
+
+  // graphql-compose's default schemaComposer is process-global. Reset it before
+  // building a fresh Flatbread schema so prior schemas with the same collection
+  // names do not leak fields or resolvers into this generation pass.
+  schemaComposer.clear();
 
   const preknownSchemaFragments = fetchPreknownSchemaFragments(config);
 
@@ -338,9 +344,17 @@ const optionallyTransformContentNodes = (
       if (!transformer?.parse) {
         throw new Error(`no transformer found for ${node.path}`);
       }
-      return transformer.parse(node);
+      return withSourceContext(transformer.parse(node), node);
     });
   }
 
   return allContentNodes;
 };
+
+function withSourceContext(entry: EntryNode, sourceNode: VFile): EntryNode {
+  return {
+    ...entry,
+    _path: sourceNode.path,
+    _filename: sourceNode.basename,
+  };
+}

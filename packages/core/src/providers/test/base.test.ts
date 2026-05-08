@@ -2,6 +2,10 @@ import test from 'ava';
 import filesystem from '@flatbread/source-filesystem';
 import markdownTransformer from '@flatbread/transformer-markdown';
 import { FlatbreadProvider } from '../base';
+import { generateSchema } from '../../generators/schema';
+import { initializeConfig } from '../../utils/initializeConfig';
+import type { EntryNode, Transformer } from '../../types';
+import { VFile } from 'vfile';
 
 function basicProject() {
   return new FlatbreadProvider({
@@ -47,7 +51,7 @@ function idSemanticsProject(
   });
 }
 
-test('basic query', async (t) => {
+test.serial('basic query', async (t) => {
   const flatbread = basicProject();
 
   const result = await flatbread.query({
@@ -64,11 +68,13 @@ test('basic query', async (t) => {
   t.snapshot(result);
 });
 
-test('normalizes numeric record IDs and string query args', async (t) => {
-  const flatbread = idSemanticsProject();
+test.serial(
+  'normalizes numeric record IDs and string query args',
+  async (t) => {
+    const flatbread = idSemanticsProject();
 
-  const result = await flatbread.query({
-    source: `
+    const result = await flatbread.query({
+      source: `
     query NumericAuthor {
       Author(id: "123") {
         id
@@ -76,21 +82,24 @@ test('normalizes numeric record IDs and string query args', async (t) => {
       }
     }
   `,
-  });
+    });
 
-  t.deepEqual(result.data, {
-    Author: {
-      id: 123,
-      name: 'Numeric Author',
-    },
-  });
-});
+    t.deepEqual(result.data, {
+      Author: {
+        id: 123,
+        name: 'Numeric Author',
+      },
+    });
+  }
+);
 
-test('accepts GraphQL ID integer literals for numeric record IDs', async (t) => {
-  const flatbread = idSemanticsProject();
+test.serial(
+  'accepts GraphQL ID integer literals for numeric record IDs',
+  async (t) => {
+    const flatbread = idSemanticsProject();
 
-  const result = await flatbread.query({
-    source: `
+    const result = await flatbread.query({
+      source: `
     query NumericAuthorIntegerLiteral {
       Author(id: 123) {
         id
@@ -98,21 +107,24 @@ test('accepts GraphQL ID integer literals for numeric record IDs', async (t) => 
       }
     }
   `,
-  });
+    });
 
-  t.deepEqual(result.data, {
-    Author: {
-      id: 123,
-      name: 'Numeric Author',
-    },
-  });
-});
+    t.deepEqual(result.data, {
+      Author: {
+        id: 123,
+        name: 'Numeric Author',
+      },
+    });
+  }
+);
 
-test('normalizes numeric relation targets when resolving refs', async (t) => {
-  const flatbread = idSemanticsProject();
+test.serial(
+  'normalizes numeric relation targets when resolving refs',
+  async (t) => {
+    const flatbread = idSemanticsProject();
 
-  const result = await flatbread.query({
-    source: `
+    const result = await flatbread.query({
+      source: `
     query NumericAuthorRelation {
       allPosts {
         id
@@ -124,27 +136,30 @@ test('normalizes numeric relation targets when resolving refs', async (t) => {
       }
     }
   `,
-  });
+    });
 
-  t.deepEqual(result.data, {
-    allPosts: [
-      {
-        id: 'numeric-author-post',
-        title: 'Numeric Author Post',
-        author: {
-          id: 123,
-          name: 'Numeric Author',
+    t.deepEqual(result.data, {
+      allPosts: [
+        {
+          id: 'numeric-author-post',
+          title: 'Numeric Author Post',
+          author: {
+            id: 123,
+            name: 'Numeric Author',
+          },
         },
-      },
-    ],
-  });
-});
+      ],
+    });
+  }
+);
 
-test('normalizes ID filter values against numeric record IDs', async (t) => {
-  const flatbread = idSemanticsProject();
+test.serial(
+  'normalizes ID filter values against numeric record IDs',
+  async (t) => {
+    const flatbread = idSemanticsProject();
 
-  const result = await flatbread.query({
-    source: `
+    const result = await flatbread.query({
+      source: `
     query NumericAuthorFilter {
       allAuthors(filter: {id: {eq: "123"}}) {
         id
@@ -152,19 +167,20 @@ test('normalizes ID filter values against numeric record IDs', async (t) => {
       }
     }
   `,
-  });
+    });
 
-  t.deepEqual(result.data, {
-    allAuthors: [
-      {
-        id: 123,
-        name: 'Numeric Author',
-      },
-    ],
-  });
-});
+    t.deepEqual(result.data, {
+      allAuthors: [
+        {
+          id: 123,
+          name: 'Numeric Author',
+        },
+      ],
+    });
+  }
+);
 
-test('rejects invalid record IDs before schema use', async (t) => {
+test.serial('rejects invalid record IDs before schema use', async (t) => {
   const flatbread = idSemanticsProject(
     'packages/core/src/providers/test/fixtures/id-semantics-invalid'
   );
@@ -186,29 +202,32 @@ test('rejects invalid record IDs before schema use', async (t) => {
   t.regex(error?.message ?? '', /boolean-id\.md/);
 });
 
-test('rejects duplicate normalized record IDs before schema use', async (t) => {
-  const flatbread = idSemanticsProject(
-    'packages/core/src/providers/test/fixtures/id-semantics-duplicates'
-  );
+test.serial(
+  'rejects duplicate normalized record IDs before schema use',
+  async (t) => {
+    const flatbread = idSemanticsProject(
+      'packages/core/src/providers/test/fixtures/id-semantics-duplicates'
+    );
 
-  const error = await t.throwsAsync(() =>
-    flatbread.query({
-      source: `
+    const error = await t.throwsAsync(() =>
+      flatbread.query({
+        source: `
       query DuplicateId {
         allAuthors {
           id
         }
       }
     `,
-    })
-  );
+      })
+    );
 
-  t.regex(error?.message ?? '', /Author record id "123" is duplicated/);
-  t.regex(error?.message ?? '', /numeric\.md/);
-  t.regex(error?.message ?? '', /string\.md/);
-});
+    t.regex(error?.message ?? '', /Author record id "123" is duplicated/);
+    t.regex(error?.message ?? '', /numeric\.md/);
+    t.regex(error?.message ?? '', /string\.md/);
+  }
+);
 
-test('relational filter query', async (t) => {
+test.serial('relational filter query', async (t) => {
   const flatbread = basicProject();
 
   const result = await flatbread.query({
@@ -222,5 +241,65 @@ test('relational filter query', async (t) => {
   `,
   });
 
-  t.snapshot(result);
+  t.deepEqual(result.data, {
+    allAuthors: [
+      {
+        enjoys: ['cats', 'coffee', 'design'],
+        name: 'Daes',
+      },
+      {
+        enjoys: ['cats', 'tea', 'making this'],
+        name: 'Tony',
+      },
+    ],
+  });
 });
+
+test.serial(
+  'validates duplicate IDs before returning a cached schema',
+  async (t) => {
+    let authorEntries: EntryNode[] = [{ id: 'author-one', name: 'Author One' }];
+    const collection = 'CacheDuplicateAuthor';
+    const transformer: Transformer = {
+      extensions: ['.json'],
+      inspect: (input) => JSON.stringify(input),
+      parse: (input) => input.data.entry as EntryNode,
+    };
+    const config = initializeConfig({
+      source: {
+        fetch: async () => ({
+          [collection]: authorEntries.map((entry) => {
+            const file = new VFile({
+              path: `virtual/authors/${String(entry.id)}.json`,
+            });
+            file.data.entry = entry;
+            return file;
+          }),
+        }),
+      },
+      transformer,
+      content: [
+        {
+          path: 'virtual/authors',
+          collection,
+        },
+      ],
+    });
+
+    await generateSchema({ config });
+
+    authorEntries = [
+      { id: 'author-one', name: 'Author One' },
+      { id: ' author-one ', name: 'Duplicate Author One' },
+    ];
+
+    const error = await t.throwsAsync(() => generateSchema({ config }));
+
+    t.regex(
+      error?.message ?? '',
+      /CacheDuplicateAuthor record id "author-one" is duplicated/
+    );
+    t.regex(error?.message ?? '', /virtual\/authors\/author-one\.json/);
+    t.regex(error?.message ?? '', /virtual\/authors\/ author-one \.json/);
+  }
+);
