@@ -144,6 +144,17 @@ Ensure `CURSOR_API_KEY` is set (the runner fails fast if missing), then launch:
   --canvas-path "$CANVAS_PATH"
 ```
 
+If the DAG is expected to edit the runner itself (`.cursor/skills/dag-task-runner/scripts/**`), launch through the supervisor instead so source edits take effect at a process boundary:
+
+```bash
+"$RUNNER_DIR/node_modules/.bin/tsx" "$RUNNER_DIR/run_dag_supervisor.ts" \
+  --dag /tmp/dag-<slug>.json \
+  --canvas-path "$CANVAS_PATH" \
+  --state-path "$HOME/.cursor/projects/<workspace-slug>/dag-state/<slug>.json"
+```
+
+The supervisor passes `--restart-on-runner-change` to `run_dag.ts`. When runner runtime files change after a rank or convergence iteration, the child runner persists state, marks the canvas `RESTARTING RUNNER`, exits `75`, and the supervisor relaunches with `--resume-state` so pending tasks continue under the new source.
+
 Same `--canvas-path` as Step 1. The runner:
 
 1. Validates the DAG and reuses the existing canvas file.
@@ -155,13 +166,16 @@ Same `--canvas-path` as Step 1. The runner:
 
 #### CLI knobs
 
-| Flag                            | Default            | Purpose                                                         |
-| ------------------------------- | ------------------ | --------------------------------------------------------------- |
-| `--models-file <path>`          | —                  | JSON file containing a partial complexity → model override map. |
-| `--task-timeout-ms <ms>`        | `1200000` (20 min) | Marks a task `ERROR` if it runs too long.                       |
-| `--stream-publish-ms <ms>`      | `500`              | Throttles live canvas streaming writes.                         |
-| `--stream-idle-timeout-ms <ms>` | `300000` (5 min)   | Marks a task `ERROR` if no stream events arrive.                |
-| `--debounce <ms>`               | `200`              | Canvas write debounce interval.                                 |
+| Flag                            | Default            | Purpose                                                                   |
+| ------------------------------- | ------------------ | ------------------------------------------------------------------------- |
+| `--models-file <path>`          | —                  | JSON file containing a partial complexity → model override map.           |
+| `--state-path <path>`           | —                  | Persist resumable state after rank boundaries.                            |
+| `--resume-state <path>`         | —                  | Resume from a persisted state file.                                       |
+| `--restart-on-runner-change`    | `false`            | Exit `75` after runner runtime files change so a supervisor can relaunch. |
+| `--task-timeout-ms <ms>`        | `1200000` (20 min) | Marks a task `ERROR` if it runs too long.                                 |
+| `--stream-publish-ms <ms>`      | `500`              | Throttles live canvas streaming writes.                                   |
+| `--stream-idle-timeout-ms <ms>` | `300000` (5 min)   | Marks a task `ERROR` if no stream events arrive.                          |
+| `--debounce <ms>`               | `200`              | Canvas write debounce interval.                                           |
 
 ### Step 4 — Summarize
 
@@ -169,20 +183,22 @@ After the runner exits, briefly summarize what completed/failed and re-link the 
 
 ## Complexity → model
 
-| Complexity | Model           |
-| ---------- | --------------- |
-| HIGH       | `gpt-5.3-codex` |
-| MED        | `composer-2`    |
-| LOW        | `auto-low`      |
+| Complexity | Model             |
+| ---------- | ----------------- |
+| HIGH       | `claude-opus-4-7` |
+| MED        | `composer-2`      |
+| LOW        | `gpt-5.4-nano`    |
 
 Override any subset inline with top-level DAG `models`, or pass a reusable profile with `--models-file <path>`. Precedence is defaults < DAG `models` < `--models-file`. The Cursor model catalog can vary by account.
 
 ### Discovering valid model ids
 
-Many Cursor catalog models encode reasoning effort and Max Mode as **slug suffixes** (e.g. `claude-opus-4-7-thinking-max`, `gpt-5.5-extra-high`, `gpt-5.3-codex-xhigh`). Two ways to enumerate the slugs your account can use:
+Many Cursor CLI catalog models encode reasoning effort and Max Mode as **slug suffixes** (e.g. `claude-opus-4-7-thinking-max`, `gpt-5.5-extra-high`, `gpt-5.3-codex-xhigh`), but the Cursor SDK may accept only base slugs. Do not compose SDK model ids from CLI suffixes by hand. For SDK-bound code, prefer `Cursor.models.list()` or the SDK's `ConfigurationError` catalog over `cursor-agent --list-models`.
+
+Ways to enumerate model ids:
 
 ```bash
-# Fastest — uses the Cursor CLI you already have installed
+# CLI catalog — useful for CLI runs, not authoritative for @cursor/sdk
 cursor-agent --list-models
 
 # SDK-flavored alternative — also prints any per-model `parameters` and preset `variants`
@@ -209,19 +225,23 @@ set -a && source .env && set +a
 
 ## CLI options
 
-| Flag                       | Default             | Notes                                                                               |
-| -------------------------- | ------------------- | ----------------------------------------------------------------------------------- |
-| `--dag`                    | required            | Path to the DAG JSON file.                                                          |
-| `--canvas-path`            | composed from below | Full absolute path to the canvas file. Preferred — used by the parent-managed flow. |
-| `--canvas`                 | —                   | Canvas filename stem (no `.canvas.tsx`). Used only if `--canvas-path` is omitted.   |
-| `--canvases-dir`           | derived from cwd    | Override the canvases output directory. Used only with `--canvas`.                  |
-| `--cwd`                    | `process.cwd()`     | Working dir each subagent operates in.                                              |
-| `--models-file`            | —                   | JSON file containing a partial complexity → model override map.                     |
-| `--debounce`               | `200` (ms)          | Canvas write debounce interval.                                                     |
-| `--init-only`              | `false`             | Write the initial all-`PENDING` canvas and exit. No `CURSOR_API_KEY` required.      |
-| `--task-timeout-ms`        | `1200000` (20 min)  | Marks a task `ERROR` if it exceeds this duration.                                   |
-| `--stream-publish-ms`      | `500` (ms)          | Throttles live canvas streaming writes to avoid excessive cloning.                  |
-| `--stream-idle-timeout-ms` | `300000` (5 min)    | Marks a task `ERROR` if no stream events arrive within this window.                 |
+| Flag                         | Default             | Notes                                                                                                              |
+| ---------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `--dag`                      | required            | Path to the DAG JSON file.                                                                                         |
+| `--canvas-path`              | composed from below | Full absolute path to the canvas file. Preferred — used by the parent-managed flow.                                |
+| `--canvas`                   | —                   | Canvas filename stem (no `.canvas.tsx`). Used only if `--canvas-path` is omitted.                                  |
+| `--canvases-dir`             | derived from cwd    | Override the canvases output directory. Used only with `--canvas`.                                                 |
+| `--cwd`                      | `process.cwd()`     | Working dir each subagent operates in.                                                                             |
+| `--models-file`              | —                   | JSON file containing a partial complexity → model override map.                                                    |
+| `--debounce`                 | `200` (ms)          | Canvas write debounce interval.                                                                                    |
+| `--init-only`                | `false`             | Write the initial all-`PENDING` canvas and exit. No `CURSOR_API_KEY` required.                                     |
+| `--state-path`               | —                   | Persist resumable runner state. Defaults to `.dag-runner/run-state.json` when `--restart-on-runner-change` is set. |
+| `--resume-state`             | —                   | Load a persisted `RunState` and skip already terminal tasks.                                                       |
+| `--restart-on-runner-change` | `false`             | Detect runner runtime file changes after safe boundaries and exit `75` for supervisor restart.                     |
+| `--max-runner-restarts`      | `20`                | Supervisor-only cap for relaunches from `run_dag_supervisor.ts`.                                                   |
+| `--task-timeout-ms`          | `1200000` (20 min)  | Marks a task `ERROR` if it exceeds this duration.                                                                  |
+| `--stream-publish-ms`        | `500` (ms)          | Throttles live canvas streaming writes to avoid excessive cloning.                                                 |
+| `--stream-idle-timeout-ms`   | `300000` (5 min)    | Marks a task `ERROR` if no stream events arrive within this window.                                                |
 
 ## Caveats
 

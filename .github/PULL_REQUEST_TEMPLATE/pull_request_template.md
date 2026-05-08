@@ -10,7 +10,6 @@ Closes # <!-- It's really useful if your PR references an issue where it is disc
 - [ ] My changes generate no new console errors locally
 - [ ] If applicable, try to include a test that fails without this PR but passes with it
 
-
 ### Does this introduce any non-backwards compatible changes?
 
 - [ ] Yes

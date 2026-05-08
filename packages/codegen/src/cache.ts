@@ -15,9 +15,11 @@ function getCacheFilePath(outputDir: string): string {
 /**
  * Load the codegen cache from disk
  */
-export async function loadCache(outputDir: string): Promise<CodegenCache | null> {
+export async function loadCache(
+  outputDir: string
+): Promise<CodegenCache | null> {
   const cacheFilePath = getCacheFilePath(outputDir);
-  
+
   try {
     if (await pathExists(cacheFilePath)) {
       const cacheContent = await fs.readFile(cacheFilePath, 'utf-8');
@@ -27,19 +29,22 @@ export async function loadCache(outputDir: string): Promise<CodegenCache | null>
     // If cache file is corrupted or unreadable, ignore it
     console.warn('Failed to load codegen cache, will regenerate types');
   }
-  
+
   return null;
 }
 
 /**
  * Save the codegen cache to disk
  */
-export async function saveCache(outputDir: string, cache: CodegenCache): Promise<void> {
+export async function saveCache(
+  outputDir: string,
+  cache: CodegenCache
+): Promise<void> {
   const cacheFilePath = getCacheFilePath(outputDir);
-  
+
   // Ensure the output directory exists
   await ensureDir(outputDir);
-  
+
   try {
     await fs.writeFile(cacheFilePath, JSON.stringify(cache, null, 2));
   } catch (error) {
@@ -76,7 +81,7 @@ export function isCacheValid(
   }
 
   // Check if all generated files still exist
-  return cache.files.every(file => {
+  return cache.files.every((file) => {
     try {
       require('fs').statSync(file);
       return true;
@@ -91,7 +96,7 @@ export function isCacheValid(
  */
 export async function clearCache(outputDir: string): Promise<void> {
   const cacheFilePath = getCacheFilePath(outputDir);
-  
+
   try {
     if (await pathExists(cacheFilePath)) {
       await fs.unlink(cacheFilePath);

@@ -1,0 +1,11 @@
+#!/bin/sh
+# Mergify CLI Hook Wrapper
+# This file is managed by mergify-cli. You can add custom logic below the marker.
+
+MERGIFY_HOOKS_DIR="$(dirname "$0")/mergify-hooks"
+if [ -f "$MERGIFY_HOOKS_DIR/commit-msg.sh" ]; then
+    "$MERGIFY_HOOKS_DIR/commit-msg.sh" "$@" || exit $?
+fi
+
+# --- USER CUSTOM LOGIC BELOW ---
+# Add your custom hook logic here (preserved during upgrades)

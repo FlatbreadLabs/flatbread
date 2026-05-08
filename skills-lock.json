@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "skills": {
+    "agent-browser": {
+      "source": "vercel-labs/agent-browser",
+      "sourceType": "github",
+      "skillPath": "skills/agent-browser/SKILL.md",
+      "computedHash": "c19a532a3777698b80b35270939a1dc559da451381971b3e1e78174d1ab54863"
+    },
+    "mergify-ci": {
+      "source": "Mergifyio/mergify-cli",
+      "sourceType": "github",
+      "skillPath": "skills/mergify-ci/SKILL.md",
+      "computedHash": "9ae6fc8749b03da31c46e00a37fe08d1d0d99a05d29cb9452aad613c5c559e9b"
+    },
+    "mergify-config": {
+      "source": "Mergifyio/mergify-cli",
+      "sourceType": "github",
+      "skillPath": "skills/mergify-config/SKILL.md",
+      "computedHash": "149398773c632c3909134790de735de5f6d6192fdb83e99054ab5be47d04f438"
+    },
+    "mergify-merge-protections": {
+      "source": "Mergifyio/mergify-cli",
+      "sourceType": "github",
+      "skillPath": "skills/mergify-merge-protections/SKILL.md",
+      "computedHash": "3b8128af5137181f89b5ceb6017f65c1f6ac049967a30918cbb0e6cb16327217"
+    },
+    "mergify-merge-queue": {
+      "source": "Mergifyio/mergify-cli",
+      "sourceType": "github",
+      "skillPath": "skills/mergify-merge-queue/SKILL.md",
+      "computedHash": "d9d872f9c44842f890d03579e80d3dab99ce312467a6e988a5d2488cf407f344"
+    },
+    "mergify-stack": {
+      "source": "Mergifyio/mergify-cli",
+      "sourceType": "github",
+      "skillPath": "skills/mergify-stack/SKILL.md",
+      "computedHash": "425f34041a676c1559f0da81f0953aa1c6b7446349a0a89d821db58d2bba6928"
+    }
+  }
+}

@@ -54,7 +54,9 @@ function selectModels(models: ModelListItem[], args: CliArgs): ModelListItem[] {
     if (out.length === 0) {
       const ids = models.map((m) => m.id).sort();
       throw new Error(
-        `No model matched id "${args.filter}". Known ids:\n  ${ids.join('\n  ')}`
+        `No model matched id "${args.filter}". Known ids:\n  ${ids.join(
+          '\n  '
+        )}`
       );
     }
   }
@@ -129,7 +131,9 @@ async function main(): Promise<void> {
   console.log(renderHumanReadable(filtered, detailed));
   if (!detailed) {
     console.log(
-      `\n(${filtered.length} model${filtered.length === 1 ? '' : 's'}; pass an id to see parameters and variants)`
+      `\n(${filtered.length} model${
+        filtered.length === 1 ? '' : 's'
+      }; pass an id to see parameters and variants)`
     );
   }
 }
