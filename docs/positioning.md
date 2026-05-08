@@ -14,6 +14,6 @@ Turn flat files in Git into typed, relational content for your TypeScript app. T
 - Not a general-purpose GraphQL platform or a substitute for a general-purpose database (transactions, granular access control, and high-scale multi-writer workloads are out of scope).
 - Reliable live reload of content while the dev server runs is [not a supported pillar yet](https://github.com/FlatbreadLabs/flatbread/issues/65); expect to restart to pick up file changes.
 
-**GraphQL:** In the default setup, GraphQL is a primary **interface** for reading an already-loaded content graph (`schema → operations → codegen`). Prefer thinking **files → model → typed read path** rather than treating GraphQL alone as Flatbread.
+**GraphQL:** In the default setup, GraphQL is a primary **interface** for reading an already-loaded content graph (`schema → operations → codegen`). Prefer thinking **files → model → typed read path** rather than treating GraphQL alone as Flatbread. For **traceability** from **backing files** (posts, authors, tag facets on posts) through **config** to generated schema and operation types—aligned with the [glossary](./glossary.md)—see the **Quickstart** and **Traceability** sections of [`packages/flatbread/README.md`](../packages/flatbread/README.md#quickstart-posts-authors-and-tags).
 
 **Skimming from GraphQL-first experience:** Jump to **`refs` + relations** in [glossary](./glossary.md), then codegen and your app’s **`flatbread codegen`** docs — the relational layer is upstream of the queries you write.

@@ -28,6 +28,12 @@ An identifier Flatbread uses to **point at one item within a collection** so rel
 
 The **API surface your application uses to read** the built content graph. In many projects today that surface is **GraphQL** (schema plus operations, often with codegen), meaning GraphQL is **an interface**, not the definition of Flatbread. Other ways to consume the same graph may exist in your stack alongside it.
 
+### Generated schema and operation types (GraphQL)
+
+When GraphQL is your **query interface**, the **generated GraphQL schema** describes how **collections** and fields are exposed at read time: list fields such as `allPosts` / `allAuthors` correspond to **collections**; nested selections follow **`refs`** (**relations**) and resolve to related **records**; scalar list fields that come from frontmatter (for example **`tags`** on a post) align with **Tag (facet)** in this glossary—not a **`Tag` collection** unless you add one.
+
+**Generated TypeScript** from GraphQL document codegen (for example operation result types such as `GetPostsAuthorsAndTagsQuery`) types **that read path only**. It does not redefine Flatbread’s domain model: the **records** and **relations** still originate in repo files and config. A future non-GraphQL generated TypeScript read surface, if shipped, would be documented separately so it does not blur this boundary.
+
 ### Record
 
 **One loaded item** in a collection: the structured result of reading a file (metadata, body, derived fields) that your app treats as a single unit. “Record” here means **a document-shaped object in memory**, not a row in a remote database.

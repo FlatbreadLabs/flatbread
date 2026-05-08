@@ -4,7 +4,7 @@ Thanks for your interest in contributing! This guide covers local development an
 
 **Flatbread** is **relational, Git-tracked content for TypeScript apps**: flat files in the repo become a typed content graph. **GraphQL is one consumer** of that graph (see `docs/glossary.md`), not the whole product story.
 
-For the **canonical posts / authors / tags** onboarding narrative (collections, `refs`, codegen, then GraphQL), see the root [README quickstart](https://github.com/FlatbreadLabs/flatbread/blob/main/README.md#quickstart-posts-authors-and-tags).
+For the **canonical posts / authors / tags** onboarding narrative (collections, `refs`, codegen, then GraphQL), see the [Flatbread package README quickstart](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/flatbread/README.md#quickstart-posts-authors-and-tags) (traceability: **files → config → query interface**, tied to **`docs/glossary.md`**).
 
 ## Prerequisites
 
