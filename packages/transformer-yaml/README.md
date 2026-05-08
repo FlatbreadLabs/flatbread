@@ -1,6 +1,6 @@
 # @flatbread/transformer-yaml 🐪
 
-> Transform [YAML](https://en.wikipedia.org/wiki/YAML) files into content that can be fetched with GraphQL.
+> Transform [YAML](https://en.wikipedia.org/wiki/YAML) into Flatbread collection entries (often consumed through GraphQL in the default setup).
 
 ## 💾 Install
 

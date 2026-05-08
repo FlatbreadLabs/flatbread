@@ -16,7 +16,19 @@
   </a>
 </p>
 
-Eat your relational markdown data _and query it, too,_ with [GraphQL](https://graphql.org/) inside damn near any framework (statement awaiting peer-review).
+Turn flat files in Git into typed, relational content for your TypeScript app—with [GraphQL](https://graphql.org/) and generated types as the default way to query the model today.
+
+**Flatbread** is a Git-native relational flat-file content layer for TypeScript apps. Your repo and filesystem are the source of truth; plugins (sources, transformers, and resolvers) extend how content is loaded and shaped.
+
+**Who it's for:** Teams shipping TypeScript sites, internal tools, and starters who want **versioned, reviewable content** and **relationships between entries**—without standing up a CMS database or giving up ownership of where content lives.
+
+**Non-goals:**
+
+- Not a hosted CMS, dashboard, or authoring UI: Flatbread is a library and local workflow, not a full content-management product you log into.
+- Not a general-purpose GraphQL platform or a substitute for a general-purpose database (transactions, granular access control, and high-scale multi-writer workloads are out of scope).
+- Reliable live reload of content while the dev server runs is [not a supported pillar yet](https://github.com/FlatbreadLabs/flatbread/issues/65); expect to restart to pick up file changes.
+
+**GraphQL:** In the default setup, GraphQL is the primary **interface** for reading the content graph—schema generation and codegen are how many apps reach the data, not the definition of the product. More detail: [docs/positioning.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/positioning.md).
 
 For contributing to this monorepo, use Node 20.19+ with pnpm 10.33.x. Runtime support for published packages is tracked by each package's own metadata.
 
