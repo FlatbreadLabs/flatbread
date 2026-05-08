@@ -58,7 +58,7 @@ Markdown and YAML for this demo live under **`examples/content`**; this package 
 - **Posts:** `examples/content/markdown/posts/` (`tags` in frontmatter → `[String]` on **`Post`** in the schema.)
 - **Authors:** `examples/content/markdown/authors/` (referenced by id from **`Post`** **`authors`**.)
 
-Canonical layout is described alongside commands in the [root README quickstart](https://github.com/FlatbreadLabs/flatbread/blob/main/README.md#quickstart-posts-authors-and-tags).
+Canonical layout, **backing files for tags** (facet on each post), and **traceability** (same **relation model** from files through config to the GraphQL read interface and illustrative query JSON) are documented in the [Flatbread README quickstart](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/flatbread/README.md#traceability-same-relation-model-files-config-query-interface) and [glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md).
 
 ## Project structure
 
