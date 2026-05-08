@@ -3,3 +3,15 @@ packages:
   - '!**/test/**'
   - '!**/__tests__/**'
   - examples/*
+
+onlyBuiltDependencies:
+  - '@apollo/protobufjs'
+  - '@parcel/watcher'
+  - '@swc/core'
+  - '@tailwindcss/oxide'
+  - agent-browser
+  - esbuild
+  - nx
+  - sharp
+  - sqlite3
+  - unrs-resolver
