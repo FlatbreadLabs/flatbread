@@ -4,7 +4,7 @@ This page defines vocabulary for Flatbread’s **Git-native, flat-file relationa
 
 **[GraphQL](https://graphql.org/)** is often the **default query interface** in typical setups, but it is one way to read the graph—not the product’s whole identity.
 
-See also: [Flatbread positioning](./positioning.md).
+See also: [Flatbread positioning](./positioning.md); [PMF decision rubric](./pmf-decision-rubric.md) (comparative criteria and agent-wedge signals).
 
 ---
 

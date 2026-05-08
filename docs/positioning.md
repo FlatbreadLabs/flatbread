@@ -1,6 +1,6 @@
 # Flatbread positioning
 
-Flatbread positions itself the same way across the repo; this page is a stable link target. For install and usage, see the [main README](../README.md). For vocabulary used across docs and config—**collections**, **relations**, **IDs**, and how a **query interface** fits in—see the [glossary](./glossary.md).
+Flatbread positions itself the same way across the repo; this page is a stable link target. For install and usage, see the [main README](../README.md). For vocabulary used across docs and config—**collections**, **relations**, **IDs**, and how a **query interface** fits in—see the [glossary](./glossary.md). For **buyer-aware comparisons** (SQLite-style workflows, CMSs, Contentlayer-like stacks, agent artifact graphs) across setup time, typing, integrity, and related criteria—plus **go / no-go** guidance for an agent-artifact wedge—see the [PMF decision rubric](./pmf-decision-rubric.md).
 
 Turn flat files in Git into typed, relational content for your TypeScript app—with [GraphQL](https://graphql.org/) and generated types as the default way to query the model today.
 
