@@ -1,6 +1,6 @@
 # @flatbread/source-filesystem 🗃
 
-> Transform files into content that can be fetched with GraphQL.
+> Load files into Flatbread's relational content model (often queried via GraphQL in the default toolkit).
 
 ## 💾 Install
 

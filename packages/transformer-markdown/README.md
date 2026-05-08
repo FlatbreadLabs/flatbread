@@ -1,6 +1,6 @@
 # @flatbread/transformer-markdown ⚡
 
-> Transform [Markdown](https://en.wikipedia.org/wiki/markdown) files into content that can be fetched with GraphQL. If you're using a CMS like NetlifyCMS, you'll want to pair this with the [`source-filesystem`](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/source-filesystem/README.md) plugin.
+> Transform [Markdown](https://en.wikipedia.org/wiki/markdown) into Flatbread collection entries. Pair with [`source-filesystem`](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/source-filesystem/README.md) when content lives on disk; typical setups then read the graph via GraphQL.
 
 ## 💾 Install
 
