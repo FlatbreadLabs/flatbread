@@ -8,6 +8,7 @@ import { clearCache } from '../cache.js';
 import type { LoadedFlatbreadConfig } from '@flatbread/core';
 import type { CodegenOptions } from '../types.js';
 import { buildSchema } from 'graphql';
+import ts from 'typescript';
 
 /**
  * End-to-end tests for the codegen package
@@ -69,6 +70,17 @@ describe('codegen end-to-end', () => {
         {
           collection: 'Post',
           path: join(tempDir, 'content/posts'),
+          refs: {
+            author: 'Author',
+          },
+        },
+        {
+          collection: 'Author',
+          path: join(tempDir, 'content/authors'),
+        },
+        {
+          collection: 'Draft',
+          path: join(tempDir, 'content/drafts'),
         },
       ],
       fieldNameTransform: (field: string) => field,
@@ -79,6 +91,8 @@ describe('codegen end-to-end', () => {
 
     // Create content directory structure
     await fs.mkdir(join(tempDir, 'content/posts'), { recursive: true });
+    await fs.mkdir(join(tempDir, 'content/authors'), { recursive: true });
+    await fs.mkdir(join(tempDir, 'content/drafts'), { recursive: true });
   });
 
   afterEach(async () => {
@@ -97,7 +111,7 @@ describe('codegen end-to-end', () => {
         outputDir: testOutputDir,
         outputFile: 'graphql.ts',
         plugins: ['typescript'],
-        cache: false, // Disable cache for predictable testing
+        cache: true,
       };
 
       const result = await generateTypes(testSchema, mockConfig, options);
@@ -118,6 +132,61 @@ describe('codegen end-to-end', () => {
       expect(content).toContain('Post');
       expect(content).toContain('Author');
       expect(content).toContain('Query');
+      expect(content).toContain(
+        'export type FlatbreadCollectionName = "Post" | "Author" | "Draft"'
+      );
+      expect(content).toContain('export type FlatbreadRecordByCollection');
+      expect(content).toContain('"Post": Post;');
+      expect(content).toContain('"Author": Author;');
+      expect(content).toContain('"Draft": Record<string, unknown>;');
+      expect(content).toContain(
+        'export type FlatbreadRelationTargetByCollection'
+      );
+      expect(content).toContain(
+        '"author": { target: "Author"; cardinality: "one"; };'
+      );
+      expect(content).toContain('FlatbreadRelationTargetCollection');
+      expect(content).toContain('FlatbreadRelationCardinality');
+      expect(content).toContain('@flatbread/content-model-types:start');
+
+      const usageFile = join(testOutputDir, 'usage.ts');
+      await fs.writeFile(
+        usageFile,
+        `
+          import type {
+            FlatbreadCollectionName,
+            FlatbreadRecord,
+            FlatbreadRelationTarget,
+            FlatbreadRelationCardinality,
+            FlatbreadRelationTargetCollection,
+          } from './graphql';
+
+          const collection: FlatbreadCollectionName = 'Post';
+          type PostRecord = FlatbreadRecord<'Post'>;
+          type RelatedAuthor = FlatbreadRelationTarget<'Post', 'author'>;
+          const relation: FlatbreadRelationTargetCollection<'Post', 'author'> = 'Author';
+          const cardinality: FlatbreadRelationCardinality<'Post', 'author'> = 'one';
+
+          export type Assertions = {
+            collection: typeof collection;
+            post: PostRecord;
+            relatedAuthor: RelatedAuthor;
+            relationCollection: typeof relation;
+            cardinality: typeof cardinality;
+          };
+        `
+      );
+
+      expectTypeScriptToCompile([generatedFile, usageFile]);
+
+      const secondResult = await generateTypes(testSchema, mockConfig, options);
+      expect(secondResult.success).toBe(true);
+      expect(secondResult.fromCache).toBe(true);
+
+      const cachedContent = await fs.readFile(generatedFile, 'utf-8');
+      expect(
+        cachedContent.match(/@flatbread\/content-model-types:start/g)
+      ).toHaveLength(1);
     });
 
     it('should generate types with operations when documents are provided', async () => {
@@ -310,3 +379,22 @@ describe('codegen end-to-end', () => {
     });
   });
 });
+
+function expectTypeScriptToCompile(files: string[]) {
+  const program = ts.createProgram(files, {
+    noEmit: true,
+    strict: true,
+    target: ts.ScriptTarget.ES2020,
+    module: ts.ModuleKind.NodeNext,
+    moduleResolution: ts.ModuleResolutionKind.NodeNext,
+    skipLibCheck: true,
+    types: [],
+  });
+  const diagnostics = ts.getPreEmitDiagnostics(program);
+
+  expect(
+    diagnostics.map((diagnostic) =>
+      ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
+    )
+  ).toEqual([]);
+}
