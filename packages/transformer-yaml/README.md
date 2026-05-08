@@ -16,27 +16,16 @@ Pair this with a compatible source plugin in your `flatbread.config.js` file:
 
 ```js
 // flatbread.config.js
-import defineConfig from '@flatbread/config';
-import transformer from '@flatbread/transformer-markdown';
-import filesystem from '@flatbread/source-filesystem';
+import { defineConfig, sourceFilesystem, transformerMarkdown } from 'flatbread';
+import transformerYaml from '@flatbread/transformer-yaml';
 
 export default defineConfig({
-  source: filesystem(),
-  transformer: transformer(),
+  source: sourceFilesystem(),
+  transformer: [transformerMarkdown(), transformerYaml()],
   content: [
     {
-      path: 'content/posts',
-      collection: 'Post',
-      refs: {
-        authors: 'Author',
-      },
-    },
-    {
-      path: 'content/authors',
-      collection: 'Author',
-      refs: {
-        friend: 'Author',
-      },
+      path: 'content/yaml/posts',
+      collection: 'YamlPost',
     },
   ],
 });

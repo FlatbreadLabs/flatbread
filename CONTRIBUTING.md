@@ -2,18 +2,34 @@
 
 Thanks for your interest in contributing! This guide covers local development and the release process (bumping versions and publishing packages).
 
+**Flatbread** is **relational, Git-tracked content for TypeScript apps**: flat files in the repo become a typed content graph. **GraphQL is one consumer** of that graph (see `docs/glossary.md`), not the whole product story.
+
 ## Prerequisites
 
 - Node 20.19+
 - pnpm 10.33.x via Corepack (`corepack enable && corepack prepare pnpm@10.33.0 --activate`)
 - Clean git working tree (commit/stash your work first)
 
+
+## Recommended onboarding (try Flatbread in the Next.js example)
+
+Use this single path first; it matches how CI and most contributors exercise the stack:
+
+1. From the **monorepo root**: `pnpm install` then `pnpm build` (builds all packages except `examples/*`).
+2. `cd examples/nextjs`
+3. One-shot codegen: `pnpm exec flatbread codegen --verbose` (output: `generated/graphql.ts`; globs and dirs come from `flatbread.config.js`).
+4. Run the app **and** Flatbread together with **`flatbread start`** (there is **no** `flatbread dev` subcommand):
+   - **`pnpm dev`** — Next dev with local HTTPS + Flatbread (GraphQL on **5057**, Next on **3000**).
+   - Headless / no HTTPS: `pnpm exec flatbread start -- next dev --turbopack`.
+
+Optional **`pnpm play`** from the repo root is a shortcut for **`cd examples/nextjs && pnpm dev`** — same as step 4 above, not a separate product command.
+
 ## Local development
 
-- Install dependencies: `pnpm -w i`
+- Install dependencies: `pnpm install` (or `pnpm -w i`)
 - Build all packages: `pnpm build`
-- Run dev across packages: `pnpm dev`
-- Work in examples (Next.js preferred): `pnpm play`
+- **Workspace libraries (watch-only):** `pnpm dev` — runs package `dev` scripts (e.g. `tsup --watch`) for `packages/*`; it does **not** start the Next.js example.
+- **Next.js example:** prefer the flow under [Recommended onboarding](#recommended-onboarding-try-flatbread-in-the-nextjs-example); or `pnpm play` as a convenience alias.
 - Check local CI parity before opening a PR: `pnpm verify`
 
 ## Working on a package
@@ -23,7 +39,7 @@ Open another terminal tab while keeping the dev server running.
 - Option 1 (preferred): use the Next.js example as a demo project
 
   - Work in the full context of a Flatbread instance as an end-user would, while tinkering with `packages/*` internals.
-  - Command: `pnpm play` (starts the Next.js example)
+  - Commands: follow [Recommended onboarding](#recommended-onboarding-try-flatbread-in-the-nextjs-example), or from root run **`pnpm play`** (`cd examples/nextjs && pnpm dev`).
   - Good when you want to test without creating per-package temporary clutter.
 
 - Option 2: scope to a specific package

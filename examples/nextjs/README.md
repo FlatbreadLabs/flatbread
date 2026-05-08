@@ -1,131 +1,111 @@
 # Flatbread Next.js Example with TypeScript Codegen
 
-This example demonstrates how to use Flatbread with Next.js and automatic TypeScript type generation.
+This example shows **Flatbread** as **relational, Git-tracked content for a TypeScript app**: markdown and YAML under version control are loaded into a typed model; **GraphQL is one read interface** (alongside anything else you build). Next.js uses generated operation types against the Flatbread GraphQL endpoint.
 
-## 🚀 Quick Start
+## Quick start (from monorepo root)
 
-1. **Install dependencies:**
+Flatbread development assumes this **pnpm** workspace. Use one path end-to-end:
+
+1. **Install and build packages** (excluding examples):
+
    ```bash
-   npm install
+   pnpm install
+   pnpm build
    ```
 
-2. **Generate TypeScript types from GraphQL schema:**
+2. **Work in this example:**
+
    ```bash
-   npx flatbread codegen --documents "src/queries/**/*.graphql" --verbose
+   cd examples/nextjs
    ```
 
-3. **Start the Flatbread server:**
+3. **Generate TypeScript types once** (paths and globs come from `flatbread.config.js`; default output is `generated/graphql.ts`):
+
    ```bash
-   npx flatbread dev
+   pnpm exec flatbread codegen --verbose
    ```
 
-4. **In another terminal, start the Next.js development server:**
-   ```bash
-   npm run dev
-   ```
+4. **Run Next.js and the Flatbread GraphQL server together** via the CLI (**there is no `flatbread dev` subcommand** — use **`flatbread start`**):
 
-5. **Open your browser to** `http://localhost:3000`
+   - **Default (local HTTPS for Next):** `pnpm dev` — runs `flatbread start --https -- next dev --turbopack`.
+   - **Headless / no HTTPS** (e.g. agents, CI): `pnpm exec flatbread start -- next dev --turbopack`.
 
-## 📁 Project Structure
+5. Open **[http://localhost:3000](http://localhost:3000)** for the app. The Flatbread GraphQL HTTP endpoint defaults to **`http://localhost:5057/graphql`** (not the Next port).
 
-- `flatbread.config.js` - Flatbread configuration
-- `src/generated/graphql.ts` - Auto-generated TypeScript types
-- `src/queries/posts.graphql` - GraphQL queries for type generation
-- `src/lib/graphql.ts` - GraphQL client utilities
-- `src/components/` - React components using generated types
-- `app/page.tsx` - Main page displaying content
+### Scripts in this package
 
-## 🏗️ Generated Types
+| Script | Purpose |
+|--------|--------|
+| `pnpm dev` | **`flatbread start`** + Next dev (HTTPS). GraphQL on **5057**, Next on **3000**. |
+| `pnpm build` | **`flatbread start`** wrapping **`next build`** so schema/codegen paths resolve during build. |
+| `pnpm start` | **`next start` only** — production Next; does **not** run Flatbread. Use only if you already have GraphQL served elsewhere. |
+| `pnpm run codegen` | **Watch-only:** `flatbread codegen --watch` — regenerate types when config, content, or documents change. |
 
-The example uses `@flatbread/codegen` to automatically generate TypeScript types from your Flatbread GraphQL schema. Types are generated based on:
+### Watch-only codegen
 
-1. **GraphQL Schema** - Generated from your Flatbread configuration
-2. **GraphQL Documents** - Queries defined in `src/queries/`
-
-### Regenerating Types
-
-When you change your Flatbread configuration or GraphQL queries, regenerate types:
+For iterative work, you can run the watcher in a second terminal (leave it running until you stop it):
 
 ```bash
-npx flatbread codegen --verbose
+pnpm run codegen
 ```
 
-### Watching for Changes
+## Project structure
 
-For development, you can watch for changes and auto-regenerate:
+Aligned with the App Router layout in this repo:
 
-```bash
-npx flatbread codegen --watch --verbose
-```
+- `app/` — routes and components (`page.tsx`, `post/[id]/`, etc.)
+- `lib/graphql.ts` — GraphQL client helpers (default endpoint `http://localhost:5057/graphql`)
+- `generated/graphql.ts` — generated TypeScript types and documents (`flatbread codegen`)
+- `queries/*.graphql` — GraphQL documents included via `flatbread.config.js`
+- `flatbread.config.js` — sources, transformers, collections, and codegen options
+- `content` → `../content` — shared example content (symlink to `examples/content`)
 
-## 🎯 Features Demonstrated
+## Configuration snippets
 
-- ✅ **Type-Safe GraphQL Queries** - Using generated TypeScript types
-- ✅ **Intelligent Caching** - Avoids regeneration when config unchanged
-- ✅ **Component Composition** - React components with proper typing
-- ✅ **Server-Side Rendering** - Next.js App Router with async data fetching
-- ✅ **Error Handling** - Graceful fallbacks for data loading errors
-
-## 📝 GraphQL Queries
-
-Example queries in `src/queries/posts.graphql`:
-
-- `GetPostCategories` - Fetch all post categories with authors and images
-- `GetAllPosts` - Fetch all posts with basic information
-- `GetAuthors` - Fetch all authors with skills and images
-
-## 🔧 Configuration
-
-### Flatbread Config (`flatbread.config.js`)
-
-Standard Flatbread configuration with content sources and transformers.
-
-### Codegen Config
-
-You can customize codegen behavior in your `flatbread.config.js`:
+Codegen in `flatbread.config.js` matches the checked-in file — excerpt:
 
 ```javascript
-export default defineConfig({
-  // ... your existing config
-  codegen: {
-    enabled: true,
-    outputDir: './src/generated',
-    outputFile: 'graphql.ts',
-    documents: ['src/queries/**/*.graphql'],
-    watch: false,
-    cache: true,
-  },
-});
+codegen: {
+  enabled: true,
+  outputDir: './generated',
+  outputFile: 'graphql.ts',
+  documents: [
+    './**/*.graphql',
+    './**/*.gql',
+    './components/**/*.graphql',
+  ],
+  // ...
+},
 ```
 
-## 🎨 Styling
+## Regenerating types
 
-This example uses Tailwind CSS for styling, similar to the SvelteKit example. The layout features:
+After changing Flatbread config, content, or `.graphql` documents:
 
-- **Split Pane Layout** - JSON output on left, rendered UI on right
-- **PostCard Components** - Displays posts with authors, ratings, and content
-- **Responsive Design** - Works on different screen sizes
-
-## 🚫 Troubleshooting
-
-### "No posts found"
-Make sure the Flatbread server is running on `http://localhost:5057`:
 ```bash
-npx flatbread dev
+pnpm exec flatbread codegen --verbose
 ```
 
-### TypeScript Errors
-Regenerate types if your schema changed:
+Force regeneration (clear cache):
+
 ```bash
-npx flatbread codegen --clear-cache --verbose
+pnpm exec flatbread codegen --clear-cache --verbose
 ```
 
-### Network Errors
-Check that your GraphQL endpoint is accessible and CORS is configured properly.
+## Troubleshooting
 
-## 📚 Learn More
+### "No posts found" or network errors
 
-- [Flatbread repo & main README](https://github.com/FlatbreadLabs/flatbread) — onboarding and install
-- [Glossary (relational primitives & query interface)](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md) — collections, relations, IDs; GraphQL is **one** read surface, not the whole product
+Ensure something is serving Flatbread at **`http://localhost:5057/graphql`** — typically by running **`pnpm dev`** or **`pnpm exec flatbread start -- next dev --turbopack`** from this directory, not `pnpm start` alone.
+
+### TypeScript errors after schema changes
+
+Run **`pnpm exec flatbread codegen --clear-cache --verbose`**.
+
+## Learn more
+
+- [Flatbread package README](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/flatbread#readme) — install and **`flatbread start`**
+- [Glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md) — collections, relations; GraphQL as one surface
+- [Contributing / monorepo workflow](https://github.com/FlatbreadLabs/flatbread/blob/main/CONTRIBUTING.md)
 - [GraphQL Code Generator](https://www.the-guild.dev/graphql/codegen)
 - [Next.js Documentation](https://nextjs.org/docs)

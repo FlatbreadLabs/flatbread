@@ -2,6 +2,8 @@
 
 > Automatic TypeScript type generation for Flatbread GraphQL schemas
 
+Flatbread treats repo files as **relational, Git-tracked content** for TypeScript apps; GraphQL is a common **read interface**. Codegen keeps operations typed against the schema Flatbread derives from your config.
+
 ## 💾 Install
 
 Use `pnpm`, `npm`, or `yarn`:
@@ -33,7 +35,7 @@ export default defineConfig({
   // Add codegen configuration
   codegen: {
     enabled: true,
-    outputDir: './src/generated',
+    outputDir: './generated',
     outputFile: 'graphql.ts',
     plugins: ['typescript', 'typescript-operations', 'typed-document-node'],
   },
@@ -73,9 +75,9 @@ const posts: Post[] = await request<GetPostsQuery>(`
 `);
 ```
 
-## 👀 Watch Mode
+## 👀 Watch Mode (watch-only)
 
-The `--watch` flag enables automatic regeneration of TypeScript types whenever your source files change. This is particularly useful during development to keep your types in sync with your content and schema changes.
+The `--watch` flag enables automatic regeneration while the process stays running—**watch-only**; use one-shot `flatbread codegen` when you need a single generation (for example in CI).
 
 ### How Watch Mode Works
 
@@ -99,8 +101,8 @@ npx flatbread codegen --watch --verbose
 🥯 Flatbread TypeScript Code Generator
 Generating GraphQL schema...
 🔍 Watching for changes...
-Watching patterns: flatbread.config.*, content/posts/**/*.{md,mdx,markdown}, src/**/*.graphql
-✓ Generated TypeScript types: /path/to/src/generated/graphql.ts
+Watching patterns: flatbread.config.*, content/**/*.{md,mdx,markdown,yml,yaml}, **/*.graphql
+✓ Generated TypeScript types: /path/to/generated/graphql.ts
 👀 Ready for changes
 
 📝 File changed: content/posts/new-article.md
@@ -126,7 +128,7 @@ export interface CodegenOptions {
   enabled?: boolean; // default: false
 
   // Output directory for generated types
-  outputDir?: string; // default: './src/generated'
+  outputDir?: string; // default: './generated'
 
   // Output filename for generated types
   outputFile?: string; // default: 'graphql.ts'
@@ -171,7 +173,7 @@ export default defineConfig({
     },
 
     // Include GraphQL documents from your app
-    documents: ['./src/**/*.graphql', './src/**/*.gql'],
+    documents: ['./queries/**/*.graphql', './**/*.graphql'],
 
     // Custom GraphQL Code Generator configuration
     codegenConfig: {
@@ -203,7 +205,7 @@ const schema = await generateSchema(configResult);
 // Generate TypeScript types
 const result = await generateTypes(schema, configResult.config, {
   enabled: true,
-  outputDir: './src/generated',
+  outputDir: './generated',
   outputFile: 'types.ts',
 });
 
@@ -226,11 +228,12 @@ Types are only regenerated when one of these changes. You can force regeneration
 
 ```bash
 # Clear cache and regenerate
-npx flatbread codegen --clear-cache
+pnpm exec flatbread codegen --clear-cache
 
-# Disable caching entirely
-npx flatbread codegen --no-cache
+# Or set codegen.cache to false in flatbread.config.* for non-cached runs
 ```
+
+Watch mode (`--watch`) is **watch-only**: leave it running during development; use a one-shot `flatbread codegen` (without `--watch`) when you only need a single generation.
 
 ## 🎛️ CLI Options
 
@@ -323,7 +326,7 @@ import { GetPostsDocument, type GetPostsQuery } from './generated/graphql';
 
 export async function getStaticProps() {
   const data = await request<GetPostsQuery>(
-    'http://localhost:5050/graphql',
+    'http://localhost:5057/graphql',
     GetPostsDocument
   );
 
@@ -343,7 +346,7 @@ import { GetPostsDocument, type GetPostsQuery } from './generated/graphql';
 
 export async function load() {
   const data = await request<GetPostsQuery>(
-    'http://localhost:5050/graphql',
+    'http://localhost:5057/graphql',
     GetPostsDocument
   );
 

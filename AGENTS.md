@@ -4,20 +4,21 @@
 
 ### Overview
 
-Flatbread is a Git-native relational content layer for TypeScript/JavaScript applications. It's a pnpm monorepo that sources flat files (Markdown, YAML), transforms them into relational data, and auto-generates a GraphQL API. See `CONTRIBUTING.md` for full development workflow.
+Flatbread is Git-native **relational content for TypeScript/JavaScript apps**: flat files become a typed graph; **GraphQL is one read surface**, not the whole product. It's a pnpm monorepo. See `CONTRIBUTING.md` for the canonical onboarding path.
 
 ### Key commands
 
 See `CONTRIBUTING.md` for full details. Quick reference:
 
-- **Install**: `pnpm install`
-- **Build**: `pnpm build`
+- **Install**: `pnpm install` (enforces pnpm via `preinstall` script)
+- **Build**: `pnpm build` (builds all packages except examples via tsup)
 - **Lint**: `pnpm lint` (prettier)
 - **Lint fix (after edits)**: `pnpm lint:fix:fast` (writes formatting repo-wide to match `pnpm lint`; staged-only: `pnpm lint:fix`, also runs via `.husky/pre-commit`)
 - **Typecheck**: `pnpm typecheck`
-- **Test**: `pnpm test` (builds, then runs ava + vitest suites)
+- **Test**: `pnpm test` (builds, then runs ava + vitest suites, including `@flatbread/proof` bounded-loop coverage). For the focused proof loop suite: `pnpm -F @flatbread/proof test`. Vitest packages use `pnpm -F @flatbread/utils exec vitest run` / `pnpm -F @flatbread/codegen exec vitest run` (`run` avoids watch mode).
 - **Full verify**: `pnpm verify` (lint + typecheck + build + test)
-- **Dev server**: `pnpm play` (GraphQL on port 5057, Next.js on port 3000)
+- **Proof loop contract**: explicit `DAG.loops[].reexecute.tasks` subsets must be dependency-closed, multiple loops must have disjoint re-execution sets, and `DAG.loops` must not be combined with `--converge-on`.
+- **Dev server**: `pnpm play` (GraphQL on port 5057, Next.js on port 3000). From `examples/nextjs`, prefer `pnpm exec flatbread start -- next dev --turbopack`. Use `flatbread start` — `flatbread dev` is not a CLI command.
 
 ### Mergify Stacks
 
@@ -32,9 +33,9 @@ The repo uses Mergify stacks for PR management. The `mergify-cli` is installed v
 - **`@flatbread/proof` requires `CURSOR_RIPGREP_PATH`.** The proof package uses `@cursor/sdk` which expects a bundled ripgrep. In Cloud Agent VMs, set `export CURSOR_RIPGREP_PATH=/usr/bin/rg` to use the system ripgrep (included in the update script).
 - **Native build scripts are approved in `pnpm-workspace.yaml`.** The `onlyBuiltDependencies` list allows esbuild, sharp, @swc/core, etc. to run their postinstall scripts automatically during `pnpm install`.
 - **Vitest packages run in watch mode by default.** Always use `vitest run` (not bare `vitest`) to get a single run and exit.
-- **`flatbread` CLI is not on PATH.** Use `npx flatbread` when running from a shell. The `pnpm play` script from the root handles this automatically.
+- **`flatbread` CLI is not on PATH globally.** From `examples/nextjs`, prefer `pnpm exec flatbread …` (local binary), or `npx flatbread` from a shell. The `pnpm play` script from the root handles this automatically.
 - **Build before test.** All packages must be built (`pnpm build`) before running tests or starting dev servers. `pnpm test` handles this automatically.
-- **The Next.js example `dev` script uses `--https`.** This requires an SSL certificate. In headless/CI environments, run without `--https`: `npx flatbread start -- next dev --turbopack`.
+- **The Next.js example `dev` script uses `--https`.** This requires an SSL certificate. In headless/CI environments, run without `--https`: `pnpm exec flatbread start -- next dev --turbopack`.
 - **Full local CI parity check:** `pnpm verify` runs lint, typecheck, build, and all tests.
 
 ### Weave merge driver
