@@ -125,6 +125,7 @@ Check that your GraphQL endpoint is accessible and CORS is configured properly.
 
 ## 📚 Learn More
 
-- [Flatbread Documentation](https://github.com/FlatbreadLabs/flatbread)
+- [Flatbread repo & main README](https://github.com/FlatbreadLabs/flatbread) — onboarding and install
+- [Glossary (relational primitives & query interface)](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md) — collections, relations, IDs; GraphQL is **one** read surface, not the whole product
 - [GraphQL Code Generator](https://www.the-guild.dev/graphql/codegen)
 - [Next.js Documentation](https://nextjs.org/docs)
