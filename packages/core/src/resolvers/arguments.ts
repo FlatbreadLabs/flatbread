@@ -5,6 +5,7 @@ import sift, {
 } from '../utils/sift';
 import { ContentNode, FlatbreadConfig } from '../types';
 import { FlatbreadProvider } from '../providers/base';
+import { getNodeIdentifier, normalizeIdentifier } from '../utils/ids';
 interface ResolveQueryArgsOptions {
   type: {
     name: string;
@@ -27,8 +28,9 @@ const resolveQueryArgs = async (
   if (filter) {
     // Place the nodes into a keyed object by ID so we can easily filter by ID without doing tons of looping.
     // TODO: store all nodes in an ID-keyed object.
-    // TODO: replace id field with user-defined/fallback identifier field.
-    const nodeById = keyBy(nodes, 'id');
+    const nodeById = keyBy(nodes, (node: ContentNode) =>
+      getNodeIdentifier(node, options.type.name)
+    );
 
     // Turn the filter into a GraphQL subquery that returns an array of matching content node IDs.
     const listOfNodeIDsToFilter = await resolveFilter(filter, config, options);
@@ -122,7 +124,7 @@ export const resolveFilter = async (
   filter: Record<string, any>,
   config: FlatbreadConfig,
   options: ResolveQueryArgsOptions
-): Promise<(string | number)[]> => {
+): Promise<string[]> => {
   // Seperate the filter into its parts:
   //  - the path leading to the field we want to compare
   //  - the comparator expression.
@@ -134,7 +136,6 @@ export const resolveFilter = async (
   // Build a GraphQL query fragment that will be used to resolve content nodes in a structure expected by the sift function, for the given filter.
   const filterQueryFragment = buildFilterQueryFragment(filterSetManifest);
 
-  // TODO: replace id field with user-defined/fallback identifier field
   const queryString = `
     query ${options.type.pluralQueryName}_FilterSubquery {
       ${options.type.pluralQueryName} {
@@ -150,7 +151,14 @@ export const resolveFilter = async (
 
   const result = data?.[options.type.pluralQueryName] as ContentNode[];
 
-  return result.filter(sift(filter)).map((node) => node.id);
+  return result
+    .filter(sift(filter))
+    .map((node) =>
+      normalizeIdentifier(
+        node.id,
+        `${options.type.name} filter subquery result id`
+      )
+    );
 };
 
 /**
