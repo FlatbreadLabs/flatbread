@@ -14,15 +14,24 @@ interface ResolveQueryArgsOptions {
   };
 }
 
+interface QueryArgs {
+  filter?: Record<string, unknown>;
+  limit?: number;
+  order?: 'ASC' | 'DESC';
+  skip?: number;
+  sortBy?: string;
+  [key: string]: unknown;
+}
+
 /**
  * Resolvers for query arguments.
  */
 const resolveQueryArgs = async (
-  nodes: any[],
-  args: any,
+  nodes: ContentNode[],
+  args: QueryArgs,
   config: FlatbreadConfig,
   options: ResolveQueryArgsOptions
-) => {
+): Promise<ContentNode[]> => {
   const { skip, limit, order, sortBy, filter } = args;
 
   if (filter) {
@@ -121,7 +130,7 @@ function buildFilterQueryFragment(filterSetManifest: TargetAndComparator) {
  * @param filter the filter argument
  */
 export const resolveFilter = async (
-  filter: Record<string, any>,
+  filter: Record<string, unknown>,
   config: FlatbreadConfig,
   options: ResolveQueryArgsOptions
 ): Promise<string[]> => {
@@ -167,20 +176,28 @@ export const resolveFilter = async (
  * @param sortBy the field to sort by
  * @param nodes the array of nodes to sort
  */
-export const resolveSortBy = (sortBy: string, nodes: any[]): void => {
-  nodes.sort((nodeA: { [x: string]: any }, nodeB: { [x: string]: any }) => {
+export const resolveSortBy = (sortBy: string, nodes: ContentNode[]): void => {
+  nodes.sort((nodeA, nodeB) => {
     const fieldA = nodeA[sortBy];
     const fieldB = nodeB[sortBy];
 
-    if (fieldA < fieldB) {
+    if (isSortable(fieldA) && isSortable(fieldB) && fieldA < fieldB) {
       return -1;
     }
-    if (fieldA > fieldB) {
+    if (isSortable(fieldA) && isSortable(fieldB) && fieldA > fieldB) {
       return 1;
     }
     // fields must be equal
     return 0;
   });
 };
+
+function isSortable(value: unknown): value is string | number | boolean {
+  return (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  );
+}
 
 export default resolveQueryArgs;

@@ -30,6 +30,20 @@ test('Sift rejects invalid ID filter comparators', (t) => {
   });
 });
 
+test('Sift supports wildcard and regex filters against string arrays', (t) => {
+  const taggedNodes = [
+    { id: 1, tags: ['alpha', 'beta'] },
+    { id: 2, tags: ['gamma'] },
+  ];
+
+  t.deepEqual(taggedNodes.filter(sift({ tags: { wildcard: '*ta' } })), [
+    taggedNodes[0],
+  ]);
+  t.deepEqual(taggedNodes.filter(sift({ tags: { regex: /^gam/ } })), [
+    taggedNodes[1],
+  ]);
+});
+
 test('Sift for nodes with nested object "child" having age greater than or equal to 18', (t) => {
   t.deepEqual(nodes.filter(sift({ child: { age: { gte: 18 } } })), [
     nodes[0],
