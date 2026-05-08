@@ -42,6 +42,7 @@
     "@flatbread/codegen": "workspace:*",
     "@flatbread/config": "workspace:*",
     "@flatbread/core": "workspace:*",
+    "@flatbread/proof": "workspace:*",
     "@flatbread/resolver-svimg": "workspace:*",
     "@flatbread/source-filesystem": "workspace:*",
     "@flatbread/transformer-markdown": "workspace:*",

@@ -22,17 +22,21 @@ export async function graphqlFetch<T = unknown>(
   variables?: Record<string, unknown>,
   endpoint: string = 'http://localhost:5057/graphql'
 ): Promise<T> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
+    signal: controller.signal,
     body: JSON.stringify({
       query,
       variables,
     }),
-  });
+  }).finally(() => clearTimeout(timeout));
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
