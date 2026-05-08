@@ -18,7 +18,7 @@
 
 Eat your relational markdown data _and query it, too,_ with [GraphQL](https://graphql.org/) inside damn near any framework (statement awaiting peer-review).
 
-If it runs ES Modules + Node 16+, it's down to clown.
+For contributing to this monorepo, use Node 20.19+ with pnpm 10.33.x. Runtime support for published packages is tracked by each package's own metadata.
 
 Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://www.gatsbyjs.com/)) anything, this project harnesses a plugin architecture to be easily customizable to fit your use cases.
 
@@ -251,7 +251,7 @@ Limits the number of returned entries to the specified amount. Accepts an intege
 
 ## Query within your app ❓❓
 
-[Check out the example integrations](https://github.com/FlatbreadLabs/flatbread/tree/main/playground) of using Flatbread with frameworks like SvelteKit and Next.js.
+[Check out the example integrations](https://github.com/FlatbreadLabs/flatbread/tree/main/examples) of using Flatbread with frameworks like SvelteKit and Next.js.
 
 ## Field overrides
 
@@ -304,7 +304,7 @@ Accepts a function which takes in field names and transforms them for the GraphQ
 {
   ...
   // replace all spaces in field names with an underscore
-  fieldNameTransform: (fieldName) => field.name.replace(/\s/g,'_')
+  fieldNameTransform: (fieldName) => fieldName.replace(/\s/g, '_')
   ...
 }
 ```
