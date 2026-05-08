@@ -31,7 +31,7 @@ Flatbread is intentionally centered on read-mostly content graphs in your reposi
 - **Planned direction:** generated TypeScript read APIs and agent-oriented query surfaces over the same model.
 - **Non-goals:** Flatbread is not a replacement for a general-purpose database, a hosted CMS, or an editing dashboard. It does not try to provide transactions, auth, permissions, or high-scale writes.
 
-Start with the relational primitives glossary in [`docs/relational-primitives.md`](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/relational-primitives.md) if you are new to Flatbread's vocabulary. Product tradeoffs are tracked in the [`PMF decision rubric`](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/pmf-decision-rubric.md).
+Start with the [`posts/authors/categories quickstart`](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/quickstart-posts-authors-tags.md) and the [`relational primitives glossary`](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/relational-primitives.md) if you are new to Flatbread's vocabulary. Product tradeoffs are tracked in the [`PMF decision rubric`](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/pmf-decision-rubric.md).
 
 # Canonical quickstart: posts, authors, and tags
 
