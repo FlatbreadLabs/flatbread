@@ -1,7 +1,14 @@
 import { generate } from '@graphql-codegen/cli';
-import { printSchema, type GraphQLSchema } from 'graphql';
+import {
+  isListType,
+  isNonNullType,
+  isObjectType,
+  printSchema,
+  type GraphQLSchema,
+  type GraphQLType,
+} from 'graphql';
 import { join, resolve } from 'path';
-import { ensureDir } from 'fs-extra';
+import { ensureDir, readFile, writeFile } from 'fs-extra';
 import { existsSync } from 'fs';
 import kleur from 'kleur';
 // @ts-ignore - chokidar types will be available after npm install
@@ -67,6 +74,7 @@ export async function generateTypes(
   // Check cache
   const cache = await loadCache(outputDir);
   if (isCacheValid(cache, configHash, schemaHash, mergedOptions)) {
+    await upsertFlatbreadContentModelTypes(outputFilePath, config, schema);
     console.log(kleur.green('✓ Using cached TypeScript types'));
     return {
       success: true,
@@ -134,6 +142,7 @@ export async function generateTypes(
 
     // Generate types
     await generate(codegenConfig, true);
+    await upsertFlatbreadContentModelTypes(outputFilePath, config, schema);
 
     const generatedFiles = [outputFilePath];
 
@@ -165,6 +174,172 @@ export async function generateTypes(
       configHash,
     };
   }
+}
+
+const CONTENT_MODEL_TYPES_START = '/* @flatbread/content-model-types:start */';
+const CONTENT_MODEL_TYPES_END = '/* @flatbread/content-model-types:end */';
+
+async function upsertFlatbreadContentModelTypes(
+  outputFilePath: string,
+  config: LoadedFlatbreadConfig,
+  schema: GraphQLSchema
+): Promise<void> {
+  const contentModelTypes = generateFlatbreadContentModelTypes(config, schema);
+  if (!contentModelTypes) return;
+
+  const current = await readFile(outputFilePath, 'utf-8');
+  const block = `${CONTENT_MODEL_TYPES_START}\n${contentModelTypes}\n${CONTENT_MODEL_TYPES_END}`;
+  const existingBlockPattern = new RegExp(
+    `\\n?${escapeRegExp(CONTENT_MODEL_TYPES_START)}[\\s\\S]*?${escapeRegExp(
+      CONTENT_MODEL_TYPES_END
+    )}`
+  );
+  const next = existingBlockPattern.test(current)
+    ? current.replace(existingBlockPattern, `\n${block}`)
+    : `${current.trimEnd()}\n\n${block}\n`;
+
+  await writeFile(outputFilePath, next);
+}
+
+function generateFlatbreadContentModelTypes(
+  config: LoadedFlatbreadConfig,
+  schema: GraphQLSchema
+): string {
+  const collections = config.content.map((contentType) =>
+    String(contentType.collection)
+  );
+
+  if (collections.length === 0) {
+    return '';
+  }
+
+  const recordEntries = collections
+    .map(
+      (collection) =>
+        `  ${JSON.stringify(collection)}: ${toTypeReference(
+          collection,
+          schema
+        )};`
+    )
+    .join('\n');
+
+  const relationEntries = config.content
+    .map((contentType) => {
+      const collection = String(contentType.collection);
+      const refs = contentType.refs as Record<string, unknown> | undefined;
+      const relationFields = refs
+        ? Object.entries(refs)
+            .map(
+              ([field, target]) =>
+                `    ${JSON.stringify(field)}: { target: ${JSON.stringify(
+                  String(target)
+                )}; cardinality: ${JSON.stringify(
+                  getRelationCardinality(schema, collection, field)
+                )}; };`
+            )
+            .join('\n')
+        : '';
+
+      return `  ${JSON.stringify(collection)}: {${
+        relationFields ? `\n${relationFields}\n  ` : ''
+      }};`;
+    })
+    .join('\n');
+
+  return `/**
+ * Flatbread content model types generated from flatbread.config.*.
+ * These describe configured collections and refs before any GraphQL operation documents are required.
+ */
+export type FlatbreadCollectionName = ${collections
+    .map((collection) => JSON.stringify(collection))
+    .join(' | ')};
+
+export type FlatbreadRecordByCollection = {
+${recordEntries}
+};
+
+export type FlatbreadRelationTargetByCollection = {
+${relationEntries}
+};
+
+export type FlatbreadRecord<
+  Collection extends FlatbreadCollectionName,
+> = FlatbreadRecordByCollection[Collection];
+
+export type FlatbreadRelationTarget<
+  Collection extends FlatbreadCollectionName,
+  Field extends keyof FlatbreadRelationTargetByCollection[Collection],
+> = FlatbreadRecord<
+  Extract<
+    FlatbreadRelationTargetCollection<Collection, Field>,
+    FlatbreadCollectionName
+  >
+> extends infer TargetRecord
+  ? FlatbreadRelationCardinality<Collection, Field> extends 'many'
+    ? ReadonlyArray<TargetRecord>
+    : TargetRecord
+  : never;
+
+export type FlatbreadRelationTargetCollection<
+  Collection extends FlatbreadCollectionName,
+  Field extends keyof FlatbreadRelationTargetByCollection[Collection],
+> = FlatbreadRelationTargetByCollection[Collection][Field] extends {
+  target: infer Target;
+}
+  ? Target
+  : never;
+
+export type FlatbreadRelationCardinality<
+  Collection extends FlatbreadCollectionName,
+  Field extends keyof FlatbreadRelationTargetByCollection[Collection],
+> = FlatbreadRelationTargetByCollection[Collection][Field] extends {
+  cardinality: infer Cardinality;
+}
+  ? Cardinality
+  : never;`;
+}
+
+function toTypeReference(collection: string, schema: GraphQLSchema): string {
+  const schemaType = schema.getType(collection);
+
+  return isObjectType(schemaType) &&
+    /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(collection)
+    ? collection
+    : 'Record<string, unknown>';
+}
+
+function getRelationCardinality(
+  schema: GraphQLSchema,
+  collection: string,
+  field: string
+): 'one' | 'many' {
+  const schemaType = schema.getType(collection);
+  if (!isObjectType(schemaType)) {
+    return 'one';
+  }
+
+  const fieldConfig = schemaType.getFields()[field];
+  if (!fieldConfig) {
+    return 'one';
+  }
+
+  return isListLikeType(fieldConfig.type) ? 'many' : 'one';
+}
+
+function isListLikeType(type: GraphQLType): boolean {
+  if (isListType(type)) {
+    return true;
+  }
+
+  if (isNonNullType(type)) {
+    return isListLikeType(type.ofType);
+  }
+
+  return false;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
