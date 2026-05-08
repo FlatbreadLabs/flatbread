@@ -69,6 +69,7 @@ export function validateCollectionReferences(
   }
 
   if (errors.length > 0) {
+    errors.sort();
     throw new Error(
       `Flatbread found ${errors.length} broken reference${
         errors.length === 1 ? '' : 's'
