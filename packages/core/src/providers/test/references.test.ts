@@ -31,6 +31,119 @@ function missingRefsProject(
   });
 }
 
+function manyToManyProject() {
+  const path =
+    'packages/core/src/providers/test/fixtures/cardinality-many-to-many';
+
+  return new FlatbreadProvider({
+    source: filesystem(),
+    transformer: markdownTransformer(),
+    content: [
+      {
+        path: `${path}/posts`,
+        collection: 'Post',
+        refs: {
+          tags: 'Tag',
+        },
+      },
+      {
+        path: `${path}/tags`,
+        collection: 'Tag',
+        refs: {
+          posts: 'Post',
+        },
+      },
+    ],
+  });
+}
+
+test.serial(
+  'supports one-to-one and one-to-many relation cardinality',
+  async (t) => {
+    const flatbread = missingRefsProject(
+      'packages/core/src/providers/test/fixtures/missing-refs-clean'
+    );
+
+    const result = await flatbread.query({
+      source: `
+      query RelationCardinality {
+        allPosts {
+          id
+          author {
+            id
+          }
+          authors {
+            id
+          }
+          tags {
+            id
+          }
+        }
+      }
+    `,
+    });
+
+    t.deepEqual(result.data, {
+      allPosts: [
+        {
+          id: 'known-post',
+          author: {
+            id: 'known-author',
+          },
+          authors: [
+            {
+              id: 'known-author',
+            },
+          ],
+          tags: [
+            {
+              id: 'known-tag',
+            },
+          ],
+        },
+      ],
+    });
+  }
+);
+
+test.serial('supports explicit many-to-many list refs', async (t) => {
+  const flatbread = manyToManyProject();
+
+  const result = await flatbread.query({
+    source: `
+    query ManyToManyCardinality {
+      allPosts {
+        id
+        tags {
+          id
+          posts {
+            id
+          }
+        }
+      }
+    }
+  `,
+  });
+
+  t.deepEqual(result.data, {
+    allPosts: [
+      {
+        id: 'known-post',
+        tags: [
+          {
+            id: 'known-tag',
+            posts: [
+              {
+                id: 'known-post',
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+});
+
 test.serial(
   'rejects missing array reference targets before schema use',
   async (t) => {
@@ -106,6 +219,55 @@ test.serial(
     t.regex(
       message,
       /Post\.author[\s\S]*has-bad-author-shape\.md[\s\S]*invalid reference value[\s\S]*Author/
+    );
+  }
+);
+
+test.serial('rejects object relation values before schema use', async (t) => {
+  const flatbread = missingRefsProject();
+
+  const error = await t.throwsAsync(() =>
+    flatbread.query({
+      source: `
+      query BadObjectAuthorShape {
+        allPosts {
+          id
+        }
+      }
+    `,
+    })
+  );
+
+  const message = error?.message ?? '';
+
+  t.regex(
+    message,
+    /Post\.author[\s\S]*has-object-author-shape\.md[\s\S]*invalid reference value[\s\S]*Author/
+  );
+});
+
+test.serial(
+  'rejects nested array relation values before schema use',
+  async (t) => {
+    const flatbread = missingRefsProject();
+
+    const error = await t.throwsAsync(() =>
+      flatbread.query({
+        source: `
+      query BadNestedAuthorsShape {
+        allPosts {
+          id
+        }
+      }
+    `,
+      })
+    );
+
+    const message = error?.message ?? '';
+
+    t.regex(
+      message,
+      /Post\.authors\[0\][\s\S]*has-nested-authors-shape\.md[\s\S]*invalid reference value[\s\S]*Author/
     );
   }
 );
