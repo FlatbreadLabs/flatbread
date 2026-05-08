@@ -295,6 +295,7 @@ function validateCollectionIdentifiers(
   });
 
   if (errors.length > 0) {
+    errors.sort();
     throw new Error(
       `Flatbread found ${errors.length} invalid record ID${
         errors.length === 1 ? '' : 's'
