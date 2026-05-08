@@ -34,6 +34,8 @@ Turn flat files in Git into typed, relational content for your TypeScript app. *
 
 **Local dev loop:** Codegen watch, schema rebuild, content reload, and framework restart boundaries are documented in [docs/local-dev-loop.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/local-dev-loop.md).
 
+**Portability:** Stable JSON snapshot export is available as a core API and documented in [docs/json-export.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/json-export.md).
+
 For contributing to this monorepo, use Node 20.19+ with pnpm 10.33.x. Runtime support for published packages is tracked by each package's own metadata.
 
 Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://www.gatsbyjs.com/)) anything, this project harnesses a plugin architecture to be easily customizable to fit your use cases.
