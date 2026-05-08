@@ -150,6 +150,14 @@ After codegen, your app imports types from **`./generated/graphql`**. The **resu
 
 The generated file also exposes a prototype **TypeScript read API** derived from the configured content model. In the Next.js example, [`examples/nextjs/lib/read.ts`](https://github.com/FlatbreadLabs/flatbread/blob/main/examples/nextjs/lib/read.ts) wires **`createFlatbreadReadApi()`** to the existing GraphQL fetcher and reads **posts**, **authors**, and **tags** with a generated default selection—no hand-written GraphQL document at the call site.
 
+#### Choosing a read interface
+
+Flatbread starts with **Git-native relational content** for TypeScript apps: flat files define records, frontmatter fields, ids, and refs; `flatbread.config.js` tells Flatbread how those files become typed collections. **GraphQL is one interface over that typed model**, and the generated TypeScript read API is another app-facing surface generated from the same model.
+
+Use **GraphQL operations** when your app needs explicit query documents, custom selections, Apollo or other GraphQL clients, persisted operations, or direct access to the GraphQL endpoint. Add `.graphql` documents, include fields like **`tags`** and **`authors`**, and rerun codegen so operation types such as **`GetPostsAuthorsAndTagsQuery`** match the posts/authors/tags graph.
+
+Use the prototype **generated TypeScript read API** when your app wants collection-shaped helpers for common reads from the configured Flatbread model, especially simple app reads such as posts, authors, tags, and resolved relations without writing GraphQL at each call site. The generated helpers currently execute through the GraphQL layer and still offer an experimental selection-string escape hatch, so both paths expose the same typed content graph backed by the same flat files while GraphQL remains the stable low-level interface.
+
 Default filesystem + markdown wiring uses the bundled [`source-filesystem`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/source-filesystem) and [`transformer-markdown`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/transformer-markdown) plugins (`flatbread` re-exports them).
 
 ### 4 · Minimal relational config (mental model)
