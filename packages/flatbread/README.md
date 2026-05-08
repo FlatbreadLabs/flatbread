@@ -148,6 +148,8 @@ query GetPostsAuthorsAndTags {
 
 After codegen, your app imports types from **`./generated/graphql`**. The **result shape** of that operation is typed (for example **`GetPostsAuthorsAndTagsQuery`**)—relations resolve to **`Author`** objects while **`tags`** stay a **string array** on **`Post`**, matching the file metadata—the same row as the [illustrative JSON](#traceability-same-relation-model-files-config-query-interface) under **Traceability**.
 
+The generated file also exposes a prototype **TypeScript read API** derived from the configured content model. In the Next.js example, [`examples/nextjs/lib/read.ts`](https://github.com/FlatbreadLabs/flatbread/blob/main/examples/nextjs/lib/read.ts) wires **`createFlatbreadReadApi()`** to the existing GraphQL fetcher and reads **posts**, **authors**, and **tags** with a generated default selection—no hand-written GraphQL document at the call site.
+
 Default filesystem + markdown wiring uses the bundled [`source-filesystem`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/source-filesystem) and [`transformer-markdown`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/transformer-markdown) plugins (`flatbread` re-exports them).
 
 ### 4 · Minimal relational config (mental model)

@@ -37,12 +37,18 @@ describe('codegen end-to-end', () => {
       publishedAt: Date
       metadata: JSON
       author: Author
+      tags: [Tag!]!
     }
     
     type Author {
       id: String!
       name: String!
       email: String
+    }
+
+    type Tag {
+      id: String!
+      label: String!
     }
   `);
 
@@ -72,11 +78,16 @@ describe('codegen end-to-end', () => {
           path: join(tempDir, 'content/posts'),
           refs: {
             author: 'Author',
+            tags: 'Tag',
           },
         },
         {
           collection: 'Author',
           path: join(tempDir, 'content/authors'),
+        },
+        {
+          collection: 'Tag',
+          path: join(tempDir, 'content/tags'),
         },
         {
           collection: 'Draft',
@@ -92,6 +103,7 @@ describe('codegen end-to-end', () => {
     // Create content directory structure
     await fs.mkdir(join(tempDir, 'content/posts'), { recursive: true });
     await fs.mkdir(join(tempDir, 'content/authors'), { recursive: true });
+    await fs.mkdir(join(tempDir, 'content/tags'), { recursive: true });
     await fs.mkdir(join(tempDir, 'content/drafts'), { recursive: true });
   });
 
@@ -133,11 +145,12 @@ describe('codegen end-to-end', () => {
       expect(content).toContain('Author');
       expect(content).toContain('Query');
       expect(content).toContain(
-        'export type FlatbreadCollectionName = "Post" | "Author" | "Draft"'
+        'export type FlatbreadCollectionName = "Post" | "Author" | "Tag" | "Draft"'
       );
       expect(content).toContain('export type FlatbreadRecordByCollection');
       expect(content).toContain('"Post": Post;');
       expect(content).toContain('"Author": Author;');
+      expect(content).toContain('"Tag": Tag;');
       expect(content).toContain('"Draft": Record<string, unknown>;');
       expect(content).toContain(
         'export type FlatbreadRelationTargetByCollection'
@@ -145,8 +158,14 @@ describe('codegen end-to-end', () => {
       expect(content).toContain(
         '"author": { target: "Author"; cardinality: "one"; };'
       );
+      expect(content).toContain(
+        '"tags": { target: "Tag"; cardinality: "many"; };'
+      );
       expect(content).toContain('FlatbreadRelationTargetCollection');
       expect(content).toContain('FlatbreadRelationCardinality');
+      expect(content).toContain('export function createFlatbreadReadApi');
+      expect(content).toContain('"Post": { all: "posts", find: "post"');
+      expect(content).toContain('author { id');
       expect(content).toContain('@flatbread/content-model-types:start');
 
       const usageFile = join(testOutputDir, 'usage.ts');
@@ -160,28 +179,45 @@ describe('codegen end-to-end', () => {
             FlatbreadRelationCardinality,
             FlatbreadRelationTargetCollection,
           } from './graphql';
+          import { createFlatbreadReadApi } from './graphql';
 
           const collection: FlatbreadCollectionName = 'Post';
           type PostRecord = FlatbreadRecord<'Post'>;
           type RelatedAuthor = FlatbreadRelationTarget<'Post', 'author'>;
+          type RelatedTags = FlatbreadRelationTarget<'Post', 'tags'>;
           const relation: FlatbreadRelationTargetCollection<'Post', 'author'> = 'Author';
           const cardinality: FlatbreadRelationCardinality<'Post', 'author'> = 'one';
+          const tagCardinality: FlatbreadRelationCardinality<'Post', 'tags'> = 'many';
+          const read = createFlatbreadReadApi(async () => ({}) as never);
+
+          async function readPosts() {
+            const posts = await read.Post.all();
+            const post: Partial<PostRecord> | undefined = posts[0];
+            const author: RelatedAuthor | undefined = post?.author ?? undefined;
+            return { post, author };
+          }
 
           export type Assertions = {
             collection: typeof collection;
             post: PostRecord;
             relatedAuthor: RelatedAuthor;
+            relatedTags: RelatedTags;
             relationCollection: typeof relation;
             cardinality: typeof cardinality;
+            tagCardinality: typeof tagCardinality;
+            readPosts: Awaited<ReturnType<typeof readPosts>>;
           };
         `
       );
 
       expectTypeScriptToCompile([generatedFile, usageFile]);
+      const beforeCacheMtime = (await fs.stat(generatedFile)).mtimeMs;
 
       const secondResult = await generateTypes(testSchema, mockConfig, options);
       expect(secondResult.success).toBe(true);
       expect(secondResult.fromCache).toBe(true);
+      const afterCacheMtime = (await fs.stat(generatedFile)).mtimeMs;
+      expect(afterCacheMtime).toBe(beforeCacheMtime);
 
       const cachedContent = await fs.readFile(generatedFile, 'utf-8');
       expect(

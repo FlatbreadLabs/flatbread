@@ -16,7 +16,7 @@ query GetAllPosts {
   }
 }
 
-query GetPostById($id: String!) {
+query GetPostById($id: ID!) {
   Post(id: $id) {
     id
     title

@@ -2,7 +2,7 @@
 id: debugging-adventures-3am
 title: 'Debugging at 3 AM: A Horror Story'
 authors:
-  - tony
+  - 2a3e
 rating: 95
 category: tech
 time_spent: '4.5 hours'

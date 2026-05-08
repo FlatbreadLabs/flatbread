@@ -3,13 +3,16 @@ import {
   isListType,
   isNonNullType,
   isObjectType,
+  isScalarType,
+  isEnumType,
   printSchema,
   type GraphQLSchema,
   type GraphQLType,
 } from 'graphql';
 import { join, resolve } from 'path';
-import { ensureDir, readFile, writeFile } from 'fs-extra';
+import { ensureDir } from 'fs-extra';
 import { existsSync } from 'fs';
+import { readFile, writeFile } from 'node:fs/promises';
 import kleur from 'kleur';
 // @ts-ignore - chokidar types will be available after npm install
 import chokidar from 'chokidar';
@@ -74,7 +77,6 @@ export async function generateTypes(
   // Check cache
   const cache = await loadCache(outputDir);
   if (isCacheValid(cache, configHash, schemaHash, mergedOptions)) {
-    await upsertFlatbreadContentModelTypes(outputFilePath, config, schema);
     console.log(kleur.green('✓ Using cached TypeScript types'));
     return {
       success: true,
@@ -245,6 +247,41 @@ function generateFlatbreadContentModelTypes(
       }};`;
     })
     .join('\n');
+  const readableCollections = collections.filter((collection) =>
+    Boolean(
+      getReadQueries(schema, collection) &&
+        getDefaultSelection(schema, collection)
+    )
+  );
+  const readApiEntries = readableCollections
+    .map((collection) => {
+      const queries = getReadQueries(schema, collection);
+      return `  ${JSON.stringify(collection)}: {
+    all(selection?: string): Promise<ReadonlyArray<Partial<FlatbreadRecord<${JSON.stringify(
+      collection
+    )}>>>>;
+    find(id: string | number, selection?: string): Promise<Partial<FlatbreadRecord<${JSON.stringify(
+      collection
+    )}>> | null>;
+  };`;
+    })
+    .join('\n');
+  const readApiRuntimeEntries = readableCollections
+    .map((collection) => {
+      const queries = getReadQueries(schema, collection);
+      const defaultSelection = getDefaultSelection(schema, collection);
+      if (!queries || !defaultSelection) {
+        return '';
+      }
+
+      return `  ${JSON.stringify(collection)}: { all: ${JSON.stringify(
+        queries.all
+      )}, find: ${JSON.stringify(queries.find)}, idType: ${JSON.stringify(
+        queries.idType
+      )}, selection: ${JSON.stringify(defaultSelection)} }`;
+    })
+    .filter(Boolean)
+    .join(',\n');
 
   return `/**
  * Flatbread content model types generated from flatbread.config.*.
@@ -276,8 +313,8 @@ export type FlatbreadRelationTarget<
   >
 > extends infer TargetRecord
   ? FlatbreadRelationCardinality<Collection, Field> extends 'many'
-    ? ReadonlyArray<TargetRecord>
-    : TargetRecord
+    ? ReadonlyArray<TargetRecord | null> | null
+    : TargetRecord | null
   : never;
 
 export type FlatbreadRelationTargetCollection<
@@ -296,7 +333,83 @@ export type FlatbreadRelationCardinality<
   cardinality: infer Cardinality;
 }
   ? Cardinality
-  : never;`;
+  : never;
+
+export type FlatbreadReadableCollectionName = ${
+    readableCollections.length > 0
+      ? readableCollections
+          .map((collection) => JSON.stringify(collection))
+          .join(' | ')
+      : 'never'
+  };
+
+export type FlatbreadGraphQLExecutor = <TData>(
+  source: string,
+  variables?: Record<string, unknown>,
+) => Promise<TData>;
+
+/**
+ * Experimental generated read API over the Flatbread content model.
+ *
+ * The API owns collection names, root query names, IDs, and result typing. The
+ * current prototype still accepts a GraphQL selection string for fields; invalid
+ * or drifting selections are runtime GraphQL errors, not type errors.
+ */
+export type FlatbreadReadApi = {
+${readApiEntries}
+};
+
+const flatbreadReadApiQueries = {
+${readApiRuntimeEntries}
+} as const;
+
+export function createFlatbreadReadApi(
+  execute: FlatbreadGraphQLExecutor,
+): FlatbreadReadApi {
+  return Object.fromEntries(
+    Object.entries(flatbreadReadApiQueries).map(([collection, queries]) => [
+      collection,
+      {
+        all: async (selection = queries.selection) => {
+          const readSelection = normalizeFlatbreadReadSelection(selection);
+          const operationName = flatbreadReadApiOperationName(collection, 'All');
+          const data = await execute<Record<string, ReadonlyArray<unknown>>>(
+            \`query \${operationName} { \${queries.all} { \${readSelection} } }\`,
+          );
+          return data[queries.all] ?? [];
+        },
+        find: async (id: string | number, selection = queries.selection) => {
+          const readSelection = normalizeFlatbreadReadSelection(selection);
+          const operationName = flatbreadReadApiOperationName(collection, 'Find');
+          const data = await execute<Record<string, unknown | null>>(
+            \`query \${operationName}($id: \${queries.idType}) { \${queries.find}(id: $id) { \${readSelection} } }\`,
+            { id },
+          );
+          return data[queries.find] ?? null;
+        },
+      },
+    ]),
+  ) as FlatbreadReadApi;
+}
+
+function normalizeFlatbreadReadSelection(selection: string): string {
+  const normalized = selection.trim();
+  if (!normalized) {
+    throw new Error('Flatbread read API selection must not be empty.');
+  }
+  return normalized;
+}
+
+function flatbreadReadApiOperationName(
+  collection: string,
+  action: string,
+): string {
+  const safeCollection = collection.replace(/[^A-Za-z0-9_]/g, '_');
+  const suffix = safeCollection && !/^\\d/.test(safeCollection)
+    ? safeCollection
+    : \`_\${safeCollection || 'Collection'}\`;
+  return \`FlatbreadRead_\${suffix}_\${action}\`;
+}`;
 }
 
 function toTypeReference(collection: string, schema: GraphQLSchema): string {
@@ -336,6 +449,103 @@ function isListLikeType(type: GraphQLType): boolean {
   }
 
   return false;
+}
+
+function getReadQueries(
+  schema: GraphQLSchema,
+  collection: string
+): { all: string; find: string; idType: string } | undefined {
+  const queryType = schema.getQueryType();
+  if (!queryType) {
+    return undefined;
+  }
+
+  const fields = queryType.getFields();
+  const find =
+    (fields[collection] ? collection : undefined) ??
+    Object.keys(fields).find(
+      (fieldName) =>
+        isNamedType(fields[fieldName].type, collection) &&
+        fields[fieldName].args.some((arg) => arg.name === 'id')
+    );
+  const all = Object.keys(fields).find((fieldName) =>
+    isListOfType(fields[fieldName].type, collection)
+  );
+
+  return find && all
+    ? {
+        all,
+        find,
+        idType:
+          fields[find].args.find((arg) => arg.name === 'id')?.type.toString() ??
+          'ID!',
+      }
+    : undefined;
+}
+
+function getDefaultSelection(
+  schema: GraphQLSchema,
+  collection: string,
+  depth = 0
+): string | undefined {
+  const schemaType = schema.getType(collection);
+  if (!isObjectType(schemaType)) {
+    return undefined;
+  }
+
+  const selections = Object.values(schemaType.getFields())
+    .map((field) => {
+      const namedType = unwrapType(field.type);
+
+      if (isScalarType(namedType) || isEnumType(namedType)) {
+        return field.name;
+      }
+
+      if (depth === 0 && isObjectType(namedType)) {
+        const nestedSelection = getDefaultSelection(
+          schema,
+          namedType.name,
+          depth + 1
+        );
+
+        return nestedSelection
+          ? `${field.name} { ${nestedSelection} }`
+          : undefined;
+      }
+
+      return undefined;
+    })
+    .filter((selection): selection is string => Boolean(selection));
+
+  return selections.length > 0 ? selections.join('\n') : undefined;
+}
+
+function unwrapType(type: GraphQLType): GraphQLType {
+  if (isNonNullType(type) || isListType(type)) {
+    return unwrapType(type.ofType);
+  }
+
+  return type;
+}
+
+function isListOfType(type: GraphQLType, collection: string): boolean {
+  if (isNonNullType(type)) {
+    return isListOfType(type.ofType, collection);
+  }
+
+  if (isListType(type)) {
+    return isNamedType(type.ofType, collection);
+  }
+
+  return false;
+}
+
+function isNamedType(type: GraphQLType, collection: string): boolean {
+  if (isNonNullType(type)) {
+    return isNamedType(type.ofType, collection);
+  }
+
+  return isObjectType(type) && type.name === collection;
 }
 
 function escapeRegExp(value: string): string {
