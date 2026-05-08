@@ -23,6 +23,7 @@
     "@types/react-dom": "^19.1.7",
     "eslint": "^9.33.0",
     "eslint-config-next": "15.4.4",
+    "flatbread": "workspace:*",
     "tailwindcss": "^4.1.11",
     "typescript": "^5.9.2"
   }
