@@ -84,6 +84,83 @@ function normalizeIdComparator(comparator: Comparator): Comparator {
   };
 }
 
+function assertArrayComparator(
+  value: unknown,
+  operation: ComparatorOperation
+): readonly unknown[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`Comparator "${operation}" requires an array value.`);
+  }
+
+  return value;
+}
+
+function assertRegExpComparator(
+  value: unknown,
+  operation: ComparatorOperation
+): RegExp {
+  if (!(value instanceof RegExp)) {
+    throw new Error(`Comparator "${operation}" requires a RegExp value.`);
+  }
+
+  return value;
+}
+
+function assertStringComparator(
+  value: unknown,
+  operation: ComparatorOperation
+): string {
+  if (typeof value !== 'string') {
+    throw new Error(`Comparator "${operation}" requires a string value.`);
+  }
+
+  return value;
+}
+
+function includesValue(
+  source: unknown,
+  value: unknown,
+  operation: ComparatorOperation
+): boolean {
+  if (Array.isArray(source)) {
+    return source.includes(value);
+  }
+
+  if (typeof source === 'string') {
+    return source.includes(assertStringComparator(value, operation));
+  }
+
+  throw new Error(
+    `Comparator "${operation}" requires an array or string field.`
+  );
+}
+
+function matchesRegExp(source: unknown, value: RegExp): boolean {
+  if (typeof source === 'string') {
+    return value.test(source);
+  }
+
+  if (Array.isArray(source)) {
+    return source.some((item) => typeof item === 'string' && value.test(item));
+  }
+
+  throw new Error('Comparator "regex" requires an array or string field.');
+}
+
+function matchesWildcard(source: unknown, value: string): boolean {
+  if (typeof source === 'string') {
+    return isWildcardMatch(source, value);
+  }
+
+  if (Array.isArray(source)) {
+    return source.some(
+      (item) => typeof item === 'string' && isWildcardMatch(item, value)
+    );
+  }
+
+  throw new Error('Comparator "wildcard" requires an array or string field.');
+}
+
 function shouldNormalizeIdComparator(
   path: string[],
   comparator: Comparator
@@ -107,33 +184,48 @@ function generateComparisonFunction(
   const { operation, value } = comparator;
   switch (operation) {
     case 'eq':
-      return (a: any) => a === value;
+      return (a: unknown) => a === value;
     case 'ne':
-      return (a: any) => a !== value;
+      return (a: unknown) => a !== value;
     case 'lt':
-      return (a: any) => a < value;
+      return (a: unknown) =>
+        (a as string | number | boolean) < (value as string | number | boolean);
     case 'lte':
-      return (a: any) => a <= value;
+      return (a: unknown) =>
+        (a as string | number | boolean) <=
+        (value as string | number | boolean);
     case 'gt':
-      return (a: any) => a > value;
+      return (a: unknown) =>
+        (a as string | number | boolean) > (value as string | number | boolean);
     case 'gte':
-      return (a: any) => a >= value;
+      return (a: unknown) =>
+        (a as string | number | boolean) >=
+        (value as string | number | boolean);
     case 'in':
-      return (a: any) => value.includes(a);
+      return (a: unknown) =>
+        (value as { includes: (item: unknown) => boolean }).includes(a);
     case 'nin':
-      return (a: any) => !value.includes(a);
+      return (a: unknown) =>
+        !(value as { includes: (item: unknown) => boolean }).includes(a);
     case 'includes':
-      return (a: any) => a.includes(value);
+      return (a: unknown) =>
+        (a as { includes: (item: unknown) => boolean }).includes(value);
     case 'excludes':
-      return (a: any) => !a.includes(value);
+      return (a: unknown) =>
+        !(a as { includes: (item: unknown) => boolean }).includes(value);
     case 'regex':
-      return (a: any) => value.test(a);
+      return (a: unknown) =>
+        (value as { test: (item: unknown) => boolean }).test(a);
     case 'wildcard':
-      return (a: any) => isWildcardMatch(a, value);
+      return (a: unknown) =>
+        isWildcardMatch(
+          a as string | readonly string[],
+          value as string | readonly string[]
+        );
     case 'exists':
-      return (a: any) => (value ? a != undefined : a == undefined);
+      return (a: unknown) => (value ? a != undefined : a == undefined);
     case 'strictlyExists':
-      return (a: any) => (value ? a !== undefined : a === undefined);
+      return (a: unknown) => (value ? a !== undefined : a === undefined);
     default:
       throw new Error(`Unsupported operation: ${operation}`);
   }
@@ -150,6 +242,9 @@ export const generateFilterSetManifest = (
 ): TargetAndComparator => {
   return deepEntries(filterArgs).map(([path, value]) => {
     const operation = path.pop();
+    if (!isComparatorOperation(operation)) {
+      throw new Error(`Unsupported operation: ${String(operation)}`);
+    }
 
     return {
       path,
@@ -161,12 +256,36 @@ export const generateFilterSetManifest = (
   });
 };
 
+function isComparatorOperation(
+  operation: unknown
+): operation is ComparatorOperation {
+  return (
+    typeof operation === 'string' &&
+    [
+      'eq',
+      'ne',
+      'lt',
+      'lte',
+      'gt',
+      'gte',
+      'in',
+      'nin',
+      'includes',
+      'excludes',
+      'regex',
+      'wildcard',
+      'exists',
+      'strictlyExists',
+    ].includes(operation)
+  );
+}
+
 /**
  * The filter argument object using a MongoDB-like syntax, inspired by how Gatsby does it.
  *
  * @see [Gatsby's query filters](https://github.com/gatsbyjs/gatsby/blob/d56c1f12ad2b3e7fa245f4ff9a74e81d0585b79e/docs/docs/query-filters.md) for API details.
  */
-type SiftArgs = Record<string, any>;
+type SiftArgs = Record<string, unknown>;
 
 /**
  * An array of target and comparator objects
@@ -178,7 +297,7 @@ export type TargetAndComparator = { path: string[]; comparator: Comparator }[];
  */
 type Comparator = {
   operation: ComparatorOperation;
-  value: any;
+  value: unknown;
 };
 
 /**
@@ -221,4 +340,30 @@ type ComparatorOperation =
 /**
  * Compare a value to a constant target value.
  */
-type CompareValueAgainstConstant = (a: any) => boolean;
+type CompareValueAgainstConstant = (a: unknown) => boolean;
+
+type Comparable = string | number | boolean;
+
+function compareComparable(
+  left: unknown,
+  right: unknown,
+  compare: (left: Comparable, right: Comparable) => boolean
+): boolean {
+  if (!isComparable(left) || !isComparable(right)) {
+    throw new Error('Ordered comparators require comparable primitive values.');
+  }
+
+  if (typeof left !== typeof right) {
+    throw new Error('Ordered comparators require matching value types.');
+  }
+
+  return compare(left, right);
+}
+
+function isComparable(value: unknown): value is Comparable {
+  return (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  );
+}

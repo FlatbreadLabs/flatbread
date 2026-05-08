@@ -59,7 +59,7 @@ async function validationMessage(
 }
 
 function normalizeMessage(message: string): string {
-  return message.replaceAll(process.cwd(), '<workspace>');
+  return message.split(process.cwd()).join('<workspace>');
 }
 
 test('validation snapshot: missing references and invalid relation shapes', async (t) => {

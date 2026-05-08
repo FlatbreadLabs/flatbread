@@ -1,6 +1,8 @@
 import { FlatbreadConfig, Override } from '../types';
 import { get, set } from 'lodash-es';
 
+type FieldOverrideTree = Record<string, unknown>;
+
 /**
  * Get an object containing functions nested in an object structure
  * aligning to the listed overrides in the config
@@ -16,7 +18,7 @@ export function getFieldOverrides(collection: string, config: FlatbreadConfig) {
   if (!content?.overrides) return {};
   const overrides = content.overrides;
 
-  return overrides.reduce((fields: any, override: Override) => {
+  return overrides.reduce((fields: FieldOverrideTree, override: Override) => {
     const { field, type, ...rest } = override;
     let path = field.replace(/\[\]/g, '[0]');
     const endsWithArray = path.endsWith('[0]');
@@ -27,7 +29,11 @@ export function getFieldOverrides(collection: string, config: FlatbreadConfig) {
     set(fields, path, () => ({
       type: endsWithArray ? `[${override.type}]` : override.type,
       ...rest,
-      resolve: (source: any, context: any, args: any) => {
+      resolve: (
+        source: unknown,
+        context: unknown,
+        args: Record<string, unknown>
+      ) => {
         return override.resolve(get(source, getPath), {
           source,
           context,

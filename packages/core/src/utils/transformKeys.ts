@@ -17,14 +17,17 @@ class IllegalFieldNameError extends Error {
   }
 }
 
-function isObject(obj: any): obj is Object {
-  return obj != null && obj.constructor.name === 'Object';
+function isObject(obj: unknown): obj is Record<string, unknown> {
+  return (
+    obj != null &&
+    (obj as { constructor?: { name?: string } }).constructor?.name === 'Object'
+  );
 }
 
 export default function transformKeys(
-  obj: any,
+  obj: unknown,
   transform: (key: string) => string
-): any {
+): unknown {
   if (Array.isArray(obj))
     return obj.map((item) => transformKeys(item, transform));
   if (!isObject(obj)) return obj;

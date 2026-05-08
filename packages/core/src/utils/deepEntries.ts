@@ -9,18 +9,18 @@ import typeOf from './typeOf';
  * @returns a tuple with a path array and value which that path leads to
  */
 const deepEntries = (
-  obj: Record<string, any>,
+  obj: unknown,
   path: string[] = [],
-  stack: any[] = []
-): [string[], any] => {
+  stack: [string[], unknown][] = []
+): [string[], unknown][] => {
   if (typeOf(obj) === 'object') {
-    for (let [key, value] of Object.entries(obj)) {
+    for (let [key, value] of Object.entries(obj as Record<string, unknown>)) {
       stack = deepEntries(value, [...path, key], stack);
     }
   } else {
     stack.push([path, obj]);
   }
-  return stack as [string[], any];
+  return stack;
 };
 
 export default deepEntries;
