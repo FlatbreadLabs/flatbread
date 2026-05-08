@@ -1,8 +1,9 @@
-# JSON snapshot export
+# Snapshot export
 
 `@flatbread/core` exposes `exportCollectionsAsJson(configResult, options)` for
-stable collection snapshots. It is currently an API surface rather than a CLI
-command.
+stable collection snapshots and `exportCollectionsAsCsv(configResult, options)`
+for flat collection views. They are currently API surfaces rather than CLI
+commands.
 
 ## Stability contract
 
@@ -38,5 +39,35 @@ console.log(JSON.stringify(snapshot, null, 2));
 - Relation values are exported as normalized IDs, not expanded nested records.
 - Source metadata is included today so snapshots are actionable during review.
   A future option may strip `_path` / `_filename` for content-only diffs.
-- CSV export is tracked separately and should define its own relation-flattening
-  policy.
+
+## CSV flat views
+
+CSV export is intentionally a flat view over the same validated JSON snapshot:
+
+- scalar fields become columns;
+- scalar arrays and relation-id arrays are joined with `;` by default;
+- relation fields remain normalized reference IDs rather than expanded records;
+- nested objects such as `_content` are omitted because they do not yet have a
+  stable flat representation.
+- the delimiter defaults to `,`; `;` and tab are also supported;
+- joined array/relation values default to `;`, configurable with
+  `relationSeparator`.
+
+```ts
+import { exportCollectionsAsCsv } from '@flatbread/core';
+
+const csv = await exportCollectionsAsCsv(configResult, {
+  collections: ['Post'],
+  delimiter: ',',
+  relationSeparator: ';',
+});
+
+console.log(csv.Post);
+```
+
+Example output:
+
+```csv
+id,_filename,_path,_slug,author,authors,tags,title
+known-post,known-post.md,content/posts/known-post.md,known-post,known-author,known-author,known-tag,Post With Resolved Refs
+```
