@@ -9,8 +9,8 @@ export type CodegenOptions = {
   outputDir?: string;
   outputFile?: string;
   plugins?: string[];
-  codegenConfig?: Record<string, any>;
-  pluginConfig?: Record<string, Record<string, any>>;
+  codegenConfig?: Record<string, unknown>;
+  pluginConfig?: Record<string, Record<string, unknown>>;
   watch?: boolean;
   cache?: boolean;
   documents?: string[];
@@ -29,9 +29,9 @@ export type BaseContentNode = {
   id: IdentifierField;
 };
 
-export type ContentNode = BaseContentNode & {
-  [key: string]: unknown;
-};
+export type ContentNode<
+  TFields extends Record<string, unknown> = Record<string, unknown>
+> = BaseContentNode & TFields;
 
 /**
  * Flatbread's configuration interface.
@@ -76,7 +76,7 @@ export interface Transformer {
    * @param input Node to transform
    */
   parse?: (input: VFile) => EntryNode;
-  preknownSchemaFragments?: () => Record<string, any>;
+  preknownSchemaFragments?: () => Record<string, unknown>;
   inspect: (input: EntryNode) => string;
   extensions: string[];
 }
@@ -86,7 +86,17 @@ export type TransformerPlugin = <Config>(config?: Config) => Transformer;
 /**
  * A representation of the content of a flat file.
  */
-export type EntryNode = Record<string, any>;
+export type EntryNode = Record<string, unknown>;
+
+export interface ContentEntry<
+  TRefs extends Record<string, string> = Record<string, string>
+> {
+  collection: string;
+  path?: string;
+  refs?: TRefs;
+  overrides?: Override[];
+  [key: string]: unknown;
+}
 
 /**
  * The result of an invoked `Source` plugin which contains methods on how to retrieve content nodes in
@@ -94,13 +104,13 @@ export type EntryNode = Record<string, any>;
  */
 export interface Source {
   initialize?: (flatbreadConfig: LoadedFlatbreadConfig) => void;
-  fetchByType?: (path: string) => Promise<any[]>;
-  fetch: (
-    allContentTypes: Record<string, any>[]
-  ) => Promise<Record<string, VFile[]>>;
+  fetchByType?: (path: string) => Promise<VFile[]>;
+  fetch: (allContentTypes: Content) => Promise<Record<string, VFile[]>>;
 }
 
-export type SourcePlugin = (sourceConfig?: Record<string, any>) => Source;
+export type SourcePlugin<
+  TConfig extends Record<string, unknown> = Record<string, unknown>
+> = (sourceConfig?: TConfig) => Source;
 
 /**
  * An override can be used to declare a custom resolve for a field in content
@@ -112,9 +122,13 @@ export interface Override {
   args?: GraphQLFieldConfigArgumentMap;
   description?: Maybe<string>;
   resolve: (
-    data: any,
-    extended: { source: any; context: any; args: any }
-  ) => any;
+    data: unknown,
+    extended: {
+      source: unknown;
+      context: unknown;
+      args: Record<string, unknown>;
+    }
+  ) => unknown;
 }
 
 /**
@@ -122,8 +136,4 @@ export interface Override {
  *
  * This is paired with a `Source` (and, *optionally*, a `Transformer`) plugin.
  */
-export type Content = {
-  collection: string;
-  overrides?: Override[];
-  [key: string]: any;
-}[];
+export type Content = ContentEntry[];

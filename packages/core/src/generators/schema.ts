@@ -12,6 +12,7 @@ import {
 import resolveQueryArgs from '../resolvers/arguments';
 import {
   ConfigResult,
+  ContentNode,
   EntryNode,
   LoadedFlatbreadConfig,
   Transformer,
@@ -28,6 +29,10 @@ import { generateCollection } from './generateCollection';
 interface RootQueries {
   maybeReturnsSingleItem: string[];
   maybeReturnsList: string[];
+}
+
+interface ResolverPayload {
+  args: Record<string, unknown>;
 }
 
 /**
@@ -54,7 +59,8 @@ export async function generateSchema(
     allContentNodes,
     config
   );
-  validateCollectionIdentifiers(allContentNodesJSON);
+  const contentNodesByCollection =
+    validateCollectionIdentifiers(allContentNodesJSON);
   validateCollectionReferences(allContentNodesJSON, config.content);
 
   // Content validation must run before returning a cached schema because the
@@ -128,7 +134,7 @@ export async function generateSchema(
       type: () => schema,
       description: `Find one ${type} by its ID`,
       args: generateArgsForSingleItemQuery(),
-      resolve: (rp: Record<string, any>) => {
+      resolve: (rp: ResolverPayload) => {
         const idToFind = normalizeOptionalIdentifier(
           rp.args.id,
           `${type} query argument "id"`
@@ -138,8 +144,8 @@ export async function generateSchema(
           return undefined;
         }
 
-        return cloneDeep(allContentNodesJSON[type]).find(
-          (node: EntryNode) => getNodeIdentifier(node, type) === idToFind
+        return cloneDeep(contentNodesByCollection[type]).find(
+          (node: ContentNode) => getNodeIdentifier(node, type) === idToFind
         );
       },
     });
@@ -149,13 +155,20 @@ export async function generateSchema(
       type: () => [schema],
       description: `Find many ${pluralType} by their IDs`,
       args: generateArgsForManyItemQuery(pluralType),
-      resolve: (rp: Record<string, any>) => {
-        const idsToFind = (rp.args.ids ?? []).map((id: unknown): string =>
+      resolve: (rp: ResolverPayload) => {
+        if (rp.args.ids !== undefined && !Array.isArray(rp.args.ids)) {
+          throw new Error(
+            `${type} query argument "ids" must be an array of identifiers.`
+          );
+        }
+        const idsArg = rp.args.ids ?? [];
+        const idsToFind = idsArg.map((id: unknown): string =>
           normalizeIdentifier(id, `${type} query argument "ids"`)
         );
         const matches =
-          cloneDeep(allContentNodesJSON[type])?.filter((node: EntryNode) =>
-            idsToFind?.includes(getNodeIdentifier(node, type))
+          cloneDeep(contentNodesByCollection[type])?.filter(
+            (node: ContentNode) =>
+              idsToFind?.includes(getNodeIdentifier(node, type))
           ) ?? [];
         return resolveQueryArgs(matches, rp.args, config, {
           type: {
@@ -172,8 +185,8 @@ export async function generateSchema(
       args: generateArgsForAllItemQuery(pluralType),
       type: () => [schema],
       description: `Return a set of ${pluralType}`,
-      resolve: (rp: Record<string, any>) => {
-        const nodes = cloneDeep(allContentNodesJSON[type]);
+      resolve: (rp: ResolverPayload) => {
+        const nodes = cloneDeep(contentNodesByCollection[type]);
         return resolveQueryArgs(nodes, rp.args, config, {
           type: {
             name: type,
@@ -259,7 +272,7 @@ export async function generateSchema(
  */
 const fetchPreknownSchemaFragments = (
   config: LoadedFlatbreadConfig
-): Record<string, any> | {} => {
+): Record<string, unknown> => {
   return config.transformer.reduce(
     (all, next) => merge(all, next.preknownSchemaFragments?.() || {}),
     {}
@@ -268,11 +281,13 @@ const fetchPreknownSchemaFragments = (
 
 function validateCollectionIdentifiers(
   allContentNodesJSON: Record<string, EntryNode[]>
-): void {
+): Record<string, ContentNode[]> {
   const errors: string[] = [];
+  const contentNodesByCollection: Record<string, ContentNode[]> = {};
 
   Object.entries(allContentNodesJSON).forEach(([collection, nodes]) => {
     const seen = new Map<string, EntryNode>();
+    contentNodesByCollection[collection] = [];
 
     nodes.forEach((node) => {
       try {
@@ -288,6 +303,7 @@ function validateCollectionIdentifiers(
         } else {
           seen.set(normalizedId, node);
         }
+        contentNodesByCollection[collection].push(node as ContentNode);
       } catch (error) {
         errors.push(error instanceof Error ? error.message : String(error));
       }
@@ -302,14 +318,18 @@ function validateCollectionIdentifiers(
       }:\n${errors.map((message) => `- ${message}`).join('\n')}`
     );
   }
+
+  return contentNodesByCollection;
 }
 
 function sourceContext(node: EntryNode): string {
   return typeof node._path === 'string' ? ` (${node._path})` : '';
 }
 
-function getTransformerExtensionMap(transformer: Transformer[]) {
-  const transformerMap = new Map();
+function getTransformerExtensionMap(
+  transformer: Transformer[]
+): Map<string, Transformer> {
+  const transformerMap = new Map<string, Transformer>();
   transformer.forEach((t) => {
     t.extensions.forEach((extension) => {
       transformerMap.set(extension, t);
@@ -325,9 +345,9 @@ function getTransformerExtensionMap(transformer: Transformer[]) {
  * @param config Flatbread config object
  */
 const optionallyTransformContentNodes = (
-  allContentNodes: Record<string, any[]>,
+  allContentNodes: Record<string, VFile[]>,
   config: LoadedFlatbreadConfig
-): Record<string, any[]> => {
+): Record<string, EntryNode[]> => {
   if (config.transformer) {
     const transformerMap = getTransformerExtensionMap(config.transformer);
     // const globs = Object.entries(transformers);
@@ -341,7 +361,7 @@ const optionallyTransformContentNodes = (
      * */
 
     return map(allContentNodes, (node: VFile) => {
-      const transformer = transformerMap.get(node.extname);
+      const transformer = transformerMap.get(node.extname ?? '');
       if (!transformer?.parse) {
         throw new Error(`no transformer found for ${node.path}`);
       }
@@ -349,7 +369,7 @@ const optionallyTransformContentNodes = (
     });
   }
 
-  return allContentNodes;
+  return allContentNodes as unknown as Record<string, EntryNode[]>;
 };
 
 function withSourceContext(entry: EntryNode, sourceNode: VFile): EntryNode {

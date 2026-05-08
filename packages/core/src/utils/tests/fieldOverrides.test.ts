@@ -17,7 +17,7 @@ test('basic override', (t) => {
         },
       },
     ])
-  );
+  ) as any;
   t.snapshot(result);
   t.is(result.basic().resolve({ basic: 'test' }), true);
 });
@@ -34,7 +34,7 @@ test('nested basic override', (t) => {
         },
       },
     ])
-  );
+  ) as any;
   t.snapshot(result);
   t.is(result.nested.basic().resolve({ basic: 'test' }), true);
 });
@@ -51,7 +51,7 @@ test('basic array override', (t) => {
         },
       },
     ])
-  );
+  ) as any;
   t.snapshot(result);
   t.deepEqual(result.basic().resolve({ basic: [''] }), [true]);
 });
@@ -68,7 +68,7 @@ test('basic object array override', (t) => {
         },
       },
     ])
-  );
+  ) as any;
   t.snapshot(result);
   t.deepEqual(result.basic[0].obj().resolve({ obj: 'test' }), true);
 });
@@ -85,7 +85,7 @@ test('override with custom type', (t) => {
         },
       },
     ])
-  );
+  ) as any;
   t.snapshot(result);
   t.deepEqual(result.basic().resolve({ basic: 'test' }), true);
 });
