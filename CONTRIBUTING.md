@@ -4,8 +4,8 @@ Thanks for your interest in contributing! This guide covers local development an
 
 ## Prerequisites
 
-- Node 16+
-- pnpm
+- Node 20.19+
+- pnpm 10.33.x via Corepack (`corepack enable && corepack prepare pnpm@10.33.0 --activate`)
 - Clean git working tree (commit/stash your work first)
 
 ## Local development
@@ -14,6 +14,7 @@ Thanks for your interest in contributing! This guide covers local development an
 - Build all packages: `pnpm build`
 - Run dev across packages: `pnpm dev`
 - Work in examples (Next.js preferred): `pnpm play`
+- Check local CI parity before opening a PR: `pnpm verify`
 
 ## Working on a package
 
@@ -42,12 +43,19 @@ pnpm build
 
 - Keep PRs small and focused; link related issues.
 - Ensure CI passes all checks.
+- Run `pnpm verify` locally when your change touches source, tests, package metadata, or CI.
 - Add test coverage for both positive and negative cases:
   - Positive: expected success paths and typical inputs.
   - Negative: invalid inputs, edge cases, and error handling/failure modes.
-- Place tests in the relevant package and use its existing runner/config (Vitest in most packages; some legacy tests use Ava).
+- Place tests in the relevant package and use its existing runner/config.
+  - Root `pnpm test` builds the workspace, runs the AVA suite configured by `ava.config.js`, then runs the package-local Vitest suites.
+  - Vitest is currently used by `@flatbread/codegen` and `@flatbread/utils`.
+  - Most other packages are covered by the root AVA suite or do not yet expose a package-local `test` script.
+- `pnpm lint` is the enforced Prettier formatting gate. `pnpm lint:eslint` is an optional/manual root ESLint check until the linting stack is modernized.
 - Helpful commands:
-  - All packages: `pnpm -r test`
+  - Local CI parity: `pnpm verify`
+  - Root test suite: `pnpm test`
+  - Package-local test scripts where present: `pnpm -r --if-present test`
   - Single package: `pnpm -F <package-name> test`
   - Watch (where supported): `pnpm -F <package-name> test:watch`
 

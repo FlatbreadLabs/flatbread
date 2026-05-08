@@ -75,7 +75,29 @@ Rollback:
 - Revert `.github/workflows/pipeline.yml`. The local scripts from the previous
   entry remain independently useful.
 
-### 3. Decision record and deferred follow-ups
+### 3. Config hygiene from adversarial audit
+
+Objective:
+
+- Remove pnpm configuration that package manifests cannot enforce.
+- Make workspace path aliases and example package metadata explicit.
+
+Rationale:
+
+- `pnpm.peerDependencyRules` only applies from the workspace root, so package
+  local copies in `@flatbread/codegen` and `flatbread` created warning noise
+  without changing install behavior.
+- The Next.js example invoked the `flatbread` CLI without declaring the
+  workspace dependency it relies on.
+- Root path aliases should cover workspace packages consistently for editor and
+  package-local TS config consumers.
+
+Rollback:
+
+- Revert the config hygiene commit to restore the previous package metadata,
+  path aliases, and lockfile entries.
+
+### 4. Decision record and deferred follow-ups
 
 Objective:
 
@@ -127,6 +149,7 @@ Recommended future pilot:
 Measured locally in this cloud workspace:
 
 - Proof audit DAG: 5/5 tasks completed in about 1 minute 9 seconds.
+- Adversarial follow-up DAG: 5/5 tasks completed in about 55 seconds.
 - Updated `@flatbread/codegen` + `@flatbread/utils` builds completed in about
   4 seconds after the package-local TS configs were added.
 - `pnpm typecheck` for the current proof pilot completed in about 2.5 seconds.
@@ -144,7 +167,8 @@ CI impact must be measured from GitHub Actions after merge or on the draft PR:
 ## Deferred recommendations
 
 - Migrate or remove dormant root ESLint in a dedicated linting PR.
-- Unify AVA and Vitest, or document why both remain necessary.
+- Unify AVA and Vitest after deciding whether package-local tests should all
+  move to Vitest, or keep both with the contributor guide's current split.
 - Add package-level `typecheck` scripts and move toward project references or a
   monorepo `tsc -b` flow.
 - Add coverage collection and thresholds around critical paths after test runner
@@ -153,3 +177,5 @@ CI impact must be measured from GitHub Actions after merge or on the draft PR:
   Express-GraphQL separately from this tooling stack.
 - Confirm whether `@nrwl/workspace` is still used; remove it in its own PR if
   it is dead weight.
+- Resolve the existing SvelteKit route data typing issue, then add
+  `svelte-check` to CI.
