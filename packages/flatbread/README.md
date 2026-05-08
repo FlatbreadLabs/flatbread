@@ -30,6 +30,8 @@ Turn flat files in Git into typed, relational content for your TypeScript app—
 
 **GraphQL:** In the default setup, GraphQL is the primary **interface** for reading the content graph—schema generation and codegen are how many apps reach the data, not the definition of the product. More detail: [docs/positioning.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/positioning.md).
 
+**Glossary:** Quick definitions for **collection**, **relation**, **ID**, **cardinality**, **validation**, and **query interface** (GraphQL as one read path, not the whole product)—see [docs/glossary.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md).
+
 For contributing to this monorepo, use Node 20.19+ with pnpm 10.33.x. Runtime support for published packages is tracked by each package's own metadata.
 
 Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://www.gatsbyjs.com/)) anything, this project harnesses a plugin architecture to be easily customizable to fit your use cases.
