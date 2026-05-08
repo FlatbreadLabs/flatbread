@@ -2,7 +2,7 @@
 
 Flatbread positions itself the same way across the repo; this page is a stable link target. For install and usage, see the [main README](../README.md). For vocabulary used across docs and config—**collections**, **relations**, **IDs**, and how a **query interface** fits in—see the [glossary](./glossary.md). For **buyer-aware comparisons** (SQLite-style workflows, CMSs, Contentlayer-like stacks, agent artifact graphs) across setup time, typing, integrity, and related criteria—plus **go / no-go** guidance for an agent-artifact wedge—see the [PMF decision rubric](./pmf-decision-rubric.md).
 
-Turn flat files in Git into typed, relational content for your TypeScript app—with [GraphQL](https://graphql.org/) and generated types as the default way to query the model today.
+Turn flat files in Git into typed, relational content for your TypeScript app. The core artifact is an in-repo **content graph** (collections, records, **`refs`**). **Generated types plus [GraphQL](https://graphql.org/) operations** layer on top today as the most common **read interface** — they describe how many apps consume that graph at build/run time; they do not redefine what Flatbread **is**.
 
 **Flatbread** is a Git-native relational flat-file content layer for TypeScript apps. Your repo and filesystem are the source of truth; plugins (sources, transformers, and resolvers) extend how content is loaded and shaped.
 
@@ -14,4 +14,6 @@ Turn flat files in Git into typed, relational content for your TypeScript app—
 - Not a general-purpose GraphQL platform or a substitute for a general-purpose database (transactions, granular access control, and high-scale multi-writer workloads are out of scope).
 - Reliable live reload of content while the dev server runs is [not a supported pillar yet](https://github.com/FlatbreadLabs/flatbread/issues/65); expect to restart to pick up file changes.
 
-**GraphQL:** In the default setup, GraphQL is the primary **interface** for reading the content graph—schema generation and codegen are how many apps reach the data, not the definition of the product.
+**GraphQL:** In the default setup, GraphQL is a primary **interface** for reading an already-loaded content graph (`schema → operations → codegen`). Prefer thinking **files → model → typed read path** rather than treating GraphQL alone as Flatbread.
+
+**Skimming from GraphQL-first experience:** Jump to **`refs` + relations** in [glossary](./glossary.md), then codegen and your app’s **`flatbread codegen`** docs — the relational layer is upstream of the queries you write.

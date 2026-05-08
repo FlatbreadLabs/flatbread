@@ -36,112 +36,156 @@ For contributing to this monorepo, use Node 20.19+ with pnpm 10.33.x. Runtime su
 
 Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://www.gatsbyjs.com/)) anything, this project harnesses a plugin architecture to be easily customizable to fit your use cases.
 
-# Install + Use
+## Quickstart (posts, authors, and tags)
 
-🚧 This project is currently experimental, and the API may change considerably before `v1.0`. Feel free to hop in and contribute some issues or PRs!
+🚧 This project is experimental; the API may change before `v1.0`.
 
-To use the most common setup for markdown files sourced from the filesystem, Flatbread interally ships with + exposes the [`source-filesystem`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/source-filesystem) + [`transformer-markdown`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/transformer-markdown) plugins.
+This repo’s **canonical first success path** is the **Next.js example** (`examples/nextjs`). It reads shared markdown under **`examples/content`** (mounted in that app as `content/` via symlink). Commands below are exact for that layout.
 
-The following example takes you through the default flatbread setup.
+### 1 · What you are modeling
+
+- **Collections** (`Post`, `Author`) map to folders of files; see the [glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md).
+- **Relations:** posts declare `authors:` in frontmatter as a list of **author ids**; Flatbread resolves them through **`refs`** in config (same idea as joins, over files—**not** a remote database).
+- **Tags:** in the bundled example, each post exposes **`tags`** as a **YAML string list** in frontmatter. That becomes a **`[String]`** field on **`Post`** in the generated schema. That is **facet-style metadata** repeated per post—not the same machinery as **`refs`** to another collection. If you need normalized tag **records** shared across posts, model a **`Tag`** collection and wire **`refs`** yourself (advanced).
+
+Illustrative frontmatter:
+
+```yaml
+---
+id: your-post-id
+title: Example
+authors:
+  - author-id-one
+tags:
+  - typescript
+  - content-graph
+---
+```
+
+Markdown **below** the closing `---` is the post body.
+
+### 2 · Content layout (this monorepo)
+
+From the repo root, the markdown that backs the relational story lives here:
+
+```text
+examples/content/markdown/posts/     # Post collection (incl. example-post.md, …)
+examples/content/markdown/authors/   # Author collection
+```
+
+The Next example points `flatbread.config.js` at `content/markdown/...` **relative to `examples/nextjs`**, where `content` is the symlink to `../content`.
+
+### 3 · Run it from the repo root
+
+Prerequisites: **Node 20.19+**, **pnpm 10.33.x** (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ```bash
-pnpm i flatbread@latest
+pnpm install
+pnpm build
+cd examples/nextjs
+pnpm exec flatbread codegen --verbose
 ```
 
-Automatically create a `flatbread.config.js` file:
+That writes **`generated/graphql.ts`**: TypeScript types and typed document nodes for your **`.graphql`** operations (configure globs under `codegen.documents` in `flatbread.config.js`).
 
-```bash
-npx flatbread init
+Add a `.graphql` file (see `queries/posts.graphql` in the example), then rerun **`pnpm exec flatbread codegen --verbose`** so the operation reflects **`tags`**, **`authors`**, etc. Illustrative operation you can paste into `queries/`:
+
+```graphql
+query GetPostsAuthorsAndTags {
+  allPosts(limit: 5) {
+    id
+    title
+    tags
+    authors {
+      id
+      name
+    }
+  }
+  allAuthors {
+    id
+    name
+  }
+}
 ```
 
-> If you're lookin for different use cases, take a peek through the various [`packages`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages) to see if any of those plugins fit your needs. You can find the relevant usage API contained therein.
+After codegen, your app imports types from **`./generated/graphql`**. The **result shape** of that operation is typed (for example **`GetPostsAuthorsAndTagsQuery`**)—relations resolve to **`Author`** objects while **`tags`** stay a **string array** on **`Post`**, matching the file metadata.
 
-Take this example where we have a content folder in our repo containing posts and author data:
+Default filesystem + markdown wiring uses the bundled [`source-filesystem`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/source-filesystem) and [`transformer-markdown`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/transformer-markdown) plugins (`flatbread` re-exports them).
 
-```gql
-content/
-├─ posts/
-│  ├─ example-post.md
-│  ├─ funky-monkey-friday.md
-├─ authors/
-│  ├─ me.md
-│  ├─ my-cat.md
-...
-flatbread.config.js
-package.json
-```
+### 4 · Minimal relational config (mental model)
 
-In reference to that structure, set up a `flatbread.config.js` in the root of your project:
+The example’s production config loads extra collections for tests; **the core onboarding shape** is:
 
 ```js
 import { defineConfig, transformerMarkdown, sourceFilesystem } from 'flatbread';
 
-const transformerConfig = {
-  markdown: {
-    gfm: true,
-    externalLinks: true,
-  },
-};
 export default defineConfig({
   source: sourceFilesystem(),
-  transformer: transformerMarkdown(transformerConfig),
-
+  transformer: transformerMarkdown({
+    markdown: { gfm: true, externalLinks: true },
+  }),
   content: [
     {
-      path: 'content/posts',
+      path: 'content/markdown/posts',
       collection: 'Post',
-      refs: {
-        authors: 'Author',
-      },
+      refs: { authors: 'Author' },
     },
     {
-      path: 'content/authors',
+      path: 'content/markdown/authors',
       collection: 'Author',
-      refs: {
-        friend: 'Author',
-      },
+      refs: { friend: 'Author' },
     },
   ],
 });
 ```
 
-Now hit your `package.json` and put the keys in the truck:
+### 5 · Reading the graph: GraphQL (after the model exists)
+
+Flatbread builds a content **graph from files**. In the default toolchain, **GraphQL is one read interface**: schema + resolver shape over that graph—not “Flatbread is a GraphQL CMS.”
+
+Wire your framework so the CLI wraps dev/build (**`flatbread start`** passes through your command after **`--`**). There is **no** `flatbread dev` subcommand.
 
 ```js
-// before
-"scripts": {
-  "dev": "svelte-kit dev",
-  "build": "svelte-kit build",
-},
-
-// after becoming based and flatbread-pilled
-"scripts": {
-  "dev": "flatbread start -- svelte-kit dev",
-  "build": "flatbread start -- svelte-kit build",
-},
+// package.json scripts (adapt the part after `--` to your framework)
+{
+  "scripts": {
+    "dev": "flatbread start -- next dev --turbopack",
+    "build": "flatbread start -- next build"
+  }
+}
 ```
 
-The Flatbread CLI runs **`flatbread start`** and, by default, serves GraphQL at **`http://localhost:5057/graphql`**. Pass your framework dev/build command after **`--`** so Flatbread and your app run together. **`flatbread dev` is not a valid subcommand.** Your **`pnpm run dev`** (after you wire scripts like below) is separate from **`next start`**, which is production Next without Flatbread unless you wrap it yourself.
-
-The Flatbread CLI will capture any script you add in after the `--` and appropriately unite them to live in a land of fairies and wonder while they dance into the sunset as you query your brand spankin new GraphQL server however you'd like from within your app.
-
-## Run that shit 🏃‍♀️
+In the Next example from **`examples/nextjs`**, **`pnpm dev`** enables HTTPS locally and pairs Next with Flatbread. The GraphQL HTTP endpoint defaults to **`http://localhost:5057/graphql`**; the Next app is on **`3000`**. **`pnpm run dev`** here is distinct from **`next start`** alone (production Next without Flatbread unless you arrange serving yourself).
 
 ```bash
-pnpm run dev
+pnpm dev
 ```
 
-## Construct queries 👩‍🍳
+If the server starts cleanly, Flatbread prints the **`graphql`** URL. Opening it launches Apollo Studio against the generated schema—you can iterate on queries there, then freeze them into **`.graphql`** files and rerun **`flatbread codegen`**.
 
-If everything goes well, you'll see a pretty `graphql` endpoint echoed out to your console by Flatbread. If you open that link in your browser, Apollo Studio will open for you to explore the schema Flatbread generated. Apollo Studio has some nice auto-prediction and gives you helpers in the schema explorer for building your queries.
+Live reload of markdown while the process runs is **[not reliable yet](https://github.com/FlatbreadLabs/flatbread/issues/65)**—restart dev after content changes.
 
-You can query that same endpoint in your app in any way you'd like. Flatbread doesn't care what framework you use.
+## Install Flatbread in your own repo
 
-> NOTE: detecting changes to your content while Flatbread is running is [not yet supported](https://github.com/FlatbreadLabs/flatbread/issues/65). You'll have to restart the process to get updated content.
+Outside this monorepo:
 
-## Query arguments
+```bash
+pnpm add flatbread@latest
+```
 
-The following arguments are listed in their order of operation.
+Scaffold **`flatbread.config.js`**:
+
+```bash
+pnpm exec flatbread init
+```
+
+Point **`content`** entries at **your** `posts/` and **`authors/`** folders, reuse the relational ideas above, and add **`codegen`** in config when you want **`generated/graphql.ts`**. Browse [`packages`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages) for plugins and resolver helpers.
+
+More detail on the bundled example (scripts, codegen watch, troubleshooting): **`examples/nextjs/README.md`**.
+
+## Query arguments (GraphQL read interface)
+
+When **GraphQL** is your read interface, list fields use the following arguments in order of application.
 
 ### `filter`
 
@@ -265,9 +309,9 @@ Skips the specified number of entries. Accepts an integer.
 
 Limits the number of returned entries to the specified amount. Accepts an integer.
 
-## Query within your app ❓❓
+## Query from your app
 
-[Check out the example integrations](https://github.com/FlatbreadLabs/flatbread/tree/main/examples) of using Flatbread with frameworks like SvelteKit and Next.js.
+Follow [Quickstart (posts, authors, and tags)](#quickstart-posts-authors-and-tags) for the relational model, **codegen**, and typed results. For framework wiring and scripts, use **[examples/nextjs](https://github.com/FlatbreadLabs/flatbread/tree/main/examples/nextjs)** or [other examples](https://github.com/FlatbreadLabs/flatbread/tree/main/examples) (for example SvelteKit).
 
 ## Field overrides
 

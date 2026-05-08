@@ -4,6 +4,8 @@ Thanks for your interest in contributing! This guide covers local development an
 
 **Flatbread** is **relational, Git-tracked content for TypeScript apps**: flat files in the repo become a typed content graph. **GraphQL is one consumer** of that graph (see `docs/glossary.md`), not the whole product story.
 
+For the **canonical posts / authors / tags** onboarding narrative (collections, `refs`, codegen, then GraphQL), see the root [README quickstart](https://github.com/FlatbreadLabs/flatbread/blob/main/README.md#quickstart-posts-authors-and-tags).
+
 ## Prerequisites
 
 - Node 20.19+
@@ -12,7 +14,7 @@ Thanks for your interest in contributing! This guide covers local development an
 
 ## Recommended onboarding (try Flatbread in the Next.js example)
 
-Use this single path first; it matches how CI and most contributors exercise the stack:
+Use this single path first; it matches how CI and most contributors exercise the stack (**shared content** under `examples/content`, symlinked from the Next app as `content/`):
 
 1. From the **monorepo root**: `pnpm install` then `pnpm build` (builds all packages except `examples/*`).
 2. `cd examples/nextjs`
