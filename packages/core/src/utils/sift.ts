@@ -3,6 +3,7 @@ import { get } from 'lodash-es';
 import deepEntries from './deepEntries';
 import reduceBooleans from './reduceBooleans';
 import { isMatch as isWildcardMatch } from 'matcher';
+import { normalizeIdentifier } from './ids';
 
 /**
  * Return a callable sifting function that can be used to filter an array of objects with the given filter object.
@@ -31,8 +32,16 @@ const createFilterFunction = (
     for (let { path, comparator } of filterSetManifest) {
       // Retrieve the value of interest from the node.
       const needle = get(node, path, undefined);
+      const comparisonNeedle = shouldNormalizeIdComparator(path, comparator)
+        ? normalizeSiftId(needle, 'filter id value', true)
+        : needle;
+      const comparisonComparator = shouldNormalizeIdComparator(path, comparator)
+        ? normalizeIdComparator(comparator)
+        : comparator;
       // Compare the value of interest to the target value, and store the result of the evaluated expression.
-      evaluatedFilterSet.push(generateComparisonFunction(comparator)(needle));
+      evaluatedFilterSet.push(
+        generateComparisonFunction(comparisonComparator)(comparisonNeedle)
+      );
     }
 
     // Combine the filter set results with the union operation.
@@ -40,6 +49,51 @@ const createFilterFunction = (
   };
 };
 export default createFilterFunction;
+
+function normalizeSiftId(
+  value: unknown,
+  context: string,
+  allowMissing = false
+): unknown {
+  if (allowMissing && (value === null || value === undefined)) {
+    return value;
+  }
+
+  return normalizeIdentifier(value, context);
+}
+
+function normalizeIdComparator(comparator: Comparator): Comparator {
+  const { operation, value } = comparator;
+
+  if (operation === 'exists' || operation === 'strictlyExists') {
+    return comparator;
+  }
+
+  if (Array.isArray(value)) {
+    return {
+      operation,
+      value: value.map((item) =>
+        normalizeSiftId(item, `filter id comparator "${operation}"`)
+      ),
+    };
+  }
+
+  return {
+    operation,
+    value: normalizeSiftId(value, `filter id comparator "${operation}"`),
+  };
+}
+
+function shouldNormalizeIdComparator(
+  path: string[],
+  comparator: Comparator
+): boolean {
+  if (path.length !== 1 || path[0] !== 'id') {
+    return false;
+  }
+
+  return ['eq', 'ne', 'in', 'nin'].includes(comparator.operation);
+}
 
 /**
  * Generate a comparison function that can be used to compare a variable `a` (the field in each node) to a constant value `value` (target value in filter argument).
