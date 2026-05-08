@@ -2,8 +2,8 @@
 id: jksfd4-234fdh-5345fj-3455-09836
 title: 'The Great Soup Tier List: A Comprehensive Ranking'
 authors:
-  - daes
-  - caffeine-researcher
+  - ab2c
+  - 2a3e
 rating: 96
 category: food
 research_duration: '2 winters'

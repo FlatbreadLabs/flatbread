@@ -6,6 +6,7 @@ export {
   normalizeIdentifier,
   normalizeOptionalIdentifier,
 } from './utils/ids';
+export { validateCollectionReferences } from './utils/references';
 
 export * from './types';
 export { FlatbreadProvider } from './providers/base';
