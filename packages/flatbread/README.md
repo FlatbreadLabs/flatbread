@@ -16,112 +16,83 @@
   </a>
 </p>
 
-Eat your relational markdown data _and query it, too,_ with [GraphQL](https://graphql.org/) inside damn near any framework (statement awaiting peer-review).
+Flatbread is a **Git-native relational content layer for TypeScript apps**. Model collections and relationships over Markdown, YAML, and other flat files; query the model with GraphQL today; and keep the source data readable, reviewable, and portable in Git.
+
+Flatbread is for teams that want structured, typed, file-backed content without adopting a hosted CMS or treating GraphQL as the product boundary. GraphQL is one interface over the relational content model, not the whole value proposition.
 
 For contributing to this monorepo, use Node 20.19+ with pnpm 10.33.x. Runtime support for published packages is tracked by each package's own metadata.
 
-Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://www.gatsbyjs.com/)) anything, this project harnesses a plugin architecture to be easily customizable to fit your use cases.
+## Product scope
 
-# Install + Use
+Flatbread is intentionally centered on read-mostly content graphs in your repository:
 
-🚧 This project is currently experimental, and the API may change considerably before `v1.0`. Feel free to hop in and contribute some issues or PRs!
+- **Good fit:** docs sites, blogs, changelogs, product catalogs, agent artifact graphs, and other TypeScript apps where authors keep source content in Git.
+- **Current interface:** generated GraphQL schema/server plus GraphQL Code Generator output for TypeScript consumers.
+- **Planned direction:** generated TypeScript read APIs and agent-oriented query surfaces over the same model.
+- **Non-goals:** Flatbread is not a replacement for a general-purpose database, a hosted CMS, or an editing dashboard. It does not try to provide transactions, auth, permissions, or high-scale writes.
 
-To use the most common setup for markdown files sourced from the filesystem, Flatbread interally ships with + exposes the [`source-filesystem`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/source-filesystem) + [`transformer-markdown`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/transformer-markdown) plugins.
+Start with the relational primitives glossary in [`docs/relational-primitives.md`](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/relational-primitives.md) if you are new to Flatbread's vocabulary. Product tradeoffs are tracked in the [`PMF decision rubric`](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/pmf-decision-rubric.md).
 
-The following example takes you through the default flatbread setup.
+# Canonical quickstart: posts, authors, and tags
+
+🚧 This project is currently experimental, and the API may change considerably before `v1.0`.
+
+The recommended first path is the Next.js example because it exercises the current root package, GraphQL server, and generated TypeScript types together.
 
 ```bash
-pnpm i flatbread@latest
+pnpm install
+pnpm build
+cd examples/nextjs
+npx flatbread codegen --verbose
+npx flatbread start -- next dev --turbopack
 ```
 
-Automatically create a `flatbread.config.js` file:
+Then open `http://localhost:3000`. Flatbread serves GraphQL on `http://localhost:5057/graphql` while Next.js renders typed query results in the app.
 
-```bash
-npx flatbread init
+The example models content as related collections:
+
+```text
+examples/nextjs/content/
+├─ markdown/authors/
+├─ markdown/posts/
+└─ yaml/authors/
 ```
 
-> If you're lookin for different use cases, take a peek through the various [`packages`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages) to see if any of those plugins fit your needs. You can find the relevant usage API contained therein.
-
-Take this example where we have a content folder in our repo containing posts and author data:
-
-```gql
-content/
-├─ posts/
-│  ├─ example-post.md
-│  ├─ funky-monkey-friday.md
-├─ authors/
-│  ├─ me.md
-│  ├─ my-cat.md
-...
-flatbread.config.js
-package.json
-```
-
-In reference to that structure, set up a `flatbread.config.js` in the root of your project:
+Those files are loaded by `examples/nextjs/flatbread.config.js`:
 
 ```js
 import { defineConfig, transformerMarkdown, sourceFilesystem } from 'flatbread';
 
-const transformerConfig = {
-  markdown: {
-    gfm: true,
-    externalLinks: true,
-  },
-};
 export default defineConfig({
   source: sourceFilesystem(),
-  transformer: transformerMarkdown(transformerConfig),
-
+  transformer: transformerMarkdown({ markdown: { gfm: true } }),
   content: [
     {
-      path: 'content/posts',
+      path: 'content/markdown/posts',
       collection: 'Post',
-      refs: {
-        authors: 'Author',
-      },
+      refs: { authors: 'Author' },
     },
     {
-      path: 'content/authors',
+      path: 'content/markdown/posts/[category]/[slug].md',
+      collection: 'PostCategory',
+      refs: { authors: 'Author' },
+    },
+    {
+      path: 'content/markdown/authors',
       collection: 'Author',
-      refs: {
-        friend: 'Author',
-      },
     },
   ],
 });
 ```
 
-Now hit your `package.json` and put the keys in the truck:
+From that model, Flatbread generates:
 
-```js
-// before
-"scripts": {
-  "dev": "svelte-kit dev",
-  "build": "svelte-kit build",
-},
+1. collections and relations from the backing files,
+2. a GraphQL schema as the current query interface,
+3. TypeScript query/result types through `npx flatbread codegen`, and
+4. app-visible query results in the Next.js example.
 
-// after becoming based and flatbread-pilled
-"scripts": {
-  "dev": "flatbread start -- svelte-kit dev",
-  "build": "flatbread start -- svelte-kit build",
-},
-```
-
-The Flatbread CLI will capture any script you add in after the `--` and appropriately unite them to live in a land of fairies and wonder while they dance into the sunset as you query your brand spankin new GraphQL server however you'd like from within your app.
-
-## Run that shit 🏃‍♀️
-
-```bash
-pnpm run dev
-```
-
-## Construct queries 👩‍🍳
-
-If everything goes well, you'll see a pretty `graphql` endpoint echoed out to your console by Flatbread. If you open that link in your browser, Apollo Studio will open for you to explore the schema Flatbread generated. Apollo Studio has some nice auto-prediction and gives you helpers in the schema explorer for building your queries.
-
-You can query that same endpoint in your app in any way you'd like. Flatbread doesn't care what framework you use.
-
-> NOTE: detecting changes to your content while Flatbread is running is [not yet supported](https://github.com/FlatbreadLabs/flatbread/issues/65). You'll have to restart the process to get updated content.
+> NOTE: detecting changes to your content while Flatbread is running is [not yet supported](https://github.com/FlatbreadLabs/flatbread/issues/65). Restart the Flatbread process after content or schema changes until the unified watch loop lands.
 
 ## Query arguments
 
