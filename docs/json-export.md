@@ -1,5 +1,11 @@
 # Snapshot export
 
+Snapshot exports are part of Flatbread's data ownership story: they turn the
+same repo-backed content graph into portable review artifacts. See
+[data ownership and exit story](./data-ownership.md) for how raw files, Git
+history, JSON/CSV exports, GraphQL introspection, and generated types fit
+together.
+
 `@flatbread/core` exposes `exportCollectionsAsJson(configResult, options)` for
 stable collection snapshots and `exportCollectionsAsCsv(configResult, options)`
 for flat collection views. They are currently API surfaces rather than CLI
