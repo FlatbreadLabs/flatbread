@@ -17,6 +17,12 @@ import {
   Transformer,
 } from '../types';
 import { map } from '../utils/map';
+import {
+  createIdentifierSet,
+  identifiersEqual,
+  normalizeIdentifier,
+  normalizeIdentifiers,
+} from '../utils/identifier';
 import { generateCollection } from './generateCollection';
 
 interface RootQueries {
@@ -115,8 +121,8 @@ export async function generateSchema(
       description: `Find one ${type} by its ID`,
       args: generateArgsForSingleItemQuery(),
       resolve: (rp: Record<string, any>) =>
-        cloneDeep(allContentNodesJSON[type]).find(
-          (node: EntryNode) => node.id === rp.args.id
+        cloneDeep(allContentNodesJSON[type]).find((node: EntryNode) =>
+          identifiersEqual(node.id, rp.args.id)
         ),
     });
 
@@ -126,11 +132,14 @@ export async function generateSchema(
       description: `Find many ${pluralType} by their IDs`,
       args: generateArgsForManyItemQuery(pluralType),
       resolve: (rp: Record<string, any>) => {
-        const idsToFind = rp.args.ids ?? [];
+        const idsToFind = createIdentifierSet(rp.args.ids ?? []);
         const matches =
-          cloneDeep(allContentNodesJSON[type])?.filter((node: EntryNode) =>
-            idsToFind?.includes(node.id)
-          ) ?? [];
+          cloneDeep(allContentNodesJSON[type])?.filter((node: EntryNode) => {
+            const normalizedNodeId = normalizeIdentifier(node.id);
+            return (
+              normalizedNodeId !== undefined && idsToFind.has(normalizedNodeId)
+            );
+          }) ?? [];
         return resolveQueryArgs(matches, rp.args, config, {
           type: {
             name: type,
@@ -199,7 +208,7 @@ export async function generateSchema(
           )} that are referenced by this ${collection}`,
           resolver: () => refTypeTC.getResolver('findMany'),
           prepareArgs: {
-            ids: (source) => source[refField],
+            ids: (source) => normalizeIdentifiers(source[refField]),
           },
           projection: { [refField]: true },
         });
@@ -209,7 +218,7 @@ export async function generateSchema(
           description: `The ${refType} referenced by this ${collection}`,
           resolver: () => refTypeTC.getResolver('findById'),
           prepareArgs: {
-            id: (source) => source[refField],
+            id: (source) => normalizeIdentifier(source[refField]),
           },
           projection: { [refField]: true },
         });

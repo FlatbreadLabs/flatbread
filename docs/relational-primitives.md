@@ -22,7 +22,11 @@ A **record** is one loaded content item inside a collection. For Markdown and YA
 
 ## ID
 
-An **ID** is the stable identifier for a record. IDs should be predictable, unique inside the relevant collection, and safe to reference from other records. When ID normalization is tightened, the same rules should apply across source files, internal content, GraphQL arguments, generated TypeScript types, and future query APIs.
+An **ID** is the stable identifier for a record. IDs should be predictable, unique inside the relevant collection, and safe to reference from other records.
+
+Flatbread accepts string and finite number IDs in source content. Query interfaces normalize those values to strings for matching, so a GraphQL argument such as `Author(id: "1")` can match a source record with `id: 1`, and relation refs use the same comparison rule. Formatting still matters: `"01"` and `1` remain distinct IDs because they normalize to different strings.
+
+Unsupported ID values such as `null`, `undefined`, `NaN`, objects, and arrays are not valid record identifiers. Validation should report them before generated schema/API use.
 
 ## Relation
 

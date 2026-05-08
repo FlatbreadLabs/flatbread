@@ -3,6 +3,11 @@ import { get } from 'lodash-es';
 import deepEntries from './deepEntries';
 import reduceBooleans from './reduceBooleans';
 import { isMatch as isWildcardMatch } from 'matcher';
+import {
+  createIdentifierSet,
+  identifiersEqual,
+  normalizeIdentifier,
+} from './identifier';
 
 /**
  * Return a callable sifting function that can be used to filter an array of objects with the given filter object.
@@ -32,7 +37,9 @@ const createFilterFunction = (
       // Retrieve the value of interest from the node.
       const needle = get(node, path, undefined);
       // Compare the value of interest to the target value, and store the result of the evaluated expression.
-      evaluatedFilterSet.push(generateComparisonFunction(comparator)(needle));
+      evaluatedFilterSet.push(
+        generateComparisonFunction(comparator, isIdentifierPath(path))(needle)
+      );
     }
 
     // Combine the filter set results with the union operation.
@@ -48,9 +55,40 @@ export default createFilterFunction;
  * @returns A function that can be used to compare a value to the target value.
  */
 function generateComparisonFunction(
-  comparator: Comparator
+  comparator: Comparator,
+  normalizeAsIdentifier = false
 ): CompareValueAgainstConstant {
   const { operation, value } = comparator;
+
+  if (normalizeAsIdentifier) {
+    switch (operation) {
+      case 'eq':
+        return (a: any) => identifiersEqual(a, value);
+      case 'ne':
+        return (a: any) => !identifiersEqual(a, value);
+      case 'in': {
+        const identifierSet = createIdentifierSet(value);
+        return (a: any) => {
+          const normalizedIdentifier = normalizeIdentifier(a);
+          return (
+            normalizedIdentifier !== undefined &&
+            identifierSet.has(normalizedIdentifier)
+          );
+        };
+      }
+      case 'nin': {
+        const identifierSet = createIdentifierSet(value);
+        return (a: any) => {
+          const normalizedIdentifier = normalizeIdentifier(a);
+          return (
+            normalizedIdentifier === undefined ||
+            !identifierSet.has(normalizedIdentifier)
+          );
+        };
+      }
+    }
+  }
+
   switch (operation) {
     case 'eq':
       return (a: any) => a === value;
@@ -84,6 +122,9 @@ function generateComparisonFunction(
       throw new Error(`Unsupported operation: ${operation}`);
   }
 }
+
+const isIdentifierPath = (path: string[]) =>
+  path.length === 1 && path[0] === 'id';
 
 /**
  * Seperate the filter args into an array of target and comparator objects.

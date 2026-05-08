@@ -1,10 +1,10 @@
-import { keyBy } from 'lodash-es';
 import sift, {
   generateFilterSetManifest,
   TargetAndComparator,
 } from '../utils/sift';
 import { ContentNode, FlatbreadConfig } from '../types';
 import { FlatbreadProvider } from '../providers/base';
+import { normalizeIdentifier } from '../utils/identifier';
 interface ResolveQueryArgsOptions {
   type: {
     name: string;
@@ -27,15 +27,24 @@ const resolveQueryArgs = async (
   if (filter) {
     // Place the nodes into a keyed object by ID so we can easily filter by ID without doing tons of looping.
     // TODO: store all nodes in an ID-keyed object.
-    // TODO: replace id field with user-defined/fallback identifier field.
-    const nodeById = keyBy(nodes, 'id');
+    const nodeById = new Map(
+      nodes.flatMap((node) => {
+        const normalizedId = normalizeIdentifier(node.id);
+        return normalizedId === undefined ? [] : [[normalizedId, node]];
+      })
+    );
 
     // Turn the filter into a GraphQL subquery that returns an array of matching content node IDs.
     const listOfNodeIDsToFilter = await resolveFilter(filter, config, options);
 
-    nodes = listOfNodeIDsToFilter.map(
-      (desiredNodeId) => nodeById[desiredNodeId]
-    );
+    nodes = listOfNodeIDsToFilter
+      .map((desiredNodeId) => {
+        const normalizedId = normalizeIdentifier(desiredNodeId);
+        return normalizedId === undefined
+          ? undefined
+          : nodeById.get(normalizedId);
+      })
+      .filter(Boolean);
   }
 
   if (sortBy) {
@@ -134,7 +143,6 @@ export const resolveFilter = async (
   // Build a GraphQL query fragment that will be used to resolve content nodes in a structure expected by the sift function, for the given filter.
   const filterQueryFragment = buildFilterQueryFragment(filterSetManifest);
 
-  // TODO: replace id field with user-defined/fallback identifier field
   const queryString = `
     query ${options.type.pluralQueryName}_FilterSubquery {
       ${options.type.pluralQueryName} {
