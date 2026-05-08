@@ -5,8 +5,36 @@
  */
 
 export type Complexity = 'HIGH' | 'MED' | 'LOW';
-export type ModelMap = Record<Complexity, string>;
+export interface ModelParameterValue {
+  id: string;
+  value: string;
+}
+
+export interface ModelSelection {
+  id: string;
+  params?: ModelParameterValue[];
+}
+
+export type ModelSpec = string | ModelSelection;
+export type ModelMap = Record<Complexity, ModelSpec>;
 export type ModelMapOverride = Partial<ModelMap>;
+export type ResolvedModelMap = Record<Complexity, ModelSelection>;
+
+export interface ModelCatalogItem {
+  id: string;
+  displayName: string;
+  parameters?: Array<{
+    id: string;
+    displayName?: string;
+    values: Array<{ value: string; displayName?: string }>;
+  }>;
+  variants?: Array<{
+    params: ModelParameterValue[];
+    displayName: string;
+    description?: string;
+    isDefault?: boolean;
+  }>;
+}
 
 /**
  * Discriminator separating LLM-backed work from non-LLM gate nodes.
@@ -78,7 +106,11 @@ export interface DAGBudget {
 }
 
 const COMPLEXITY_VALUES = new Set<Complexity>(['HIGH', 'MED', 'LOW']);
-const COMPLEXITY_KEYS: readonly Complexity[] = ['HIGH', 'MED', 'LOW'] as const;
+export const COMPLEXITY_KEYS: readonly Complexity[] = [
+  'HIGH',
+  'MED',
+  'LOW',
+] as const;
 const TASK_KIND_VALUES = new Set<TaskKind>(['task', 'pause', 'oracle']);
 /** Synthetic placeholder so non-LLM tasks (pause, oracle) satisfy the existing structural type. The runner must branch on `kind` before consuming this. */
 const NON_LLM_SYNTHETIC_COMPLEXITY: Complexity = 'LOW';
@@ -476,10 +508,10 @@ export function validateModelMap(
     if (!COMPLEXITY_VALUES.has(key as Complexity)) {
       throw new Error(`${label} contains unknown complexity key: ${key}`);
     }
-    if (typeof value !== 'string' || value.trim() === '') {
-      throw new Error(`${label}.${key} must be a non-empty string.`);
-    }
-    models[key as Complexity] = value.trim();
+    models[key as Complexity] = validateModelSelection(
+      value,
+      `${label}.${key}`
+    );
   }
   return models;
 }
@@ -492,6 +524,251 @@ export function createModelResolver(
     if (!COMPLEXITY_KEYS.includes(c)) {
       throw new Error(`Unknown complexity: ${c}`);
     }
-    return models[c];
+    return normalizeModelSelection(models[c], `model for ${c}`).id;
   };
+}
+
+export function createModelSelectionResolver(
+  overrides: ModelMapOverride = {}
+): (c: Complexity) => ModelSelection {
+  const models: ModelMap = { ...DEFAULT_MODEL_MAP, ...overrides };
+  return (c: Complexity): ModelSelection => {
+    if (!COMPLEXITY_KEYS.includes(c)) {
+      throw new Error(`Unknown complexity: ${c}`);
+    }
+    return normalizeModelSelection(models[c], `model for ${c}`);
+  };
+}
+
+export function createCatalogBackedModelResolver(
+  modelFor: (c: Complexity) => ModelSelection,
+  catalog: readonly ModelCatalogItem[]
+): (c: Complexity) => ModelSelection {
+  const cache = new Map<Complexity, ModelSelection>();
+  return (c: Complexity): ModelSelection => {
+    const cached = cache.get(c);
+    if (cached) return cloneModelSelection(cached);
+    const resolved = resolveModelSelectionFromCatalog(
+      modelFor(c),
+      catalog,
+      `model for ${c}`
+    );
+    cache.set(c, resolved);
+    return cloneModelSelection(resolved);
+  };
+}
+
+export function validateModelSelection(
+  raw: unknown,
+  label = 'model'
+): ModelSelection {
+  if (typeof raw === 'string') {
+    const id = raw.trim();
+    if (id === '') {
+      throw new Error(`${label} must be a non-empty string or model object.`);
+    }
+    return { id };
+  }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error(`${label} must be a non-empty string or model object.`);
+  }
+  const obj = raw as Record<string, unknown>;
+  const id = obj.id;
+  if (typeof id !== 'string' || id.trim() === '') {
+    throw new Error(`${label}.id must be a non-empty string.`);
+  }
+  if (obj.params === undefined) {
+    return { id: id.trim() };
+  }
+  if (!Array.isArray(obj.params)) {
+    throw new Error(`${label}.params must be an array when set.`);
+  }
+  const params: ModelParameterValue[] = [];
+  const seen = new Set<string>();
+  for (let i = 0; i < obj.params.length; i++) {
+    const rawParam = obj.params[i];
+    if (!rawParam || typeof rawParam !== 'object' || Array.isArray(rawParam)) {
+      throw new Error(`${label}.params[${i}] must be an object.`);
+    }
+    const param = rawParam as Record<string, unknown>;
+    if (typeof param.id !== 'string' || param.id.trim() === '') {
+      throw new Error(`${label}.params[${i}].id must be a non-empty string.`);
+    }
+    if (typeof param.value !== 'string' || param.value.trim() === '') {
+      throw new Error(
+        `${label}.params[${i}].value must be a non-empty string.`
+      );
+    }
+    const paramId = param.id.trim();
+    if (seen.has(paramId)) {
+      throw new Error(`${label}.params contains duplicate id: ${paramId}`);
+    }
+    seen.add(paramId);
+    params.push({ id: paramId, value: param.value.trim() });
+  }
+  return params.length > 0 ? { id: id.trim(), params } : { id: id.trim() };
+}
+
+export function normalizeModelSelection(
+  raw: ModelSpec,
+  label = 'model'
+): ModelSelection {
+  return validateModelSelection(raw, label);
+}
+
+export function formatModelSelection(model: ModelSelection): string {
+  const params = model.params ?? [];
+  if (params.length === 0) return model.id;
+  return `${model.id} (${params.map((p) => `${p.id}=${p.value}`).join(', ')})`;
+}
+
+export function resolveModelSelectionFromCatalog(
+  selection: ModelSelection,
+  catalog: readonly ModelCatalogItem[],
+  label = 'model'
+): ModelSelection {
+  const catalogItem = catalog.find((model) => model.id === selection.id);
+  if (!catalogItem) {
+    const ids = catalog.map((model) => model.id).sort();
+    throw new Error(
+      `${label} uses unknown Cursor SDK model "${selection.id}". Known models:\n  ${ids.join(
+        '\n  '
+      )}`
+    );
+  }
+
+  validateRequestedParams(selection, catalogItem, label);
+
+  const variants = catalogItem.variants ?? [];
+  if (variants.length === 0) {
+    return cloneModelSelection(selection);
+  }
+
+  const requestedParams = selection.params ?? [];
+  const chosenVariant =
+    requestedParams.length === 0
+      ? defaultVariant(variants)
+      : chooseMatchingVariant(requestedParams, variants);
+
+  if (!chosenVariant) {
+    throw new Error(
+      `${label} ${formatModelSelection(
+        selection
+      )} does not match any Cursor SDK preset variant. Valid variants:\n  ${formatVariants(
+        variants
+      )}`
+    );
+  }
+
+  const params = chosenVariant.params.map((param) => ({ ...param }));
+  return params.length > 0 ? { id: selection.id, params } : { id: selection.id };
+}
+
+function validateRequestedParams(
+  selection: ModelSelection,
+  catalogItem: ModelCatalogItem,
+  label: string
+): void {
+  const definitions = new Map(
+    (catalogItem.parameters ?? []).map((param) => [param.id, param])
+  );
+  const requestedParams = selection.params ?? [];
+  for (const param of requestedParams) {
+    const definition = definitions.get(param.id);
+    if (!definition) {
+      const supported = [...definitions.keys()].sort();
+      throw new Error(
+        `${label} ${selection.id} does not support param "${param.id}". Supported params: ${
+          supported.length > 0 ? supported.join(', ') : '(none)'
+        }`
+      );
+    }
+    const allowed = new Set(definition.values.map((value) => value.value));
+    if (!allowed.has(param.value)) {
+      throw new Error(
+        `${label} ${selection.id} param "${param.id}" does not support value "${param.value}". Supported values: ${[
+          ...allowed,
+        ].join(', ')}`
+      );
+    }
+  }
+}
+
+type ModelCatalogVariant = NonNullable<ModelCatalogItem['variants']>[number];
+
+function defaultVariant(
+  variants: ReadonlyArray<ModelCatalogVariant>
+): ModelCatalogVariant {
+  return variants.find((variant) => variant.isDefault) ?? variants[0];
+}
+
+function chooseMatchingVariant(
+  requestedParams: readonly ModelParameterValue[],
+  variants: ReadonlyArray<ModelCatalogVariant>
+): ModelCatalogVariant | undefined {
+  const matches = variants.filter((variant) =>
+    paramsContainAll(variant.params, requestedParams)
+  );
+  if (matches.length === 0) return undefined;
+
+  const defaultParams = new Map(
+    defaultVariant(variants).params.map((param) => [param.id, param.value])
+  );
+  const requestedIds = new Set(requestedParams.map((param) => param.id));
+  let best = matches[0];
+  let bestScore = scoreVariant(best.params, defaultParams, requestedIds);
+  for (const match of matches.slice(1)) {
+    const score = scoreVariant(match.params, defaultParams, requestedIds);
+    if (score > bestScore) {
+      best = match;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
+function paramsContainAll(
+  candidateParams: readonly ModelParameterValue[],
+  requestedParams: readonly ModelParameterValue[]
+): boolean {
+  const candidate = new Map(
+    candidateParams.map((param) => [param.id, param.value])
+  );
+  return requestedParams.every(
+    (param) => candidate.get(param.id) === param.value
+  );
+}
+
+function scoreVariant(
+  params: readonly ModelParameterValue[],
+  defaultParams: ReadonlyMap<string, string>,
+  requestedIds: ReadonlySet<string>
+): number {
+  let score = 0;
+  for (const param of params) {
+    if (requestedIds.has(param.id)) continue;
+    if (defaultParams.get(param.id) === param.value) score++;
+  }
+  return score;
+}
+
+function formatVariants(
+  variants: ReadonlyArray<ModelCatalogVariant>
+): string {
+  return variants
+    .map((variant) => {
+      const params = variant.params
+        .map((param) => `${param.id}=${param.value}`)
+        .join(', ');
+      const suffix = variant.isDefault ? ' [default]' : '';
+      return `${variant.displayName}${suffix}: ${params || '(no params)'}`;
+    })
+    .join('\n  ');
+}
+
+function cloneModelSelection(selection: ModelSelection): ModelSelection {
+  const params = selection.params?.map((param) => ({ ...param }));
+  return params && params.length > 0
+    ? { id: selection.id, params }
+    : { id: selection.id };
 }

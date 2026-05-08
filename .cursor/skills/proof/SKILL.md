@@ -29,9 +29,15 @@ You (the parent agent) author the DAG inline using your understanding of the use
 {
   "title": "<short human-readable title for the run>",
   "models": {
-    "HIGH": "gpt-5.3-codex",
+    "HIGH": {
+      "id": "claude-opus-4-7",
+      "params": [{ "id": "effort", "value": "max" }]
+    },
     "MED": "composer-2",
-    "LOW": "auto-low"
+    "LOW": {
+      "id": "gpt-5.4-nano",
+      "params": [{ "id": "reasoning", "value": "low" }]
+    }
   },
   "tasks": [
     {
@@ -49,7 +55,7 @@ Rules:
 - Every `depends_on` entry must reference another task's `id`.
 - No cycles. The runner rejects cyclic DAGs at parse time.
 - `complexity` controls the model the subagent uses (see table below). Pick `HIGH` for novel/complex reasoning, `MED` for typical implementation, `LOW` for mechanical/lookup tasks.
-- Optional top-level `models` can override the default complexity → model map for this DAG.
+- Optional top-level `models` can override the default complexity → model map for this DAG. Values can be either a plain SDK model id string or `{ "id": "...", "params": [{ "id": "...", "value": "..." }] }`.
 - `subtask_prompt` should read like a standalone request — the runner automatically prepends a short summary of upstream task outputs, so you do not need to repeat them.
 - Do **not** put two tasks that write to the same file in the same rank (siblings within a rank run concurrently and would race).
 
@@ -167,7 +173,7 @@ After the runner exits, briefly summarize what completed/failed and re-link the 
 | MED        | `composer-2`      |
 | LOW        | `gpt-5.4-nano`    |
 
-Override any subset inline with top-level DAG `models`, or pass a reusable profile with `--models-file <path>`. Precedence is defaults < DAG `models` < `--models-file`. The Cursor model catalog can vary by account.
+Override any subset inline with top-level DAG `models`, or pass a reusable profile with `--models-file <path>`. Values can be plain SDK model id strings or SDK model selections with `params`. At run time, Proof calls `Cursor.models.list()`, validates ids and param values, and expands partial selections to the closest valid preset variant using the model's default variant for omitted params. Precedence is defaults < DAG `models` < `--models-file`. The Cursor model catalog can vary by account.
 
 ### Discovering valid model ids
 
