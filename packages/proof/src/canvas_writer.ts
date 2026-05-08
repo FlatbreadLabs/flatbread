@@ -10,7 +10,15 @@
 
 import { writeFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import type { Complexity, DAG, TaskKind } from './dag.js';
+import {
+  formatModelSelection,
+  normalizeModelSelection,
+  type Complexity,
+  type DAG,
+  type ModelSelection,
+  type ModelSpec,
+  type TaskKind,
+} from './dag.js';
 
 export type TaskStatus =
   | 'PENDING'
@@ -27,6 +35,7 @@ export interface TaskState {
   subtask_prompt: string;
   status: TaskStatus;
   model: string;
+  modelSelection?: ModelSelection;
   /** `'task'` (default), `'pause'`, or `'oracle'`. Undefined is normalized to `'task'`. */
   kind?: TaskKind;
   /**
@@ -91,25 +100,34 @@ export interface RunState {
 
 export function initialRunState(
   dag: DAG,
-  modelFor: (c: Complexity) => string
+  modelFor: (c: Complexity) => ModelSpec
 ): RunState {
   return {
     title: dag.title,
     startedAt: Date.now(),
-    tasks: dag.tasks.map((t) => ({
-      id: t.id,
-      depends_on: t.depends_on,
-      complexity: t.complexity,
-      subtask_prompt: t.subtask_prompt,
-      status: 'PENDING',
-      model: modelFor(t.complexity),
-      // Normalize undefined kind → 'task' so downstream consumers (canvas
-      // template, runner dispatcher) never have to ?? again.
-      kind: t.kind ?? 'task',
-      // Surface oracle-only fields so the canvas can render the gate's
-      // command / expectation without reading the streamed result body.
-      ...(t.kind === 'oracle' ? { command: t.command, expect: t.expect } : {}),
-    })),
+    tasks: dag.tasks.map((t) => {
+      const modelSelection = normalizeModelSelection(
+        modelFor(t.complexity),
+        `model for task ${t.id}`
+      );
+      return {
+        id: t.id,
+        depends_on: t.depends_on,
+        complexity: t.complexity,
+        subtask_prompt: t.subtask_prompt,
+        status: 'PENDING',
+        model: formatModelSelection(modelSelection),
+        modelSelection,
+        // Normalize undefined kind → 'task' so downstream consumers (canvas
+        // template, runner dispatcher) never have to ?? again.
+        kind: t.kind ?? 'task',
+        // Surface oracle-only fields so the canvas can render the gate's
+        // command / expectation without reading the streamed result body.
+        ...(t.kind === 'oracle'
+          ? { command: t.command, expect: t.expect }
+          : {}),
+      };
+    }),
   };
 }
 

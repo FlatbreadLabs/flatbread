@@ -8,21 +8,33 @@
  */
 
 export {
+  COMPLEXITY_KEYS,
   DEFAULT_MODEL_MAP,
   computeRanks,
+  createCatalogBackedModelResolver,
+  createModelSelectionResolver,
   createModelResolver,
+  formatModelSelection,
   isOracleTask,
   isPauseTask,
+  normalizeModelSelection,
   parseDAG,
+  resolveModelSelectionFromCatalog,
+  validateModelSelection,
   validateModelMap,
 } from './dag.js';
 export type {
   Complexity,
   DAG,
   DAGBudget,
+  ModelCatalogItem,
   ModelMap,
   ModelMapOverride,
+  ModelParameterValue,
+  ModelSelection,
+  ModelSpec,
   RawTask,
+  ResolvedModelMap,
   TaskKind,
 } from './dag.js';
 
