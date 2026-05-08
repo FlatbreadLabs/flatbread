@@ -16,7 +16,7 @@
   </a>
 </p>
 
-Turn flat files in Git into typed, relational content for your TypeScript app—with [GraphQL](https://graphql.org/) and generated types as the default way to query the model today.
+Turn flat files in Git into typed, relational content for your TypeScript app. **[GraphQL](https://graphql.org/)** and codegen are a common **read interface** for that content graph—not the only surface you can build; see [docs/positioning.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/positioning.md).
 
 **Flatbread** is a Git-native relational flat-file content layer for TypeScript apps. Your repo and filesystem are the source of truth; plugins (sources, transformers, and resolvers) extend how content is loaded and shaped.
 
@@ -28,7 +28,7 @@ Turn flat files in Git into typed, relational content for your TypeScript app—
 - Not a general-purpose GraphQL platform or a substitute for a general-purpose database (transactions, granular access control, and high-scale multi-writer workloads are out of scope).
 - Reliable live reload of content while the dev server runs is [not a supported pillar yet](https://github.com/FlatbreadLabs/flatbread/issues/65); expect to restart to pick up file changes.
 
-**GraphQL:** In the default setup, GraphQL is the primary **interface** for reading the content graph—schema generation and codegen are how many apps reach the data, not the definition of the product. More detail: [docs/positioning.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/positioning.md).
+**GraphQL:** In the default toolkit, GraphQL is a common **read interface** for the content graph—schema generation and codegen are how many apps reach the data, not the definition of the product. More detail: [docs/positioning.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/positioning.md).
 
 **Glossary:** Quick definitions for **collection**, **relation**, **ID**, **cardinality**, **validation**, and **query interface** (GraphQL as one read path, not the whole product)—see [docs/glossary.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md).
 
@@ -120,6 +120,8 @@ Now hit your `package.json` and put the keys in the truck:
   "build": "flatbread start -- svelte-kit build",
 },
 ```
+
+The Flatbread CLI runs **`flatbread start`** and, by default, serves GraphQL at **`http://localhost:5057/graphql`**. Pass your framework dev/build command after **`--`** so Flatbread and your app run together. **`flatbread dev` is not a valid subcommand.** Your **`pnpm run dev`** (after you wire scripts like below) is separate from **`next start`**, which is production Next without Flatbread unless you wrap it yourself.
 
 The Flatbread CLI will capture any script you add in after the `--` and appropriately unite them to live in a land of fairies and wonder while they dance into the sunset as you query your brand spankin new GraphQL server however you'd like from within your app.
 
@@ -325,4 +327,4 @@ Accepts a function which takes in field names and transforms them for the GraphQ
 
 # ☀️ Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the release workflow (bumping versions and publishing).
+See [CONTRIBUTING.md](https://github.com/FlatbreadLabs/flatbread/blob/main/CONTRIBUTING.md) for the release workflow (bumping versions and publishing).
