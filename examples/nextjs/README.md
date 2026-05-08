@@ -1,10 +1,10 @@
 # Flatbread Next.js Example with TypeScript Codegen
 
-This example shows **Flatbread** as **relational, Git-tracked content for a TypeScript app**: markdown and YAML under version control are loaded into a typed model; **GraphQL is one read interface** (alongside anything else you build). Next.js uses generated operation types against the Flatbread GraphQL endpoint.
+This example is the repo’s **default first success path**: **relational Git-backed markdown** ( **`Post`** ↔ **`Author`** via `refs`; **`tags`** as string arrays on posts) compiled into a typed shape. **GraphQL plus codegen** are the **read interface baked into this demo**—not Flatbread’s only story; see [`docs/positioning.md`](../../docs/positioning.md).
+
+**Note:** `flatbread.config.js` here also declares **PostCategory**, **OverrideTest**, **YamlAuthor**, etc. for integration tests. Treat those as **secondary**; the onboarding narrative is **posts + authors + tags** on the **`Post`** row.
 
 ## Quick start (from monorepo root)
-
-Flatbread development assumes this **pnpm** workspace. Use one path end-to-end:
 
 1. **Install and build packages** (excluding examples):
 
@@ -13,45 +13,54 @@ Flatbread development assumes this **pnpm** workspace. Use one path end-to-end:
    pnpm build
    ```
 
-2. **Work in this example:**
+2. **Enter this example:**
 
    ```bash
    cd examples/nextjs
    ```
 
-3. **Generate TypeScript types once** (paths and globs come from `flatbread.config.js`; default output is `generated/graphql.ts`):
+3. **Generate TypeScript types once** (paths and globs come from `flatbread.config.js`; output: `generated/graphql.ts`):
 
    ```bash
    pnpm exec flatbread codegen --verbose
    ```
 
-4. **Run Next.js and the Flatbread GraphQL server together** via the CLI (**there is no `flatbread dev` subcommand** — use **`flatbread start`**):
+   Add or edit **`.graphql`** files under `queries/` (or globs in config), then rerun codegen so **`tags`**, **`authors`**, and other fields stay in sync.
+
+4. **Serve the GraphQL read interface alongside Next** (**there is no `flatbread dev`** — use **`flatbread start`**):
 
    - **Default (local HTTPS for Next):** `pnpm dev` — runs `flatbread start --https -- next dev --turbopack`.
    - **Headless / no HTTPS** (e.g. agents, CI): `pnpm exec flatbread start -- next dev --turbopack`.
 
-5. Open **[http://localhost:3000](http://localhost:3000)** for the app. The Flatbread GraphQL HTTP endpoint defaults to **`http://localhost:5057/graphql`** (not the Next port).
+5. Open **[http://localhost:3000](http://localhost:3000)** for the app. Flatbread defaults to **`http://localhost:5057/graphql`** (not the Next port).
 
 ### Scripts in this package
 
-| Script | Purpose |
-|--------|--------|
-| `pnpm dev` | **`flatbread start`** + Next dev (HTTPS). GraphQL on **5057**, Next on **3000**. |
-| `pnpm build` | **`flatbread start`** wrapping **`next build`** so schema/codegen paths resolve during build. |
-| `pnpm start` | **`next start` only** — production Next; does **not** run Flatbread. Use only if you already have GraphQL served elsewhere. |
+| Script           | Purpose                                                                                   |
+|------------------|-------------------------------------------------------------------------------------------|
+| `pnpm dev`       | **`flatbread start`** + Next dev (HTTPS). GraphQL on **5057**, Next on **3000**.          |
+| `pnpm build`     | **`flatbread start`** wrapping **`next build`** so schema/codegen paths resolve during build. |
+| `pnpm start`     | **`next start` only** — production Next; does **not** run Flatbread unless you arrange it. |
 | `pnpm run codegen` | **Watch-only:** `flatbread codegen --watch` — regenerate types when config, content, or documents change. |
 
 ### Watch-only codegen
 
-For iterative work, you can run the watcher in a second terminal (leave it running until you stop it):
+For iterative work, run the watcher in a second terminal:
 
 ```bash
 pnpm run codegen
 ```
 
-## Project structure
+## Content path
 
-Aligned with the App Router layout in this repo:
+Markdown and YAML for this demo live under **`examples/content`**; this package uses a **`content` → `../content`** symlink so config paths stay `content/markdown/...`.
+
+- **Posts:** `examples/content/markdown/posts/` (`tags` in frontmatter → `[String]` on **`Post`** in the schema.)
+- **Authors:** `examples/content/markdown/authors/` (referenced by id from **`Post`** **`authors`**.)
+
+Canonical layout is described alongside commands in the [root README quickstart](https://github.com/FlatbreadLabs/flatbread/blob/main/README.md#quickstart-posts-authors-and-tags).
+
+## Project structure
 
 - `app/` — routes and components (`page.tsx`, `post/[id]/`, etc.)
 - `lib/graphql.ts` — GraphQL client helpers (default endpoint `http://localhost:5057/graphql`)

@@ -10,7 +10,11 @@ See also: [Flatbread positioning](./positioning.md); [PMF decision rubric](./pmf
 
 ### Cardinality
 
-How many related items a field connects—whether a relation resolves to **one** related entry or **many** (for example, a single author versus a list of tags). Cardinality shapes how the graph is exposed to your app (including generated GraphQL fields); it does **not** imply a SQL-style database engine.
+How many related items a field connects—whether a relation resolves to **one** related entry or **many** (for example, a single author versus a list of tag strings on a post). Cardinality shapes how the graph is exposed to your app (including generated GraphQL fields); it does **not** imply a SQL-style database engine.
+
+### Tag (facet) vs `Tag` collection
+
+A **facet** is metadata stored on a record (often a **YAML list of strings** such as `tags: [a, b]` on a post). It becomes a **scalar list** in the read interface and is **not** the same as **`refs`** resolving to another collection. A **`Tag` collection** means one file per tag (or equivalent) and **`refs`** from **`Post`** → **`Tag`** so tag entries are **normalized records** in the graph—use that when tags need shared descriptions, stable ids, or relational edges of their own.
 
 ### Collection
 
