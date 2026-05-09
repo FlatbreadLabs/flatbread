@@ -18,6 +18,7 @@ export {
   isPauseTask,
   normalizeModelSelection,
   parseDAG,
+  resolveConvergenceLoops,
   resolveModelSelectionFromCatalog,
   validateModelSelection,
   validateModelMap,
@@ -26,6 +27,9 @@ export type {
   Complexity,
   DAG,
   DAGBudget,
+  DAGConvergenceLoop,
+  LoopReexecute,
+  LoopStopWhen,
   ModelCatalogItem,
   ModelMap,
   ModelMapOverride,
@@ -33,6 +37,7 @@ export type {
   ModelSelection,
   ModelSpec,
   RawTask,
+  ResolvedConvergenceLoop,
   ResolvedModelMap,
   TaskKind,
 } from './dag.js';
@@ -43,6 +48,7 @@ export type { RunState, TaskState, TaskStatus } from './canvas_writer.js';
 export {
   buildConvergenceContext,
   extractConvergenceFindings,
+  resolveLoopReexecuteIds,
   transitiveAncestors,
 } from './converge_loop.js';
 export type { ConvergenceFindings } from './converge_loop.js';
