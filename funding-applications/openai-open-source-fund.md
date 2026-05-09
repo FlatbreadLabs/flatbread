@@ -62,13 +62,15 @@ https://github.com/FlatbreadLabs/flatbread — public, MIT, pnpm 10.33.0 monorep
 
 ### How would you use API credits for your project?
 
-Credits go straight into Codex-driven maintainer automation and the Effort Graph proof loop — not into open-ended R&D. Itemised below; full budget table in **Funding ask**.
+Credits go straight into Codex-driven maintainer automation and three audacious bets stacked on top of the Effort Graph — not into open-ended R&D. Front half (~2 bullets) compresses foundations + Effort Graph MVP; back half (~5 bullets) funds workflow presets, HITL ergonomics around `@flatbread/proof` DAGs, and a continuous evals/research loop. Full budget table in **Funding ask**.
 
-1. **Codex-as-PR-reviewer on `FlatbreadLabs/flatbread`.** Wire Codex CLI into `pipeline.yml` so every PR gets: typed-config diff review, schema-impact summary, and an Effort/Plan link suggestion. Replaces ~6 hours/week of solo triage.
-2. **Codex-as-release-engineer.** Automate changelog generation, version bumping (`scripts/bumpVersions.ts`), and pre-publish verification (`pnpm verify`) so package releases stop being a context-switch tax.
-3. **Effort Graph evals harness.** Run Codex against synthetic Effort/Plan/Decision graphs to measure: reference-integrity catch rate, ID-normalization regressions, and watch-mode latency. Credits fund the eval calls and the regression replays.
-4. **`@flatbread/proof` self-hosted DAGs for roadmap delivery.** Each near-term PMF item (typed config, ID normalization, relation validation, watch mode) is shipped as a Proof DAG of Codex subagents under maintainer review. Credits fund the subagent calls.
-5. **Docs + cookbook generation.** Codex turns the existing PMF audit and Agent Artifact Opportunity doc into a navigable docs site with worked examples (`posts → authors → tags`, Effort Graph quickstart, MCP tool reference).
+1. **Codex-driven foundation toil + Effort Graph MVP (Phase 1 + 2).** One umbrella PR train covers typed `defineConfig`, ID normalization, relation validation, and watch-mode parity, then ships the Conventions preset, Append API, and `flatbread-mcp` server. Codex-as-PR-reviewer wired into `pipeline.yml` (typed-config diff review, schema-impact summary, Effort/Plan link suggestion) and Codex-as-release-engineer (changelog, `scripts/bumpVersions.ts`, `pnpm verify`) absorb the per-PR and per-release calls. ~2 months of dense, bounded credit spend; everything downstream depends on it landing on time.
+2. **`@flatbread/proof` self-hosted DAGs as the roadmap delivery vehicle.** Every Phase 3/4 deliverable ships as a Proof DAG of Codex subagents under maintainer review, writing back into Effort/Plan/Decision/Session/Artifact/Run. Credits fund subagent calls and golden-trace generation; the same DAG runs become Phase-4 eval fixtures, so the spend compounds.
+3. **Workflow preset catalog for complex projects (Phase 3 — largest single line).** Six named, parameterized DAGs over the Effort Graph: `schema-cutover`, `release-train`, `research-compendium`, `docs-site-refactor`, `api-version-cutover`, `design-system-token-rotation`. Sized at ~10 build-out runs × ~12 nodes × ~25k input tokens per preset; Decision/Plan default to GPT-5-class, Artifact/Session default to Codex-mini. Drives **use-case coverage**; a seventh slot is held for a community-contributed preset by month 8.
+4. **HITL ergonomics around `@flatbread/proof` DAGs (Phase 4 / bet B).** Approval API with first-class `needsApproval` boundaries, Claude-Code-style plan-review gate against the live Effort Graph, and LangGraph-style durable pause/resume keyed to a `thread_id` Session checkpoint. Credits fund per-node approval evals and the resume-correctness fixture suite that proves a paused DAG resumes days later without re-firing tool calls.
+5. **Continuous-improvement evals + research loop — fixture growth (Phase 4 / bet C, part 1).** `fixture-promote` CLI turns any failing Proof trace into a versioned eval fixture; nightly sweeps replay the catalog against the Effort Graph it was authored from. Sized at ~200 promoted fixtures × ~30 nights × ~10k input tokens — the line item that makes the catalog self-improving rather than static.
+6. **PR-time regression replay + public Inspect-View dashboard (bet C, part 2).** GitHub Action replays the eval catalog on every PR — failures block merge or open a Decision for HITL override. A public dashboard publishes reference-integrity catch rate, decision drift, and cross-session recall per release; eval-driven preset retuning feeds failure mining back into per-node model selection, retry budgets, and HITL thresholds.
+7. **Docs / cookbook / contributor sponsorship.** One worked example per preset, an MCP cookbook against `flatbread-mcp`, and credit-share for the first two outside contributors landing a preset or a fixture pack. Modest line, real **community adoption** lever — the catalog is only credible once non-maintainers ship into it.
 
 ### Anything else you'd like us to know?
 
@@ -76,9 +78,9 @@ Three things.
 
 **One — we are betting on Codex specifically, not "AI in general."** The Effort Graph’s value proposition is that durable typed artifacts make agent harnesses cheaper and more accurate over multi-week efforts. Codex CLI is the harness most aligned with that thesis (PR-shaped, terminal-native, rolling out into maintainer workflows). A grant here lets Flatbread be the reference relational substrate for Codex on real projects.
 
-**Two — we already shipped the dog-food.** `@flatbread/proof` is in the public repo, used internally to plan and execute work on Flatbread itself, and runs against the Cursor SDK today. It is straightforward to add a Codex adapter; that is on the funded roadmap below.
+**Two — the grant unlocks three audacious bets stacked on top of the dog-food.** `@flatbread/proof` is already in the public repo, used internally to plan and execute work on Flatbread itself, and runs against the Cursor SDK today; the Codex adapter is on the funded roadmap. After the foundation toil and Effort Graph MVP land in Phases 1–2, the credits then fund (a) **workflow presets for complex projects** — six parameterized DAGs (`schema-cutover`, `release-train`, `research-compendium`, `docs-site-refactor`, `api-version-cutover`, `design-system-token-rotation`) over `@flatbread/proof` and the Effort Graph; (b) **HITL ergonomics** around those DAGs (approval API, Claude-Code-style plan-review gate, LangGraph-style durable pause/resume keyed to `thread_id` Session checkpoints); and (c) a **continuous evals + research loop** (`fixture-promote` CLI, PR-time regression-replay GitHub Action, public Inspect-View dashboard, eval-driven preset retuning). These are the bets the credits buy that maintainer-toil-only would not.
 
-**Three — the public story writes itself.** Maintainer (Tony Ketcham) shipping a typed git-native memory layer that Codex uses to review its own PRs is the "teams using Codex to power GitHub PR workflows" archetype OpenAI has already amplified. Public progress channels are listed in **How we'll publicly share progress**.
+**Three — the public story writes itself: use-case coverage, community adoption, workflow capture.** Each of the six shipped presets is a beachhead for a real complex-project archetype (**use-case coverage**). A seventh community-contributed preset slot, the MCP cookbook, and credit-share for the first two outside contributors landing a preset or fixture pack seed **community adoption**. And every Proof DAG run produces a typed Effort/Plan/Decision/Session/Artifact/Run trail the next run reads — **workflow capture** as a first-class artifact rather than a side-effect. Maintainer (Tony Ketcham) shipping a typed git-native memory layer that Codex uses to review its own PRs is the "teams using Codex to power GitHub PR workflows" archetype OpenAI has already amplified. Public progress channels are listed in **How we'll publicly share progress**.
 
 > NOTE TO REVIEWER: the live form may include an OpenAI Org ID field; if so, paste it here. The playbook flagged this as UNVERIFIED.
 
@@ -88,19 +90,19 @@ Three things.
 
 The published award is **up to $25,000 in OpenAI API credits**, plus 6 months of ChatGPT Pro with Codex and conditional Codex Security access. We are requesting the full **$25,000 in API credits** plus the bundled ChatGPT Pro / Codex Security seats for the maintainer.
 
-> NOTE TO REVIEWER: the playbook found no separate cash component for this fund. If a cash line is offered on the live form, request an additional **$15,000 USD** for maintainer time on the Effort Graph MVP and cite the budget table below. Otherwise leave cash at $0 and absorb maintainer time as in-kind.
+> NOTE TO REVIEWER: the playbook found no separate cash component for this fund. If a cash line is offered on the live form, request an additional **$15,000 USD** for maintainer time on the workflow presets catalog and HITL ergonomics surfaces (Phase 3 + 4 — the audacious bets the credits alone can't fully cover) and cite the budget table below. Otherwise leave cash at $0 and absorb maintainer time as in-kind.
 
 ### Budget table (12 months)
 
-| Line item                                  | Allocation                  | Rationale                                                                                |
-| ------------------------------------------ | --------------------------- | ---------------------------------------------------------------------------------------- |
-| Maintainer time (Tony Ketcham)             | $0 cash / in-kind           | Absorbed unless a cash line is offered; tracked as Effort records in the graph.          |
-| MCP server build-out (`flatbread-mcp`)     | ~$6,000 in credits          | Codex-driven scaffolding, tool-schema generation, evals against Effort Graph fixtures.   |
-| Evals harness (relation integrity, IDs)    | ~$5,000 in credits          | Synthetic graphs + regression replays; Codex grades diffs against typed schemas.         |
-| Codex PR-review + release automation       | ~$5,000 in credits          | Per-PR review calls, weekly release runs, triage summarization on issue backlog.         |
-| Docs site + cookbook generation            | ~$4,000 in credits          | Codex generates worked examples, API references, migration notes from existing docs.    |
-| Contributor sponsorship (paid via OSS Pay) | ~$5,000 in credits + ChatGPT Pro seats for top 2 outside contributors | Lowers the bus-factor concern and rewards real PR landings. |
-| **Total**                                  | **~$25,000 in API credits** |                                                                                          |
+| Line item                                          | Allocation                  | Rationale                                                                                                              |
+| -------------------------------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Foundation Codex toil (compressed)                 | $2,500 in credits           | Typed config, ID normalization, relation validation, watch mode — 2 months of dense PR review/codegen.                  |
+| Effort Graph + `flatbread-mcp` server              | $3,000 in credits           | Conventions preset, append API, MCP tool scaffolding, fixture-backed integration tests.                                |
+| Workflow preset DAGs (Phase 3 — largest line)      | $8,000 in credits           | Six presets × ~10 build-out DAG runs + golden-trace generation. The bet that drives use-case coverage.                  |
+| HITL ergonomics surfaces                           | $3,500 in credits           | Approval API, plan-review gate, durable pause/resume; UI scaffolding + resume-correctness fixtures.                    |
+| Evals + continuous-improvement loop                | $5,000 in credits           | Nightly sweeps, fixture-promotion CLI, PR-time regression replay, public dashboard, eval-driven preset retuning.       |
+| Docs / cookbook / contributor sponsorship          | $3,000 in credits + ChatGPT Pro seats for top 2 outside contributors | Worked examples per preset, MCP cookbook, credit-share for the first two outside contributors landing a preset or fixture pack. |
+| **Total**                                          | **$25,000 in API credits**  |                                                                                                                        |
 
 > NOTE TO REVIEWER: confirm whether the fund permits redistributing ChatGPT Pro / Codex seats to non-maintainer contributors before promising sponsorship seats publicly.
 
@@ -108,31 +110,54 @@ The published award is **up to $25,000 in OpenAI API credits**, plus 6 months of
 
 ## 12-month milestone roadmap
 
-Aligned with the PMF audit near-term list and the Effort Graph MVP from `flatbread-agent-artifact-opportunity.md` (Posture C — recommended).
+Four phases, not quarters. Front half (months 1–4) compresses foundations + Effort Graph MVP; back half (months 5–12) ships three compounding bets: **workflow presets → HITL ergonomics → continuous-improvement evals loop**.
 
-**Q1 (months 1–3) — Foundations the agent layer needs anyway.**
+### Phase 1 (months 1–2) — Foundations, compressed
 
-- Typed config: kill loose `any` surfaces in `packages/config`; generate config types from a single source.
-- ID normalization: stable, comparable IDs across `core`, GraphQL args, and generated TS.
-- First Codex-as-PR-reviewer integration landed in `pipeline.yml`.
+Front-loaded onto Codex/Claude toil; human review only. Four items ship under one umbrella PR train.
 
-**Q2 (months 4–6) — Integrity and dev loop.**
+- **Typed `defineConfig` with end-to-end inference.** Codex-as-PR-reviewer drafts type-erasure removals in `packages/config`; maintainer reviews/merges.
+- **ID normalization across `core`, GraphQL args, generated TS.** Claude Code Skill scaffolds, Codex shards per-collection PRs, maintainer adjudicates edges.
+- **Relation validation with diagnostics.** Stub failing-fixture promotion (Phase 4) so future broken refs land as cases; Codex drafts diagnostic copy.
+- **Watch-mode parity with build mode.** `@flatbread/proof` reuses watch events; Codex drafts the watcher refactor, maintainer reviews concurrency.
 
-- Relation validation with diagnostics: missing targets, duplicate IDs, cardinality violations fail at load.
-- Unified watch mode: edit `.md`/`.yaml`, schema rebuilds, types regenerate, examples hot-update.
-- `@flatbread/proof` Codex adapter alongside the Cursor SDK runner.
+### Phase 2 (months 3–4) — Effort Graph MVP, compressed
 
-**Q3 (months 7–9) — Effort Graph MVP.**
+Three deliverables, one quickstart ("Effort Graph for a real PR").
 
-- Conventions preset: Effort, Plan, Decision, Session, Artifact, Run as first-class collections.
-- Append API: safe, schema-validated writes from harnesses (no CMS, no UI).
-- `flatbread-mcp` server: read + append tools exposed over MCP for Codex / Claude Code / Cursor.
+- **Conventions preset.** Effort, Plan, Decision, Session, Artifact, Run as first-class collections with reference-integrity checks; codegen produces the typed read API.
+- **Append API.** Schema-validated writes from harnesses, no CMS, no UI. The same validators that catch broken refs at load now reject malformed appends.
+- **`flatbread-mcp` server.** Read + append tools exposed over MCP for Codex, Claude Code, and Cursor against the same Effort Graph schema.
 
-**Q4 (months 10–12) — Adoption and evals.**
+### Phase 3 (months 5–8) — Audacious bet A: Workflow Presets for Complex Projects
 
-- Public eval harness comparing harness behaviour with vs without an Effort Graph (token spend, decision drift, cross-session recall).
-- Docs site live; one canonical "posts → authors → tags" quickstart and one "Effort Graph for a real PR" walkthrough.
-- v1.0 release of `flatbread` and `@flatbread/proof`.
+Six shipped presets, each a parameterized DAG composed with the Effort Graph and run through `@flatbread/proof`. Decision/Plan default to Opus / GPT-5-class; Artifact/Session default to Sonnet/Haiku/Codex-mini; all write back into Effort/Plan/Decision/Session/Artifact/Run.
+
+- **`schema-cutover`** — old + new schema, codegen target. Decision → Plan → codegen + shard Artifacts → test Runs → HITL pre-merge.
+- **`release-train`** — package graph + semver. Decision → changelog Plan → per-package Artifact → canary Sessions → HITL pre-publish.
+- **`research-compendium`** — topic + sources. Outline Decision → section Plans → draft Sessions → cite-check Run → HITL.
+- **`docs-site-refactor`** — IA tree + redirect map. Decision → page-level Plan → MDX Artifacts → broken-link Run → HITL.
+- **`api-version-cutover`** — facade + traffic-shift schedule. Decision → migration Plan → adapter Artifacts → contract-test Run → HITL canary.
+- **`design-system-token-rotation`** — token map + visual-regression budget. Decision → token Plan → component codemod Artifacts → snapshot Run → HITL.
+
+A seventh slot is reserved for a community-contributed preset by month 8 to seed the contributor pipeline.
+
+### Phase 4 (months 9–12) — Audacious bets B + C in parallel
+
+Run B and C overlapping: each preset run produces both an HITL surface and an eval fixture, so they ship cheapest together.
+
+**B. HITL ergonomics around `@flatbread/proof` + the Effort Graph**
+
+- **Approval API.** First-class `needsApproval` boundary on every DAG node, surfaced through the MCP server and a thin web review pane.
+- **Plan-review gate.** Mirrors Claude Code plan mode: Decision/Plan nodes pause, surface a diff-able markdown plan against the live Effort Graph, proceed only once a human signs the Decision.
+- **Durable pause/resume.** LangGraph-style `interrupt()` keyed to a `thread_id` checkpoint, persisted as a Session record so a paused DAG resumes days later without re-firing tool calls.
+
+**C. Continuous-improvement evals + research loop**
+
+- **`fixture-promote` CLI.** Promotes any failing Proof DAG trace into a versioned eval fixture.
+- **PR-time regression-replay GitHub Action.** Replays the catalog against the PR; failures block merge or open a Decision for HITL override.
+- **Public eval dashboard.** Inspect-View-style; reference-integrity catch rate, decision drift, cross-session recall — published from the Effort Graph the evals run against.
+- **Eval-driven preset tuning.** Failure mining feeds back into preset DAG defaults (per-node model selection, retry budgets, HITL thresholds) — the catalog becomes self-improving.
 
 ---
 
@@ -142,13 +167,12 @@ Aligned with the PMF audit near-term list and the Effort Graph MVP from `flatbre
 - **Per-release notes** generated by the funded Codex release-engineer pipeline; CHANGELOG entries link back to the Effort that produced them.
 - **One write-up per quarter** on the maintainer’s blog: what Codex shipped vs what the human shipped, with a real Effort Graph from the repo as the running example. OpenAI is welcome to amplify or reuse any of it.
 - **Eval results published** in `funding-research/` and the docs site — including failure cases — so adopters can audit the integrity claims rather than trust the marketing.
+- **Public evals dashboard, refreshed quarterly** — Inspect-View-style regression results across the growing catalog of product-case fixtures (`schema-cutover`, `release-train`, `research-compendium`, `docs-site-refactor`, `api-version-cutover`, `design-system-token-rotation`, plus community-contributed presets), so the catalog's failure-and-recovery curve is visible to adopters and amplifiers in one place.
 
 ---
 
 ## Why now / why us
 
-The agent-artifact layer in 2026 has dense conventions (`AGENTS.md`, `SKILL.md`, `.handoff/`, `.GCC/`, vault MCPs) and almost no typed relational schema across them. Search and backlinks exist; reference integrity, stable cross-tool IDs, and predicate-rich queries do not. Flatbread already models collections, refs, and Mongo-style filters over markdown/YAML in git — the exact primitives the missing layer needs (`flatbread-agent-artifact-opportunity.md`, §5).
+The agent-artifact layer in 2026 has dense conventions (`AGENTS.md`, `SKILL.md`, `.handoff/`, `.GCC/`, vault MCPs) and almost no typed relational schema across them. Flatbread already models collections, refs, and Mongo-style filters over markdown/YAML in git, and `@flatbread/proof` already runs DAGs of subagents against that graph — shipped in this same monorepo (`packages/proof`), used internally to plan and execute work on Flatbread itself. The missing unlock is not another harness or memory format — it is **workflow capture**: durable, parameterized presets for the specific shapes of complex work (schema cutovers, release trains, docs refactors, API cutovers, token rotations, research compendiums) that a coding agent picks up, hydrates from an Effort Graph, and resumes across sessions. The framing is the public Effort Graph opportunity memo (`flatbread-agent-artifact-opportunity.md`, §5, Posture C), built on the PMF-audit pivot.
 
-We are credible on execution, not just thesis. `@flatbread/proof` is a working Cursor-SDK DAG runner shipped in this same monorepo (`packages/proof`); it decomposes work into subagents, runs them in topological order, and writes a live canvas — Flatbread already eats its own dog food on agentic workflows. The maintainer (Tony Ketcham) authors the packages, runs the releases, and wrote both the PMF audit and the Effort Graph opportunity memo. The roadmap above is not aspiration; the near-term items are already on the public PMF audit and the proof package is already on npm.
-
-What an OpenAI Open Source Fund grant unlocks is **time compression**: Codex doing the maintainer toil (PR review, releases, eval grading, docs) so the human can ship the Effort Graph MVP and the MCP server in 12 months instead of 24. That is the bet — typed git-native memory for Codex-driven work, written by a maintainer who is already doing it in public.
+Six named presets with HITL gates and a self-improving eval loop drive the three things this project most needs: **use-case coverage** (each preset is a beachhead for a real complex-project archetype), **community adoption** (contributors land their own presets and fixtures once the catalog is open), and **workflow capture** itself (every Proof DAG run is a typed Effort/Plan/Decision/Session/Artifact/Run trail the next run reads). A solo MIT maintainer — Tony Ketcham, who authors the packages, runs the releases, and wrote both the PMF audit and the opportunity memo — can ship this in twelve months only because Codex does the foundation toil up front and the eval loop tunes presets after. Funded agent toil turns a 24-month roadmap into a 12-month one; that is the bet, written by a maintainer who is already doing it in public.

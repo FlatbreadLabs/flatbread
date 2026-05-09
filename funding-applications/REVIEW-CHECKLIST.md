@@ -4,6 +4,17 @@ Unified checklist for `openai-open-source-fund.md` and `claude-for-oss-brief.md`
 
 ---
 
+## Revision summary — roadmap compression + audacious bets
+
+- **Foundation window (months 1–4):** Both drafts compress typed config, ID normalization, relation validation, watch-mode parity, and the Effort Graph MVP (Conventions preset, Append API, `flatbread-mcp`) into Phases 1–2 — no quarter-by-quarter spread; the back half is free for higher-risk deliverables.
+- **Audacious bets (months 5–12):** **A** — six named workflow presets + 7th community slot; **B** — HITL ergonomics (`needsApproval`, plan-review gate, LangGraph-style pause/resume on `thread_id`); **C** — continuous evals (`fixture-promote`, PR regression replay, public Inspect-View-style dashboard, eval-driven preset retuning). OpenAI funds these primarily with API credits; Claude frames them as Max-seat + optional API workloads on `@flatbread/proof`.
+- **Budget (OpenAI):** Rebalanced toward **Phase 3 presets ($8k)**, **HITL ($3.5k)**, and **evals loop ($5k)**; foundation and Effort Graph + MCP lines are deliberately smaller vs the old shape. Cash NOTE (if offered) targets presets + HITL surfaces.
+- **Claude token projection:** Raised to ~**80–160M input / ~16–32M output** tokens/month (~**2–3×** prior estimate), with arithmetic tied to continuous preset DAGs + nightly fixture replay — signals continuous harness cost, not ad-hoc IDE use.
+- **Explicit narrative wedge:** Both drafts now name **use-case coverage**, **community adoption**, and **workflow capture** as the public payoff; OpenAI anchors **Codex** as the harness bet; Claude keeps **MCP neutrality + Claude Code / HITL / evals** alignment.
+- **Cross-draft alignment:** Same **four-phase roadmap**, identical **six preset names** (+ community slot), shared **Bet A / B / C** vocabulary — reviewers can diff programs without conflicting technical claims.
+
+---
+
 ## 1. Acceptance-likelihood self-assessment
 
 Scores are **1–5** (1 = weak, 5 = strong). Interpret as an internal sanity check, not a prediction.
@@ -12,69 +23,69 @@ Scores are **1–5** (1 = weak, 5 = strong). Interpret as an internal sanity che
 
 | Dimension | Score | Notes |
 |-----------|-------|--------|
-| Clarity | 4 | Structure mirrors the form; thesis → use of credits → budget → roadmap → public commitment reads linearly. Some density in the opening “brief description” may fatigue a skimmer. |
-| Technical specificity | 5 | Named packages, paths (`packages/proof`), CI file, concrete credit line items, quarterly milestones with verifiable deliverables. |
-| Funder-fit | 5 | Explicit Codex CLI / PR / release automation / dog-food `@flatbread/proof` loop matches what the program is positioned to amplify. |
-| Evidence of traction | 3–4 | Strong *technical* artifact (`@flatbread/proof`) and internal process proof; weaker on classic signals (stars, downloads, adopters named). Co-maintainer caveat is flagged honestly — good ethics, slight risk if read as solo bus factor. |
-| Maintainer credibility | 4 | Clear role attribution; npm/package ownership cited; avoids anonymous “we.” LinkedIn/GitHub placeholders still sap completeness until filled. |
-| Ask rationale | 5 | Credits map to enumerated workflows; budget table totals the published cap; optional cash fork is disciplined. |
+| Clarity | 3–4 | Form order is intact; audacious sections are **information-dense** (7 credit bullets + full Phase 3/4 text). Skimmers may miss the forest — an exec summary sentence at the top of “How would you use credits” would help. |
+| Technical specificity | **5** | **Raised:** Six presets with sizing math (~nodes × runs × tokens), HITL and eval sub-bullets, budget lines tied to Phase 3/4. Reviewers get concrete hooks for due diligence. |
+| Funder-fit | 5 | Codex PR/release automation, dog-food `@flatbread/proof`, “betting on Codex specifically” — tightly on-message for a Codex-oriented fund. |
+| Evidence of traction | **2–3** | **Due-diligence cost raised:** Same strong engineering proof, but **scope vs solo maintainer** is starker (preset catalog + HITL product + public evals). Reviewers may ask “who ships this if Tony is unavailable?” — co-maintainer honesty is good; **mitigation** (phased cuts, community slot) is implied but not spelled as risk table. |
+| Maintainer credibility | 4 | PMF audit + opportunity memo + shipped `proof` still land; placeholders (LinkedIn, exact handle) unchanged. |
+| Ask rationale | **5** | **Raised:** Six-row budget maps dollars to Bets A/B/C; optional cash NOTE points at the audacious surface area. |
 
-**Overall verdict:** The OpenAI draft is **submission-ready in substance** once identity/org fields are verified. Its main vulnerability is reliance on narrative traction (memos + shipped proof) rather than community scale; compensating angles — Codex-shaped automation and a credible 12‑month throughput plan — are well aligned with the likely reviewer mental model.
+**Overall verdict:** **Stronger on specificity and ask–roadmap alignment** than the pre-revision draft; **main new risk is ambition density** (reviewer asks “is this one year for one person?”). Worth one explicit sentence on **sequencing / minimum viable catalog** if a funder pushes back.
 
 ### Claude for Open Source (`claude-for-oss-brief.md`)
 
 | Dimension | Score | Notes |
 |-----------|-------|--------|
-| Clarity | 4 | Sales-brief shape is appropriate; eligibility table helps a human reviewer triage quickly. Token math is dense — may need a one-line “bottom line” up front. |
-| Technical specificity | 4–5 | Proof package, MCP/eval harness, provider plan, and fixture-scale assumptions are concrete. Roadmap item 4 vs OpenAI’s `flatbread-mcp` naming should be reconciled (see §4). |
-| Funder-fit | 4–5 | MCP + Claude Code + Skills + “neutral plumbing” tracks Anthropic messaging; Impact track framing hedges star/download gaps responsibly. |
-| Evidence of traction | 3–4 | Same profile as OpenAI: strong engineering evidence, lighter on ecosystem metrics. “Recent activity” leans on audit dating — ensure repo activity actually supports that claim at submit time. |
-| Maintainer credibility | 4 | Consistent with OpenAI draft; “sole maintainer” is explicit — double-edged for funders sensitive to sustainability. |
-| Ask rationale | 3–4 | Max seat ask is clear; **API credits** are positioned as valuable but flagged UNVERIFIED — if credits are out of scope, the brief should still stand on the seat value alone (tighten that branch). |
+| Clarity | 4 | Brief length is capped; four phases scan well. Token paragraph remains the heaviest block — a one-line “request: Max + (if eligible) API for harness” up front still helps. |
+| Technical specificity | **5** | **Raised:** Phase 3 names all six presets; Phase 4 mirrors OpenAI’s HITL + eval machinery; public commitment adds dashboard + preset gallery. |
+| Funder-fit | **4–5** | MCP, Skills, HITL (`needsApproval`, plan mode), Inspect / evals-as-research — explicit bridge to Anthropic positioning. |
+| Evidence of traction | **2–3** | Same as OpenAI: engineering story > ecosystem scale. **Audacious scope** increases “solo bus factor” salience here too. |
+| Maintainer credibility | 4 | Consistent sole-maintainer framing; “up to 2 seats if co-maintainer” is still a hedge funders will notice. |
+| Ask rationale | **3** | Max seat is clear. **Due-diligence cost raised:** High token projection + “continuous eval harness” **depends on whether API credits are in-program**; if not, brief must not read as promising unfunded load. |
 
-**Overall verdict:** The Claude brief is **strong on fit and technical story** but **more sensitive to program mechanics** (single grant shape, form fields, eligibility wording). Tighten the ask when API credits are not in play, resolve the hard timeline sentence against live program terms, and align MCP package naming with the OpenAI draft to avoid “two different products” confusion.
+**Overall verdict:** **Fit and technical alignment improved**; **program-mechanics risk** (seat-only vs seat+API, form fields) and **numeric credibility** of token bounds are the top reviewer questions. Confirming **API eligibility for an automated eval loop** is now **higher priority** than generic “credits mentioned.”
 
 ---
 
 ## 2. Open UNVERIFIED items the user MUST resolve before submission
 
-Consolidated from both files and cross-cutting checks:
+Consolidated from both files and cross-cutting checks. **Removed** items that the revision pass already fixed in draft text (e.g. Q1–Q4 vs four-phase misalignment, Claude’s old hard end-date wording).
 
 - **LinkedIn:** Canonical URL for Tony Ketcham (OpenAI form).
-- **Primary GitHub handle:** Confirm the account with **write/owner** access on `FlatbreadLabs` (OpenAI lists `toeknee-FlatbreadLabs`; Claude references `package.json` — ensure they match reality and the form).
-- **Email:** Confirm `ketcham.dev@gmail.com` is the address you want on file vs any GitHub noreply preference (OpenAI note).
+- **Primary GitHub handle:** Confirm the account with **write/owner** access on `FlatbreadLabs` (OpenAI lists `toeknee-FlatbreadLabs`; align with Claude / `package.json` reality).
+- **Email:** Confirm `ketcham.dev@gmail.com` vs GitHub noreply preference (OpenAI note).
 - **OpenAI Org ID:** Whether the live form includes this field; paste if required (OpenAI).
-- **Cash component:** Whether OpenAI’s live form offers cash in addition to credits; if yes, whether to add the **$15,000** maintainer-time line (OpenAI).
-- **Seat redistribution:** Whether ChatGPT Pro / Codex seats may be offered to **non-maintainer** contributors before committing the “top 2 contributors” line (OpenAI budget).
-- **Co-maintainers:** Final honest list (sole vs multiple) for OpenAI; aligns with Claude’s “1 seat, up to 2 if co-maintainer lands.”
-- **Claude program shape:** Confirm whether the offer is **only** a 6‑month Max seat or also **separate API credits** (Claude).
-- **Claude eligibility language:** Official rules on OSI license, commercial use, and star/download thresholds — playbook items were inferred; verify against current Anthropic copy (Claude).
-- **Claude intake form fields:** Map the brief’s “Form responses” section to the **actual** contact-sales form (Claude).
-- **Claude timeline cap:** The brief ties an end boundary to a specific calendar date — verify against the live offer’s grant window and remove or rephrase if wrong (Claude).
-- **Budget arithmetic / cap rules:** Confirm OpenAI allows the **stated split** (e.g., contributor sponsorship line mixing credits + seats) under program terms.
-- **Repo activity at submit time:** Both drafts imply recent releases/CI/commits — sanity-check GitHub/npm so claims stay true on the submission clock.
+- **Cash component:** Whether OpenAI’s live form offers cash; if yes, whether to use the **$15,000** maintainer-time line tied to Phase 3 + 4 (OpenAI).
+- **Seat redistribution:** Whether ChatGPT Pro / Codex seats may go to **non-maintainers** before promising “top 2 contributors” (OpenAI budget row).
+- **Co-maintainers:** Final honest list (sole vs multiple) for OpenAI; must match Claude’s “1 seat, up to 2 if co-maintainer lands.”
+- **Claude program shape — Max vs API (expanded):** Confirm whether the offer is **only** a 6‑month Max seat or also **separate API credits**. **New:** Confirm whether credits (if any) may be applied to **automated / CI-driven eval replay and preset DAG harnesses**, not merely interactive IDE sessions — the revised brief predicates meaningful value on continuous usage.
+- **Claude eligibility language:** Official rules on OSI license, commercial use, and star/download thresholds — verify against current Anthropic copy (Claude).
+- **Claude intake form fields:** Map the brief’s “Form responses” to the **actual** contact-sales form (Claude).
+- **Budget cap / mixing rules (OpenAI):** Confirm the program allows the **six-line credit split** and any **credits + seat** wording in the docs/contributors row under published terms.
+- **Preset / eval sizing truth:** Sanity-check that **node counts, run counts, and fixture-count assumptions** behind credit and token arithmetic are directionally defensible if a reviewer asks for a spreadsheet (both drafts).
 
 ---
 
 ## 3. Suggested edits to strengthen each draft
 
+_Line-level suggestions aimed at new audacious-bet content._
+
 ### `openai-open-source-fund.md`
 
-- **`Brief description of the project` (≈L44–50):** Lead with **one sentence** on problem + Effort Graph, then the README verbatim quote. Reduces burying the pivot below stylistic flourish.
-- **`Which open source project` (≈L42):** Optionally add **one npm download or release cadence fact** if you have a truthful number — starves the “traction” objection without fluff.
-- **`How would you use API credits` (≈L63–71):** Add a **single closing sentence** estimating relative credit burn (e.g., PR automation vs eval harness vs proof DAGs) so reviewers see prioritization under a $25k cap.
-- **`Contributor sponsorship` row (budget table ≈L102):** Until seat redistribution is confirmed, soften to **“if permitted”** in the visible submission text or move seats to an internal appendix — the reviewer note alone may not propagate to the pasted form fields.
-- **`Anything else` (≈L73–80):** The “Codex adapter is straightforward” line could read as hand-wavy — add **half a sentence** on interface surface (same DAG graph, swap provider/SDK) if accurate.
-- **§5 citation (≈L150):** Replace or supplement `§5` with a **heading string** (`README` / doc title) so copy-paste into a plain-text form doesn’t lose meaning.
+- **`How would you use API credits` (seven bullets):** After bullet 7, add **one sentence** stating **credit priority order under stress** (e.g. presets + eval replay before discretionary doc polish) — audacious sections invite “what drops first?” questions.
+- **Bullet 3 (preset catalog):** Add **half a sentence** on **acceptance criteria** per preset (“green DAG + published golden trace”) so “six shipped presets” is falsifiable without new scope.
+- **Bullet 4 (HITL):** Clarify **`thread_id`** as Effort Graph field vs opaque runtime ID in one clause — reviewers bridge from LangGraph metaphor to your schema.
+- **Phase 4 / public dashboard:** Note **hosting surface** (docs site subdomain vs GitHub Pages vs minimal static) so “public dashboard” isn’t assumed to be free infra.
+- **`Anything else` para 2:** Optional **italic one-liner** on **minimum viable deliverable** if timeline slips — reduces “all or nothing” read without shrinking ambition.
+- **`Why now / why us`:** One sentence tying **solo maintainer + 12 months** to **Phase ordering** (“B/C intentionally consume fixtures produced by Phase 3 runs”) reinforces feasibility.
 
 ### `claude-for-oss-brief.md`
 
-- **`What we'd use Claude for` (≈L37–40):** Open with **“Primary ask: Claude Max seat for maintainer loops; secondary (if eligible): API tokens for nightly evals.”** Then the token math — improves scanability if credits are marginal.
-- **Token projection paragraph:** Flag **confidence** (low/medium) or peg one number as **upper bound** to avoid seeming over-precise without data.
-- **Roadmap items 4 vs 9 (≈L59–65):** Deduplicate overlap between “MCP server” and “docs + Skills examples” — one bullet can own integration docs.
-- **`Form responses` / Timeline (≈L82–83):** Replace the **fixed end date** with “within the approved grant window from start” unless the program publishes that exact boundary; mirror whatever the live FAQ says.
-- **`packages/flatbread` (≈L35, L59):** If the MCP server package name is **`flatbread-mcp`** (per OpenAI draft), align the path **or** add “(package name TBD)” once — reviewers should not see conflicting locations.
-- **Eligibility table row “sole author/maintainer”:** If contributors have merge rights, rephrase to **“primary maintainer / release owner”** to stay defensible against `git shortlog`.
+- **`What we'd use Claude for` — API bullets:** Open with **“Primary: Max seat; secondary (if permitted): API for nightly preset + fixture harness.”** Then the three audacious workloads — aligns ask with continuous token story.
+- **Token projection paragraph:** Prefix with **“(upper-band estimate; we will meter and publish actuals)”** or similar — specificity raised **verification burden**; flagging bounds reduces “false precision” risk.
+- **`Maintainer + roadmap` Phase 4:** Add **“(fixtures from Phase 3 runs feed Phase 4 eval catalog)”** — one clause syncs parallelism claim with OpenAI’s compounding narrative.
+- **`Public commitment`:** Specify **dashboard refresh cadence** (monthly vs quarterly) to match OpenAI’s “refreshed quarterly” line unless you intentionally differ.
+- **`packages/flatbread` vs `flatbread-mcp`:** In the maintainer paragraph (~L35), align **implementation path** with the roadmap package name **or** add “MCP lives in workspace package `flatbread-mcp` (authoring path TBD)” — removes residual path drift vs OpenAI.
 
 ---
 
@@ -82,17 +93,16 @@ Consolidated from both files and cross-cutting checks:
 
 | Element | OpenAI draft | Claude draft | Reconciles? |
 |---------|---------------|--------------|-------------|
-| Elevator pitch / README quote | Verbatim README line embedded in narrative | Same quote | **Yes** |
-| License | MIT (frontmatter + body) | MIT | **Yes** |
-| Maintainer | Tony Ketcham, primary/sole framing | Tony Ketcham | **Yes** (OpenAI leaves room for co-maintainers — ensure both drafts match final reality) |
-| Repo URL | `https://github.com/FlatbreadLabs/flatbread` | Same | **Yes** |
-| `@flatbread/proof` thesis | Cursor-SDK DAG; Codex adapter on roadmap | Cursor-SDK DAG; Claude provider on roadmap | **Yes** |
-| MCP server | `flatbread-mcp`, Q3 MVP | MCP in **`packages/flatbread`** | **Drift** — align naming/path |
-| Roadmap pillars | Typed config, ID norm, validation, watch, MCP, Effort Graph, evals, docs, v1.0 | Same themes + generated TS adapter, eval dashboard explicit | **Mostly aligned** — Claude adds items OpenAI folds into Q4; optional one-line cross-reference in OpenAI to “generated TS adapter” |
-| Funding ask | $25k API credits + bundled seats (+ optional cash) | ~$1.2k equivalent Max seat ± API credits | **Intentionally different programs** — no conflict; verify Claude brief does not implicitly promise API funding |
-| Sole maintainer vs community | Slack + contributors; wary of padded co-maintainer list | “1 seat; up to 2 if co-maintainer” | **Minor tension** — pick one staffing story for external readers |
-| Public outputs | Discussions, Slack, quarterly blog, `funding-research/` evals | Case studies, MCP guide for Claude Code, eval dashboard, talk | **Aligned in spirit**; different platforms — acceptable |
-| Sensitive identity fields | Email + GitHub + LinkedIn in draft | Maintainer handle deferred to `package.json` | **Drift risk** — ensure Claude intake gets the **same** GitHub identity OpenAI submits |
+| **Roadmap shape** | Four phases; months 1–4 foundation + MVP; 5–8 presets; 9–12 HITL + evals parallel | Same structure and month bands | **Yes** |
+| **Six preset names** | `schema-cutover`, `release-train`, `research-compendium`, `docs-site-refactor`, `api-version-cutover`, `design-system-token-rotation` | Same six + 7th community slot by month 8 | **Yes** |
+| **Audacious vocabulary** | Bets A / B / C; `needsApproval`, plan-review gate, pause/resume, `fixture-promote`, PR replay, Inspect-View-style dashboard | Same hooks; Anthropic-facing HITL/evals justification | **Yes** |
+| **Pivot framing** | **Codex** as primary harness bet; opportunity memo §5 / Posture C | **Claude Max + MCP** neutrality; Claude provider on roadmap; Codex listed as harness peer | **Intentionally complementary** — same substrate, **different sponsor hooks** |
+| Elevator / README quote | Verbatim README line | Same quote | **Yes** |
+| License / repo / maintainer | MIT; `FlatbreadLabs/flatbread`; Tony | Same | **Yes** |
+| `@flatbread/proof` | Cursor-SDK today; Codex adapter funded | Claude provider funded; Cursor-SDK DAG | **Yes** — verify both don’t imply both adapters shipped day one |
+| MCP server naming | **`flatbread-mcp`** in roadmap + budget | Roadmap:**`flatbread-mcp`**; maintainer paragraph still says authoring in **`packages/flatbread`** | **Minor drift** — clarify package path vs monorepo folder (see §3) |
+| Funding ask | $25k credits + bundles (+ optional cash) | ~$1.2k Max ± API | **Programs differ** — OK; Claude must not over-promise API |
+| Public outputs | Dashboard bullet + quarterly refresh language | Dashboard + preset gallery + MCP guide | **Aligned** — align **cadence** if you want symmetry |
 
 ---
 
@@ -100,7 +110,11 @@ Consolidated from both files and cross-cutting checks:
 
 **Recommend submitting the OpenAI application first.**
 
-**Reasoning (no calendar dates):** The OpenAI draft is **longer and form-anchored**, with several **blocking field verifications** (LinkedIn, org handle, optional org ID, seat redistribution). Getting those verified once tends to stabilize the **canonical maintainer/GitHub/contact story** that the Claude intake will likely re-use. Strategically, OpenAI emphasizes **Codex-native automation** tied to `@flatbread/proof`; Anthropic emphasizes **Claude Max + MCP neutrality**. Sending OpenAI after you freeze those technical claims reduces the odds of rewriting the Claude brief twice. If program windows or deadlines diverge, **prioritize whichever portal has the tighter cutoff** once you know actual terms — otherwise default to OpenAI first, Claude second after a quick **cross-draft pass** on MCP naming, maintainer/consistency wording, and removal of any date-bound language not confirmed by Anthropic.
+**Reasoning:** The revisions **did not weaken** “freeze canonical facts first”: OpenAI remains the **longer form-anchored draft** with **LinkedIn / GitHub / optional Org ID / seat redistribution / cash fork** blocking items. Completing verification there **still establishes the single maintainer-contact and repo story** the Claude funnel reuses.
+
+**Updated angle post-revision:** Both drafts now share the **same four-phase roadmap and preset catalog** — after OpenAI submits (or freezes), Claude needs only a **short pass** for **program-specific** wording (token bounds, API-for-harness eligibility) and **`packages/flatbread` vs `flatbread-mcp`** consistency.
+
+If **Anthropic’s window is materially shorter** than OpenAI’s, **invert order** — but keep a **same-day checklist sync** so preset names and phase boundaries don’t drift.
 
 ---
 

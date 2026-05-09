@@ -12,10 +12,10 @@ last_updated: 2026-05-09
 # Flatbread — Claude for Open Source brief
 
 ## Project at a glance
-- **What:** Flatbread — *eat your relational markdown data and query it, too, with GraphQL inside damn near any framework* (`README.md`). A pnpm monorepo turning `.md`/YAML on disk into a typed, relational graph for sites and, increasingly, coding agents.
-- **License:** MIT (`package.json`); published to npm; Node `>=20.19`; `packageManager` pnpm 10.33.0.
-- **Traction:** Public CI (`.github/workflows/pipeline.yml`); shipped `@flatbread/proof` Cursor-SDK DAG runner; live `examples/nextjs` and `examples/sveltekit`; written PMF audit (`flatbread-flow-pmf-audit.md`) and agent-artifact thesis (`flatbread-agent-artifact-opportunity.md`).
-- **Ask:** Per-maintainer **6-month Claude Max 20x** seat (~$200/mo, ~$1,200 grant) to power agent-loop development on `@flatbread/proof` and the forthcoming MCP surface.
+- **What:** Flatbread — *eat your relational markdown data and query it, too, with GraphQL* (`README.md`). A pnpm monorepo turning `.md`/YAML on disk into a typed relational graph for sites and coding agents.
+- **License:** MIT; published to npm; Node `>=20.19`; pnpm 10.33.0.
+- **Traction:** Public CI; `@flatbread/proof` DAG runner; live `examples/nextjs` + `examples/sveltekit`; PMF audit + agent-artifact thesis.
+- **Ask:** Per-maintainer **6-month Claude Max 20x** seat (~$200/mo, ~$1,200 grant) — powers maintainer IDE work *and* a continuously-running eval + preset-DAG harness on `@flatbread/proof`, not just the IDE loop.
 
 ## Eligibility checklist
 
@@ -28,47 +28,48 @@ last_updated: 2026-05-09
 | Contributor onboarding | `CONTRIBUTING.md`; pnpm workspace; documented `examples/` | `CONTRIBUTING.md`, `pnpm-workspace.yaml`, `examples/` |
 | Use-cases where Claude Max adds value | DAG runner + MCP eval harness (see below) | `packages/proof/`, this brief |
 
-> NOTE TO REVIEWER: Playbook flagged "OSI-license + no commercial gatekeeping" as UNVERIFIED — only "public repo" is explicit on the intake. We meet MIT regardless. Stars/downloads thresholds are also UNVERIFIED; submitting through the Impact track is the conservative path.
+> NOTE TO REVIEWER: OSI-license + commercial-gatekeeping and stars/dl thresholds are UNVERIFIED on intake; we meet MIT regardless and submit via Impact track.
 
 ## What we'd use Claude for
 
-**Maintainer seats — Claude Max 20x (Claude Code + Opus/Sonnet/Haiku):** 1 seat for Tony today; up to 2 if a co-maintainer lands during the grant window. Used daily for monorepo refactors, codegen on `packages/codegen`, and authoring the MCP server in `packages/flatbread`.
+**Maintainer seat — Claude Max 20x:** 1 seat for Tony today, up to 2 if a co-maintainer lands during the grant window. Daily use covers monorepo refactors, `packages/codegen`, and authoring the MCP server in `packages/flatbread`.
 
-**Claude API — `@flatbread/proof` DAG runner + agent-eval harness:**
-- `@flatbread/proof` orchestrates Cursor-SDK subagents over a typed Effort/Plan/Decision/Artifact graph. We plan to add a Claude provider alongside the existing harness so the same DAG runs against Claude Sonnet/Opus.
-- **Projected monthly token volume:** ~30–60M input + ~6–12M output tokens/month. Reasoning: ~20 DAG runs/week × ~10 nodes/run × ~30k input tokens (effort context + plan + relevant artifacts) + ~3k output tokens, plus a nightly eval sweep of ~200 fixtures × ~25k tokens. Sonnet-weighted with selective Opus on planning nodes.
-- **MCP eval harness:** scripted runs against the MCP surface to verify reference integrity (broken `Plan→Decision` links, dangling `Artifact` refs) — adds ~5–10M tokens/month.
+**Claude API — three back-half workloads on `@flatbread/proof`:**
+- **Workflow preset DAGs for complex projects.** Six parameterized presets (Phase 3 names them) + a 7th community slot — each a beachhead for a complex-project archetype, driving **use-case coverage** a single harness benchmark can't.
+- **HITL approval API around `@flatbread/proof`.** `needsApproval` on every node, Claude-Code-style plan-review gate on Decision/Plan, LangGraph-style durable pause/resume keyed to a `thread_id` Session checkpoint.
+- **Continuous-improvement evals with public dashboard.** `fixture-promote` CLI + PR-time regression-replay GH Action; failures retune per-node models, retry budgets, and HITL thresholds so the catalog self-tunes.
+- **Projected monthly token volume:** ~**80–160M input + ~16–32M output tokens/month**, ~**2–3× the prior 30–60M / 6–12M estimate** because eval and preset DAGs run continuously, not only during maintainer sessions. Arithmetic: 5 presets × ~8 runs/wk × ~12 nodes × ~25k input ≈ **52M/mo**; + ~200 fixtures × ~10k × ~30 nights ≈ **60M/mo** (regression replay); + ~5M HITL → ~115M steady state, ~160M as the catalog grows. Output ≈ 20% of input. Sonnet/Haiku-weighted, selective Opus on Decision/Plan.
 
-> NOTE TO REVIEWER: The playbook reads the offer as a *single fixed 6-month Max grant*; separate API credits are UNVERIFIED. If API credits are not in scope, the harness above runs on metered API spend and the Max seat covers maintainer-loop work only. We'd accept either shape.
+> NOTE TO REVIEWER: Separate API credits are UNVERIFIED — playbook reads offer as a 6-month Max grant only. If credits are out of scope, the workloads above run on metered spend; we'd accept either shape.
 
 ## Why Claude specifically
 
-- **MCP ecosystem participation.** Anthropic donated MCP to the Linux Foundation's Agentic AI Foundation; Flatbread's roadmap ships an **MCP surface** so coding agents (Claude Code first) can read/write the typed Effort Graph natively. We are building *for* MCP, not bolting it on.
-- **Claude Code + Skills fit.** `@flatbread/proof` is a DAG runner for harnessed coding agents — the exact shape Claude Code Skills target. The artifact shipped today (`packages/proof`) is a concrete proof-of-concept.
-- **Safety posture via typed integrity.** Our differentiator is *reference integrity for the agent-artifact layer*: typed schemas catch broken `Plan→Decision` and `Effort→Artifact` links before they cause context drift or silent regressions in long-running agent runs. This is a complement to RSP/ASL-style guardrails at the model layer.
-- **Neutral plumbing, not a wrapper.** We're an integration layer that any harness (Claude Code, Cursor, Codex) can compose against — exactly the "neutral infrastructure" stance Anthropic has rewarded in prior recipients (Apache, PSF, MCP itself).
+- **MCP ecosystem participation.** Anthropic donated MCP to the Linux Foundation; we ship an **MCP surface** so Claude Code reads/writes the typed Effort Graph natively — built *for* MCP, not bolted on.
+- **Claude Code + Skills fit.** `@flatbread/proof` is a DAG runner for harnessed coding agents — the shape Claude Code Skills target; `packages/proof` ships today.
+- **Safety posture via typed integrity.** Typed schemas catch broken `Plan→Decision` and `Effort→Artifact` links before they cause context drift in long-running agents — a complement to RSP/ASL-style guardrails at the model layer.
+- **Neutral plumbing, not a wrapper.** Any harness (Claude Code, Cursor, Codex) can compose against the Effort Graph — the "neutral infrastructure" stance Anthropic has rewarded before (Apache, PSF, MCP itself).
+- **Funder-aligned audacious bets.** Anthropic's posture on HITL (Claude Code plan mode, MCP `needsApproval`) and evals (Inspect, evals-as-research) maps directly onto Phase 4 — built *on top of* patterns Anthropic already endorses.
 
 ## Maintainer + roadmap
 
-**Maintainer:** Tony Ketcham — sole author/maintainer, merge access, npm publisher. See `CONTRIBUTING.md` and `package.json` author field.
+**Maintainer:** Tony Ketcham — sole author, merge access, npm publisher.
 
-**12-month roadmap (aligned to `flatbread-flow-pmf-audit.md` + Effort Graph MVP):**
-1. Typed `defineConfig` with full inference end-to-end.
-2. ID normalization + relation validation across collections.
-3. Watch mode parity with build mode for agent loops.
-4. **MCP server in `packages/flatbread`** exposing read/write of Effort/Plan/Decision/Session/Artifact/Run.
-5. **Effort Graph MVP** as a first-class collection set with reference-integrity checks.
-6. Generated TS adapter parallel to GraphQL (per PMF audit pivot).
-7. `@flatbread/proof` v1: Claude provider + multi-harness DAG runs.
-8. Eval harness: regression suite over fixture Effort Graphs.
-9. Docs site + Claude Code Skills examples.
-10. Case study: Flatbread-on-Flatbread (dogfood the Effort Graph for our own roadmap).
+**12-month roadmap — 4 phases, not quarters.** Front half (months 1–4) compresses foundations + Effort Graph MVP under a Codex/Claude PR train; back half (months 5–12) ships three compounding audacious bets.
+
+**Phase 1 (months 1–2) — Foundations, compressed.** Typed `defineConfig` with end-to-end inference; ID normalization across `core`, GraphQL args, generated TS; relation validation; watch-mode parity — one umbrella PR train.
+
+**Phase 2 (months 3–4) — Effort Graph MVP.** Conventions preset (Effort, Plan, Decision, Session, Artifact, Run with reference-integrity checks); schema-validated Append API; `flatbread-mcp` server exposing read + append over MCP for Claude Code, Cursor, Codex.
+
+**Phase 3 (months 5–8) — Audacious bet A: Workflow Presets.** Six shipped presets — `schema-cutover`, `release-train`, `research-compendium`, `docs-site-refactor`, `api-version-cutover`, `design-system-token-rotation` — each a parameterized DAG over the Effort Graph + `@flatbread/proof`. A 7th slot reserved for a community-contributed preset by month 8 to seed **community adoption**.
+
+**Phase 4 (months 9–12) — Audacious bets B + C in parallel.** **B. HITL ergonomics**: approval API with `needsApproval` on every node, Claude-Code-style plan-review gate on Decision/Plan, LangGraph-style durable pause/resume persisted as a Session. **C. Continuous-improvement evals**: `fixture-promote` CLI; PR-time regression-replay GH Action; public Inspect-View-style dashboard; eval-driven preset retuning — closing the **workflow capture** loop: every Proof DAG run is a typed Effort/Plan/Decision/Session/Artifact/Run trail the next reads.
 
 ## Public commitment
 
-- **Case studies** on running a coding-agent roadmap through `@flatbread/proof` with Claude as the model provider.
-- **MCP integration guide for Claude Code** — step-by-step on wiring the Flatbread MCP server into a Claude Code project.
-- **Eval results** — public dashboard of reference-integrity regressions caught per release, published alongside `packages/proof` runs.
+- **Case studies** on a coding-agent roadmap run through `@flatbread/proof` with Claude.
+- **MCP integration guide for Claude Code** — wiring the Flatbread MCP server into a Claude Code project.
+- **Public Inspect-View-style evals dashboard.** Reference-integrity catch rate, decision drift, cross-session recall — published continuously from the Effort Graph the evals run against, as open data for any Claude Code user.
+- **Open-source workflow preset gallery.** All six preset DAGs + the 7th community slot shipped under MIT — any Claude Code user can drop a `schema-cutover` or `release-train` into their own project directly.
 - Conference / blog talk on *git-native relational memory for coding agents*, crediting Claude for OSS.
 
 ## Form responses
@@ -76,10 +77,10 @@ last_updated: 2026-05-09
 - **Project name:** Flatbread
 - **Repo URL:** https://github.com/FlatbreadLabs/flatbread
 - **License:** MIT
-- **Primary maintainer:** Tony Ketcham (GitHub handle on file in `package.json`)
+- **Primary maintainer:** Tony Ketcham
 - **Stars / downloads:** Below 5k★/1M dl thresholds — applying via **Impact track** with `flatbread-agent-artifact-opportunity.md` as the write-up.
-- **Ask:** 6-month Claude Max 20x seat for the maintainer; API credits for the DAG runner + MCP eval harness if in scope.
-- **Timeline:** Start within 2 weeks of approval; deliverables (MCP server, Claude provider in `@flatbread/proof`, public eval dashboard) within the 6-month grant window ending **June 30, 2026** if offer aligns to that cap.
-- **Why Claude:** MCP-native roadmap, Claude Code Skills fit, typed integrity layer as a safety complement.
+- **Ask:** 6-month Claude Max 20x seat; API credits for the preset/HITL/evals workloads if in scope.
+- **Timeline:** Start within 2 weeks of approval; deliverables (MCP server, Claude provider in `@flatbread/proof`, public eval dashboard, preset gallery) within the 6-month grant window.
+- **Why Claude:** MCP-native roadmap, Claude Code Skills fit, typed integrity as safety complement, HITL/evals aligned with Anthropic's posture.
 
-> NOTE TO REVIEWER: Exact intake form fields are UNVERIFIED — playbook lists likely fields (GitHub handle, repo URL, stars/dl, recent contributions, use-cases, Impact write-up). Adjust this section to match the actual form once accessed.
+> NOTE TO REVIEWER: Exact intake form fields are UNVERIFIED.
