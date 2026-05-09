@@ -14,15 +14,20 @@ export {
   isOracleTask,
   isPauseTask,
   parseDAG,
+  resolveConvergenceLoops,
   validateModelMap,
 } from './dag.js';
 export type {
   Complexity,
   DAG,
   DAGBudget,
+  DAGConvergenceLoop,
+  LoopReexecute,
+  LoopStopWhen,
   ModelMap,
   ModelMapOverride,
   RawTask,
+  ResolvedConvergenceLoop,
   TaskKind,
 } from './dag.js';
 
@@ -32,6 +37,7 @@ export type { RunState, TaskState, TaskStatus } from './canvas_writer.js';
 export {
   buildConvergenceContext,
   extractConvergenceFindings,
+  resolveLoopReexecuteIds,
   transitiveAncestors,
 } from './converge_loop.js';
 export type { ConvergenceFindings } from './converge_loop.js';
