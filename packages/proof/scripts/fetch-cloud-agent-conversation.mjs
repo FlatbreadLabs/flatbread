@@ -6,8 +6,10 @@
  */
 import { Agent } from '@cursor/sdk';
 
-const BC_RE = /\bbc-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
-const RUN_RE = /\brun-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
+const BC_RE =
+  /\bbc-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
+const RUN_RE =
+  /\brun-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
 
 function parseArgs(argv) {
   const positional = [];
@@ -41,17 +43,11 @@ function extractFromUrl(raw) {
     const href = /^https?:\/\//i.test(trimmed)
       ? trimmed
       : trimmed.includes('cursor.com')
-        ? `https://${trimmed.replace(/^\/+/, '')}`
-        : null;
+      ? `https://${trimmed.replace(/^\/+/, '')}`
+      : null;
     if (href) {
       const u = new URL(href);
-      const keysAgent = [
-        'selectedBcId',
-        'agentId',
-        'bcId',
-        'id',
-        'agent',
-      ];
+      const keysAgent = ['selectedBcId', 'agentId', 'bcId', 'id', 'agent'];
       for (const k of keysAgent) {
         const v = u.searchParams.get(k);
         if (v && BC_RE.test(v)) {
@@ -84,7 +80,7 @@ function extractFromUrl(raw) {
 
 async function main() {
   const { input, explicitRun, apiKey } = parseArgs(
-    process.argv.slice(2).filter((a) => a !== '--'),
+    process.argv.slice(2).filter((a) => a !== '--')
   );
   let raw = input;
   if (input === '' || input === '-') {
@@ -94,14 +90,14 @@ async function main() {
 
   if (!process.env.CURSOR_API_KEY && !apiKey) {
     console.error(
-      'Missing CURSOR_API_KEY (or pass --api-key for one-off use).',
+      'Missing CURSOR_API_KEY (or pass --api-key for one-off use).'
     );
     process.exit(1);
   }
 
   if (!raw) {
     console.error(
-      'Usage: node scripts/fetch-cloud-agent-conversation.mjs "<cursor agents url or bc- id>" [--run run-uuid]',
+      'Usage: node scripts/fetch-cloud-agent-conversation.mjs "<cursor agents url or bc- id>" [--run run-uuid]'
     );
     process.exit(1);
   }
@@ -109,7 +105,7 @@ async function main() {
   const { agentId, runId: runFromText } = extractFromUrl(raw);
   if (!agentId) {
     console.error(
-      'Could not find a cloud agent id (bc-…). Paste a cursor.com/agents URL or the bc-… id.',
+      'Could not find a cloud agent id (bc-…). Paste a cursor.com/agents URL or the bc-… id.'
     );
     process.exit(1);
   }
@@ -137,7 +133,7 @@ async function main() {
       process.exit(1);
     }
     const sorted = [...items].sort(
-      (a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0),
+      (a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)
     );
     run = sorted[0];
   }
