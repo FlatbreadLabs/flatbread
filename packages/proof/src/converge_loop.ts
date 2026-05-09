@@ -22,7 +22,7 @@
  * the same topological order as the original run.
  */
 
-import type { DAG } from './dag.js';
+import type { DAG, ResolvedConvergenceLoop } from './dag.js';
 
 export interface ConvergenceFindings {
   hasIssues: boolean;
@@ -131,6 +131,33 @@ export function transitiveAncestors(taskId: string, dag: DAG): Set<string> {
     for (const dep of t.depends_on) stack.push(dep);
   }
   return visited;
+}
+
+/**
+ * Resolves a single loop's `reexecute` selector into the concrete set of
+ * task ids the runner re-executes per iteration. Always includes the
+ * convergence task itself so the loop body can re-run it after upstream
+ * re-execution. Pure function — does not mutate the DAG or the loop.
+ *
+ * - `{ kind: 'ancestors' }` → `transitiveAncestors(convergeOn) ∪ {convergeOn}`,
+ *   matching the legacy `--converge-on` behavior.
+ * - `{ kind: 'tasks'; tasks: [...] }` → the validated allow-list (already
+ *   guaranteed at parse time to lie inside the convergence ancestor cone).
+ *   The convergence task id is added defensively even though `parseDAG`
+ *   already injects it during validation.
+ */
+export function resolveLoopReexecuteIds(
+  loop: ResolvedConvergenceLoop,
+  dag: DAG
+): Set<string> {
+  if (loop.reexecute.kind === 'ancestors') {
+    const ids = transitiveAncestors(loop.convergeOn, dag);
+    ids.add(loop.convergeOn);
+    return ids;
+  }
+  const ids = new Set<string>(loop.reexecute.tasks);
+  ids.add(loop.convergeOn);
+  return ids;
 }
 
 /**

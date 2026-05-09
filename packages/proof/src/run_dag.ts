@@ -126,6 +126,7 @@ import {
 import {
   buildConvergenceContext,
   extractConvergenceFindings,
+  resolveLoopReexecuteIds,
   transitiveAncestors,
 } from './converge_loop.js';
 import {
@@ -594,6 +595,27 @@ async function main(): Promise<void> {
       `--converge-on "${args.convergeOn}" is not a task id in DAG "${dag.title}"`
     );
   }
+  // The CLI flag and the DAG-native `loops` config both produce convergence
+  // loops; combining them silently would force a precedence rule and make
+  // reproducible runs depend on whether someone remembered to pass the
+  // flag. Reject the combination outright.
+  if (args.convergeOn && dag.loops && dag.loops.length > 0) {
+    throw new Error(
+      `--converge-on cannot be combined with DAG.loops (DAG "${dag.title}" already declares ${dag.loops.length} loop(s)). Remove one.`
+    );
+  }
+  // Synthesize a single-element loop list from the CLI flag so the runner
+  // treats both entry points uniformly. `--max-iterations` (CLI) feeds the
+  // synthesized loop's `maxIterations`; `dag.budget.maxIterations`
+  // continues to apply on top per-loop via the existing budget check.
+  const resolvedLoops =
+    dag.loops !== undefined && dag.loops.length > 0
+      ? resolveConvergenceLoops(dag.loops)
+      : args.convergeOn !== undefined
+      ? resolveConvergenceLoops([
+          { convergeOn: args.convergeOn, maxIterations: args.maxIterations },
+        ])
+      : [];
 
   const fullOutputAbsoluteDir: string | undefined = (() => {
     if (args.noArtifacts || args.initOnly || args.dryCheckCmds)
@@ -911,10 +933,17 @@ async function main(): Promise<void> {
     }
 
     await maybeRestartAfterRunnerChange('main ranks before convergence');
-    if (args.convergeOn) {
+    // Loops execute sequentially in declaration order. A loop that hits
+    // BUDGET-EXCEEDED still lets later loops run — each loop's terminal
+    // state is independent and surfaces through the per-task status
+    // tally, the same way the legacy single-loop CLI worked.
+    for (const loop of resolvedLoops) {
+      const reExecIds = resolveLoopReexecuteIds(loop, dag);
       await runConvergenceLoop({
-        convergeOn: args.convergeOn,
-        maxIterations: args.maxIterations,
+        loopId: loop.id,
+        convergeOn: loop.convergeOn,
+        maxIterations: loop.maxIterations,
+        reExecIds,
         dag,
         ranks,
         stateById,
@@ -926,9 +955,9 @@ async function main(): Promise<void> {
         afterIteration: async (iteration: number) => {
           writer.schedule(structuredCloneState(state));
           await writer.flush();
-          await persistState(`completed convergence iteration ${iteration}`);
+          await persistState(`completed ${loop.id} iteration ${iteration}`);
           await maybeRestartAfterRunnerChange(
-            `convergence iteration ${iteration}`
+            `${loop.id} iteration ${iteration}`
           );
         },
       });
@@ -1553,8 +1582,17 @@ async function writeRunIndexMarkdown(
 }
 
 interface RunConvergenceLoopOptions {
+  /** Stable id used in canvas/log messages. Either the user-provided loop id or `loop-${convergeOn}`. */
+  loopId: string;
   convergeOn: string;
   maxIterations: number;
+  /**
+   * Precomputed re-execution id set. Always contains `convergeOn` itself so
+   * the loop body can re-run it after upstream re-execution completes. The
+   * caller computes this from the loop's `reexecute` selector via
+   * `resolveLoopReexecuteIds`.
+   */
+  reExecIds: Set<string>;
   dag: DAG;
   ranks: RawTask[][];
   stateById: Map<string, TaskState>;
@@ -1601,9 +1639,10 @@ async function runConvergenceLoop(
   opts: RunConvergenceLoopOptions
 ): Promise<void> {
   const {
+    loopId,
     convergeOn,
     maxIterations,
-    dag,
+    reExecIds,
     ranks,
     stateById,
     dispatchTask,
@@ -1617,13 +1656,11 @@ async function runConvergenceLoop(
   if (!convergeTs) {
     // Defensive — main() already validates this, but the loop must not crash.
     console.error(
-      `[proof] --converge-on "${convergeOn}" not found in state; skipping convergence loop`
+      `[proof] ${loopId}: convergence task "${convergeOn}" not found in state; skipping`
     );
     return;
   }
 
-  const ancestorIds = transitiveAncestors(convergeOn, dag);
-  const reExecIds = new Set<string>([...ancestorIds, convergeOn]);
   // Filter the original ranks to just the re-executed tasks. Drop empty
   // ranks. Order is preserved → topological correctness is preserved.
   const reExecRanks: RawTask[][] = ranks
@@ -1648,7 +1685,7 @@ async function runConvergenceLoop(
     );
     if (!findings.hasIssues) {
       console.log(
-        `[proof] converge-on ${convergeOn}: clean — no Blockers / High-severity findings after ${
+        `[proof] ${loopId} (converge-on ${convergeOn}): clean — no Blockers / High-severity findings after ${
           iter - 1
         } re-iteration(s)`
       );
@@ -1677,13 +1714,13 @@ async function runConvergenceLoop(
       convergeTs.errorMessage = `Convergence iteration ${iter} would exceed budget.maxIterations=${budget.maxIterations}`;
       writer.schedule(structuredCloneState(state));
       console.log(
-        `[proof] converge-on ${convergeOn}: BUDGET-EXCEEDED — iteration ${iter} would exceed budget.maxIterations=${budget.maxIterations}`
+        `[proof] ${loopId} (converge-on ${convergeOn}): BUDGET-EXCEEDED — iteration ${iter} would exceed budget.maxIterations=${budget.maxIterations}`
       );
       return;
     }
 
     console.log(
-      `[proof] converge iteration ${iter}/${maxIterations}: ${findings.blockerLines.length} blocker(s), ${findings.highSeverityLines.length} high-severity finding(s) — re-running ${reExecIds.size} task(s)`
+      `[proof] ${loopId} iteration ${iter}/${maxIterations}: ${findings.blockerLines.length} blocker(s), ${findings.highSeverityLines.length} high-severity finding(s) — re-running ${reExecIds.size} task(s)`
     );
 
     const convergenceContext = buildConvergenceContext(
@@ -1762,11 +1799,11 @@ async function runConvergenceLoop(
       }
     }
     console.log(
-      `[proof] converge-on ${convergeOn}: BUDGET-EXCEEDED — exhausted --max-iterations=${maxIterations} with ${finalFindings.blockerLines.length} blocker(s), ${finalFindings.highSeverityLines.length} high-severity finding(s)`
+      `[proof] ${loopId} (converge-on ${convergeOn}): BUDGET-EXCEEDED — exhausted maxIterations=${maxIterations} with ${finalFindings.blockerLines.length} blocker(s), ${finalFindings.highSeverityLines.length} high-severity finding(s)`
     );
   } else {
     console.log(
-      `[proof] converge-on ${convergeOn}: clean after ${maxIterations} re-iteration(s)`
+      `[proof] ${loopId} (converge-on ${convergeOn}): clean after ${maxIterations} re-iteration(s)`
     );
   }
 }
