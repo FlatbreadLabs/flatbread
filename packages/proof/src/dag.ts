@@ -69,12 +69,18 @@ export interface DAG {
   models?: ModelMapOverride;
   framing?: string;
   budget?: DAGBudget;
+  converge?: DAGConverge;
   tasks: RawTask[];
 }
 
 export interface DAGBudget {
   maxIterations?: number;
   maxTokensTotal?: number;
+}
+
+export interface DAGConverge {
+  on: string;
+  maxIterations?: number;
 }
 
 const COMPLEXITY_VALUES = new Set<Complexity>(['HIGH', 'MED', 'LOW']);
@@ -162,8 +168,12 @@ export function parseDAG(raw: unknown): DAG {
     obj.framing === undefined ? undefined : validateFraming(obj.framing);
   const budget =
     obj.budget === undefined ? undefined : validateBudget(obj.budget);
+  const converge =
+    obj.converge === undefined
+      ? undefined
+      : validateConverge(obj.converge, ids);
 
-  return { title: obj.title, models, framing, budget, tasks };
+  return { title: obj.title, models, framing, budget, converge, tasks };
 }
 
 function validateFraming(raw: unknown): string {
@@ -197,6 +207,37 @@ function validateBudgetNumber(
   if (typeof raw !== 'number' || !Number.isSafeInteger(raw) || raw < 0) {
     throw new Error(`${label} must be a non-negative integer when set.`);
   }
+}
+
+function validatePositiveInteger(
+  raw: unknown,
+  label: string
+): asserts raw is number {
+  if (typeof raw !== 'number' || !Number.isSafeInteger(raw) || raw <= 0) {
+    throw new Error(`${label} must be a positive integer when set.`);
+  }
+}
+
+function validateConverge(
+  raw: unknown,
+  taskIds: ReadonlySet<string>
+): DAGConverge {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error('DAG.converge must be a JSON object when set.');
+  }
+  const obj = raw as Record<string, unknown>;
+  if (typeof obj.on !== 'string' || obj.on.trim() === '') {
+    throw new Error('DAG.converge.on must be a non-empty string.');
+  }
+  if (!taskIds.has(obj.on)) {
+    throw new Error(`DAG.converge.on references unknown task id: ${obj.on}`);
+  }
+  const converge: DAGConverge = { on: obj.on };
+  if (obj.maxIterations !== undefined) {
+    validatePositiveInteger(obj.maxIterations, 'DAG.converge.maxIterations');
+    converge.maxIterations = obj.maxIterations;
+  }
+  return converge;
 }
 
 function validateTask(raw: unknown, index: number): RawTask {

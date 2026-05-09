@@ -21,6 +21,10 @@ Create a DAG JSON file:
 ```json
 {
   "title": "Build a tiny CLI todo app",
+  "converge": {
+    "on": "review",
+    "maxIterations": 2
+  },
   "tasks": [
     {
       "id": "design",
@@ -33,6 +37,12 @@ Create a DAG JSON file:
       "depends_on": ["design"],
       "complexity": "MED",
       "subtask_prompt": "Implement the todo CLI based on the design."
+    },
+    {
+      "id": "review",
+      "depends_on": ["implement"],
+      "complexity": "LOW",
+      "subtask_prompt": "Review the implementation for blockers and high-severity issues. Output `## Blockers` and `## High-severity findings` sections."
     }
   ]
 }
@@ -73,6 +83,11 @@ Optional task kinds add control gates:
 - `kind: "oracle"` runs a shell command and records pass/fail evidence.
 - `kind: "pause"` waits for a checkpoint sentinel so a human can inspect or approve before downstream work continues.
 
+Optional top-level controls let DAG authors tune execution:
+
+- `budget`: set DAG-wide soft ceilings like `maxIterations` and `maxTokensTotal`.
+- `converge`: set `{ "on": "<task-id>", "maxIterations"?: <positive-int> }` so the DAG itself names the convergence task and can lower or raise the default loop ceiling. CLI flags `--converge-on` and `--max-iterations` still win when both are present.
+
 ## Project Skill
 
 The canonical Cursor skill entrypoint lives at:
@@ -107,6 +122,7 @@ pnpm -F @flatbread/proof build
 ```bash
 pnpm -F @flatbread/proof typecheck
 pnpm -F @flatbread/proof build
+pnpm -F @flatbread/proof test
 pnpm -F @flatbread/proof models:list
 pnpm exec proof --dry-check-cmds --dag .cursor/skills/proof/examples/example_dag.json
 ```
@@ -117,13 +133,16 @@ Proof also exposes helpers for tooling:
 
 ```ts
 import {
+  DEFAULT_MAX_ITERATIONS,
   computeRanks,
   createModelResolver,
   parseDAG,
+  resolveConvergenceConfig,
   runDryCheck,
   type DAG,
+  type DAGConverge,
   type TaskState,
 } from '@flatbread/proof';
 ```
 
-The public API includes DAG parsing and rank computation, model resolution, canvas state types, convergence helpers, dry command checks, oracle and pause helpers, and self-hosting state utilities.
+The public API includes DAG parsing and rank computation, convergence config resolution, model resolution, canvas state types, convergence helpers, dry command checks, oracle and pause helpers, and self-hosting state utilities.

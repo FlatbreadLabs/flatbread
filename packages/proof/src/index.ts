@@ -20,11 +20,21 @@ export type {
   Complexity,
   DAG,
   DAGBudget,
+  DAGConverge,
   ModelMap,
   ModelMapOverride,
   RawTask,
   TaskKind,
 } from './dag.js';
+
+export {
+  DEFAULT_MAX_ITERATIONS,
+  resolveConvergenceConfig,
+} from './convergence_config.js';
+export type {
+  CliConvergenceOverrides,
+  ResolvedConvergenceConfig,
+} from './convergence_config.js';
 
 export { CanvasWriter, initialRunState } from './canvas_writer.js';
 export type { RunState, TaskState, TaskStatus } from './canvas_writer.js';

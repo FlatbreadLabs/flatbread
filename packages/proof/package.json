@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch src",
+    "test": "tsx --test test/**/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "models:list": "tsx src/list_models.ts"
   },

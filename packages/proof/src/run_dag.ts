@@ -49,15 +49,17 @@
  *                             through the same parser as regular tasks.
  *   --checkpoint-dir <path>  Directory for `kind: 'pause'` sentinel files
  *                             (default `.proof/` under --cwd).
- *   --converge-on <task-id>  After the main DAG run, parse the named task's
- *                             `resultText` for `## Blockers` /
- *                             `## High-severity findings`. If non-empty,
- *                             re-execute the entire upstream ancestor
- *                             subtree with the convergence task's latest
- *                             result appended as context, then re-execute
- *                             the convergence task. Loop until clean or
- *                             --max-iterations is reached.
- *   --max-iterations <N>     Convergence iteration ceiling (default: 3).
+ *   --converge-on <task-id>  Override DAG `converge.on`. After the main DAG
+ *                             run, parse the named task's `resultText` for
+ *                             `## Blockers` / `## High-severity findings`.
+ *                             If non-empty, re-execute the entire upstream
+ *                             ancestor subtree with the convergence task's
+ *                             latest result appended as context, then
+ *                             re-execute the convergence task. Loop until
+ *                             clean or the effective max iteration ceiling
+ *                             is reached.
+ *   --max-iterations <N>     Override DAG `converge.maxIterations`
+ *                             (default fallback: 3).
  *   --state-path <path>      Persist resumable runner state after each rank.
  *                             Defaults to `.proof/run-state.json` when
  *                             --restart-on-runner-change is enabled.
@@ -93,6 +95,7 @@ import type {
   RawTask,
   TaskKind,
 } from './dag.js';
+import { resolveConvergenceConfig } from './convergence_config.js';
 import {
   CanvasWriter,
   initialRunState,
@@ -161,10 +164,10 @@ interface CliArgs {
   dryCheckCmds: boolean;
   /** Absolute dir for `kind: 'pause'` sentinel files. Defaults to `<cwd>/.proof`. */
   checkpointDir: string;
-  /** When set, the runner re-executes ancestors after the named task to converge on a clean review. */
+  /** CLI override for DAG `converge.on`. */
   convergeOn?: string;
-  /** Convergence iteration ceiling (default 3). */
-  maxIterations: number;
+  /** CLI override for DAG `converge.maxIterations`. */
+  maxIterations?: number;
   /** Optional resumable state path. If omitted, no state file is written. */
   statePath?: string;
   /** Load prior `RunState` from this path before executing ranks. */
@@ -240,9 +243,8 @@ function parseArgs(argv: string[]): CliArgs {
     DEFAULT_STREAM_IDLE_TIMEOUT_MS,
     '--stream-idle-timeout-ms'
   );
-  const maxIterations = parsePositiveInt(
+  const maxIterations = parseOptionalPositiveInt(
     args['max-iterations'],
-    DEFAULT_MAX_ITERATIONS,
     '--max-iterations'
   );
   const fullOutputRaw = args['full-output-dir'];
@@ -313,6 +315,14 @@ function parsePositiveInt(
     throw new Error(`${flag} must be a positive integer`);
   }
   return n;
+}
+
+function parseOptionalPositiveInt(
+  raw: string | undefined,
+  flag: string
+): number | undefined {
+  if (raw === undefined) return undefined;
+  return parsePositiveInt(raw, 1, flag);
 }
 
 interface ModelOverrideSources {
@@ -495,6 +505,10 @@ async function main(): Promise<void> {
   const dagPath = resolveAgainstCwd(args.dag, args.cwd);
   const raw = JSON.parse(await readFile(dagPath, 'utf8'));
   const dag = parseDAG(raw);
+  const convergence = resolveConvergenceConfig(dag, {
+    convergeOn: args.convergeOn,
+    maxIterations: args.maxIterations,
+  });
   const fileModels =
     args.modelsFile === undefined
       ? undefined
@@ -508,12 +522,6 @@ async function main(): Promise<void> {
     mergeModelOverrides({ dagModels: dag.models, fileModels })
   );
   const ranks = computeRanks(dag);
-
-  if (args.convergeOn && !dag.tasks.some((t) => t.id === args.convergeOn)) {
-    throw new Error(
-      `--converge-on "${args.convergeOn}" is not a task id in DAG "${dag.title}"`
-    );
-  }
 
   const fullOutputAbsoluteDir =
     args.fullOutputDir !== undefined
@@ -778,10 +786,10 @@ async function main(): Promise<void> {
     }
 
     await maybeRestartAfterRunnerChange('main ranks before convergence');
-    if (args.convergeOn) {
+    if (convergence.on) {
       await runConvergenceLoop({
-        convergeOn: args.convergeOn,
-        maxIterations: args.maxIterations,
+        convergeOn: convergence.on,
+        maxIterations: convergence.maxIterations,
         dag,
         ranks,
         stateById,
@@ -1135,8 +1143,6 @@ const WAIT_AFTER_STREAM_GRACE_MS = 15 * 1000;
 const UPSTREAM_SNIPPET_CAP = 2000;
 /** Raised listener ceiling to avoid false-positive AbortSignal warnings from SDK internals. */
 const ABORT_SIGNAL_LISTENER_LIMIT = 100;
-/** Default cap on `--converge-on` re-execution attempts after the initial run. */
-const DEFAULT_MAX_ITERATIONS = 3;
 /**
  * Process exit code reserved for `dag.budget.maxTokensTotal` enforcement.
  * Exit `0` is success, `1` is generic failure (existing behavior),
@@ -1349,11 +1355,12 @@ interface RunConvergenceLoopOptions {
   findingsDir?: string;
   /**
    * DAG-level budget. `budget.maxIterations` adds a soft cap on top of the
-   * `--max-iterations` CLI flag — the loop aborts and marks the convergence
-   * task `BUDGET-EXCEEDED` when the next re-run would push the convergence
-   * task's iteration past this value. `budget.maxTokensTotal` is enforced
-   * after every rank's `Promise.all` (same as the main run loop) and halts
-   * the entire run via `BudgetExceededError`.
+   * active convergence ceiling (DAG `converge.maxIterations`, overridden by
+   * CLI `--max-iterations`) — the loop aborts and marks the convergence task
+   * `BUDGET-EXCEEDED` when the next re-run would push the convergence task's
+   * iteration past this value. `budget.maxTokensTotal` is enforced after
+   * every rank's `Promise.all` (same as the main run loop) and halts the
+   * entire run via `BudgetExceededError`.
    */
   budget?: DAGBudget;
   /** Called after each completed re-execution iteration; used by self-hosting restarts. */
@@ -1443,9 +1450,9 @@ async function runConvergenceLoop(
     // convergence task's `iteration` counter advances by 1 per re-run; if
     // the next re-run would push it past the budgeted ceiling, we abort
     // here and surface that on the canvas via the new BUDGET-EXCEEDED
-    // status. The CLI `--max-iterations` flag is enforced by the loop
-    // header above; the budget is an additional, DAG-author-controlled
-    // ceiling that can be tighter than the runner default.
+    // status. The active convergence ceiling is enforced by the loop header
+    // above; the budget is an additional, DAG-author-controlled ceiling that
+    // can be tighter than the runner default.
     if (budget?.maxIterations !== undefined && iter > budget.maxIterations) {
       const now = Date.now();
       convergeTs.status = 'BUDGET-EXCEEDED';

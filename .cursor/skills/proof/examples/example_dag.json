@@ -1,5 +1,9 @@
 {
   "title": "Build a tiny CLI todo app",
+  "converge": {
+    "on": "review",
+    "maxIterations": 2
+  },
   "tasks": [
     {
       "id": "research-stack",
@@ -36,6 +40,12 @@
       "depends_on": ["implement"],
       "complexity": "LOW",
       "subtask_prompt": "Write a short `README.md` in the cwd describing what `todo.mjs` does, the supported commands with examples, and where data is stored. Do not modify `todo.mjs`."
+    },
+    {
+      "id": "review",
+      "depends_on": ["tests", "docs"],
+      "complexity": "LOW",
+      "subtask_prompt": "Review the implementation and test/docs outputs for blockers or high-severity issues. Output exactly the sections `## Blockers`, `## High-severity findings`, and `## Medium-severity findings`."
     }
   ]
 }
