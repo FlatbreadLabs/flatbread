@@ -1,0 +1,20 @@
+---
+description: When the user pastes a Cursor cloud agents URL or bc- agent id, fetch the linked run conversation via @cursor/sdk.
+alwaysApply: true
+---
+
+# Cursor cloud agent URL → transcript fetch
+
+When the user’s message includes a **Cursor cloud agents** URL (`cursor.com/agents` with query params such as `selectedBcId`, or any **`bc-`…** cloud agent id as defined by `@cursor/sdk` cloud routing), **before** answering questions that depend on that agent’s thread:
+
+1. From the repository root, run:
+
+   `pnpm run cursor:fetch-cloud-agent -- "<full pasted URL or text containing bc-…>"`
+
+   Optional: if the paste includes a specific **`run-`…** id, append `--run run-…` so that run is fetched instead of the latest.
+
+2. Use `CURSOR_API_KEY` from the environment (required). If the command fails, say so and do not invent transcript content.
+
+3. Parse the JSON on stdout. Keys: `agent` (metadata), `run` (id, status, timing, git), `conversation` (full `run.conversation()` turns). Prefer this payload over `Agent.messages.list`, which may be empty for some cloud agents.
+
+4. Answer using the fetched `conversation` (and `agent` / `run` context). If the user only shared a URL with no follow-up question, summarize the latest run briefly and offer to go deeper.
