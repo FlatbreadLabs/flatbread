@@ -516,6 +516,16 @@ export function validateModelMap(
   return models;
 }
 
+/**
+ * @deprecated This backward-compat shim intentionally returns only `ModelSelection.id`
+ * and silently discards any `params`.
+ *
+ * If you need param support (including preservation of the full `ModelSelection`),
+ * migrate to `createModelSelectionResolver`.
+ *
+ * This helper is retained for backward compatibility and may be removed in a
+ * future release.
+ */
 export function createModelResolver(
   overrides: ModelMapOverride = {}
 ): (c: Complexity) => string {
@@ -715,17 +725,21 @@ function chooseMatchingVariant(
   );
   if (matches.length === 0) return undefined;
 
+  const defaultVar = defaultVariant(variants);
   const defaultParams = new Map(
-    defaultVariant(variants).params.map((param) => [param.id, param.value])
+    defaultVar.params.map((param) => [param.id, param.value])
   );
   const requestedIds = new Set(requestedParams.map((param) => param.id));
   let best = matches[0];
   let bestScore = scoreVariant(best.params, defaultParams, requestedIds);
+  // Ties break to the catalog-declared default variant; otherwise first match wins.
   for (const match of matches.slice(1)) {
     const score = scoreVariant(match.params, defaultParams, requestedIds);
     if (score > bestScore) {
       best = match;
       bestScore = score;
+    } else if (score === bestScore && match === defaultVar && best !== defaultVar) {
+      best = match;
     }
   }
   return best;

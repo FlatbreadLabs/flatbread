@@ -155,4 +155,6 @@ import {
 } from '@flatbread/proof';
 ```
 
+Note: `createModelResolver` is deprecated in favor of `createModelSelectionResolver` when you need param support (the deprecated helper only returns `ModelSelection.id` and drops `params`).
+
 The public API includes DAG parsing and rank computation, model resolution, canvas state types, convergence helpers, dry command checks, oracle and pause helpers, and self-hosting state utilities.

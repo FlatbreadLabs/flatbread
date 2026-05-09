@@ -713,6 +713,12 @@ function TaskList({
                     : ''}
                   {(t.iteration ?? 0) > 0 ? ' · iteration ' + t.iteration : ''}
                 </Text>
+                {t.modelSelection?.params && t.modelSelection.params.length > 0 ? (
+                  <Text size="small" tone="tertiary" style={{ paddingLeft: 12 }}>
+                    {'Params: ' +
+                      t.modelSelection.params.map((p) => p.id + '=' + p.value).join(', ')}
+                  </Text>
+                ) : null}
                 {effectiveKind(t) === 'pause' && t.checkpointPath ? (
                   <Stack gap={4}>
                     <Text size="small" weight="semibold">
