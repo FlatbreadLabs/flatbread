@@ -568,16 +568,19 @@ export function createCatalogBackedModelResolver(
   };
 }
 
-export function validateModelSelection(
-  raw: unknown,
-  label = 'model'
-): ModelSelection {
+/**
+ * Validate a JSON model override without changing its nominal shape: plain
+ * strings stay strings so `parseDAG` / `validateModelMap` remain
+ * round-trip-stable for legacy configs. Use `normalizeModelSelection` when
+ * you need a `ModelSelection` object (including `{ id }` for strings).
+ */
+export function validateModelSelection(raw: unknown, label = 'model'): ModelSpec {
   if (typeof raw === 'string') {
     const id = raw.trim();
     if (id === '') {
       throw new Error(`${label} must be a non-empty string or model object.`);
     }
-    return { id };
+    return id;
   }
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     throw new Error(`${label} must be a non-empty string or model object.`);
@@ -623,7 +626,8 @@ export function normalizeModelSelection(
   raw: ModelSpec,
   label = 'model'
 ): ModelSelection {
-  return validateModelSelection(raw, label);
+  const spec = validateModelSelection(raw, label);
+  return typeof spec === 'string' ? { id: spec } : spec;
 }
 
 export function formatModelSelection(model: ModelSelection): string {
@@ -681,31 +685,54 @@ function validateRequestedParams(
   catalogItem: ModelCatalogItem,
   label: string
 ): void {
-  const definitions = new Map(
-    (catalogItem.parameters ?? []).map((param) => [param.id, param])
-  );
   const requestedParams = selection.params ?? [];
-  for (const param of requestedParams) {
-    const definition = definitions.get(param.id);
-    if (!definition) {
-      const supported = [...definitions.keys()].sort();
-      throw new Error(
-        `${label} ${selection.id} does not support param "${
-          param.id
-        }". Supported params: ${
-          supported.length > 0 ? supported.join(', ') : '(none)'
-        }`
-      );
+  if (requestedParams.length === 0) return;
+
+  const paramDefs = catalogItem.parameters ?? [];
+  if (paramDefs.length > 0) {
+    const definitions = new Map(paramDefs.map((param) => [param.id, param]));
+    for (const param of requestedParams) {
+      const definition = definitions.get(param.id);
+      if (!definition) {
+        const supported = [...definitions.keys()].sort();
+        throw new Error(
+          `${label} ${selection.id} does not support param "${
+            param.id
+          }". Supported params: ${
+            supported.length > 0 ? supported.join(', ') : '(none)'
+          }`
+        );
+      }
+      const allowed = new Set(definition.values.map((value) => value.value));
+      if (!allowed.has(param.value)) {
+        throw new Error(
+          `${label} ${selection.id} param "${param.id}" does not support value "${
+            param.value
+          }". Supported values: ${[...allowed].join(', ')}`
+        );
+      }
     }
-    const allowed = new Set(definition.values.map((value) => value.value));
-    if (!allowed.has(param.value)) {
-      throw new Error(
-        `${label} ${selection.id} param "${param.id}" does not support value "${
-          param.value
-        }". Supported values: ${[...allowed].join(', ')}`
-      );
-    }
+    return;
   }
+
+  const variants = catalogItem.variants ?? [];
+  if (variants.length > 0) {
+    const chosenVariant = chooseMatchingVariant(requestedParams, variants);
+    if (!chosenVariant) {
+      throw new Error(
+        `${label} ${formatModelSelection(
+          selection
+        )} does not match any Cursor SDK preset variant. Valid variants:\n  ${formatVariants(
+          variants
+        )}`
+      );
+    }
+    return;
+  }
+
+  throw new Error(
+    `${label} ${selection.id} does not declare parameters or preset variants in the Cursor SDK catalog; remove explicit params from this model selection.`
+  );
 }
 
 type ModelCatalogVariant = NonNullable<ModelCatalogItem['variants']>[number];
