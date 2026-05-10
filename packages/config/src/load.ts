@@ -117,7 +117,6 @@ async function bundleConfigFile(
     outExtension: {
       '.js': '.mjs',
     },
-    watch: true,
     plugins: [
       {
         //
@@ -173,10 +172,13 @@ async function bundleConfigFile(
     ],
   });
 
-  const { text } = configBuild?.outputFiles[0];
+  const outputFile = configBuild.outputFiles?.[0];
+  if (!outputFile) {
+    throw new Error('esbuild did not return an in-memory output file');
+  }
 
   return {
-    code: text,
+    code: outputFile.text,
   };
 }
 
