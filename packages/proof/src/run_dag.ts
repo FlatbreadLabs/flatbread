@@ -31,9 +31,15 @@
  *                            bounds how long a `kind: 'pause'` task waits
  *                            for sentinel removal before it errors out.
  *   --stream-publish-ms <ms> Throttle live stream publishes (default: 500ms).
- *   --full-output-dir <path> Full per-task transcripts as `${taskId}.md`
- *                             (relative to --cwd unless absolute). Canvas
- *                             text stays capped; this captures the raw stream.
+ *   --full-output-dir <path> Per-task transcripts as `${taskId}.md` plus
+ *                             `_index.md` (run summary table) and `_dag.json`
+ *                             (the original DAG definition). Defaults to
+ *                             `~/.cursor/projects/<workspace>/artifacts/dag-<title>-<ts>/`
+ *                             when omitted. Override with an explicit path or
+ *                             suppress entirely with `--no-artifacts`.
+ *   --no-artifacts           Skip writing per-task transcripts, _index.md,
+ *                             and _dag.json. Useful when only the live canvas
+ *                             is needed.
  *   --findings-dir <path>    JSON sidecars per task as
  *                             `${taskId}.findings.json` (or
  *                             `${taskId}.iter<n>.findings.json` for
@@ -177,6 +183,8 @@ interface CliArgs {
   resumeState?: string;
   /** Exit 75 after persisting state when runner runtime files change. */
   restartOnRunnerChange: boolean;
+  /** When true, skip writing per-task markdown transcripts and the run index. */
+  noArtifacts: boolean;
 }
 
 interface RunnerTaskRun {
@@ -305,6 +313,7 @@ function parseArgs(argv: string[]): CliArgs {
     statePath,
     resumeState,
     restartOnRunnerChange,
+    noArtifacts: args['no-artifacts'] === 'true',
   };
 }
 
@@ -407,6 +416,36 @@ function defaultCanvasesDir(cwd: string): string {
     .map((seg) => seg.replace(/[^A-Za-z0-9._-]/g, '-'))
     .join('-');
   return join(homedir(), '.cursor', 'projects', slug, 'canvases');
+}
+
+function slugifyTitle(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+/**
+ * Default artifacts directory, mirrors the canvas path scheme.
+ * Timestamped so repeated runs of the same DAG accumulate rather than
+ * overwriting each other.
+ */
+function defaultArtifactsDir(cwd: string, dagTitleSlug: string): string {
+  const projectSlug = cwd
+    .replace(/^\//, '')
+    .replace(/\/+$/, '')
+    .split('/')
+    .map((seg) => seg.replace(/[^A-Za-z0-9._-]/g, '-'))
+    .join('-');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  return join(
+    homedir(),
+    '.cursor',
+    'projects',
+    projectSlug,
+    'artifacts',
+    `dag-${dagTitleSlug}-${timestamp}`
+  );
 }
 
 async function loadResumedRunState(
@@ -562,13 +601,22 @@ async function main(): Promise<void> {
     );
   }
 
-  const fullOutputAbsoluteDir =
-    args.fullOutputDir !== undefined
-      ? resolveAgainstCwd(args.fullOutputDir, args.cwd)
-      : undefined;
-  if (fullOutputAbsoluteDir && !args.initOnly) {
+  const fullOutputAbsoluteDir: string | undefined = (() => {
+    if (args.noArtifacts || args.initOnly || args.dryCheckCmds)
+      return undefined;
+    if (args.fullOutputDir !== undefined) {
+      return resolveAgainstCwd(args.fullOutputDir, args.cwd);
+    }
+    return defaultArtifactsDir(args.cwd, slugifyTitle(dag.title));
+  })();
+  if (fullOutputAbsoluteDir) {
     await mkdir(fullOutputAbsoluteDir, { recursive: true });
-    console.log(`[proof] full-output-dir → ${fullOutputAbsoluteDir}`);
+    console.log(`[proof] artifacts → ${fullOutputAbsoluteDir}`);
+    await writeFile(
+      join(fullOutputAbsoluteDir, '_dag.json'),
+      JSON.stringify(raw, null, 2),
+      'utf8'
+    );
   }
 
   const findingsAbsoluteDir =
@@ -711,7 +759,7 @@ async function main(): Promise<void> {
     framing: dag.framing,
   };
 
-  const runOne = (
+  const runOne = async (
     task: RawTask,
     overrides?: Partial<RunTaskOptions>
   ): Promise<void> => {
@@ -731,7 +779,7 @@ async function main(): Promise<void> {
     }
     if (effectiveTaskKind(task) === 'pause') {
       const ts = stateById.get(task.id)!;
-      return runPauseTask(
+      await runPauseTask(
         task,
         ts,
         {
@@ -744,10 +792,19 @@ async function main(): Promise<void> {
           cloneState: structuredCloneState,
         }
       );
+      if (fullOutputAbsoluteDir) {
+        await persistTaskMarkdownFile(
+          fullOutputAbsoluteDir,
+          dag.title,
+          ts,
+          ts.resultText ?? ''
+        );
+      }
+      return;
     }
     if (effectiveTaskKind(task) === 'oracle') {
       const ts = stateById.get(task.id)!;
-      return runOracleTask(
+      await runOracleTask(
         task,
         ts,
         {
@@ -760,6 +817,15 @@ async function main(): Promise<void> {
           cloneState: structuredCloneState,
         }
       );
+      if (fullOutputAbsoluteDir) {
+        await persistTaskMarkdownFile(
+          fullOutputAbsoluteDir,
+          dag.title,
+          ts,
+          ts.resultText ?? ''
+        );
+      }
+      return;
     }
     return runTask(task, stateById, state, writer, args.cwd, {
       ...baseRunOptions,
@@ -886,7 +952,13 @@ async function main(): Promise<void> {
       await writeRunIndexMarkdown(
         fullOutputAbsoluteDir,
         dag.title,
-        state.tasks
+        state.tasks,
+        {
+          startedAt: state.startedAt,
+          finishedAt: state.finishedAt,
+          runOutcome: state.runOutcome,
+          runMessage: state.runMessage,
+        }
       );
     }
 
@@ -1359,17 +1431,44 @@ async function persistTaskMarkdownFile(
 async function writeRunIndexMarkdown(
   dir: string,
   dagTitle: string,
-  tasks: TaskState[]
+  tasks: TaskState[],
+  runMeta?: {
+    startedAt?: number;
+    finishedAt?: number;
+    runOutcome?: string;
+    runMessage?: string;
+  }
 ): Promise<void> {
+  const metaLines = [
+    '- **DAG definition:** [_dag.json](./_dag.json)',
+    ...(runMeta?.startedAt !== undefined
+      ? [`- **Started:** ${new Date(runMeta.startedAt).toISOString()}`]
+      : []),
+    ...(runMeta?.finishedAt !== undefined
+      ? [`- **Finished:** ${new Date(runMeta.finishedAt).toISOString()}`]
+      : []),
+    ...(runMeta?.runOutcome !== undefined
+      ? [
+          `- **Outcome:** ${runMeta.runOutcome}${
+            runMeta.runMessage ? ` — ${runMeta.runMessage}` : ''
+          }`,
+        ]
+      : []),
+  ];
   const lines = [
     '# DAG run — transcript index',
     '',
     `**${dagTitle}**`,
     '',
-    '| Task | Status | Transcript |',
-    '|------|--------|-------------|',
+    ...metaLines,
+    '',
+    '| Task | Kind | Status | Transcript |',
+    '|------|------|--------|------------|',
     ...tasks.map(
-      (t) => `| ${t.id} | ${t.status} | [${t.id}.md](./${t.id}.md) |`
+      (t) =>
+        `| ${t.id} | ${t.kind ?? 'task'} | ${t.status} | [${t.id}.md](./${
+          t.id
+        }.md) |`
     ),
     '',
   ];

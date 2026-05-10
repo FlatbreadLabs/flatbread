@@ -146,20 +146,23 @@ Same `--canvas-path` as Step 1. The runner:
 3. Automatically skips tasks whose upstream dependencies failed (marks them `ERROR` with a "Skipped: upstream task(s) … failed" message).
 4. Captures each subagent's final assistant text, status, token usage, and duration.
 5. Writes a final canvas with summary stats.
-6. On SIGINT/SIGTERM/SIGHUP, cancels all in-flight subagents before finalizing the canvas.
+6. Writes per-task markdown transcripts, `_index.md`, and `_dag.json` to a timestamped artifacts directory by default (suppress with `--no-artifacts` or override path with `--full-output-dir`).
+7. On SIGINT/SIGTERM/SIGHUP, cancels all in-flight subagents before finalizing the canvas.
 
 #### CLI knobs
 
-| Flag                            | Default            | Purpose                                                                   |
-| ------------------------------- | ------------------ | ------------------------------------------------------------------------- |
-| `--models-file <path>`          | —                  | JSON file containing a partial complexity → model override map.           |
-| `--state-path <path>`           | —                  | Persist resumable state after rank boundaries.                            |
-| `--resume-state <path>`         | —                  | Resume from a persisted state file.                                       |
-| `--restart-on-runner-change`    | `false`            | Exit `75` after runner runtime files change so a supervisor can relaunch. |
-| `--task-timeout-ms <ms>`        | `1200000` (20 min) | Marks a task `ERROR` if it runs too long.                                 |
-| `--stream-publish-ms <ms>`      | `500`              | Throttles live canvas streaming writes.                                   |
-| `--stream-idle-timeout-ms <ms>` | `300000` (5 min)   | Marks a task `ERROR` if no stream events arrive.                          |
-| `--debounce <ms>`               | `200`              | Canvas write debounce interval.                                           |
+| Flag                            | Default            | Purpose                                                                                                                                                                   |
+| ------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--models-file <path>`          | —                  | JSON file containing a partial complexity → model override map.                                                                                                           |
+| `--state-path <path>`           | —                  | Persist resumable state after rank boundaries.                                                                                                                            |
+| `--resume-state <path>`         | —                  | Resume from a persisted state file.                                                                                                                                       |
+| `--restart-on-runner-change`    | `false`            | Exit `75` after runner runtime files change so a supervisor can relaunch.                                                                                                 |
+| `--task-timeout-ms <ms>`        | `1200000` (20 min) | Marks a task `ERROR` if it runs too long.                                                                                                                                 |
+| `--stream-publish-ms <ms>`      | `500`              | Throttles live canvas streaming writes.                                                                                                                                   |
+| `--stream-idle-timeout-ms <ms>` | `300000` (5 min)   | Marks a task `ERROR` if no stream events arrive.                                                                                                                          |
+| `--debounce <ms>`               | `200`              | Canvas write debounce interval.                                                                                                                                           |
+| `--full-output-dir <path>`      | computed default   | Per-task transcripts + `_index.md` + `_dag.json`. Default: `~/.cursor/projects/<workspace>/artifacts/dag-<title>-<ts>/`. Override path or suppress with `--no-artifacts`. |
+| `--no-artifacts`                | `false`            | Skip all artifact file output. Canvas is still written.                                                                                                                   |
 
 ### Step 4 — Summarize
 
@@ -220,26 +223,30 @@ set -a && source .env && set +a
 
 ## CLI options
 
-| Flag                         | Default             | Notes                                                                                                         |
-| ---------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `--dag`                      | required            | Path to the DAG JSON file.                                                                                    |
-| `--canvas-path`              | composed from below | Full absolute path to the canvas file. Preferred — used by the parent-managed flow.                           |
-| `--canvas`                   | —                   | Canvas filename stem (no `.canvas.tsx`). Used only if `--canvas-path` is omitted.                             |
-| `--canvases-dir`             | derived from cwd    | Override the canvases output directory. Used only with `--canvas`.                                            |
-| `--cwd`                      | `process.cwd()`     | Working dir each subagent operates in.                                                                        |
-| `--models-file`              | —                   | JSON file containing a partial complexity → model override map.                                               |
-| `--debounce`                 | `200` (ms)          | Canvas write debounce interval.                                                                               |
-| `--init-only`                | `false`             | Write the initial all-`PENDING` canvas and exit. No `CURSOR_API_KEY` required.                                |
-| `--state-path`               | —                   | Persist resumable runner state. Defaults to `.proof/run-state.json` when `--restart-on-runner-change` is set. |
-| `--resume-state`             | —                   | Load a persisted `RunState` and skip already terminal tasks.                                                  |
-| `--restart-on-runner-change` | `false`             | Detect runner runtime file changes after safe boundaries and exit `75` for supervisor restart.                |
-| `--max-runner-restarts`      | `20`                | Supervisor-only cap for relaunches from `proof-supervisor`.                                                   |
-| `--task-timeout-ms`          | `1200000` (20 min)  | Marks a task `ERROR` if it exceeds this duration.                                                             |
-| `--stream-publish-ms`        | `500` (ms)          | Throttles live canvas streaming writes to avoid excessive cloning.                                            |
-| `--stream-idle-timeout-ms`   | `300000` (5 min)    | Marks a task `ERROR` if no stream events arrive within this window.                                           |
+| Flag                         | Default             | Notes                                                                                                                                                                                                                |
+| ---------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--dag`                      | required            | Path to the DAG JSON file.                                                                                                                                                                                           |
+| `--canvas-path`              | composed from below | Full absolute path to the canvas file. Preferred — used by the parent-managed flow.                                                                                                                                  |
+| `--canvas`                   | —                   | Canvas filename stem (no `.canvas.tsx`). Used only if `--canvas-path` is omitted.                                                                                                                                    |
+| `--canvases-dir`             | derived from cwd    | Override the canvases output directory. Used only with `--canvas`.                                                                                                                                                   |
+| `--cwd`                      | `process.cwd()`     | Working dir each subagent operates in.                                                                                                                                                                               |
+| `--models-file`              | —                   | JSON file containing a partial complexity → model override map.                                                                                                                                                      |
+| `--debounce`                 | `200` (ms)          | Canvas write debounce interval.                                                                                                                                                                                      |
+| `--init-only`                | `false`             | Write the initial all-`PENDING` canvas and exit. No `CURSOR_API_KEY` required.                                                                                                                                       |
+| `--full-output-dir`          | computed default    | Per-task transcripts as `${taskId}.md` plus `_index.md` and `_dag.json`. Defaults to `~/.cursor/projects/<workspace>/artifacts/dag-<title>-<ts>/`. Override with an explicit path or suppress with `--no-artifacts`. |
+| `--no-artifacts`             | `false`             | Skip writing per-task transcripts, `_index.md`, and `_dag.json`. Canvas is still written.                                                                                                                            |
+| `--findings-dir`             | —                   | Per-task JSON sidecars as `${taskId}.findings.json`. Schema: `{ taskId, iteration, status, durationMs, sections }`.                                                                                                  |
+| `--state-path`               | —                   | Persist resumable runner state. Defaults to `.proof/run-state.json` when `--restart-on-runner-change` is set.                                                                                                        |
+| `--resume-state`             | —                   | Load a persisted `RunState` and skip already terminal tasks.                                                                                                                                                         |
+| `--restart-on-runner-change` | `false`             | Detect runner runtime file changes after safe boundaries and exit `75` for supervisor restart.                                                                                                                       |
+| `--max-runner-restarts`      | `20`                | Supervisor-only cap for relaunches from `proof-supervisor`.                                                                                                                                                          |
+| `--task-timeout-ms`          | `1200000` (20 min)  | Marks a task `ERROR` if it exceeds this duration.                                                                                                                                                                    |
+| `--stream-publish-ms`        | `500` (ms)          | Throttles live canvas streaming writes to avoid excessive cloning.                                                                                                                                                   |
+| `--stream-idle-timeout-ms`   | `300000` (5 min)    | Marks a task `ERROR` if no stream events arrive within this window.                                                                                                                                                  |
 
 ## Caveats
 
+- Per-task markdown transcripts, a run index (`_index.md`), and the DAG definition (`_dag.json`) are written to a timestamped artifacts directory by default. Pass `--no-artifacts` to suppress or `--full-output-dir` to override the path.
 - Local runtime only — every subagent runs against `--cwd` (defaults to wherever you invoke the runner).
 - Sibling tasks in the same rank run in parallel; do not let them write the same files.
 - Inline MCP servers and sub-sub-agents are not configured by this runner.

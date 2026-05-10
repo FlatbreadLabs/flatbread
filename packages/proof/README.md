@@ -100,6 +100,32 @@ Optional task kinds add control gates:
 - `kind: "oracle"` runs a shell command and records pass/fail evidence.
 - `kind: "pause"` waits for a checkpoint sentinel so a human can inspect or approve before downstream work continues.
 
+## Artifact Output
+
+By default, every run writes per-task markdown transcripts to a timestamped directory:
+
+```
+~/.cursor/projects/<workspace-slug>/artifacts/dag-<title-slug>-<timestamp>/
+  _dag.json      # The original DAG definition
+  _index.md      # Run summary: outcome, timings, and links to all transcripts
+  <task-id>.md   # Full agent output for each task (kind: task, oracle, or pause)
+```
+
+This mirrors the canvas path scheme so artifacts and canvases live together under `~/.cursor/projects/<workspace-slug>/`.
+
+To suppress artifact writing:
+
+```bash
+pnpm exec proof --dag /tmp/my.json --canvas-path /tmp/my.canvas.tsx --no-artifacts
+```
+
+To write artifacts to a custom path:
+
+```bash
+pnpm exec proof --dag /tmp/my.json --canvas-path /tmp/my.canvas.tsx \
+  --full-output-dir /path/to/my-artifacts/
+```
+
 ## Project Skill
 
 The canonical Cursor skill entrypoint lives at:
