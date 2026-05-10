@@ -51,6 +51,7 @@ export {
   resolveLoopReexecuteIds,
   transitiveAncestors,
 } from './converge_loop.js';
+export { transitiveAncestorIds } from './dag.js';
 export type { ConvergenceFindings } from './converge_loop.js';
 
 export {

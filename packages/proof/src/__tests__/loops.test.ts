@@ -113,7 +113,24 @@ test('parseDAG rejects two loops with the same explicit id', (t) => {
           { id: 'shared', convergeOn: 'design', maxIterations: 2 },
         ])
       ),
-    { message: /duplicate loop id/ }
+    { message: /resolved loop id.*shared.*collides/ }
+  );
+});
+
+test('parseDAG rejects loops whose resolved ids collide (explicit id matches another loop\'s default)', (t) => {
+  // Loop 0 has no explicit id: resolves to 'loop-review' via default.
+  // Loop 1 explicitly sets id: 'loop-review', convergeOn a different task.
+  // Before the fix these two loops silently produced duplicate resolved ids;
+  // after the fix parseDAG must throw.
+  t.throws(
+    () =>
+      parseDAG(
+        dagWith([
+          { convergeOn: 'review', maxIterations: 2 },
+          { id: 'loop-review', convergeOn: 'implement', maxIterations: 2 },
+        ])
+      ),
+    { message: /resolved loop id.*loop-review.*collides/ }
   );
 });
 
@@ -130,11 +147,40 @@ test('parseDAG accepts explicit reexecute.tasks inside the ancestor cone', (t) =
   const reexec = dag.loops![0].reexecute!;
   t.is(reexec.kind, 'tasks');
   if (reexec.kind === 'tasks') {
-    t.true(reexec.tasks.includes('implement'));
     // convergeOn is injected so the loop body always re-runs the
     // convergence task itself after upstream re-execution.
-    t.true(reexec.tasks.includes('review'));
+    t.deepEqual([...reexec.tasks].sort(), ['implement', 'review']);
   }
+});
+
+test('parseDAG deduplicates convergeOn from reexecute.tasks when caller includes it explicitly', (t) => {
+  const dag = parseDAG(
+    dagWith([
+      {
+        convergeOn: 'review',
+        maxIterations: 2,
+        reexecute: { kind: 'tasks', tasks: ['implement', 'review'] }, // review = convergeOn
+      },
+    ])
+  );
+  const reexec = dag.loops![0].reexecute!;
+  t.is(reexec.kind, 'tasks');
+  if (reexec.kind === 'tasks') {
+    // 'review' must appear exactly once despite being both the convergeOn and explicit in the list
+    t.deepEqual([...reexec.tasks].sort(), ['implement', 'review']);
+  }
+});
+
+test('parseDAG accepts a pause task as convergeOn (behavior: allowed, convergence semantics may be vacuous)', (t) => {
+  const raw = {
+    title: 'pause-convergeOn',
+    tasks: [
+      { id: 'gate', depends_on: [], subtask_prompt: 'wait', kind: 'pause' },
+    ],
+    loops: [{ convergeOn: 'gate', maxIterations: 1 }],
+  };
+  const dag = parseDAG(raw);
+  t.is(dag.loops![0].convergeOn, 'gate');
 });
 
 test('parseDAG rejects reexecute.tasks outside the ancestor cone', (t) => {

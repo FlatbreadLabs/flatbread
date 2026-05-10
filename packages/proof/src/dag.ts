@@ -274,11 +274,16 @@ export function parseDAG(raw: unknown): DAG {
 /**
  * Returns the closed set of transitive ancestor ids for `taskId` in the
  * given task list (the union of `depends_on` reached by repeated
- * traversal). Mirrors `transitiveAncestors` in `converge_loop.ts` but is
- * defined here so `parseDAG` can validate `loops.reexecute.tasks` without
- * a circular module import.
+ * traversal). Canonical transitive-ancestor traversal shared with
+ * `converge_loop.ts`. Defined here (takes `RawTask[]` not a full `DAG`
+ * object) so `parseDAG` can validate `loops.reexecute.tasks` without a
+ * circular module import; `converge_loop.ts:transitiveAncestors` delegates
+ * to this function.
  */
-function transitiveAncestorIds(taskId: string, tasks: RawTask[]): Set<string> {
+export function transitiveAncestorIds(
+  taskId: string,
+  tasks: RawTask[]
+): Set<string> {
   const byId = new Map(tasks.map((t) => [t.id, t]));
   const visited = new Set<string>();
   const start = byId.get(taskId);
@@ -302,7 +307,7 @@ function validateLoops(raw: unknown, tasks: RawTask[]): DAGConvergenceLoop[] {
   const taskIds = new Set(tasks.map((t) => t.id));
   const loops: DAGConvergenceLoop[] = [];
   const seenConvergeOn = new Set<string>();
-  const seenIds = new Set<string>();
+  const seenResolvedIds = new Set<string>();
   for (let i = 0; i < raw.length; i++) {
     const loop = validateLoop(raw[i], i, taskIds, tasks);
     if (seenConvergeOn.has(loop.convergeOn)) {
@@ -311,12 +316,14 @@ function validateLoops(raw: unknown, tasks: RawTask[]): DAGConvergenceLoop[] {
       );
     }
     seenConvergeOn.add(loop.convergeOn);
-    if (loop.id !== undefined) {
-      if (seenIds.has(loop.id)) {
-        throw new Error(`DAG.loops[${i}]: duplicate loop id "${loop.id}".`);
-      }
-      seenIds.add(loop.id);
+    const resolvedId = loop.id ?? `loop-${loop.convergeOn}`;
+    if (seenResolvedIds.has(resolvedId)) {
+      throw new Error(
+        `DAG.loops[${i}]: resolved loop id "${resolvedId}" collides with a previous loop's id. ` +
+          `Set an explicit \`id\` on one of the colliding loops to disambiguate.`
+      );
     }
+    seenResolvedIds.add(resolvedId);
     loops.push(loop);
   }
   return loops;
