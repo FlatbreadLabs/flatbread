@@ -22,7 +22,11 @@
  * the same topological order as the original run.
  */
 
-import type { DAG, ResolvedConvergenceLoop } from './dag.js';
+import {
+  transitiveAncestorIds,
+  type DAG,
+  type ResolvedConvergenceLoop,
+} from './dag.js';
 
 export interface ConvergenceFindings {
   hasIssues: boolean;
@@ -116,21 +120,7 @@ const PLACEHOLDER_WORDS = new Set([
 ]);
 
 export function transitiveAncestors(taskId: string, dag: DAG): Set<string> {
-  const byId = new Map(dag.tasks.map((t) => [t.id, t]));
-  const visited = new Set<string>();
-  const start = byId.get(taskId);
-  if (!start) return visited;
-
-  const stack: string[] = [...start.depends_on];
-  while (stack.length > 0) {
-    const id = stack.pop()!;
-    if (visited.has(id)) continue;
-    visited.add(id);
-    const t = byId.get(id);
-    if (!t) continue;
-    for (const dep of t.depends_on) stack.push(dep);
-  }
-  return visited;
+  return transitiveAncestorIds(taskId, dag.tasks);
 }
 
 /**
