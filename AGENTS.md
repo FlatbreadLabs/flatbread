@@ -13,6 +13,7 @@ See `CONTRIBUTING.md` for full details. Quick reference:
 - **Install**: `pnpm install`
 - **Build**: `pnpm build`
 - **Lint**: `pnpm lint` (prettier)
+- **Lint fix (after edits)**: `pnpm lint:fix:fast` (writes formatting repo-wide to match `pnpm lint`; staged-only: `pnpm lint:fix`, also runs via `.husky/pre-commit`)
 - **Typecheck**: `pnpm typecheck`
 - **Test**: `pnpm test` (builds, then runs ava + vitest suites)
 - **Full verify**: `pnpm verify` (lint + typecheck + build + test)

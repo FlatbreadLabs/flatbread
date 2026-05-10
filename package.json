@@ -22,6 +22,7 @@
     "lint:prettier": "prettier --check --plugin-search-dir=. .",
     "lint": "pnpm lint:prettier",
     "lint:fix": "pnpm lint:fix:prettier",
+    "lint:fix:fast": "prettier --write --plugin-search-dir=. .",
     "lint:fix:prettier": "pretty-quick --staged",
     "typecheck": "pnpm --filter @flatbread/proof typecheck",
     "play": "cd examples/nextjs && pnpm dev",

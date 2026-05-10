@@ -51,7 +51,7 @@ pnpm build
   - Root `pnpm test` builds the workspace, runs the AVA suite configured by `ava.config.js`, then runs the package-local Vitest suites.
   - Vitest is currently used by `@flatbread/codegen` and `@flatbread/utils`.
   - Most other packages are covered by the root AVA suite or do not yet expose a package-local `test` script.
-- `pnpm lint` is the enforced Prettier formatting gate. `pnpm lint:eslint` is an optional/manual root ESLint check until the linting stack is modernized.
+- `pnpm lint` is the enforced Prettier formatting gate. After editing, run `pnpm lint:fix:fast` so formatting matches CI (Cursor agents: see `.cursor/rules/post-edit-lint-fix.mdc`). On commit, `.husky/pre-commit` runs `pnpm lint:fix` (Pretty Quick on staged files). `pnpm lint:eslint` is an optional/manual root ESLint check until the linting stack is modernized.
 - Helpful commands:
   - Local CI parity: `pnpm verify`
   - Root test suite: `pnpm test`

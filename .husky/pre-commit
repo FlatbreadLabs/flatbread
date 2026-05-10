@@ -1,0 +1,5 @@
+#!/bin/sh
+cd "$(dirname "$0")/.." || exit 1
+
+# Match pnpm lint (Prettier) on staged files before the commit is recorded.
+pnpm lint:fix:prettier || exit 1

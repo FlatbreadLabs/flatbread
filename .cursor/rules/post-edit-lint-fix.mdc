@@ -1,0 +1,22 @@
+---
+description: Fast Prettier fix after edits (matches pnpm lint)
+alwaysApply: true
+---
+
+# Post-edit lint fix
+
+After you change files in this repo (source, tests, scripts, JSON/YAML/MD that Prettier formats, config), run **one** fast formatting pass so the tree matches CI:
+
+```bash
+pnpm lint:fix:fast
+```
+
+Run it **after substantive edits** and before you commit or finish a task turn. Do not skip this in favor of only eyeballing formatting.
+
+Staged-only formatting (also run automatically by `.husky/pre-commit` when you commit):
+
+```bash
+pnpm lint:fix
+```
+
+CI still enforces `pnpm lint` (check-only). The enforced formatter is Prettier; do not rely on ESLint `--fix` unless the task is explicitly about ESLint.
