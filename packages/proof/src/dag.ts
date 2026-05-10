@@ -574,7 +574,10 @@ export function createCatalogBackedModelResolver(
  * round-trip-stable for legacy configs. Use `normalizeModelSelection` when
  * you need a `ModelSelection` object (including `{ id }` for strings).
  */
-export function validateModelSelection(raw: unknown, label = 'model'): ModelSpec {
+export function validateModelSelection(
+  raw: unknown,
+  label = 'model'
+): ModelSpec {
   if (typeof raw === 'string') {
     const id = raw.trim();
     if (id === '') {
@@ -706,9 +709,11 @@ function validateRequestedParams(
       const allowed = new Set(definition.values.map((value) => value.value));
       if (!allowed.has(param.value)) {
         throw new Error(
-          `${label} ${selection.id} param "${param.id}" does not support value "${
-            param.value
-          }". Supported values: ${[...allowed].join(', ')}`
+          `${label} ${selection.id} param "${
+            param.id
+          }" does not support value "${param.value}". Supported values: ${[
+            ...allowed,
+          ].join(', ')}`
         );
       }
     }
@@ -765,7 +770,11 @@ function chooseMatchingVariant(
     if (score > bestScore) {
       best = match;
       bestScore = score;
-    } else if (score === bestScore && match === defaultVar && best !== defaultVar) {
+    } else if (
+      score === bestScore &&
+      match === defaultVar &&
+      best !== defaultVar
+    ) {
       best = match;
     }
   }
