@@ -38,6 +38,23 @@ test('no positional args: piped stdin is read; then missing API key (not readFil
   t.notRegex(stderr, /Received type number/, stderr);
 });
 
+test('--run without value exits before unknown-flag / API key', async (t) => {
+  const { code, stderr } = await runScript(['--run'], '');
+  t.is(code, 1);
+  t.true(
+    stderr.includes('Missing value for --run') || stderr.includes('--run'),
+    stderr
+  );
+  t.false(stderr.startsWith('Unknown flag'), stderr);
+});
+
+test('--api-key without value exits before unknown-flag', async (t) => {
+  const { code, stderr } = await runScript(['--api-key'], '');
+  t.is(code, 1);
+  t.true(stderr.includes('--api-key'), stderr);
+  t.false(stderr.startsWith('Unknown flag'), stderr);
+});
+
 test('dash positional: piped stdin is read; then missing API key', async (t) => {
   const bc = 'bc-aaaaaaaa-bbbb-cccc-dddddddddddd';
   const { code, stderr } = await runScript(['-'], bc);

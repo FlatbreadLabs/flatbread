@@ -18,12 +18,28 @@ function parseArgs(argv) {
   const args = argv.filter((a) => a !== '--');
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--run' && args[i + 1]) {
-      explicitRun = args[++i];
+    if (a === '--run') {
+      const v = args[i + 1];
+      if (!v || v.startsWith('-')) {
+        console.error(
+          'Missing value for --run (expected run-… uuid after the flag).'
+        );
+        process.exit(1);
+      }
+      explicitRun = v;
+      i++;
       continue;
     }
-    if (a === '--api-key' && args[i + 1]) {
-      apiKey = args[++i];
+    if (a === '--api-key') {
+      const v = args[i + 1];
+      if (!v || v.startsWith('-')) {
+        console.error(
+          'Missing value for --api-key (expected the key after the flag).'
+        );
+        process.exit(1);
+      }
+      apiKey = v;
+      i++;
       continue;
     }
     if (a === '-') {
@@ -52,14 +68,19 @@ function extractFromUrl(raw) {
   const trimmed = raw.trim();
   let agentId;
   let runId;
-  try {
-    const href = /^https?:\/\//i.test(trimmed)
-      ? trimmed
-      : trimmed.includes('cursor.com')
-      ? `https://${trimmed.replace(/^\/+/, '')}`
-      : null;
-    if (href) {
-      const u = new URL(href);
+  const href = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : trimmed.includes('cursor.com')
+    ? `https://${trimmed.replace(/^\/+/, '')}`
+    : null;
+  if (href) {
+    let u;
+    try {
+      u = new URL(href);
+    } catch {
+      u = undefined;
+    }
+    if (u) {
       const keysAgent = ['selectedBcId', 'agentId', 'bcId', 'id', 'agent'];
       for (const k of keysAgent) {
         const v = u.searchParams.get(k);
@@ -77,8 +98,6 @@ function extractFromUrl(raw) {
         }
       }
     }
-  } catch {
-    // ignore
   }
   if (!agentId) {
     const m = trimmed.match(BC_RE);
@@ -92,9 +111,7 @@ function extractFromUrl(raw) {
 }
 
 async function main() {
-  const { input, explicitRun, apiKey } = parseArgs(
-    process.argv.slice(2).filter((a) => a !== '--')
-  );
+  const { input, explicitRun, apiKey } = parseArgs(process.argv.slice(2));
   let raw = input;
   if (input === '-') {
     raw = (await readStdinUtf8()).trim();
@@ -114,7 +131,7 @@ async function main() {
 
   if (!raw) {
     console.error(
-      'Usage: node scripts/fetch-cloud-agent-conversation.mjs "<cursor agents url or bc- id>" [--run run-uuid]'
+      'Usage: node scripts/fetch-cloud-agent-conversation.mjs "<cursor agents url or bc- id>" [--run run-uuid] [--api-key …]'
     );
     process.exit(1);
   }
@@ -149,9 +166,12 @@ async function main() {
       console.error(`No runs found for agent ${agentId}.`);
       process.exit(1);
     }
-    const sorted = [...items].sort(
-      (a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)
-    );
+    const sorted = [...items].sort((a, b) => {
+      const tb = b.createdAt ?? Number.NEGATIVE_INFINITY;
+      const ta = a.createdAt ?? Number.NEGATIVE_INFINITY;
+      if (tb !== ta) return tb - ta;
+      return String(b.id ?? '').localeCompare(String(a.id ?? ''));
+    });
     run = sorted[0];
   }
 
@@ -173,6 +193,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error(e?.message || e);
+  console.error(e);
   process.exit(1);
 });
