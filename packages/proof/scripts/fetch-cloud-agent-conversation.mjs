@@ -26,6 +26,10 @@ function parseArgs(argv) {
       apiKey = args[++i];
       continue;
     }
+    if (a === '-') {
+      positional.push(a);
+      continue;
+    }
     if (a.startsWith('-')) {
       console.error(`Unknown flag: ${a}`);
       process.exit(1);
@@ -33,6 +37,15 @@ function parseArgs(argv) {
     positional.push(a);
   }
   return { input: positional.join(' ').trim(), explicitRun, apiKey };
+}
+
+/** Read until stdin EOF (non-blocking when stdin is already closed with no data). */
+async function readStdinUtf8() {
+  const chunks = [];
+  for await (const chunk of process.stdin) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks).toString('utf8');
 }
 
 function extractFromUrl(raw) {
@@ -83,9 +96,13 @@ async function main() {
     process.argv.slice(2).filter((a) => a !== '--')
   );
   let raw = input;
-  if (input === '' || input === '-') {
-    const { readFile } = await import('node:fs/promises');
-    raw = String(await readFile(0, 'utf8')).trim();
+  if (input === '-') {
+    raw = (await readStdinUtf8()).trim();
+  } else if (input === '') {
+    // Avoid blocking on an interactive TTY when no URL argument was given.
+    if (!process.stdin.isTTY) {
+      raw = (await readStdinUtf8()).trim();
+    }
   }
 
   if (!process.env.CURSOR_API_KEY && !apiKey) {
