@@ -1,6 +1,6 @@
 # Flatbread Next.js Example with TypeScript Codegen
 
-This example is the repo’s **default first success path**: **relational Git-backed markdown** ( **`Post`** ↔ **`Author`** via `refs`; **`tags`** as string arrays on posts) compiled into a typed shape. **GraphQL plus codegen** are one read path baked into this demo, and the generated TypeScript read API gives simple app reads a collection-shaped interface over the same typed model; see [Choosing a read interface](../../README.md#choosing-a-read-interface).
+This example is the repo’s **default first success path**: **relational Git-backed markdown** ( **`Post`** ↔ **`Author`** via `refs`; **`tags`** as string arrays on posts) compiled into a typed shape. **GraphQL plus codegen** are one read path baked into this demo, and the generated TypeScript read API gives simple app reads a collection-shaped interface over the same typed model; see [Choosing a read interface](../../packages/flatbread/README.md#choosing-a-read-interface).
 
 **Note:** `flatbread.config.js` here also declares **PostCategory**, **OverrideTest**, **YamlAuthor**, etc. for integration tests. Treat those as **secondary**; the onboarding narrative is **posts + authors + tags** on the **`Post`** row.
 
@@ -25,7 +25,7 @@ This example is the repo’s **default first success path**: **relational Git-ba
    pnpm exec flatbread codegen --verbose
    ```
 
-   Add or edit **`.graphql`** files under `queries/` (or globs in config), then rerun codegen so **`tags`**, **`authors`**, and other fields stay in sync. Codegen also emits the prototype **generated TypeScript read API** in `generated/graphql.ts`; see `lib/read.ts` for the posts/authors/tags example that calls `createFlatbreadReadApi()`, and see [Choosing a read interface](../../README.md#choosing-a-read-interface) for when to use each read path.
+   Add or edit **`.graphql`** files under `queries/` (or globs in config), then rerun codegen so **`tags`**, **`authors`**, and other fields stay in sync. Codegen also emits the prototype **generated TypeScript read API** in `generated/graphql.ts`; see `lib/read.ts` for the posts/authors/tags example that calls `createFlatbreadReadApi()`, and see [Choosing a read interface](../../packages/flatbread/README.md#choosing-a-read-interface) for when to use each read path.
 
 4. **Serve the GraphQL read interface alongside Next** (**there is no `flatbread dev`** — use **`flatbread start`**):
 
@@ -76,7 +76,7 @@ Markdown and YAML for this demo live under **`examples/content`**; this package 
 - **Posts:** `examples/content/markdown/posts/` (`tags` in frontmatter → `[String]` on **`Post`** in the schema.)
 - **Authors:** `examples/content/markdown/authors/` (referenced by id from **`Post`** **`authors`**.)
 
-Canonical layout, **backing files for tags** (facet on each post), **traceability** (same **relation model** from files through config to read interfaces and illustrative query JSON), and guidance on GraphQL versus the generated TypeScript read API are documented in the [Flatbread README quickstart](../../README.md#quickstart-posts-authors-and-tags), [Choosing a read interface](../../README.md#choosing-a-read-interface), and [glossary](../../docs/glossary.md).
+Canonical layout, **backing files for tags** (facet on each post), **traceability** (same **relation model** from files through config to read interfaces and illustrative query JSON), and guidance on GraphQL versus the generated TypeScript read API are documented in the [Flatbread README quickstart](../../packages/flatbread/README.md#quickstart-posts-authors-and-tags), [Choosing a read interface](../../packages/flatbread/README.md#choosing-a-read-interface), and [glossary](../../docs/glossary.md).
 
 ## Project structure
 
@@ -137,7 +137,7 @@ const authorNames = posts[0]?.authors?.map((author) => author.name);
 const tags = posts[0]?.tags;
 ```
 
-That path queries **posts**, **authors**, and **tags** through the generated TypeScript API while GraphQL remains the underlying execution layer. The lower-level generated methods still accept an optional GraphQL selection string for experimentation, but the canonical example uses the generated default selection so the call site does not hand-write a GraphQL document. For custom selections, persisted operations, or direct GraphQL clients, use operation documents instead; the root [Choosing a read interface](../../README.md#choosing-a-read-interface) section is the canonical contract.
+That path queries **posts**, **authors**, and **tags** through the generated TypeScript API while GraphQL remains the underlying execution layer. The lower-level generated methods still accept an optional GraphQL selection string for experimentation, but the canonical example uses the generated default selection so the call site does not hand-write a GraphQL document. For custom selections, persisted operations, or direct GraphQL clients, use operation documents instead; the root [Choosing a read interface](../../packages/flatbread/README.md#choosing-a-read-interface) section is the canonical contract.
 
 ## Troubleshooting
 
@@ -151,7 +151,7 @@ Run **`pnpm exec flatbread codegen --clear-cache --verbose`**.
 
 ## Learn more
 
-- [Flatbread package README](../../README.md) — quickstart, install, **`flatbread start`**, and choosing GraphQL or the generated TypeScript read API
+- [Flatbread package README](../../packages/flatbread/README.md) — quickstart, install, **`flatbread start`**, and choosing GraphQL or the generated TypeScript read API
 - [Glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md) — collections, relations; GraphQL as one surface
 - [Contributing / monorepo workflow](https://github.com/FlatbreadLabs/flatbread/blob/main/CONTRIBUTING.md)
 - [GraphQL Code Generator](https://www.the-guild.dev/graphql/codegen)
