@@ -17,7 +17,7 @@ export interface ModelSelection {
 
 export type ModelSpec = string | ModelSelection;
 export type ModelMap = Record<Complexity, ModelSelection>;
-export type ModelMapOverride = Partial<ModelMap>;
+export type ModelMapOverride = Partial<Record<Complexity, ModelSpec>>;
 export type ResolvedModelMap = Record<Complexity, ModelSelection>;
 
 export interface ModelCatalogItem {
@@ -508,8 +508,8 @@ export function validateModelMap(
     if (!COMPLEXITY_VALUES.has(key as Complexity)) {
       throw new Error(`${label} contains unknown complexity key: ${key}`);
     }
-    models[key as Complexity] = validateModelSelection(
-      value,
+    models[key as Complexity] = normalizeModelSelection(
+      value as ModelSpec,
       `${label}.${key}`
     );
   }
@@ -746,9 +746,9 @@ function assertKnownComplexity(c: Complexity): void {
 
 function resolveModelMap(overrides: ModelMapOverride = {}): ModelMap {
   return {
-    HIGH: cloneModelSelection(overrides.HIGH ?? DEFAULT_MODEL_MAP.HIGH),
-    MED: cloneModelSelection(overrides.MED ?? DEFAULT_MODEL_MAP.MED),
-    LOW: cloneModelSelection(overrides.LOW ?? DEFAULT_MODEL_MAP.LOW),
+    HIGH: normalizeModelSelection(overrides.HIGH ?? DEFAULT_MODEL_MAP.HIGH),
+    MED: normalizeModelSelection(overrides.MED ?? DEFAULT_MODEL_MAP.MED),
+    LOW: normalizeModelSelection(overrides.LOW ?? DEFAULT_MODEL_MAP.LOW),
   };
 }
 

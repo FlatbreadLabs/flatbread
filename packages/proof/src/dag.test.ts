@@ -1,8 +1,11 @@
 import test from 'ava';
 
 import {
+  createModelSelectionResolver,
   normalizeModelSelection,
+  parseDAG,
   resolveModelSelectionFromCatalog,
+  validateModelMap,
   type ModelCatalogItem,
   type ModelSpec,
   type ModelSelection,
@@ -350,4 +353,86 @@ test('normalizeModelSelection throws label-prefixed errors for invalid param val
     }
     t.is(err.message, 'test model.params[0].value must be a non-empty string.');
   }
+});
+
+test('validateModelMap accepts plain string model ids', (t) => {
+  t.deepEqual(
+    validateModelMap(
+      {
+        HIGH: '  claude-opus-4-7  ',
+        LOW: 'gpt-5.4-nano',
+      },
+      'test models'
+    ),
+    {
+      HIGH: { id: 'claude-opus-4-7' },
+      LOW: { id: 'gpt-5.4-nano' },
+    }
+  );
+});
+
+test('validateModelMap accepts model selection objects with params', (t) => {
+  t.deepEqual(
+    validateModelMap(
+      {
+        MED: {
+          id: 'composer-2',
+          params: [{ id: 'effort', value: 'max' }],
+        },
+      },
+      'test models'
+    ),
+    {
+      MED: {
+        id: 'composer-2',
+        params: [{ id: 'effort', value: 'max' }],
+      },
+    }
+  );
+});
+
+test('createModelSelectionResolver normalizes mixed override shapes', (t) => {
+  const modelFor = createModelSelectionResolver({
+    HIGH: 'claude-opus-4-7',
+    MED: {
+      id: 'composer-2',
+      params: [{ id: 'effort', value: 'medium' }],
+    },
+  });
+
+  t.deepEqual(modelFor('HIGH'), { id: 'claude-opus-4-7' });
+  t.deepEqual(modelFor('MED'), {
+    id: 'composer-2',
+    params: [{ id: 'effort', value: 'medium' }],
+  });
+  t.deepEqual(modelFor('LOW'), { id: 'gpt-5.4-nano' });
+});
+
+test('parseDAG normalizes mixed model override shapes', (t) => {
+  const dag = parseDAG({
+    title: 'Mixed model overrides',
+    models: {
+      HIGH: 'claude-opus-4-7',
+      MED: {
+        id: 'composer-2',
+        params: [{ id: 'effort', value: 'medium' }],
+      },
+    },
+    tasks: [
+      {
+        id: 'review',
+        depends_on: [],
+        complexity: 'HIGH',
+        subtask_prompt: 'Review the change.',
+      },
+    ],
+  });
+
+  t.deepEqual(dag.models, {
+    HIGH: { id: 'claude-opus-4-7' },
+    MED: {
+      id: 'composer-2',
+      params: [{ id: 'effort', value: 'medium' }],
+    },
+  });
 });

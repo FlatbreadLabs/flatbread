@@ -68,20 +68,17 @@ Every DAG has a `title` and a `tasks` array. Each task needs:
 
 Proof computes ranks with Kahn topological sort and runs sibling tasks in the same rank concurrently. Avoid placing two sibling tasks in the same rank if they write the same files.
 
-Optional top-level `models` can override the default complexity map with SDK
-model selections:
+Optional top-level `models` can override the default complexity map with plain
+SDK model id strings or SDK model selections:
 
 ```json
 {
   "models": {
     "HIGH": {
-      "id": "claude-opus-4-7",
-      "params": [
-        { "id": "thinking", "value": "true" },
-        { "id": "effort", "value": "max" }
-      ]
+      "id": "gpt-5.4",
+      "params": [{ "id": "reasoning", "value": "high" }]
     },
-    "MED": { "id": "composer-2" },
+    "MED": "composer-2",
     "LOW": {
       "id": "gpt-5.4-nano",
       "params": [{ "id": "reasoning", "value": "low" }]
@@ -89,6 +86,9 @@ model selections:
   }
 }
 ```
+
+Use the object shape when you need `params`; use a string when the model id is
+enough. For example, use `{ "id": "gpt-5.4", "params": [{ "id": "reasoning", "value": "high" }] }`, not a suffix-style id like `gpt-5.4-high`.
 
 When a DAG runs, Proof calls `Cursor.models.list()`, validates model ids and
 param values, and expands partial selections to the closest valid SDK preset
