@@ -321,6 +321,21 @@ test('normalizeModelSelection trims string model ids', (t) => {
   t.deepEqual(normalizeModelSelection('  composer-2  '), { id: 'composer-2' });
 });
 
+test('normalizeModelSelection normalizes valid object model specs', (t) => {
+  const input: ModelSelection = {
+    id: '  composer-2  ',
+    params: [{ id: '  effort  ', value: '  medium  ' }],
+  };
+  const result = normalizeModelSelection(input, 'test model');
+
+  t.deepEqual(result, {
+    id: 'composer-2',
+    params: [{ id: 'effort', value: 'medium' }],
+  });
+  t.not(result, input);
+  t.not(result.params, input.params);
+});
+
 test('normalizeModelSelection throws label-prefixed errors for invalid model specs', (t) => {
   for (const raw of ['', '   ', 42, null]) {
     const err = t.throws(() =>
@@ -353,6 +368,27 @@ test('normalizeModelSelection throws label-prefixed errors for invalid param val
     }
     t.is(err.message, 'test model.params[0].value must be a non-empty string.');
   }
+});
+
+test('normalizeModelSelection throws on duplicate param ids', (t) => {
+  const err = t.throws(() =>
+    normalizeModelSelection(
+      {
+        id: 'composer-2',
+        params: [
+          { id: 'effort', value: 'low' },
+          { id: 'effort', value: 'high' },
+        ],
+      },
+      'test model'
+    )
+  );
+
+  if (!err) {
+    t.fail('Expected duplicate param id to throw.');
+    return;
+  }
+  t.regex(err.message, /duplicate id: effort/);
 });
 
 test('validateModelMap accepts plain string model ids', (t) => {
