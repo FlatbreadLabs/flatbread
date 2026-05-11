@@ -437,6 +437,7 @@ function defaultArtifactsDir(cwd: string, dagTitleSlug: string): string {
     .split('/')
     .map((seg) => seg.replace(/[^A-Za-z0-9._-]/g, '-'))
     .join('-');
+  const slug = dagTitleSlug || 'untitled';
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   return join(
     homedir(),
@@ -444,7 +445,7 @@ function defaultArtifactsDir(cwd: string, dagTitleSlug: string): string {
     'projects',
     projectSlug,
     'artifacts',
-    `dag-${dagTitleSlug}-${timestamp}`
+    `dag-${slug}-${timestamp}`
   );
 }
 
@@ -734,6 +735,23 @@ async function main(): Promise<void> {
       await markRunTerminated(state, message, outcome);
       writer.schedule(structuredCloneState(state));
       await writer.flush();
+      if (fullOutputAbsoluteDir && !indexWritten) {
+        await writeRunIndexMarkdown(
+          fullOutputAbsoluteDir,
+          dag.title,
+          state.tasks,
+          {
+            startedAt: state.startedAt,
+            finishedAt: state.finishedAt,
+            runOutcome: state.runOutcome,
+            runMessage: state.runMessage,
+          }
+        ).catch((e: unknown) => {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.warn(`[proof] _index.md write failed: ${msg}`);
+        });
+        indexWritten = true;
+      }
     } catch (flushErr) {
       const flushMsg =
         flushErr instanceof Error ? flushErr.message : String(flushErr);
@@ -968,7 +986,12 @@ async function main(): Promise<void> {
           runOutcome: state.runOutcome,
           runMessage: state.runMessage,
         }
-      );
+      ).catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.warn(`[proof] _index.md write failed: ${msg}`);
+      });
+      // Skip the defensive `finally` rewrite now that this attempt finished
+      // (success or logged failure).
       indexWritten = true;
     }
 
@@ -1026,6 +1049,7 @@ async function main(): Promise<void> {
           const msg = e instanceof Error ? e.message : String(e);
           console.warn(`[proof] _index.md write failed: ${msg}`);
         });
+        indexWritten = true;
       }
       console.error(`[proof] ${err.message}`);
       process.exit(EXIT_BUDGET_EXCEEDED);
