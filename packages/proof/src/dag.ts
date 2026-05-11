@@ -106,9 +106,9 @@ export interface DAG {
    *
    * Loops execute sequentially in declaration order after the main rank loop
    * completes. `--converge-on` may not be combined with `loops`; the runner
- * errors at startup if both are set. Loop re-execution sets must also be
- * disjoint so one loop cannot silently invalidate another loop's already
- * converged outcome.
+   * errors at startup if both are set. Loop re-execution sets must also be
+   * disjoint so one loop cannot silently invalidate another loop's already
+   * converged outcome.
    */
   loops?: DAGConvergenceLoop[];
 }
@@ -495,7 +495,9 @@ function validateLoopInteractions(
       );
       if (overlap.length === 0) continue;
       throw new Error(
-        `DAG.loops must have disjoint re-execution sets. "${reExecSets[i].id}" and "${reExecSets[j].id}" both re-run: ${overlap.join(
+        `DAG.loops must have disjoint re-execution sets. "${
+          reExecSets[i].id
+        }" and "${reExecSets[j].id}" both re-run: ${overlap.join(
           ', '
         )}. Split the DAG so each loop owns a separate task cone, or collapse the work into one loop.`
       );
