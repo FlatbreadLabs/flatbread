@@ -106,17 +106,6 @@ function assertRegExpComparator(
   return value;
 }
 
-function assertStringComparator(
-  value: unknown,
-  operation: ComparatorOperation
-): string {
-  if (typeof value !== 'string') {
-    throw new Error(`Comparator "${operation}" requires a string value.`);
-  }
-
-  return value;
-}
-
 function includesValue(
   source: unknown,
   value: unknown,
@@ -127,7 +116,12 @@ function includesValue(
   }
 
   if (typeof source === 'string') {
-    return source.includes(assertStringComparator(value, operation));
+    if (value instanceof RegExp) {
+      throw new TypeError(
+        'First argument to String.prototype.includes must not be a regular expression'
+      );
+    }
+    return Reflect.apply(String.prototype.includes, source, [value]);
   }
 
   throw new Error(
@@ -147,18 +141,41 @@ function matchesRegExp(source: unknown, value: RegExp): boolean {
   throw new Error('Comparator "regex" requires an array or string field.');
 }
 
-function matchesWildcard(source: unknown, value: string): boolean {
+function matchesWildcard(
+  source: unknown,
+  patterns: string | readonly string[]
+): boolean {
   if (typeof source === 'string') {
-    return isWildcardMatch(source, value);
+    return isWildcardMatch(source, patterns);
   }
 
   if (Array.isArray(source)) {
     return source.some(
-      (item) => typeof item === 'string' && isWildcardMatch(item, value)
+      (item) => typeof item === 'string' && isWildcardMatch(item, patterns)
     );
   }
 
   throw new Error('Comparator "wildcard" requires an array or string field.');
+}
+
+function assertWildcardPatternValue(
+  value: unknown,
+  operation: ComparatorOperation
+): string | readonly string[] {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (
+    Array.isArray(value) &&
+    value.every((item): item is string => typeof item === 'string')
+  ) {
+    return value;
+  }
+
+  throw new Error(
+    `Comparator "${operation}" requires a string or string array pattern value.`
+  );
 }
 
 function shouldNormalizeIdComparator(
@@ -187,41 +204,38 @@ function generateComparisonFunction(
       return (a: unknown) => a === value;
     case 'ne':
       return (a: unknown) => a !== value;
-    case 'lt':
-      return (a: unknown) =>
-        (a as string | number | boolean) < (value as string | number | boolean);
-    case 'lte':
-      return (a: unknown) =>
-        (a as string | number | boolean) <=
-        (value as string | number | boolean);
-    case 'gt':
-      return (a: unknown) =>
-        (a as string | number | boolean) > (value as string | number | boolean);
-    case 'gte':
-      return (a: unknown) =>
-        (a as string | number | boolean) >=
-        (value as string | number | boolean);
-    case 'in':
-      return (a: unknown) =>
-        (value as { includes: (item: unknown) => boolean }).includes(a);
-    case 'nin':
-      return (a: unknown) =>
-        !(value as { includes: (item: unknown) => boolean }).includes(a);
+    case 'lt': {
+      return (a: unknown) => compareComparable(a, value, (l, r) => l < r);
+    }
+    case 'lte': {
+      return (a: unknown) => compareComparable(a, value, (l, r) => l <= r);
+    }
+    case 'gt': {
+      return (a: unknown) => compareComparable(a, value, (l, r) => l > r);
+    }
+    case 'gte': {
+      return (a: unknown) => compareComparable(a, value, (l, r) => l >= r);
+    }
+    case 'in': {
+      const list = assertArrayComparator(value, operation);
+      return (a: unknown) => list.includes(a);
+    }
+    case 'nin': {
+      const list = assertArrayComparator(value, operation);
+      return (a: unknown) => !list.includes(a);
+    }
     case 'includes':
-      return (a: unknown) =>
-        (a as { includes: (item: unknown) => boolean }).includes(value);
+      return (a: unknown) => includesValue(a, value, operation);
     case 'excludes':
-      return (a: unknown) =>
-        !(a as { includes: (item: unknown) => boolean }).includes(value);
-    case 'regex':
-      return (a: unknown) =>
-        (value as { test: (item: unknown) => boolean }).test(a);
-    case 'wildcard':
-      return (a: unknown) =>
-        isWildcardMatch(
-          a as string | readonly string[],
-          value as string | readonly string[]
-        );
+      return (a: unknown) => !includesValue(a, value, operation);
+    case 'regex': {
+      const pattern = assertRegExpComparator(value, operation);
+      return (a: unknown) => matchesRegExp(a, pattern);
+    }
+    case 'wildcard': {
+      const patterns = assertWildcardPatternValue(value, operation);
+      return (a: unknown) => matchesWildcard(a, patterns);
+    }
     case 'exists':
       return (a: unknown) => (value ? a != undefined : a == undefined);
     case 'strictlyExists':
@@ -350,13 +364,10 @@ function compareComparable(
   compare: (left: Comparable, right: Comparable) => boolean
 ): boolean {
   if (!isComparable(left) || !isComparable(right)) {
-    throw new Error('Ordered comparators require comparable primitive values.');
+    return false;
   }
 
-  if (typeof left !== typeof right) {
-    throw new Error('Ordered comparators require matching value types.');
-  }
-
+  // Preserve native `<`/`<=`/`>`/`>=` coercion across mixed primitives (e.g. numeric field vs `'1'`).
   return compare(left, right);
 }
 
