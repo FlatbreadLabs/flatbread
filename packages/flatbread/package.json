@@ -31,7 +31,7 @@
     "*.d.ts"
   ],
   "dependencies": {
-    "@apollo/server": "5.0.0",
+    "@apollo/server": "5.5.0",
     "@apollo/utils.keyvaluecache": "^4.0.0",
     "@as-integrations/express5": "1.1.2",
     "@flatbread/codegen": "workspace:*",
