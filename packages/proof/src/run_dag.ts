@@ -434,7 +434,12 @@ function slugifyTitle(s: string): string {
 function defaultArtifactsDir(cwd: string, dagTitleSlug: string): string {
   const slug = dagTitleSlug || 'untitled';
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  return join(resolve(cwd), '.flatbread', 'artifacts', `dag-${slug}-${timestamp}`);
+  return join(
+    resolve(cwd),
+    '.flatbread',
+    'artifacts',
+    `dag-${slug}-${timestamp}`
+  );
 }
 
 async function loadResumedRunState(
