@@ -117,7 +117,7 @@ test('parseDAG rejects two loops with the same explicit id', (t) => {
   );
 });
 
-test('parseDAG rejects loops whose resolved ids collide (explicit id matches another loop\'s default)', (t) => {
+test("parseDAG rejects loops whose resolved ids collide (explicit id matches another loop's default)", (t) => {
   // Loop 0 has no explicit id: resolves to 'loop-review' via default.
   // Loop 1 explicitly sets id: 'loop-review', convergeOn a different task.
   // Before the fix these two loops silently produced duplicate resolved ids;
