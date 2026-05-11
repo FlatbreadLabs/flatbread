@@ -152,7 +152,10 @@ test('parseDAG accepts explicit reexecute.tasks when the subset is dependency-cl
       {
         convergeOn: 'review',
         maxIterations: 2,
-        reexecute: { kind: 'tasks', tasks: ['research', 'design', 'implement'] },
+        reexecute: {
+          kind: 'tasks',
+          tasks: ['research', 'design', 'implement'],
+        },
       },
     ])
   );
@@ -319,7 +322,10 @@ test('resolveLoopReexecuteIds with explicit tasks honors the allow-list', (t) =>
       {
         convergeOn: 'review',
         maxIterations: 2,
-        reexecute: { kind: 'tasks', tasks: ['research', 'design', 'implement'] },
+        reexecute: {
+          kind: 'tasks',
+          tasks: ['research', 'design', 'implement'],
+        },
       },
     ])
   ) as DAG;
@@ -445,7 +451,10 @@ test('DAGConvergenceLoop type round-trips through resolveConvergenceLoops', (t) 
       id: 'r',
       convergeOn: 'review',
       maxIterations: 5,
-      reexecute: { kind: 'tasks', tasks: ['research', 'design', 'implement', 'review'] },
+      reexecute: {
+        kind: 'tasks',
+        tasks: ['research', 'design', 'implement', 'review'],
+      },
     },
   ];
   const resolved = resolveConvergenceLoops(declared);
