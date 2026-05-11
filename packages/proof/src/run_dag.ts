@@ -947,7 +947,6 @@ async function main(): Promise<void> {
         convergeOn: loop.convergeOn,
         maxIterations: loop.maxIterations,
         reExecIds,
-        dag,
         ranks,
         stateById,
         dispatchTask,
@@ -1596,7 +1595,6 @@ interface RunConvergenceLoopOptions {
    * `resolveLoopReexecuteIds`.
    */
   reExecIds: Set<string>;
-  dag: DAG;
   ranks: RawTask[][];
   stateById: Map<string, TaskState>;
   dispatchTask: (
