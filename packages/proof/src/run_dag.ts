@@ -1538,12 +1538,15 @@ async function writeRunIndexMarkdown(
     '',
     '| Task | Kind | Status | Transcript |',
     '|------|------|--------|------------|',
-    ...tasks.map(
-      (t) =>
-        `| ${t.id} | ${t.kind ?? 'task'} | ${t.status} | [${t.id}.md](./${
-          t.id
-        }.md) |`
-    ),
+    ...tasks.map((t) => {
+      const transcriptFile = `${t.id}.md`;
+      const transcriptCell = existsSync(join(dir, transcriptFile))
+        ? `[${transcriptFile}](./${transcriptFile})`
+        : '_missing transcript_';
+      return `| ${t.id} | ${t.kind ?? 'task'} | ${
+        t.status
+      } | ${transcriptCell} |`;
+    }),
     '',
   ];
   await writeFile(join(dir, '_index.md'), lines.join('\n'), 'utf8');

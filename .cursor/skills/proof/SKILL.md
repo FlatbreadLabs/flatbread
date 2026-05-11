@@ -71,7 +71,7 @@ The runner executes tasks within a rank **concurrently** via `Promise.all`. A li
 
 Quality bar: when you sketch the rank structure (rank 1 → rank 2 → …), at least one rank should contain more than one task in any non-trivial problem. If your DAG is a single chain of 1-task ranks, you almost certainly missed parallelism — go back and look again.
 
-The example shipped with the runner (`examples/example_dag.json`) demonstrates the pattern: rank 1 fans out to two read-only research tasks, rank 2 merges them into a design, rank 3 implements, and rank 4 fans out again to tests + docs.
+The example shipped with the skill (`.cursor/skills/proof/examples/example_dag.json`) demonstrates the pattern: rank 1 fans out to two read-only research tasks, rank 2 merges them into a design, rank 3 implements, and rank 4 fans out again to tests + docs.
 
 Write the JSON to a temp file **and immediately generate the initial canvas** so the user can open it while subagents spin up. Run all of the following in a single shell block:
 
@@ -105,7 +105,7 @@ The canvas path is:
 ~/.cursor/projects/<workspace-slug>/canvases/dag-<slug>.canvas.tsx
 ```
 
-`<workspace-slug>` is derived from the cwd's absolute path with `/` and other special chars replaced by `-`. To compute it, take `pwd`, strip the leading `/`, and replace each remaining `/` with `-`. Example: cwd `/Users/me/Code/myapp` → slug `Users-me-Code-myapp`. Use the same `<slug>` you used for the DAG JSON filename so they're easy to correlate.
+`<workspace-slug>` is derived from the cwd's absolute path by stripping the leading `/`, replacing path separators with `-`, and sanitizing other non-alphanumeric characters within each path segment to `-`. Example: cwd `/Users/me/Code/myapp` → slug `Users-me-Code-myapp`. Use the same `<slug>` you used for the DAG JSON filename so they're easy to correlate.
 
 ### Step 2 — Surface the canvas link in chat
 
@@ -149,7 +149,7 @@ Same `--canvas-path` as Step 1. The runner:
 6. Artifact output (default, suppress with `--no-artifacts` or override path with `--full-output-dir`; skipped entirely for `--init-only` and `--dry-check-cmds`):
    - **At run start:** writes `_dag.json` (the original DAG definition) to the artifacts directory.
    - **As each task finishes:** writes `${taskId}.md` (full transcript for `kind: task`, `oracle`, and `pause`).
-   - **At run end:** best-effort `_index.md` (run summary table with timestamps, outcome, and per-task links); write failures are logged as `[proof]` warnings rather than crashing the runner.
+   - **At run end:** best-effort `_index.md` (run summary table with timestamps, outcome, and per-task links for transcripts that exist); write failures are logged as `[proof]` warnings rather than crashing the runner.
 7. On SIGINT/SIGTERM/SIGHUP, cancels all in-flight subagents before finalizing the canvas.
 
 #### CLI knobs
@@ -179,7 +179,7 @@ After the runner exits, briefly summarize what completed/failed and re-link the 
 | MED        | `composer-2`      |
 | LOW        | `gpt-5.4-nano`    |
 
-Override any subset inline with top-level DAG `models`, or pass a reusable profile with `--models-file <path>`. Values can be plain SDK model id strings or SDK model selections with `params`. At run time, Proof calls `Cursor.models.list()`, validates ids and param values, and expands partial selections to the closest valid preset variant using the model's default variant for omitted params. Precedence is defaults < DAG `models` < `--models-file`. The Cursor model catalog can vary by account.
+Override any subset inline with top-level DAG `models`, or pass a reusable profile with `--models-file <path>`. Values can be plain SDK model id strings or SDK model selections with `params`. At run time, Proof calls `Cursor.models.list()`, validates ids and param values, and expands partial selections by requiring requested params to match a catalog variant, then choosing the valid variant whose omitted params best match the model's default variant. Precedence is defaults < DAG `models` < `--models-file`. The Cursor model catalog can vary by account.
 
 To use a cheaper high-capability GPT model, use the base SDK id plus params, not a suffix-style id:
 
@@ -207,6 +207,7 @@ cursor-agent --list-models
 # SDK-flavored alternative — also prints any per-model `parameters` and preset `variants`
 pnpm -F @flatbread/proof models:list                  # all ids
 pnpm -F @flatbread/proof models:list <model-id>       # detail for one model
+pnpm -F @flatbread/proof models:list --grep <text>    # case-insensitive filter
 pnpm -F @flatbread/proof models:list --json <model-id>
 ```
 
@@ -229,7 +230,7 @@ set -a && source .env && set +a
 | Flag                         | Default             | Notes                                                                                                                                                                                                       |
 | ---------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--dag`                      | required            | Path to the DAG JSON file.                                                                                                                                                                                  |
-| `--canvas-path`              | composed from below | Full absolute path to the canvas file. Preferred — used by the parent-managed flow.                                                                                                                         |
+| `--canvas-path`              | composed from below | Full path to the canvas file. Preferred as an absolute path for parent-managed flow; relative paths are accepted and resolve from the runner process cwd, not `--cwd`.                                      |
 | `--canvas`                   | —                   | Canvas filename stem (no `.canvas.tsx`). Used only if `--canvas-path` is omitted.                                                                                                                           |
 | `--canvases-dir`             | derived from cwd    | Override the canvases output directory. Used only with `--canvas`.                                                                                                                                          |
 | `--cwd`                      | `process.cwd()`     | Working dir each subagent operates in.                                                                                                                                                                      |
@@ -238,7 +239,7 @@ set -a && source .env && set +a
 | `--init-only`                | `false`             | Write the initial all-`PENDING` canvas and exit. No `CURSOR_API_KEY` required.                                                                                                                              |
 | `--full-output-dir`          | computed default    | Per-task transcripts as `${taskId}.md` plus `_index.md` and `_dag.json`. Defaults to `<cwd>/.flatbread/artifacts/dag-<title-slug>-<ts>/`. Override with an explicit path or suppress with `--no-artifacts`. |
 | `--no-artifacts`             | `false`             | Suppresses per-task transcripts, `_index.md`, and `_dag.json`; does **not** suppress `--findings-dir` JSON sidecars (separate code path). Canvas is still written.                                          |
-| `--findings-dir`             | —                   | Per-task JSON sidecars as `${taskId}.findings.json`. Schema: `{ taskId, iteration, status, durationMs, sections }`.                                                                                         |
+| `--findings-dir`             | —                   | Per-task JSON sidecars as `${taskId}.findings.json` for original runs and `${taskId}.iter<n>.findings.json` for convergence re-runs. Schema: `{ taskId, iteration, status, durationMs, sections }`.         |
 | `--state-path`               | —                   | Persist resumable runner state. Defaults to `.proof/run-state.json` when `--restart-on-runner-change` is set.                                                                                               |
 | `--resume-state`             | —                   | Load a persisted `RunState` and skip already terminal tasks.                                                                                                                                                |
 | `--restart-on-runner-change` | `false`             | Detect runner runtime file changes after safe boundaries and exit `75` for supervisor restart.                                                                                                              |
@@ -249,14 +250,14 @@ set -a && source .env && set +a
 
 ## Caveats
 
-- Per-task markdown transcripts, a run index (`_index.md`), and the DAG definition (`_dag.json`) are written under **`<cwd>/.flatbread/artifacts/`** by default on **full DAG runs** (not `--init-only` or `--dry-check-cmds`). Pass `--no-artifacts` to suppress transcripts/index/DAG JSON, or `--full-output-dir` to override the path. **`--no-artifacts` does not disable `--findings-dir`** — for fully clean disk output, omit `--findings-dir` as well. In CI or read-only workspaces you may want `--no-artifacts` or a writable `--full-output-dir`.
+- Per-task markdown transcripts, a run index (`_index.md`), and the DAG definition (`_dag.json`) are written under **`<cwd>/.flatbread/artifacts/`** by default on **full DAG runs** (not `--init-only` or `--dry-check-cmds`). Pass `--no-artifacts` to suppress transcripts/index/DAG JSON, or `--full-output-dir` to override the path. `_index.md` links only transcripts that exist; if an individual transcript write fails, that row is marked as a missing transcript. **`--no-artifacts` does not disable `--findings-dir`** — for fully clean disk output, omit `--findings-dir` as well. In CI or read-only workspaces you may want `--no-artifacts` or a writable `--full-output-dir`.
 - When using `proof-supervisor`, each **child runner process** recomputes the default artifacts path with a new timestamp unless you pin a stable directory. The supervisor forwards the full argv to each child (only `--max-runner-restarts` is stripped), so put **`--full-output-dir <path>` on the supervisor invocation** if every restart should write into the same artifacts folder.
 - `--resume-state` creates a new artifact directory for the resumed session; tasks completed in prior sessions do not have transcripts in the new directory.
 - Local runtime only — every subagent runs against `--cwd` (defaults to wherever you invoke the runner).
 - Sibling tasks in the same rank run in parallel; do not let them write the same files.
 - Inline MCP servers and sub-sub-agents are not configured by this runner.
 - A failed task automatically skips all downstream dependents (they are marked `ERROR` with a "Skipped: upstream task(s) … failed" message). This prevents wasted API calls on tasks whose inputs are missing.
-- Per-task streamed text is capped at `STREAM_CAP = 4000` chars to keep the canvas file modest. Upstream context passed to child tasks is capped at 2000 chars per parent.
+- Per-task streamed text is capped at `STREAM_CAP = 4000` chars to keep the canvas file modest. Upstream context passed to child tasks is capped at 2000 chars per parent, with section-aware truncation when the parent output contains multiple `##` sections.
 - Timed-out tasks are marked `ERROR` instead of staying indefinitely in `RUNNING`.
 - SIGINT/SIGTERM/SIGHUP gracefully cancel all in-flight subagents and finalize the canvas before exiting.
 - Unexpected unhandled rejections from SDK internals are suppressed to prevent runner crashes; uncaught exceptions are logged and trigger a clean shutdown.
@@ -264,6 +265,6 @@ set -a && source .env && set +a
 ## Reference
 
 - Package: `@flatbread/proof` at `packages/proof`
-- DAG schema example: `examples/example_dag.json`
+- DAG schema example: `.cursor/skills/proof/examples/example_dag.json`
 - Library exports: `import { parseDAG, computeRanks, ... } from '@flatbread/proof'`
 - Cursor SDK docs: https://cursor.com/docs/api/sdk/typescript
