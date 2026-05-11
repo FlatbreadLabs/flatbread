@@ -102,3 +102,50 @@ test('resolveModelSelectionFromCatalog throws a descriptive error when no varian
     /does not match any Cursor SDK preset variant\. Valid variants:/
   );
 });
+
+test('resolveModelSelectionFromCatalog returns default variant when no params requested', (t) => {
+  const resolved = resolveSelection({ id: 'composer-2' }, [
+    {
+      displayName: 'Fast',
+      params: [{ id: 'effort', value: 'low' }],
+    },
+    {
+      displayName: 'Default',
+      isDefault: true,
+      params: [{ id: 'effort', value: 'medium' }],
+    },
+  ]);
+
+  t.deepEqual(resolved, {
+    id: 'composer-2',
+    params: [{ id: 'effort', value: 'medium' }],
+  });
+});
+
+test('resolveModelSelectionFromCatalog throws on unknown model id', (t) => {
+  const catalog: ModelCatalogItem[] = [
+    { id: 'composer-2', displayName: 'Composer 2' },
+  ];
+  const err = t.throws(() =>
+    resolveModelSelectionFromCatalog({ id: 'unknown-model' }, catalog, 'test')
+  );
+
+  if (!err) {
+    t.fail('Expected unknown model id to throw.');
+    return;
+  }
+  t.regex(err.message, /uses unknown Cursor SDK model/);
+});
+
+test('resolveModelSelectionFromCatalog passes through selection when model has no variants', (t) => {
+  const catalog: ModelCatalogItem[] = [
+    { id: 'composer-2', displayName: 'Composer 2' },
+  ];
+  const selection: ModelSelection = {
+    id: 'composer-2',
+  };
+  const resolved = resolveModelSelectionFromCatalog(selection, catalog, 'test');
+
+  t.deepEqual(resolved, selection);
+  t.not(resolved, selection);
+});
