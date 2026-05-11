@@ -13,6 +13,7 @@ See `CONTRIBUTING.md` for full details. Quick reference:
 - **Install**: `pnpm install`
 - **Build**: `pnpm build`
 - **Lint**: `pnpm lint` (prettier)
+- **Lint fix (after edits)**: `pnpm lint:fix:fast` (writes formatting repo-wide to match `pnpm lint`; staged-only: `pnpm lint:fix`, also runs via `.husky/pre-commit`)
 - **Typecheck**: `pnpm typecheck`
 - **Test**: `pnpm test` (builds, then runs ava + vitest suites)
 - **Full verify**: `pnpm verify` (lint + typecheck + build + test)
@@ -28,6 +29,7 @@ The repo uses Mergify stacks for PR management. The `mergify-cli` is installed v
 
 ### Gotchas
 
+- **`@flatbread/proof` requires `CURSOR_RIPGREP_PATH`.** The proof package uses `@cursor/sdk` which expects a bundled ripgrep. In Cloud Agent VMs, set `export CURSOR_RIPGREP_PATH=/usr/bin/rg` to use the system ripgrep (included in the update script).
 - **Native build scripts are approved in `pnpm-workspace.yaml`.** The `onlyBuiltDependencies` list allows esbuild, sharp, @swc/core, etc. to run their postinstall scripts automatically during `pnpm install`.
 - **Vitest packages run in watch mode by default.** Always use `vitest run` (not bare `vitest`) to get a single run and exit.
 - **`flatbread` CLI is not on PATH.** Use `npx flatbread` when running from a shell. The `pnpm play` script from the root handles this automatically.

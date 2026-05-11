@@ -7,7 +7,8 @@
     "build": "tsup",
     "dev": "tsup --watch src",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "models:list": "tsx src/list_models.ts"
+    "models:list": "tsx src/list_models.ts",
+    "cursor:fetch-cloud-agent": "node scripts/fetch-cloud-agent-conversation.mjs"
   },
   "repository": {
     "type": "git",
@@ -34,6 +35,7 @@
     "bin",
     "dist",
     "src",
+    "scripts",
     "*.d.ts"
   ],
   "engines": {
