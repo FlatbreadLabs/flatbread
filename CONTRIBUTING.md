@@ -66,12 +66,15 @@ pnpm build
   - Negative: invalid inputs, edge cases, and error handling/failure modes.
 - Place tests in the relevant package and use its existing runner/config.
   - Root `pnpm test` builds the workspace, runs the AVA suite configured by `ava.config.js`, then runs the package-local Vitest suites.
+  - Bounded-loop coverage for `@flatbread/proof` is exercised by both `pnpm test` and `pnpm -F @flatbread/proof test`.
+  - That focused proof suite is the quickest check for loop parser/runtime guards such as explicit rerun validation, overlapping-loop rejection, and convergence iteration accounting.
   - Vitest is currently used by `@flatbread/codegen` and `@flatbread/utils`.
-  - Most other packages are covered by the root AVA suite or do not yet expose a package-local `test` script.
+  - `@flatbread/proof` exposes a package-local AVA entrypoint for the loop schema suite; most other packages are covered by the root AVA suite or do not yet expose a package-local `test` script.
 - `pnpm lint` is the enforced Prettier formatting gate. `pnpm lint:eslint` is an optional/manual root ESLint check until the linting stack is modernized.
 - Helpful commands:
   - Local CI parity: `pnpm verify`
   - Root test suite: `pnpm test`
+  - Proof bounded-loop suite: `pnpm -F @flatbread/proof test`
   - Package-local test scripts where present: `pnpm -r --if-present test`
   - Single package: `pnpm -F <package-name> test`
   - Watch (where supported): `pnpm -F <package-name> test:watch`

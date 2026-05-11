@@ -23,7 +23,6 @@ export type {
   DAGBudget,
   DAGConvergenceLoop,
   LoopReexecute,
-  LoopStopWhen,
   ModelMap,
   ModelMapOverride,
   RawTask,

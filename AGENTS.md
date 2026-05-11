@@ -11,7 +11,8 @@ Flatbread is Git-native **relational content for TypeScript/JavaScript apps**: f
 - **Install**: `pnpm install` (enforces pnpm via `preinstall` script)
 - **Build**: `pnpm build` (builds all packages except examples via tsup)
 - **Lint**: `pnpm lint` (runs prettier)
-- **Tests**: `pnpm test` (ava tests) and `pnpm -F @flatbread/utils exec vitest run` / `pnpm -F @flatbread/codegen exec vitest run` (vitest tests — use `run` flag to avoid watch mode)
+- **Tests**: `pnpm test` (root AVA suite, including `@flatbread/proof` bounded-loop coverage) and `pnpm -F @flatbread/proof test` for the focused proof loop suite. Vitest packages use `pnpm -F @flatbread/utils exec vitest run` / `pnpm -F @flatbread/codegen exec vitest run` (`run` avoids watch mode).
+- **Proof loop contract**: explicit `DAG.loops[].reexecute.tasks` subsets must be dependency-closed, multiple loops must have disjoint re-execution sets, and `DAG.loops` must not be combined with `--converge-on`.
 - **Dev server**: `cd examples/nextjs && pnpm exec flatbread start -- next dev --turbopack` (GraphQL on **5057**, Next on **3000**). Use **`pnpm dev`** in that folder for local HTTPS. Use **`flatbread start`** — **`flatbread dev` is not a CLI command.**
 
 ### Gotchas
