@@ -100,6 +100,47 @@ Optional task kinds add control gates:
 - `kind: "oracle"` runs a shell command and records pass/fail evidence.
 - `kind: "pause"` waits for a checkpoint sentinel so a human can inspect or approve before downstream work continues.
 
+
+## `DAG.loops`
+
+Bounded convergence loops can live in the DAG itself instead of only on the CLI. This keeps the run reproducible: contributors do not need to remember a matching `--converge-on ... --max-iterations ...` flag pair.
+
+```json
+{
+  "title": "implement then review until clean",
+  "loops": [
+    {
+      "convergeOn": "review",
+      "maxIterations": 3,
+      "reexecute": { "kind": "tasks", "tasks": ["implement"] }
+    }
+  ],
+  "tasks": [
+    {
+      "id": "implement",
+      "depends_on": [],
+      "complexity": "MED",
+      "subtask_prompt": "Implement the feature."
+    },
+    {
+      "id": "review",
+      "depends_on": ["implement"],
+      "complexity": "HIGH",
+      "subtask_prompt": "Review the implementation. Use `## Blockers` and `## High-severity findings` when needed."
+    }
+  ]
+}
+```
+
+Notes:
+
+- Omit `id` to get the default `loop-<convergeOn>` id.
+- Omit `reexecute` to re-run the full ancestor cone, which matches the legacy CLI behavior.
+- `reexecute: { "kind": "tasks", "tasks": [...] }` must stay inside the convergence task's ancestor cone and be dependency-closed for every non-`convergeOn` task it names; invalid subsets fail fast during DAG parsing with the missing ancestor ids.
+- Parsed explicit rerun lists always include `convergeOn` itself, even if the authored JSON omits it.
+- `DAG.loops` and `--converge-on` are mutually exclusive. If the DAG already declares loops, remove the CLI flag instead of relying on precedence.
+- Multiple loops are allowed only when their re-execution sets are disjoint, so one loop cannot invalidate another loop's converged result later in the run.
+
 ## Artifact Output
 
 By default, every **full DAG run** writes per-task markdown transcripts to a timestamped directory (not `--init-only`, which exits before artifact setup, and not `--dry-check-cmds`, which never enters the runner):
@@ -166,9 +207,13 @@ pnpm -F @flatbread/proof build
 ```bash
 pnpm -F @flatbread/proof typecheck
 pnpm -F @flatbread/proof build
+pnpm -F @flatbread/proof test
+pnpm test
 pnpm -F @flatbread/proof models:list
 pnpm exec proof --dry-check-cmds --dag .cursor/skills/proof/examples/example_dag.json
 ```
+
+`pnpm -F @flatbread/proof test` is the focused bounded-loop suite. Root `pnpm test` also reaches that AVA file through `ava.config.js`.
 
 ## Library API
 
