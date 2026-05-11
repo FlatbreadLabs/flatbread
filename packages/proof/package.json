@@ -6,6 +6,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch src",
+    "test": "pnpm --dir ../.. exec ava packages/proof/src/__tests__/loops.test.ts",
+    "test:watch": "pnpm --dir ../.. exec ava --watch packages/proof/src/__tests__/loops.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "models:list": "tsx src/list_models.ts",
     "cursor:fetch-cloud-agent": "node scripts/fetch-cloud-agent-conversation.mjs"

@@ -54,8 +54,7 @@ Add an optional top-level `DAG.loops` array. Each entry is a
       "id": "review-loop",
       "convergeOn": "review",
       "maxIterations": 3,
-      "reexecute": { "kind": "ancestors" },
-      "stopWhen": "no-blockers"
+      "reexecute": { "kind": "ancestors" }
     }
   ],
   "tasks": [
@@ -71,8 +70,6 @@ export type LoopReexecute =
   | { kind: 'ancestors' }
   | { kind: 'tasks'; tasks: string[] };
 
-export type LoopStopWhen = 'no-blockers'; // future: 'oracle-pass', etc.
-
 export interface DAGConvergenceLoop {
   /** Stable id for canvas/log display. Defaults to `loop-${convergeOn}`. */
   id?: string;
@@ -82,8 +79,6 @@ export interface DAGConvergenceLoop {
   maxIterations: number;
   /** What to re-execute on each iteration. Defaults to `{ kind: 'ancestors' }`. */
   reexecute?: LoopReexecute;
-  /** Stop predicate. Defaults to `'no-blockers'` (current behavior). */
-  stopWhen?: LoopStopWhen;
 }
 ```
 
@@ -95,10 +90,16 @@ export interface DAGConvergenceLoop {
   id; the set must be a subset of `transitiveAncestors(convergeOn) ∪ {convergeOn}`
   (re-executing tasks outside the convergence ancestor cone breaks
   topological re-execution order — explicit error rather than silent
-  divergence).
+  divergence). Every non-`convergeOn` task in the list must also bring along
+  its own transitive ancestors so the rerun subset is dependency-closed.
 - Two loops cannot share the same `convergeOn` (avoids ambiguous
   iteration counter ownership).
-- `id` (when set) must be unique across loops.
+- `id` must be unique across loops after defaults are applied, so an explicit
+  `id: "loop-review"` cannot collide with another loop whose defaulted id would
+  also be `loop-review`.
+- Two loops must have disjoint re-execution sets. If they overlap, the parser
+  rejects the DAG rather than letting a later loop silently invalidate an
+  earlier loop's converged outcome.
 - The CLI `--converge-on` flag is mutually exclusive with `DAG.loops`
   — supplying both is an error rather than a silent precedence rule.
 
@@ -113,17 +114,18 @@ The existing `runConvergenceLoop` function generalizes:
 - Multiple loops run sequentially (in declaration order). Each loop's
   `BUDGET-EXCEEDED` propagates to the run-level outcome the same way
   the single CLI loop does today.
+- Runner restarts resume from the persisted convergence iteration counter
+  instead of replaying iteration numbers from `1`.
 - `dag.budget.maxIterations` continues to work and applies to each
   loop independently — it is a hard cap on the per-loop iteration
   counter, not a global counter.
 
 ### What is intentionally out of scope (this PR)
 
-- New `stopWhen` predicates beyond `'no-blockers'`. The existing
-  parser (`extractConvergenceFindings` in `converge_loop.ts`) is
-  the only stop predicate; richer predicates (oracle-pass,
-  numeric thresholds) can land in follow-ups without further
-  schema churn.
+- Alternate loop stop predicates. The existing parser
+  (`extractConvergenceFindings` in `converge_loop.ts`) is the only stop rule;
+  richer predicates (oracle-pass, numeric thresholds) can land in follow-ups
+  once there is a concrete runtime need.
 - Nested loops (loop inside loop). The flat array is enough for
   every workflow we have today.
 - Cross-loop coordination (loop A waits on loop B's iteration N).
@@ -144,14 +146,17 @@ The existing `runConvergenceLoop` function generalizes:
 
 ## Test plan
 
-Unit tests (AVA, new `packages/proof/src/__tests__/loops.test.ts`):
+Focused AVA tests (`packages/proof/src/__tests__/loops.test.ts`, runnable via
+`pnpm -F @flatbread/proof test` and included in root `pnpm test`):
 
-- `parseDAG` accepts `loops` with default `reexecute`/`stopWhen`.
+- `parseDAG` accepts `loops` with default `reexecute`.
 - `parseDAG` rejects `convergeOn` referencing an unknown task id.
 - `parseDAG` rejects two loops with the same `convergeOn`.
-- `parseDAG` rejects two loops with the same explicit `id`.
+- `parseDAG` rejects two loops with the same materialized `id` (including
+  defaulted `loop-${convergeOn}` collisions).
 - `parseDAG` rejects `reexecute.tasks` containing unknown ids or ids
-  outside the convergence ancestor cone.
+  outside the convergence ancestor cone, and rejects non-closed subsets.
+- `parseDAG` rejects overlapping loop re-execution sets.
 - `parseDAG` rejects non-positive `maxIterations`.
 - `resolveLoopReexecuteIds` returns the right id set for both
   `'ancestors'` and explicit `tasks` modes.
@@ -167,7 +172,11 @@ Backward-compat smoke:
 - A DAG with `loops` plus CLI `--converge-on` errors at startup.
 
 Self-review via `/proof` is the user-facing acceptance test; this
-PR's test plan above is what gates the merge.
+PR's test plan above is what gates the merge. Contributor-facing command:
+
+```bash
+pnpm -F @flatbread/proof test
+```
 
 ## Migration
 

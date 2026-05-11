@@ -66,7 +66,6 @@ test('resolveConvergenceLoops fills defaults', (t) => {
   ]);
   t.is(resolved[0].id, 'loop-review');
   t.deepEqual(resolved[0].reexecute, { kind: 'ancestors' });
-  t.is(resolved[0].stopWhen, 'no-blockers');
 });
 
 test('parseDAG rejects convergeOn referencing unknown task id', (t) => {
@@ -134,13 +133,26 @@ test("parseDAG rejects loops whose resolved ids collide (explicit id matches ano
   );
 });
 
-test('parseDAG accepts explicit reexecute.tasks inside the ancestor cone', (t) => {
+test('parseDAG rejects explicit ids that collide with defaulted loop ids', (t) => {
+  t.throws(
+    () =>
+      parseDAG(
+        dagWith([
+          { convergeOn: 'review', maxIterations: 2 },
+          { id: 'loop-review', convergeOn: 'design', maxIterations: 2 },
+        ])
+      ),
+    { message: /duplicate loop id/ }
+  );
+});
+
+test('parseDAG accepts explicit reexecute.tasks when the subset is dependency-closed', (t) => {
   const dag = parseDAG(
     dagWith([
       {
         convergeOn: 'review',
         maxIterations: 2,
-        reexecute: { kind: 'tasks', tasks: ['implement'] },
+        reexecute: { kind: 'tasks', tasks: ['research', 'design', 'implement'] },
       },
     ])
   );
@@ -149,7 +161,12 @@ test('parseDAG accepts explicit reexecute.tasks inside the ancestor cone', (t) =
   if (reexec.kind === 'tasks') {
     // convergeOn is injected so the loop body always re-runs the
     // convergence task itself after upstream re-execution.
-    t.deepEqual([...reexec.tasks].sort(), ['implement', 'review']);
+    t.deepEqual([...reexec.tasks].sort(), [
+      'design',
+      'implement',
+      'research',
+      'review',
+    ]);
   }
 });
 
@@ -159,7 +176,10 @@ test('parseDAG deduplicates convergeOn from reexecute.tasks when caller includes
       {
         convergeOn: 'review',
         maxIterations: 2,
-        reexecute: { kind: 'tasks', tasks: ['implement', 'review'] }, // review = convergeOn
+        reexecute: {
+          kind: 'tasks',
+          tasks: ['research', 'design', 'implement', 'review'],
+        }, // review = convergeOn
       },
     ])
   );
@@ -167,7 +187,12 @@ test('parseDAG deduplicates convergeOn from reexecute.tasks when caller includes
   t.is(reexec.kind, 'tasks');
   if (reexec.kind === 'tasks') {
     // 'review' must appear exactly once despite being both the convergeOn and explicit in the list
-    t.deepEqual([...reexec.tasks].sort(), ['implement', 'review']);
+    t.deepEqual([...reexec.tasks].sort(), [
+      'design',
+      'implement',
+      'research',
+      'review',
+    ]);
   }
 });
 
@@ -232,6 +257,22 @@ test('parseDAG rejects reexecute.tasks containing unknown task ids', (t) => {
   );
 });
 
+test('parseDAG rejects non-closed reexecute.tasks subsets', (t) => {
+  t.throws(
+    () =>
+      parseDAG(
+        dagWith([
+          {
+            convergeOn: 'review',
+            maxIterations: 2,
+            reexecute: { kind: 'tasks', tasks: ['implement'] },
+          },
+        ])
+      ),
+    { message: /must be dependency-closed/ }
+  );
+});
+
 test('parseDAG rejects unknown reexecute.kind', (t) => {
   t.throws(
     () =>
@@ -245,22 +286,6 @@ test('parseDAG rejects unknown reexecute.kind', (t) => {
         ])
       ),
     { message: /reexecute\.kind must be one of/ }
-  );
-});
-
-test('parseDAG rejects unknown stopWhen', (t) => {
-  t.throws(
-    () =>
-      parseDAG(
-        dagWith([
-          {
-            convergeOn: 'review',
-            maxIterations: 2,
-            stopWhen: 'oracle-pass',
-          },
-        ])
-      ),
-    { message: /stopWhen must be one of/ }
   );
 });
 
@@ -294,15 +319,14 @@ test('resolveLoopReexecuteIds with explicit tasks honors the allow-list', (t) =>
       {
         convergeOn: 'review',
         maxIterations: 2,
-        reexecute: { kind: 'tasks', tasks: ['implement'] },
+        reexecute: { kind: 'tasks', tasks: ['research', 'design', 'implement'] },
       },
     ])
   ) as DAG;
   const resolved = resolveConvergenceLoops(dag.loops!);
   const ids = resolveLoopReexecuteIds(resolved[0], dag);
-  // Only the explicit allow-list + convergence task itself — not 'design'
-  // or 'research' even though they are ancestors.
-  t.deepEqual([...ids].sort(), ['implement', 'review']);
+  // Only the explicit allow-list + convergence task itself.
+  t.deepEqual([...ids].sort(), ['design', 'implement', 'research', 'review']);
 });
 
 test('resolveConvergenceLoops preserves user-provided id when set', (t) => {
@@ -314,7 +338,7 @@ test('resolveConvergenceLoops preserves user-provided id when set', (t) => {
   t.is(resolved[0].maxIterations, 3);
 });
 
-test('parseDAG accepts multiple loops driving distinct tasks', (t) => {
+test('parseDAG accepts multiple loops when their re-execution sets are disjoint', (t) => {
   const tasks = [
     {
       id: 'research',
@@ -324,7 +348,7 @@ test('parseDAG accepts multiple loops driving distinct tasks', (t) => {
     },
     {
       id: 'docs',
-      depends_on: ['research'],
+      depends_on: [],
       complexity: 'MED',
       subtask_prompt: 'd',
     },
@@ -336,7 +360,7 @@ test('parseDAG accepts multiple loops driving distinct tasks', (t) => {
     },
     {
       id: 'impl',
-      depends_on: ['research'],
+      depends_on: [],
       complexity: 'MED',
       subtask_prompt: 'i',
     },
@@ -363,6 +387,52 @@ test('parseDAG accepts multiple loops driving distinct tasks', (t) => {
   );
 });
 
+test('parseDAG rejects loops with overlapping re-execution sets', (t) => {
+  t.throws(
+    () =>
+      parseDAG({
+        title: 'overlap',
+        tasks: [
+          {
+            id: 'shared',
+            depends_on: [],
+            complexity: 'LOW',
+            subtask_prompt: 'shared',
+          },
+          {
+            id: 'docs',
+            depends_on: ['shared'],
+            complexity: 'MED',
+            subtask_prompt: 'docs',
+          },
+          {
+            id: 'docs-review',
+            depends_on: ['docs'],
+            complexity: 'HIGH',
+            subtask_prompt: 'docs review',
+          },
+          {
+            id: 'impl',
+            depends_on: ['shared'],
+            complexity: 'MED',
+            subtask_prompt: 'impl',
+          },
+          {
+            id: 'impl-review',
+            depends_on: ['impl'],
+            complexity: 'HIGH',
+            subtask_prompt: 'impl review',
+          },
+        ],
+        loops: [
+          { convergeOn: 'docs-review', maxIterations: 2 },
+          { convergeOn: 'impl-review', maxIterations: 2 },
+        ],
+      }),
+    { message: /must have disjoint re-execution sets/ }
+  );
+});
+
 test('parseDAG rejects non-array loops', (t) => {
   t.throws(() => parseDAG(dagWith({ convergeOn: 'review' })), {
     message: /must be an array/,
@@ -375,8 +445,7 @@ test('DAGConvergenceLoop type round-trips through resolveConvergenceLoops', (t) 
       id: 'r',
       convergeOn: 'review',
       maxIterations: 5,
-      reexecute: { kind: 'tasks', tasks: ['implement', 'review'] },
-      stopWhen: 'no-blockers',
+      reexecute: { kind: 'tasks', tasks: ['research', 'design', 'implement', 'review'] },
     },
   ];
   const resolved = resolveConvergenceLoops(declared);
@@ -384,7 +453,9 @@ test('DAGConvergenceLoop type round-trips through resolveConvergenceLoops', (t) 
     id: 'r',
     convergeOn: 'review',
     maxIterations: 5,
-    reexecute: { kind: 'tasks', tasks: ['implement', 'review'] },
-    stopWhen: 'no-blockers',
+    reexecute: {
+      kind: 'tasks',
+      tasks: ['research', 'design', 'implement', 'review'],
+    },
   });
 });

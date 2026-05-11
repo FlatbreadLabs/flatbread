@@ -106,7 +106,9 @@ export interface DAG {
    *
    * Loops execute sequentially in declaration order after the main rank loop
    * completes. `--converge-on` may not be combined with `loops`; the runner
-   * errors at startup if both are set.
+ * errors at startup if both are set. Loop re-execution sets must also be
+ * disjoint so one loop cannot silently invalidate another loop's already
+ * converged outcome.
    */
   loops?: DAGConvergenceLoop[];
 }
@@ -123,25 +125,16 @@ export interface DAGBudget {
  *   re-runs every transitive ancestor of `convergeOn` plus `convergeOn`
  *   itself.
  * - `{ kind: 'tasks'; tasks: [...] }` — explicit allow-list. Every id must
- *   be a known task and must lie inside the convergence ancestor cone
+ *   be a known task, must lie inside the convergence ancestor cone
  *   (`transitiveAncestors(convergeOn) ∪ {convergeOn}`); ids outside that
  *   cone are rejected at parse time because re-running them would break
- *   topological ordering of the filtered re-execution ranks.
+ *   topological ordering of the filtered re-execution ranks. The explicit
+ *   list must also be dependency-closed for every non-`convergeOn` task it
+ *   names so the runner never mixes a fresh task with stale upstream inputs.
  */
 export type LoopReexecute =
   | { kind: 'ancestors' }
   | { kind: 'tasks'; tasks: string[] };
-
-/**
- * Stop predicate for a convergence loop. Currently only `'no-blockers'` is
- * supported — the convergence task's `## Blockers` and
- * `## High-severity findings` sections must both be empty (per
- * `extractConvergenceFindings`) for the loop to exit clean. Future
- * predicates (e.g. `'oracle-pass'`, score thresholds) can be added here
- * without further schema churn.
- */
-export type LoopStopWhen = 'no-blockers';
-
 /**
  * First-class bounded convergence loop. Generalizes the singleton CLI
  * `--converge-on`/`--max-iterations` pair into a DAG-native config so a
@@ -158,8 +151,6 @@ export interface DAGConvergenceLoop {
   maxIterations: number;
   /** What to re-execute per iteration. Defaults to `{ kind: 'ancestors' }`. */
   reexecute?: LoopReexecute;
-  /** Stop predicate. Defaults to `'no-blockers'`. */
-  stopWhen?: LoopStopWhen;
 }
 
 /** Loop config with all defaults filled in — what the runner actually consumes. */
@@ -168,14 +159,12 @@ export interface ResolvedConvergenceLoop {
   convergeOn: string;
   maxIterations: number;
   reexecute: LoopReexecute;
-  stopWhen: LoopStopWhen;
 }
 
 const LOOP_REEXECUTE_KINDS = new Set<LoopReexecute['kind']>([
   'ancestors',
   'tasks',
 ]);
-const LOOP_STOP_WHEN_VALUES = new Set<LoopStopWhen>(['no-blockers']);
 const COMPLEXITY_VALUES = new Set<Complexity>(['HIGH', 'MED', 'LOW']);
 export const COMPLEXITY_KEYS: readonly Complexity[] = [
   'HIGH',
@@ -319,13 +308,14 @@ function validateLoops(raw: unknown, tasks: RawTask[]): DAGConvergenceLoop[] {
     const resolvedId = loop.id ?? `loop-${loop.convergeOn}`;
     if (seenResolvedIds.has(resolvedId)) {
       throw new Error(
-        `DAG.loops[${i}]: resolved loop id "${resolvedId}" collides with a previous loop's id. ` +
+        `DAG.loops[${i}]: duplicate loop id; resolved loop id "${resolvedId}" collides with a previous loop's id. ` +
           `Set an explicit \`id\` on one of the colliding loops to disambiguate.`
       );
     }
     seenResolvedIds.add(resolvedId);
     loops.push(loop);
   }
+  validateLoopInteractions(loops, tasks);
   return loops;
 }
 
@@ -369,20 +359,6 @@ function validateLoop(
     }
     id = obj.id;
   }
-  let stopWhen: LoopStopWhen | undefined;
-  if (obj.stopWhen !== undefined) {
-    if (
-      typeof obj.stopWhen !== 'string' ||
-      !LOOP_STOP_WHEN_VALUES.has(obj.stopWhen as LoopStopWhen)
-    ) {
-      throw new Error(
-        `DAG.loops[${index}].stopWhen must be one of: ${[
-          ...LOOP_STOP_WHEN_VALUES,
-        ].join(' | ')}.`
-      );
-    }
-    stopWhen = obj.stopWhen as LoopStopWhen;
-  }
   let reexecute: LoopReexecute | undefined;
   if (obj.reexecute !== undefined) {
     reexecute = validateReexecute(
@@ -396,7 +372,6 @@ function validateLoop(
   const loop: DAGConvergenceLoop = { convergeOn, maxIterations };
   if (id !== undefined) loop.id = id;
   if (reexecute !== undefined) loop.reexecute = reexecute;
-  if (stopWhen !== undefined) loop.stopWhen = stopWhen;
   return loop;
 }
 
@@ -460,6 +435,20 @@ function validateReexecute(
       );
     }
   }
+  const selected = new Set(requested);
+  for (const id of requested) {
+    if (id === convergeOn) continue;
+    const missingAncestors = [...transitiveAncestorIds(id, tasks)].filter(
+      (ancestorId) => cone.has(ancestorId) && !selected.has(ancestorId)
+    );
+    if (missingAncestors.length > 0) {
+      throw new Error(
+        `DAG.loops[${loopIndex}].reexecute.tasks must be dependency-closed. Task "${id}" also requires its ancestor(s): ${missingAncestors.join(
+          ', '
+        )}. Add them or remove "${id}".`
+      );
+    }
+  }
   // Always include the convergence task itself so the loop body can re-run
   // it after upstream re-execution. De-dupe while preserving caller order.
   const seen = new Set<string>();
@@ -473,12 +462,12 @@ function validateReexecute(
 }
 
 /**
- * Fills in defaults (`id`, `reexecute`, `stopWhen`) for each declared loop
- * so the runner can consume a single canonical shape regardless of which
- * fields the DAG author left implicit. Pure function — does not access the
- * DAG task list. Defaults align with the legacy `--converge-on` behavior:
- * re-execute the full ancestor cone and stop when the convergence task's
- * `## Blockers` / `## High-severity findings` are both empty.
+ * Fills in defaults (`id`, `reexecute`) for each declared loop so the runner
+ * can consume a single canonical shape regardless of which fields the DAG
+ * author left implicit. Pure function — does not access the DAG task list.
+ * Defaults align with the legacy `--converge-on` behavior: re-execute the
+ * full ancestor cone and stop when the convergence task's `## Blockers` /
+ * `## High-severity findings` are both empty.
  */
 export function resolveConvergenceLoops(
   loops: readonly DAGConvergenceLoop[]
@@ -488,8 +477,45 @@ export function resolveConvergenceLoops(
     convergeOn: loop.convergeOn,
     maxIterations: loop.maxIterations,
     reexecute: loop.reexecute ?? { kind: 'ancestors' },
-    stopWhen: loop.stopWhen ?? 'no-blockers',
   }));
+}
+
+function validateLoopInteractions(
+  loops: readonly DAGConvergenceLoop[],
+  tasks: RawTask[]
+): void {
+  const reExecSets = loops.map((loop) => ({
+    id: loop.id ?? `loop-${loop.convergeOn}`,
+    taskIds: computeLoopReexecuteIds(loop, tasks),
+  }));
+  for (let i = 0; i < reExecSets.length; i++) {
+    for (let j = i + 1; j < reExecSets.length; j++) {
+      const overlap = [...reExecSets[i].taskIds].filter((id) =>
+        reExecSets[j].taskIds.has(id)
+      );
+      if (overlap.length === 0) continue;
+      throw new Error(
+        `DAG.loops must have disjoint re-execution sets. "${reExecSets[i].id}" and "${reExecSets[j].id}" both re-run: ${overlap.join(
+          ', '
+        )}. Split the DAG so each loop owns a separate task cone, or collapse the work into one loop.`
+      );
+    }
+  }
+}
+
+function computeLoopReexecuteIds(
+  loop: DAGConvergenceLoop,
+  tasks: RawTask[]
+): Set<string> {
+  const ids = new Set<string>();
+  if (loop.reexecute?.kind === 'tasks') {
+    for (const id of loop.reexecute.tasks) ids.add(id);
+    ids.add(loop.convergeOn);
+    return ids;
+  }
+  for (const id of transitiveAncestorIds(loop.convergeOn, tasks)) ids.add(id);
+  ids.add(loop.convergeOn);
+  return ids;
 }
 function validateFraming(raw: unknown): string {
   if (typeof raw !== 'string') {

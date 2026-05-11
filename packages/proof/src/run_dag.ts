@@ -601,7 +601,7 @@ async function main(): Promise<void> {
   // flag. Reject the combination outright.
   if (args.convergeOn && dag.loops && dag.loops.length > 0) {
     throw new Error(
-      `--converge-on cannot be combined with DAG.loops (DAG "${dag.title}" already declares ${dag.loops.length} loop(s)). Remove one.`
+      `--converge-on "${args.convergeOn}" cannot be combined with DAG.loops (DAG "${dag.title}" already declares ${dag.loops.length} loop(s)). Remove the CLI flag to use the DAG's loops, or delete DAG.loops for an ad-hoc CLI-driven run.`
     );
   }
   // Synthesize a single-element loop list from the CLI flag so the runner
@@ -933,10 +933,13 @@ async function main(): Promise<void> {
     }
 
     await maybeRestartAfterRunnerChange('main ranks before convergence');
-    // Loops execute sequentially in declaration order. A loop that hits
-    // BUDGET-EXCEEDED still lets later loops run — each loop's terminal
-    // state is independent and surfaces through the per-task status
-    // tally, the same way the legacy single-loop CLI worked.
+    // Loops execute sequentially in declaration order. `parseDAG()` already
+    // rejected overlapping re-execution sets, so one loop cannot silently
+    // invalidate another loop's converged task state by re-running shared
+    // ancestors afterwards. A loop that hits BUDGET-EXCEEDED still lets later
+    // loops run — each loop's terminal state is independent and surfaces
+    // through the per-task status tally, the same way the legacy single-loop
+    // CLI worked.
     for (const loop of resolvedLoops) {
       const reExecIds = resolveLoopReexecuteIds(loop, dag);
       await runConvergenceLoop({
@@ -1667,7 +1670,8 @@ async function runConvergenceLoop(
     .map((rank) => rank.filter((t) => reExecIds.has(t.id)))
     .filter((rank) => rank.length > 0);
 
-  for (let iter = 1; iter <= maxIterations; iter++) {
+  const startingIteration = (convergeTs.iteration ?? 0) + 1;
+  for (let iter = startingIteration; iter <= maxIterations; iter++) {
     // Prefer the findings-dir JSON sidecar when one was written for the most
     // recent run of the convergence task; the sidecar is captured at task
     // completion, so it survives the streaming buffer churn that can occasionally
@@ -1759,13 +1763,13 @@ async function runConvergenceLoop(
     await afterIteration?.(iter);
   }
 
-  // CLI --max-iterations exhausted. Re-parse the convergence task's latest
+  // CLI/DAG maxIterations exhausted. Re-parse the convergence task's latest
   // output (preferring the post-run sidecar over live `resultText`, same as
   // the loop body) and, if blockers / high-severity findings are still
   // present, surface this as a budget-style terminal state on the
   // convergence task. The existing main-run tally then bumps `runOutcome`
-  // to `'FAILED'` and the process exits with `EXIT_BUDGET_EXCEEDED` (4) —
-  // matching how `--budget` enforcement signals overflow today.
+  // to `'BUDGET_EXCEEDED'` and the process exits with
+  // `EXIT_BUDGET_EXCEEDED` (4), matching token-budget enforcement.
   const finalSidecarText =
     findingsDir !== undefined
       ? await readFindingsSidecarAsText(
