@@ -1,41 +1,41 @@
 {
-  "title": "Build a tiny CLI todo app",
+  "title": "Build a browser graphing calculator",
   "tasks": [
     {
-      "id": "research-stack",
+      "id": "research-calculator-scope",
       "depends_on": [],
       "complexity": "LOW",
-      "subtask_prompt": "Sketch the smallest reasonable design for a single-file Node.js CLI todo app that stores items in a local JSON file. List the supported commands (add, list, done, rm), the JSON schema, and the file layout. Output as markdown bullets only — do not write any code yet."
+      "subtask_prompt": "Sketch the smallest reasonable feature set for a dependency-free browser graphing calculator. Include expression input, x/y viewport controls, canvas plotting, error states, and a few sample expressions. Output as markdown bullets only — do not write any code yet."
     },
     {
-      "id": "research-cli-conventions",
+      "id": "research-expression-safety",
       "depends_on": [],
       "complexity": "LOW",
-      "subtask_prompt": "Summarize the conventions a small Node CLI should follow: shebang line, exit codes, stdout vs stderr usage, --help output shape, and how to parse argv without a dependency. Output as markdown bullets only — do not write code."
+      "subtask_prompt": "Summarize a conservative approach for evaluating math expressions in a small browser-only graphing calculator without third-party dependencies. Cover supported functions, variable handling for x, validation, and user-facing parse errors. Output as markdown bullets only — do not write code."
     },
     {
       "id": "design",
-      "depends_on": ["research-stack", "research-cli-conventions"],
+      "depends_on": ["research-calculator-scope", "research-expression-safety"],
       "complexity": "MED",
-      "subtask_prompt": "Combine the upstream research into a one-page implementation plan for the todo CLI. Specify file paths, function signatures, error handling, and the JSON storage shape. Output a markdown design doc — still no code."
+      "subtask_prompt": "Combine the upstream research into a one-page implementation plan for the graphing calculator. Specify file paths, DOM structure, core function signatures, expression evaluation strategy, coordinate transforms, and error handling. Output a markdown design doc — still no code."
     },
     {
       "id": "implement",
       "depends_on": ["design"],
       "complexity": "MED",
-      "subtask_prompt": "Implement the design as `todo.mjs` in the current working directory. It must be a single file with no dependencies, support the four commands from the design, and persist to `./todos.json`. After writing the file, run it once with `node todo.mjs --help` and include the output in your reply."
+      "subtask_prompt": "Implement the design as `index.html` in the current working directory. It must be a single dependency-free HTML file with embedded CSS and JavaScript, draw function graphs on a canvas, expose viewport controls, and show validation errors without crashing. After writing the file, describe how to open and use it."
     },
     {
       "id": "tests",
       "depends_on": ["implement"],
       "complexity": "LOW",
-      "subtask_prompt": "Add a `test_todo.mjs` script in the cwd that exercises add → list → done → rm against `todo.mjs` using a temp JSON file. Use only the Node `node:test` and `node:assert` modules. Run it with `node --test test_todo.mjs` and include the output in your reply."
+      "subtask_prompt": "Add a `test_graphing_calculator.mjs` script in the cwd that checks the pure expression parsing/evaluation helpers and coordinate transform helpers from `index.html`. Use only Node built-ins such as `node:test`, `node:assert`, and `node:fs`. Run it with `node --test test_graphing_calculator.mjs` and include the output in your reply."
     },
     {
       "id": "docs",
       "depends_on": ["implement"],
       "complexity": "LOW",
-      "subtask_prompt": "Write a short `README.md` in the cwd describing what `todo.mjs` does, the supported commands with examples, and where data is stored. Do not modify `todo.mjs`."
+      "subtask_prompt": "Write a short `README.md` in the cwd describing what the graphing calculator does, how to open `index.html`, supported math syntax with examples, viewport controls, and known limitations. Do not modify `index.html`."
     }
   ]
 }
