@@ -481,6 +481,19 @@ function taskModelSelection(ts: TaskState): ModelSelection {
   );
 }
 
+async function fetchCursorModelCatalog(): Promise<
+  Awaited<ReturnType<typeof Cursor.models.list>>
+> {
+  try {
+    return await Cursor.models.list();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Could not fetch Cursor model catalog. Check CURSOR_API_KEY and network connectivity. Original error: ${message}`
+    );
+  }
+}
+
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
 
@@ -531,7 +544,7 @@ async function main(): Promise<void> {
     ? unresolvedModelForComplexity
     : createCatalogBackedModelResolver(
         unresolvedModelForComplexity,
-        await Cursor.models.list()
+        await fetchCursorModelCatalog()
       );
   if (!args.initOnly) {
     for (const complexity of COMPLEXITY_KEYS) {
