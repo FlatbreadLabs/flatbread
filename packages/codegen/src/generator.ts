@@ -255,7 +255,6 @@ function generateFlatbreadContentModelTypes(
   );
   const readApiEntries = readableCollections
     .map((collection) => {
-      const queries = getReadQueries(schema, collection);
       return `  ${JSON.stringify(collection)}: {
     all(selection?: string): Promise<ReadonlyArray<Partial<FlatbreadRecord<${JSON.stringify(
       collection

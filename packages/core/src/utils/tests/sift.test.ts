@@ -94,3 +94,69 @@ test('Union sift for nodes with wildcard title matching "*tion", rating greater 
     [nodes2[0]]
   );
 });
+
+test('Ordered comparators return no match for missing, null, non-primitive, or type-mismatched fields without throwing', (t) => {
+  const varied = [
+    { id: 1, rank: 10 },
+    { id: 2 },
+    { id: 3, rank: null },
+    { id: 4, rank: {} as unknown },
+    { id: 5, rank: 'nine' },
+  ];
+
+  t.notThrows(() => varied.filter(sift({ rank: { gte: 5 } })));
+  t.deepEqual(varied.filter(sift({ rank: { gte: 5 } })), [varied[0]]);
+
+  t.notThrows(() => [{ id: 1, rank: 10 }].filter(sift({ rank: { gt: '1' } })));
+  t.deepEqual([{ id: 1, rank: 10 }].filter(sift({ rank: { gt: '1' } })), [
+    { id: 1, rank: 10 },
+  ]);
+
+  t.deepEqual(
+    [
+      { id: 1, n: 2 },
+      { id: 2, n: 10 },
+    ].filter(sift({ n: { lt: '9' } })),
+    [{ id: 1, n: 2 }]
+  );
+
+  const withBool = [
+    { id: 1, flag: true },
+    { id: 2, flag: false },
+  ];
+  t.deepEqual(withBool.filter(sift({ flag: { eq: true } })), [withBool[0]]);
+  t.deepEqual(withBool.filter(sift({ flag: { gt: false } })), [withBool[0]]);
+});
+
+test('String includes/excludes coerce the comparator value like String.prototype.includes', (t) => {
+  const items = [
+    { id: 1, title: 'post 123' },
+    { id: 2, title: 'hello' },
+  ];
+
+  t.notThrows(() => items.filter(sift({ title: { includes: 123 } })));
+  t.deepEqual(items.filter(sift({ title: { includes: 123 } })), [items[0]]);
+  t.deepEqual(items.filter(sift({ title: { excludes: 123 } })), [items[1]]);
+});
+
+test('String includes/excludes reject RegExp search values like String.prototype.includes', (t) => {
+  const row = { id: 1, title: 'abc' };
+
+  t.throws(() => [row].filter(sift({ title: { includes: /a/ } })), {
+    instanceOf: TypeError,
+    message:
+      'First argument to String.prototype.includes must not be a regular expression',
+  });
+  t.throws(() => [row].filter(sift({ title: { excludes: /a/ } })), {
+    instanceOf: TypeError,
+    message:
+      'First argument to String.prototype.includes must not be a regular expression',
+  });
+});
+
+test('Ordered comparator on sparse nested paths does not throw and skips non-matching nodes', (t) => {
+  const rows = [{ id: 1 }, { id: 2, meta: { score: 5 } }];
+
+  t.notThrows(() => rows.filter(sift({ meta: { score: { gte: 3 } } })));
+  t.deepEqual(rows.filter(sift({ meta: { score: { gte: 3 } } })), [rows[1]]);
+});
