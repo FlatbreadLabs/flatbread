@@ -34,11 +34,12 @@
  *   --full-output-dir <path> Per-task transcripts as `${taskId}.md` plus
  *                             `_index.md` (run summary table) and `_dag.json`
  *                             (the original DAG definition). Defaults to
- *                             `~/.cursor/projects/<workspace>/artifacts/dag-<title>-<ts>/`
+ *                             `<cwd>/.flatbread/artifacts/dag-<title-slug>-<ts>/`
  *                             when omitted. Override with an explicit path or
  *                             suppress entirely with `--no-artifacts`.
  *   --no-artifacts           Skip writing per-task transcripts, _index.md,
- *                             and _dag.json. Useful when only the live canvas
+ *                             and _dag.json (does not suppress `--findings-dir`
+ *                             JSON sidecars). Useful when only the live canvas
  *                             is needed.
  *   --findings-dir <path>    JSON sidecars per task as
  *                             `${taskId}.findings.json` (or
@@ -426,27 +427,14 @@ function slugifyTitle(s: string): string {
 }
 
 /**
- * Default artifacts directory, mirrors the canvas path scheme.
- * Timestamped so repeated runs of the same DAG accumulate rather than
- * overwriting each other.
+ * Default artifacts directory under the repo (`--cwd`) tree so transcripts
+ * live beside the workspace (Flatbread convention: `.flatbread/`). Timestamped
+ * so repeated runs accumulate rather than overwriting each other.
  */
 function defaultArtifactsDir(cwd: string, dagTitleSlug: string): string {
-  const projectSlug = cwd
-    .replace(/^\//, '')
-    .replace(/\/+$/, '')
-    .split('/')
-    .map((seg) => seg.replace(/[^A-Za-z0-9._-]/g, '-'))
-    .join('-');
   const slug = dagTitleSlug || 'untitled';
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  return join(
-    homedir(),
-    '.cursor',
-    'projects',
-    projectSlug,
-    'artifacts',
-    `dag-${slug}-${timestamp}`
-  );
+  return join(resolve(cwd), '.flatbread', 'artifacts', `dag-${slug}-${timestamp}`);
 }
 
 async function loadResumedRunState(

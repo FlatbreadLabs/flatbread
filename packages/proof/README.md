@@ -105,15 +105,15 @@ Optional task kinds add control gates:
 By default, every **full DAG run** writes per-task markdown transcripts to a timestamped directory (not `--init-only`, which exits before artifact setup, and not `--dry-check-cmds`, which never enters the runner):
 
 ```
-~/.cursor/projects/<workspace-slug>/artifacts/dag-<title-slug>-<timestamp>/
+<repo-root>/.flatbread/artifacts/dag-<title-slug>-<timestamp>/
   _dag.json      # The original DAG definition
   _index.md      # Run summary: outcome, timings, and links to all transcripts
   <task-id>.md   # Full agent output for each task (kind: task, oracle, or pause)
 ```
 
-This mirrors the canvas path scheme so artifacts and canvases live together under `~/.cursor/projects/<workspace-slug>/`.
+Paths resolve from `--cwd` (defaults to the process working directory). The live canvas still defaults under `~/.cursor/projects/<workspace-slug>/canvases/` when using `--canvas` without `--canvas-path`.
 
-Previously, transcripts only appeared when you passed `--full-output-dir`; now they are on by default. Use `--no-artifacts` if you want the old opt-in behavior (no writes under `~/.cursor/…/artifacts/` except what other flags request).
+Previously, transcripts only appeared when you passed `--full-output-dir`; now they land under `.flatbread/` by default. Use `--no-artifacts` for opt-out, or `--full-output-dir` to redirect elsewhere.
 
 `--no-artifacts` suppresses transcripts, `_index.md`, and `_dag.json` only. **`--findings-dir` JSON sidecars use a separate path** — omit that flag (or point it elsewhere) if you need completely artifact-free output besides the canvas.
 
@@ -152,6 +152,8 @@ pnpm exec proof-supervisor \
 ```
 
 The supervisor adds `--restart-on-runner-change`. If runtime files change after a rank, Proof persists state, exits with code `75`, and the supervisor resumes from the state file under the rebuilt runtime.
+
+Each supervisor-spawned runner picks a **new default** `.flatbread/artifacts/dag-<slug>-<timestamp>/` directory unless you pin **`--full-output-dir <path>` on the supervisor command** so every child inherits the same path.
 
 After editing `packages/proof/src/**`, rebuild before resuming packaged CLI runs:
 
