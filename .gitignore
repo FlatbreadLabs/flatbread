@@ -14,3 +14,6 @@
 # logs
 yarn-error.log
 .pnpm-debug.log
+
+# Proof DAG transcripts / run indexes (default: .flatbread/artifacts/)
+.flatbread/artifacts/
