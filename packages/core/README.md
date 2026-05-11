@@ -9,3 +9,25 @@ However, you can utilize this package directly to build your own custom GraphQL 
 ```bash
 pnpm i @flatbread/core@latest
 ```
+
+## Snapshot exports
+
+This package also exposes stable snapshot export helpers for the validated
+content graph:
+
+- `exportCollectionsAsJson(configResult, options)` returns deterministic JSON
+  snapshots for selected collections.
+- `exportCollectionsAsCsv(configResult, options)` returns flat CSV views over
+  that same validated data.
+
+Prefer importing these helpers from `flatbread` in app code, since the main
+package re-exports `@flatbread/core` and is the primary consumer-facing surface.
+Import from `@flatbread/core` directly when you intentionally want the lower
+level package:
+
+```ts
+import { exportCollectionsAsJson, exportCollectionsAsCsv } from 'flatbread';
+```
+
+See [`docs/json-export.md`](../../docs/json-export.md) for the full export
+contract and examples.

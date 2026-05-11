@@ -16,7 +16,7 @@ pnpm add @flatbread/codegen
 
 This package generates TypeScript from the Flatbread model so apps can read typed content through the interface that fits the call site. It uses [GraphQL Code Generator](https://www.the-guild.dev/graphql/codegen) under the hood for schema and operation types, and also emits a prototype generated TypeScript read API derived from your configured collections, fields, and refs.
 
-For the canonical posts/authors/tags walkthrough and the contract for choosing GraphQL versus the generated TypeScript read API, see the root [Quickstart](../../README.md#quickstart-posts-authors-and-tags) and [Choosing a read interface](../../README.md#choosing-a-read-interface).
+For the canonical posts/authors/tags walkthrough and the contract for choosing GraphQL versus the generated TypeScript read API, see the canonical [Quickstart](../flatbread/README.md#quickstart-posts-authors-and-tags) and [Choosing a read interface](../flatbread/README.md#choosing-a-read-interface).
 
 ## 👩‍🍳 Basic Usage
 

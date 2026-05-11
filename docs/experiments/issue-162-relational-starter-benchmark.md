@@ -2,13 +2,13 @@
 
 ## Question
 
-Can a developer start from the canonical Flatbread path, understand the
-`posts → authors + tags` model, and reach a typed read result in under 10
+Can a developer start from Flatbread's canonical existing example, understand
+the `posts → authors + tags` model, and reach a typed read result in under 10
 minutes?
 
 ## Benchmark path
 
-This uses the repo's canonical onboarding route:
+This uses the repo's canonical onboarding route on the existing example:
 
 1. Read the root README quickstart:
    [`packages/flatbread/README.md#quickstart-posts-authors-and-tags`](../../packages/flatbread/README.md#quickstart-posts-authors-and-tags).
@@ -89,7 +89,7 @@ The watcher is intentionally long-running, so the shell command used
 field was present.
 
 This completes the canonical install → build → codegen → first demo query path
-in under 10 minutes.
+on the existing example in under 10 minutes.
 
 ## Generated TypeScript read API verification
 
@@ -214,8 +214,10 @@ created by a maintainer.
 
 ## Decision
 
-**Iterate / keep.** The canonical starter path now makes the relation-first
-value legible and reaches typed output, generated TypeScript read API execution,
-and a demo query result comfortably under the 10-minute target in a fresh
-worktree / warm-store environment. A stricter network-cold benchmark should
-still be run before using the timing as external marketing evidence.
+**Iterate / keep.** The canonical starter path on the existing example now
+makes the relation-first value legible and reaches typed output, generated
+TypeScript read API execution, and a demo query result comfortably under the
+10-minute target in a fresh worktree / warm-store environment. This should be
+described as time-to-first-query on the canonical example, not time-to-model
+from zero. A stricter network-cold benchmark should still be run before using
+the timing as external marketing evidence.
