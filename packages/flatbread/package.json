@@ -47,7 +47,7 @@
     "express": "^5.1.0",
     "express-graphql": "^0.12.0",
     "gradient-string": "^2.0.2",
-    "graphql": "16.5.0",
+    "graphql": "16.8.1",
     "kleur": "^4.1.5",
     "remark-github": "^11.2.4",
     "sade": "^1.8.1",
