@@ -31,9 +31,16 @@
  *                            bounds how long a `kind: 'pause'` task waits
  *                            for sentinel removal before it errors out.
  *   --stream-publish-ms <ms> Throttle live stream publishes (default: 500ms).
- *   --full-output-dir <path> Full per-task transcripts as `${taskId}.md`
- *                             (relative to --cwd unless absolute). Canvas
- *                             text stays capped; this captures the raw stream.
+ *   --full-output-dir <path> Per-task transcripts as `${taskId}.md` plus
+ *                             `_index.md` (run summary table) and `_dag.json`
+ *                             (the original DAG definition). Defaults to
+ *                             `<cwd>/.flatbread/artifacts/dag-<title-slug>-<ts>/`
+ *                             when omitted. Override with an explicit path or
+ *                             suppress entirely with `--no-artifacts`.
+ *   --no-artifacts           Skip writing per-task transcripts, _index.md,
+ *                             and _dag.json (does not suppress `--findings-dir`
+ *                             JSON sidecars). Useful when only the live canvas
+ *                             is needed.
  *   --findings-dir <path>    JSON sidecars per task as
  *                             `${taskId}.findings.json` (or
  *                             `${taskId}.iter<n>.findings.json` for
@@ -70,7 +77,7 @@
  *                             newly edited source.
  */
 
-import { Agent } from '@cursor/sdk';
+import { Agent, Cursor } from '@cursor/sdk';
 import { existsSync } from 'node:fs';
 import { setMaxListeners } from 'node:events';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -82,13 +89,19 @@ import { fileURLToPath } from 'node:url';
 
 import {
   parseDAG,
+  COMPLEXITY_KEYS,
   computeRanks,
-  createModelResolver,
+  createCatalogBackedModelResolver,
+  createModelSelectionResolver,
+  formatModelSelection,
+  normalizeModelSelection,
   validateModelMap,
 } from './dag.js';
 import type {
   DAG,
   DAGBudget,
+  ModelSelection,
+  ModelSpec,
   ModelMapOverride,
   RawTask,
   TaskKind,
@@ -171,6 +184,8 @@ interface CliArgs {
   resumeState?: string;
   /** Exit 75 after persisting state when runner runtime files change. */
   restartOnRunnerChange: boolean;
+  /** When true, skip writing per-task markdown transcripts and the run index. */
+  noArtifacts: boolean;
 }
 
 interface RunnerTaskRun {
@@ -299,6 +314,7 @@ function parseArgs(argv: string[]): CliArgs {
     statePath,
     resumeState,
     restartOnRunnerChange,
+    noArtifacts: args['no-artifacts'] === 'true',
   };
 }
 
@@ -403,10 +419,33 @@ function defaultCanvasesDir(cwd: string): string {
   return join(homedir(), '.cursor', 'projects', slug, 'canvases');
 }
 
+function slugifyTitle(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+/**
+ * Default artifacts directory under the repo (`--cwd`) tree so transcripts
+ * live beside the workspace (Flatbread convention: `.flatbread/`). Timestamped
+ * so repeated runs accumulate rather than overwriting each other.
+ */
+function defaultArtifactsDir(cwd: string, dagTitleSlug: string): string {
+  const slug = dagTitleSlug || 'untitled';
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  return join(
+    resolve(cwd),
+    '.flatbread',
+    'artifacts',
+    `dag-${slug}-${timestamp}`
+  );
+}
+
 async function loadResumedRunState(
   statePath: string,
   dag: DAG,
-  modelForComplexity: (c: RawTask['complexity']) => string
+  modelForComplexity: (c: RawTask['complexity']) => ModelSpec
 ): Promise<RunState> {
   const persisted = await readPersistedRunState(statePath);
   const state = persisted.state;
@@ -430,7 +469,12 @@ async function loadResumedRunState(
     ts.depends_on = task.depends_on;
     ts.complexity = task.complexity;
     ts.subtask_prompt = task.subtask_prompt;
-    ts.model = modelForComplexity(task.complexity);
+    const modelSelection = normalizeModelSelection(
+      modelForComplexity(task.complexity),
+      `model for task ${task.id}`
+    );
+    ts.model = formatModelSelection(modelSelection);
+    ts.modelSelection = modelSelection;
     ts.kind = task.kind ?? 'task';
     ts.command = task.kind === 'oracle' ? task.command : undefined;
     ts.expect = task.kind === 'oracle' ? task.expect : undefined;
@@ -459,6 +503,28 @@ function isResumeTerminalStatus(status: TaskState['status']): boolean {
   return (
     status === 'FINISHED' || status === 'ERROR' || status === 'BUDGET-EXCEEDED'
   );
+}
+
+function taskModelSelection(ts: TaskState): ModelSelection {
+  return (
+    ts.modelSelection ??
+    // Fallback path is for legacy persisted run-state (before modelSelection).
+    // In that shape ts.model is always a plain model id (not formatted output).
+    normalizeModelSelection(ts.model, `task ${ts.id} model`)
+  );
+}
+
+async function fetchCursorModelCatalog(): Promise<
+  Awaited<ReturnType<typeof Cursor.models.list>>
+> {
+  try {
+    return await Cursor.models.list();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Could not fetch Cursor model catalog. Check CURSOR_API_KEY and network connectivity. Original error: ${message}`
+    );
+  }
 }
 
 async function main(): Promise<void> {
@@ -504,9 +570,23 @@ async function main(): Promise<void> {
           ),
           `--models-file ${args.modelsFile}`
         );
-  const modelForComplexity = createModelResolver(
+  const unresolvedModelForComplexity = createModelSelectionResolver(
     mergeModelOverrides({ dagModels: dag.models, fileModels })
   );
+  const modelForComplexity = args.initOnly
+    ? unresolvedModelForComplexity
+    : createCatalogBackedModelResolver(
+        unresolvedModelForComplexity,
+        await fetchCursorModelCatalog()
+      );
+  if (!args.initOnly) {
+    for (const complexity of COMPLEXITY_KEYS) {
+      modelForComplexity(complexity);
+    }
+    console.log(
+      '[proof] validated model selections against Cursor.models.list()'
+    );
+  }
   const ranks = computeRanks(dag);
 
   if (args.convergeOn && !dag.tasks.some((t) => t.id === args.convergeOn)) {
@@ -515,13 +595,22 @@ async function main(): Promise<void> {
     );
   }
 
-  const fullOutputAbsoluteDir =
-    args.fullOutputDir !== undefined
-      ? resolveAgainstCwd(args.fullOutputDir, args.cwd)
-      : undefined;
-  if (fullOutputAbsoluteDir && !args.initOnly) {
+  const fullOutputAbsoluteDir: string | undefined = (() => {
+    if (args.noArtifacts || args.initOnly || args.dryCheckCmds)
+      return undefined;
+    if (args.fullOutputDir !== undefined) {
+      return resolveAgainstCwd(args.fullOutputDir, args.cwd);
+    }
+    return defaultArtifactsDir(args.cwd, slugifyTitle(dag.title));
+  })();
+  if (fullOutputAbsoluteDir) {
     await mkdir(fullOutputAbsoluteDir, { recursive: true });
-    console.log(`[proof] full-output-dir → ${fullOutputAbsoluteDir}`);
+    console.log(`[proof] artifacts → ${fullOutputAbsoluteDir}`);
+    await writeFile(
+      join(fullOutputAbsoluteDir, '_dag.json'),
+      JSON.stringify(raw, null, 2),
+      'utf8'
+    );
   }
 
   const findingsAbsoluteDir =
@@ -555,6 +644,7 @@ async function main(): Promise<void> {
   const writer = new CanvasWriter(args.canvasPath, args.debounceMs);
   let finalized = false;
   let interrupting = false;
+  let indexWritten = false;
 
   console.log(
     `[proof] DAG "${dag.title}" — ${dag.tasks.length} tasks across ${ranks.length} rank(s)`
@@ -638,6 +728,23 @@ async function main(): Promise<void> {
       await markRunTerminated(state, message, outcome);
       writer.schedule(structuredCloneState(state));
       await writer.flush();
+      if (fullOutputAbsoluteDir && !indexWritten) {
+        await writeRunIndexMarkdown(
+          fullOutputAbsoluteDir,
+          dag.title,
+          state.tasks,
+          {
+            startedAt: state.startedAt,
+            finishedAt: state.finishedAt,
+            runOutcome: state.runOutcome,
+            runMessage: state.runMessage,
+          }
+        ).catch((e: unknown) => {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.warn(`[proof] _index.md write failed: ${msg}`);
+        });
+        indexWritten = true;
+      }
     } catch (flushErr) {
       const flushMsg =
         flushErr instanceof Error ? flushErr.message : String(flushErr);
@@ -661,10 +768,11 @@ async function main(): Promise<void> {
     streamPublishMs: args.streamPublishMs,
     streamIdleTimeoutMs: args.streamIdleTimeoutMs,
     fullOutputAbsoluteDir,
+    dagTitle: dag.title,
     framing: dag.framing,
   };
 
-  const runOne = (
+  const runOne = async (
     task: RawTask,
     overrides?: Partial<RunTaskOptions>
   ): Promise<void> => {
@@ -679,12 +787,13 @@ async function main(): Promise<void> {
         state,
         writer,
         failedDeps,
-        fullOutputAbsoluteDir
+        fullOutputAbsoluteDir,
+        dag.title
       );
     }
     if (effectiveTaskKind(task) === 'pause') {
       const ts = stateById.get(task.id)!;
-      return runPauseTask(
+      await runPauseTask(
         task,
         ts,
         {
@@ -697,10 +806,22 @@ async function main(): Promise<void> {
           cloneState: structuredCloneState,
         }
       );
+      if (fullOutputAbsoluteDir) {
+        await persistTaskMarkdownFile(
+          fullOutputAbsoluteDir,
+          dag.title,
+          ts,
+          ts.resultText ?? ''
+        ).catch((e: unknown) => {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.warn(`[proof] artifact write failed for ${task.id}: ${msg}`);
+        });
+      }
+      return;
     }
     if (effectiveTaskKind(task) === 'oracle') {
       const ts = stateById.get(task.id)!;
-      return runOracleTask(
+      await runOracleTask(
         task,
         ts,
         {
@@ -713,6 +834,18 @@ async function main(): Promise<void> {
           cloneState: structuredCloneState,
         }
       );
+      if (fullOutputAbsoluteDir) {
+        await persistTaskMarkdownFile(
+          fullOutputAbsoluteDir,
+          dag.title,
+          ts,
+          ts.resultText ?? ''
+        ).catch((e: unknown) => {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.warn(`[proof] artifact write failed for ${task.id}: ${msg}`);
+        });
+      }
+      return;
     }
     return runTask(task, stateById, state, writer, args.cwd, {
       ...baseRunOptions,
@@ -839,8 +972,20 @@ async function main(): Promise<void> {
       await writeRunIndexMarkdown(
         fullOutputAbsoluteDir,
         dag.title,
-        state.tasks
-      );
+        state.tasks,
+        {
+          startedAt: state.startedAt,
+          finishedAt: state.finishedAt,
+          runOutcome: state.runOutcome,
+          runMessage: state.runMessage,
+        }
+      ).catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.warn(`[proof] _index.md write failed: ${msg}`);
+      });
+      // Skip the defensive `finally` rewrite now that this attempt finished
+      // (success or logged failure).
+      indexWritten = true;
     }
 
     const succeeded = state.tasks.length - errors.length - budgetHits.length;
@@ -881,6 +1026,24 @@ async function main(): Promise<void> {
       writer.schedule(structuredCloneState(state));
       await writer.flush();
       finalized = true;
+      // process.exit() bypasses the finally block, so write _index.md here.
+      if (fullOutputAbsoluteDir && !indexWritten) {
+        await writeRunIndexMarkdown(
+          fullOutputAbsoluteDir,
+          dag.title,
+          state.tasks,
+          {
+            startedAt: state.startedAt,
+            finishedAt: state.finishedAt,
+            runOutcome: state.runOutcome,
+            runMessage: state.runMessage,
+          }
+        ).catch((e: unknown) => {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.warn(`[proof] _index.md write failed: ${msg}`);
+        });
+        indexWritten = true;
+      }
       console.error(`[proof] ${err.message}`);
       process.exit(EXIT_BUDGET_EXCEEDED);
     }
@@ -905,6 +1068,26 @@ async function main(): Promise<void> {
       );
       writer.schedule(structuredCloneState(state));
       await writer.flush();
+    }
+    // Best-effort _index.md on error / defensive-exit paths. The success path
+    // and BudgetExceededError path write it themselves (setting indexWritten);
+    // here we catch generic throws and unexpected exits. process.exit() does
+    // not reach this block, which is why BudgetExceededError is handled above.
+    if (fullOutputAbsoluteDir && state.runOutcome && !indexWritten) {
+      await writeRunIndexMarkdown(
+        fullOutputAbsoluteDir,
+        dag.title,
+        state.tasks,
+        {
+          startedAt: state.startedAt,
+          finishedAt: state.finishedAt,
+          runOutcome: state.runOutcome,
+          runMessage: state.runMessage,
+        }
+      ).catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.warn(`[proof] _index.md write failed: ${msg}`);
+      });
     }
   }
 }
@@ -941,10 +1124,11 @@ async function runTask(
       ? options.framing.trimEnd() + '\n\n'
       : '';
   const stitched = framing + stitchedBody;
+  const modelSelection = taskModelSelection(ts);
 
   const agent = await Agent.create({
     apiKey: process.env.CURSOR_API_KEY!,
-    model: { id: ts.model },
+    model: modelSelection,
     local: { cwd },
   });
 
@@ -1083,10 +1267,13 @@ async function runTask(
     if (fullDir) {
       await persistTaskMarkdownFile(
         fullDir,
-        state.title,
+        options.dagTitle ?? state.title,
         ts,
         fullStreamChunks.join('')
-      );
+      ).catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.warn(`[proof] artifact write failed for ${task.id}: ${msg}`);
+      });
     }
     try {
       await (agent as unknown as AsyncDisposable)[Symbol.asyncDispose]();
@@ -1102,6 +1289,13 @@ interface RunTaskOptions {
   streamPublishMs: number;
   streamIdleTimeoutMs: number;
   fullOutputAbsoluteDir?: string;
+  /**
+   * The DAG title from the live-parsed DAG definition, used when writing
+   * per-task markdown files. Falls back to `state.title` when absent.
+   * Keeping this in sync with `dag.title` (rather than `state.title`) avoids
+   * stale-title disagreements in resumed runs.
+   */
+  dagTitle?: string;
   /**
    * Stitched in BETWEEN the upstream-context block and the task's own
    * `subtask_prompt`. Used by `--converge-on` re-runs to inject the latest
@@ -1311,18 +1505,48 @@ async function persistTaskMarkdownFile(
 async function writeRunIndexMarkdown(
   dir: string,
   dagTitle: string,
-  tasks: TaskState[]
+  tasks: TaskState[],
+  runMeta?: {
+    startedAt?: number;
+    finishedAt?: number;
+    runOutcome?: string;
+    runMessage?: string;
+  }
 ): Promise<void> {
+  const metaLines = [
+    '- **DAG definition:** [_dag.json](./_dag.json)',
+    ...(runMeta?.startedAt !== undefined
+      ? [`- **Started:** ${new Date(runMeta.startedAt).toISOString()}`]
+      : []),
+    ...(runMeta?.finishedAt !== undefined
+      ? [`- **Finished:** ${new Date(runMeta.finishedAt).toISOString()}`]
+      : []),
+    ...(runMeta?.runOutcome !== undefined
+      ? [
+          `- **Outcome:** ${runMeta.runOutcome}${
+            runMeta.runMessage ? ` — ${runMeta.runMessage}` : ''
+          }`,
+        ]
+      : []),
+  ];
   const lines = [
     '# DAG run — transcript index',
     '',
     `**${dagTitle}**`,
     '',
-    '| Task | Status | Transcript |',
-    '|------|--------|-------------|',
-    ...tasks.map(
-      (t) => `| ${t.id} | ${t.status} | [${t.id}.md](./${t.id}.md) |`
-    ),
+    ...metaLines,
+    '',
+    '| Task | Kind | Status | Transcript |',
+    '|------|------|--------|------------|',
+    ...tasks.map((t) => {
+      const transcriptFile = `${t.id}.md`;
+      const transcriptCell = existsSync(join(dir, transcriptFile))
+        ? `[${transcriptFile}](./${transcriptFile})`
+        : '_missing transcript_';
+      return `| ${t.id} | ${t.kind ?? 'task'} | ${
+        t.status
+      } | ${transcriptCell} |`;
+    }),
     '',
   ];
   await writeFile(join(dir, '_index.md'), lines.join('\n'), 'utf8');
@@ -1547,13 +1771,14 @@ async function runConvergenceLoop(
   }
 }
 
-function skipTask(
+async function skipTask(
   task: RawTask,
   stateById: Map<string, TaskState>,
   state: RunState,
   writer: CanvasWriter,
   failedDeps: string[],
-  fullOutputAbsoluteDir?: string
+  fullOutputAbsoluteDir?: string,
+  dagTitle?: string
 ): Promise<void> {
   const ts = stateById.get(task.id)!;
   const now = Date.now();
@@ -1565,8 +1790,16 @@ function skipTask(
     `[proof] skipping ${task.id} — upstream ${failedDeps.join(', ')} failed`
   );
   writer.schedule(structuredCloneState(state));
-  if (!fullOutputAbsoluteDir) return Promise.resolve();
-  return persistTaskMarkdownFile(fullOutputAbsoluteDir, state.title, ts, '');
+  if (!fullOutputAbsoluteDir) return;
+  await persistTaskMarkdownFile(
+    fullOutputAbsoluteDir,
+    dagTitle ?? state.title,
+    ts,
+    ''
+  ).catch((e: unknown) => {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn(`[proof] artifact write failed for ${task.id}: ${msg}`);
+  });
 }
 
 async function markRunTerminated(

@@ -13,6 +13,7 @@ See `CONTRIBUTING.md` for full details. Quick reference:
 - **Install**: `pnpm install`
 - **Build**: `pnpm build`
 - **Lint**: `pnpm lint` (prettier)
+- **Lint fix (after edits)**: `pnpm lint:fix:fast` (writes formatting repo-wide to match `pnpm lint`; staged-only: `pnpm lint:fix`, also runs via `.husky/pre-commit`)
 - **Typecheck**: `pnpm typecheck`
 - **Test**: `pnpm test` (builds, then runs ava + vitest suites)
 - **Full verify**: `pnpm verify` (lint + typecheck + build + test)
@@ -35,3 +36,12 @@ The repo uses Mergify stacks for PR management. The `mergify-cli` is installed v
 - **Build before test.** All packages must be built (`pnpm build`) before running tests or starting dev servers. `pnpm test` handles this automatically.
 - **The Next.js example `dev` script uses `--https`.** This requires an SSL certificate. In headless/CI environments, run without `--https`: `npx flatbread start -- next dev --turbopack`.
 - **Full local CI parity check:** `pnpm verify` runs lint, typecheck, build, and all tests.
+
+### Weave merge driver
+
+The repo uses [weave](https://ataraxy-labs.github.io/weave/docs.html) for entity-level semantic merges. The `.gitattributes` file routes supported file types (`.ts`, `.js`, `.json`, `.md`, `.yaml`, etc.) through `weave-driver`, which resolves merges at the function/class/entity level instead of line-by-line.
+
+- **Binaries**: `weave` (CLI) and `weave-driver` (git merge driver), installed via `cargo install --git https://github.com/Ataraxy-Labs/weave weave-cli weave-driver`. The update script handles this.
+- **Preview a merge**: `weave preview <branch>` — dry-run that shows which files/entities would merge cleanly or conflict.
+- **Config**: `weave setup` was already run; git config `merge.weave.driver` points to `weave-driver`. No re-run needed unless the binary path changes.
+- **Rust toolchain**: Weave requires Rust >= 1.89. The update script ensures `rustup default stable` is set.

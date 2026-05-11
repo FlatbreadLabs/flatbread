@@ -68,10 +68,67 @@ Every DAG has a `title` and a `tasks` array. Each task needs:
 
 Proof computes ranks with Kahn topological sort and runs sibling tasks in the same rank concurrently. Avoid placing two sibling tasks in the same rank if they write the same files.
 
+Optional top-level `models` can override the default complexity map with plain
+SDK model id strings or SDK model selections:
+
+```json
+{
+  "models": {
+    "HIGH": {
+      "id": "gpt-5.4",
+      "params": [{ "id": "reasoning", "value": "high" }]
+    },
+    "MED": "composer-2",
+    "LOW": {
+      "id": "gpt-5.4-nano",
+      "params": [{ "id": "reasoning", "value": "low" }]
+    }
+  }
+}
+```
+
+Use the object shape when you need `params`; use a string when the model id is
+enough. For example, use `{ "id": "gpt-5.4", "params": [{ "id": "reasoning", "value": "high" }] }`, not a suffix-style id like `gpt-5.4-high`.
+
+When a DAG runs, Proof calls `Cursor.models.list()`, validates model ids and
+param values, and expands partial selections to the closest valid SDK preset
+variant using that model's default variant for omitted params. `--init-only`
+does not call the SDK, so it can still render a canvas without `CURSOR_API_KEY`.
+
 Optional task kinds add control gates:
 
 - `kind: "oracle"` runs a shell command and records pass/fail evidence.
 - `kind: "pause"` waits for a checkpoint sentinel so a human can inspect or approve before downstream work continues.
+
+## Artifact Output
+
+By default, every **full DAG run** writes per-task markdown transcripts to a timestamped directory (not `--init-only`, which exits before artifact setup, and not `--dry-check-cmds`, which never enters the runner):
+
+```
+<repo-root>/.flatbread/artifacts/dag-<title-slug>-<timestamp>/
+  _dag.json      # The original DAG definition
+  _index.md      # Run summary: outcome, timings, and links to all transcripts
+  <task-id>.md   # Full agent output for each task (kind: task, oracle, or pause)
+```
+
+Paths resolve from `--cwd` (defaults to the process working directory). The live canvas still defaults under `~/.cursor/projects/<workspace-slug>/canvases/` when using `--canvas` without `--canvas-path`.
+
+Previously, transcripts only appeared when you passed `--full-output-dir`; now they land under `.flatbread/` by default. Use `--no-artifacts` for opt-out, or `--full-output-dir` to redirect elsewhere.
+
+`--no-artifacts` suppresses transcripts, `_index.md`, and `_dag.json` only. **`--findings-dir` JSON sidecars use a separate path** — omit that flag (or point it elsewhere) if you need completely artifact-free output besides the canvas.
+
+To suppress artifact writing:
+
+```bash
+pnpm exec proof --dag /tmp/my.json --canvas-path /tmp/my.canvas.tsx --no-artifacts
+```
+
+To write artifacts to a custom path:
+
+```bash
+pnpm exec proof --dag /tmp/my.json --canvas-path /tmp/my.canvas.tsx \
+  --full-output-dir /path/to/my-artifacts/
+```
 
 ## Project Skill
 
@@ -96,6 +153,8 @@ pnpm exec proof-supervisor \
 
 The supervisor adds `--restart-on-runner-change`. If runtime files change after a rank, Proof persists state, exits with code `75`, and the supervisor resumes from the state file under the rebuilt runtime.
 
+Each supervisor-spawned runner picks a **new default** `.flatbread/artifacts/dag-<slug>-<timestamp>/` directory unless you pin **`--full-output-dir <path>` on the supervisor command** so every child inherits the same path.
+
 After editing `packages/proof/src/**`, rebuild before resuming packaged CLI runs:
 
 ```bash
@@ -118,8 +177,9 @@ Proof also exposes helpers for tooling:
 ```ts
 import {
   computeRanks,
-  createModelResolver,
+  createModelSelectionResolver,
   parseDAG,
+  resolveModelSelectionFromCatalog,
   runDryCheck,
   type DAG,
   type TaskState,

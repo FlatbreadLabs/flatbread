@@ -22,6 +22,7 @@
     "lint:prettier": "prettier --check --plugin-search-dir=. .",
     "lint": "pnpm lint:prettier",
     "lint:fix": "pnpm lint:fix:prettier",
+    "lint:fix:fast": "prettier --write --plugin-search-dir=. .",
     "lint:fix:prettier": "pretty-quick --staged",
     "typecheck": "pnpm --filter @flatbread/proof typecheck",
     "play": "cd examples/nextjs && pnpm dev",
@@ -33,6 +34,7 @@
     "test:vitest": "pnpm --filter @flatbread/codegen --filter @flatbread/utils test",
     "test": "pnpm build && pnpm test:ava && pnpm test:vitest",
     "verify": "pnpm lint && pnpm typecheck && pnpm build && pnpm test",
+    "cursor:fetch-cloud-agent": "pnpm --filter @flatbread/proof exec node scripts/fetch-cloud-agent-conversation.mjs",
     "dev:test": "ava --watch --verbose",
     "prepare": "husky install"
   },
