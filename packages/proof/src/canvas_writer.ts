@@ -233,6 +233,7 @@ type TaskStatus =
 type Complexity = 'HIGH' | 'MED' | 'LOW';
 type TaskKind = 'task' | 'pause' | 'oracle';
 
+// Keep in sync with ModelParameterValue / ModelSelection in dag.ts.
 interface ModelParameterValue {
   id: string;
   value: string;

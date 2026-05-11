@@ -550,7 +550,7 @@ export function validateModelSelection(
   label = 'model'
 ): ModelSelection {
   const obj = validateModelSelectionObject(raw, label);
-  const id = validateModelId(obj.id, `${label}.id`);
+  const id = validateNonEmptyString(obj.id, `${label}.id`);
   const params = validateModelParams(obj.params, label);
   return createModelSelection(id, params);
 }
@@ -565,7 +565,7 @@ function validateModelSelectionObject(
   return raw as Record<string, unknown>;
 }
 
-function validateModelId(raw: unknown, label: string): string {
+function validateNonEmptyString(raw: unknown, label: string): string {
   if (typeof raw !== 'string' || raw.trim() === '') {
     throw new Error(`${label} must be a non-empty string.`);
   }
@@ -605,8 +605,11 @@ function validateModelParam(
   }
   const param = raw as Record<string, unknown>;
   return {
-    id: validateModelId(param.id, `${label}.params[${index}].id`),
-    value: validateModelId(param.value, `${label}.params[${index}].value`),
+    id: validateNonEmptyString(param.id, `${label}.params[${index}].id`),
+    value: validateNonEmptyString(
+      param.value,
+      `${label}.params[${index}].value`
+    ),
   };
 }
 
@@ -615,7 +618,7 @@ export function normalizeModelSelection(
   label = 'model'
 ): ModelSelection {
   if (typeof raw === 'string') {
-    return createModelSelection(validateModelId(raw, label));
+    return createModelSelection(validateNonEmptyString(raw, label));
   }
   return validateModelSelection(raw, label);
 }
