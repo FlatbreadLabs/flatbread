@@ -4,7 +4,7 @@ import {
   resolveModelSelectionFromCatalog,
   type ModelCatalogItem,
   type ModelSelection,
-} from './dag';
+} from './dag.js';
 
 function resolveSelection(
   selection: ModelSelection,
