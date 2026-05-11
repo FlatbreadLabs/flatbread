@@ -475,6 +475,8 @@ function isResumeTerminalStatus(status: TaskState['status']): boolean {
 function taskModelSelection(ts: TaskState): ModelSelection {
   return (
     ts.modelSelection ??
+    // Fallback path is for legacy persisted run-state (before modelSelection).
+    // In that shape ts.model is always a plain model id (not formatted output).
     normalizeModelSelection(ts.model, `task ${ts.id} model`)
   );
 }
