@@ -2,7 +2,7 @@
 
 A weighing of opportunities, hypotheses of outcome, and an ideal end state for the Flatbread + Proof axis as a search-and-memory substrate.
 
-> Companion to [`flatbread-agent-artifact-opportunity.md`](flatbread-agent-artifact-opportunity.md) and [`flatbread-flow-pmf-audit.md`](flatbread-flow-pmf-audit.md). Synthesizes upstream dossiers under `/tmp/proof-search/` (`audit-flatbread-retrieval.md`, `audit-proof-context.md`, `sota-dense-sparse-hybrid.md`, `sota-graph-structure.md`, `sota-agent-memory.md`, `sota-embeddable-runtimes.md`, `synthesis-flatbread.md`, `synthesis-proof.md`, `synthesis-novel.md`).
+> Companion to [`flatbread-agent-artifact-opportunity.md`](flatbread-agent-artifact-opportunity.md) and [`flatbread-flow-pmf-audit.md`](flatbread-flow-pmf-audit.md). Authored via a `/proof` DAG; intermediate dossier names are listed in [`docs/research/performant-context-search/README.md`](docs/research/performant-context-search/README.md). Evidence for claims is in repo paths cited inline and in **§13 — References** (no ephemeral `file://` paths).
 
 ---
 
@@ -26,7 +26,7 @@ Flatbread's relational filter DSL is excellent on **declared frontmatter columns
 
 ### 2.1 Frontmatter-only retrieval is structurally insufficient
 
-The audit ([`/tmp/proof-search/audit-flatbread-retrieval.md`](file:///tmp/proof-search/audit-flatbread-retrieval.md) §2.4–2.5, §3.1, §5) is unambiguous about today's retrieval surface in [`packages/core`](packages/core):
+The internal Flatbread codebase audit (methodology: [`docs/research/performant-context-search/README.md`](docs/research/performant-context-search/README.md); sections cited here match the audit dossier §2.4–2.5, §3.1, §5) is unambiguous about today's retrieval surface in [`packages/core`](packages/core):
 
 - The `filter` JSON DSL (`packages/core/src/utils/sift.ts`) is a Mongo-style comparator engine: `eq`, `ne`, `lt/lte/gt/gte`, `in/nin`, `includes/excludes`, `regex`, `wildcard`, `exists`, `strictlyExists`. It runs over an **in-memory `EntryNode` JSON graph**, with `resolveFilter` (`packages/core/src/resolvers/arguments.ts`) executing an internal GraphQL subquery to fetch only the leaf paths a filter mentions, then `sift()`-ing the result.
 - Boolean composition is **implicit AND** across flattened leaf conditions (`reduceBooleans('and')` in `packages/core/src/utils/sift.ts`); `$or` and `$nor` are unimplemented in the default sift path even though `reduceBooleans` supports `or` internally. `findMany(ids)` lacks the `filter` argument that `all*` has. `sortBy` only resolves top-level keys (`packages/core/src/resolvers/arguments.ts:162-176`).
@@ -44,7 +44,7 @@ The PMF audit treats this as a near-term hygiene matter ([`flatbread-flow-pmf-au
 
 ### 2.2 Parent-text truncation is the same bug, on the agent side
 
-Proof's audit ([`/tmp/proof-search/audit-proof-context.md`](file:///tmp/proof-search/audit-proof-context.md) §1.1–1.5, §2, §8, §10) names the analogous problem in [`packages/proof/src`](packages/proof/src):
+The internal Proof audit (same methodology doc; sections §1.1–1.5, §2, §8, §10 in the audit dossier) names the analogous problem in [`packages/proof/src`](packages/proof/src):
 
 - Each LLM task's `assistant` stream is appended to a `BoundedTextBuffer` capped at `STREAM_CAP = 4000` chars (`packages/proof/src/run_dag.ts:1124-1135`). The `resultText` field that downstream tasks see is the buffer's render — early prose is dropped with a truncation banner.
 - When a child task assembles its prompt, `buildUpstreamContext` (`packages/proof/src/run_dag.ts:1606-1628`) loops over each `depends_on` parent and includes **at most `UPSTREAM_SNIPPET_CAP = 2000` chars per parent** through `truncateUpstreamSnippet`. The truncator is _section-aware_ — it splits on `## Headings` and drops sections in a fixed `SECTION_DROP_PRIORITY` order (`Current contract` → `Validation plan` → `Human checkpoints` → `Migration impact` → `Proposed contract`) — but the priority list is **hand-coded for one task shape** and has zero awareness of _what the child actually wants to know_. When the priority list runs out, it falls back to a hard slice.
@@ -182,7 +182,7 @@ The `sota-embeddable-runtimes.md` dossier inventories every git-native, zero-inf
 | **`fastembed-js`**                                | npm                | First-class                                       | ONNX cache                             | n/a (inference)                                    | MIT                         | gitignore cache                                   |
 | **`onnxruntime-node`**                            | npm                | First-class                                       | `.onnx` weights                        | n/a (inference)                                    | MIT                         | gitignore weights                                 |
 
-The dossier's bottom line: for **Flatbread / Proof defaults, stay in TS**: **Orama** _or_ **SQLite + sqlite-vec + FTS5** covers most RAG shapes; avoid committing `/.flatbread/index`; generate it deterministically from markdown checked into git; keep models in the user cache or explicit allowed downloads (`sota-embeddable-runtimes.md` Bottom line). The opt-in "heavy" tier is **LanceDB** or **PGlite + pgvector** for larger vectors; **Qdrant** as an external server for hybrid + ColBERT multivectors; **Voyage / Cohere** as cloud APIs when an HTTP call is acceptable.
+The dossier's bottom line: for **Flatbread / Proof defaults, stay in TS**: **Orama** _or_ **SQLite + sqlite-vec + FTS5** covers most RAG shapes; treat derived blobs under `.flatbread/index/` as **regenerated outputs** (pair with committed manifests where teams want diffable retrieval inputs); keep models in the user cache or explicit allowed downloads (`sota-embeddable-runtimes.md` Bottom line). The opt-in "heavy" tier is **LanceDB** or **PGlite + pgvector** for larger vectors; **Qdrant** as an external server for hybrid + ColBERT multivectors; **Voyage / Cohere** as cloud APIs when an HTTP call is acceptable.
 
 Cold-start expectations on a developer laptop for **10k chunks** (`sota-embeddable-runtimes.md` Cold-start table, May 2026 community reporting): `transformers.js` CPU tiny model **~0.5–2 h**; `transformers.js` WebGPU **~5–20 min**; `fastembed-js` ORT CPU small BF16/INT8 **~10–40 min**; `node-llama-cpp` on M-series / CUDA **minutes–hour**; cloud API **minutes** (network + rate limits). Always validate with a 5× mini-run extrapolation on the target machine.
 
@@ -352,7 +352,7 @@ Indexer adds short locators before embed/BM25 per Anthropic recipe **Pros:** Big
 
 #### F9 — Index artifacts + verify CLI
 
-chunks/edges jsonl plus gitignored sqlite/orama binaries; `flatbread index verify` checks hashes **Pros:** CI drift detection; clone size control **Hypothesis:** Support load shifts from mystique to actionable rebuild commands.
+chunks/edges jsonl plus derived sqlite/orama binaries; **proposed (not shipped):** a future `flatbread index verify` would hash manifests against sources for CI — today the `flatbread` CLI only exposes `start`, `init`, and `codegen` ([`packages/flatbread/src/cli/index.ts`](packages/flatbread/src/cli/index.ts)). **Pros:** CI drift detection; clone size control **Hypothesis:** Support load shifts from mystique to actionable rebuild commands.
 
 #### F10 — MCP toolpack
 
@@ -440,7 +440,7 @@ Project Effort graph to Skills, AGENTS.md, `.cursor/rules` deterministically **P
 
 **Query surfaces:** GraphQL remains the introspectable contract for apps; MCP exposes tool-shaped facades over the identical resolver stack; codegen grows typed accessors (document nodes + thin SDK) so agents rarely hand-author GraphQL strings.
 
-**Index format:** Source markdown stays canonical. **Tier A:** committed `chunks.jsonl` / `edges.jsonl` manifests for CI and small repos. **Tier B (default at scale):** derived `sqlite` with FTS5 + `sqlite-vec` (or Orama snapshot) under `.flatbread/index/`, gitignored, rebuilt by `flatbread index build` with manifest hashes recorded. Optional **Tier C:** team policy commits quantized vectors per N3 when audit demands byte-level review.
+**Index format:** Source markdown stays canonical. **Tier A:** committed `chunks.jsonl` / `edges.jsonl` manifests for CI and small repos. **Tier B (proposed default at scale):** derived `sqlite` with FTS5 + `sqlite-vec` (or Orama snapshot) under `.flatbread/index/`, rebuilt by a **`flatbread index build` command that does not exist yet** — the shipped CLI is still `start` / `init` / `codegen` only ([`packages/flatbread/src/cli/index.ts`](packages/flatbread/src/cli/index.ts)); implement build/verify as part of `@flatbread/index` + CLI extension work, then record manifest hashes for CI. Teams may gitignore Tier B binaries or commit them depending on policy. Optional **Tier C:** team policy commits quantized vectors per N3 when audit demands byte-level review.
 
 **Retrieval pipeline (prose):** Resolvers first **narrow** by relational `filter` (tenant, effort, status, link predicates), push candidate ids into parallel **lexical** and **dense ANN** lanes capped at top‑100 each, **fuse** with RRF (k=60), optionally **rerank** top‑50 with `bge-reranker-v2-m3`, then **expand** along declared refs and extracted wikilinks using PathRAG-style pruning + hop/token budgets before packaging citations. Contextual prefixes and late-interaction lanes are indexer profiles, not separate products.
 
@@ -489,7 +489,7 @@ flowchart LR
 
 - Land normalized IDs, relation validation, and stricter Flatbread config typing called out in the PMF audit so chunk ids, refs, and wikilink targets resolve to one canonical keyspace.
 - Ship structure-aware chunk + symbol emission behind a transformer flag (F1/F2) with golden tests across GFM/MDX edges.
-- Add `flatbread index verify` hooks that hash manifests against source files even before vectors ship.
+- **Proposed:** add `flatbread index verify` (not in the CLI yet) to hash manifests against source files even before vectors ship — same `@flatbread/index` / CLI milestone as `flatbread index build`.
 - Proof ships **O11 stub + O3 behind a flag** using the same embed/rank interface but defaulting to legacy truncation until benchmarks pass.
 - Document license-clean default models (Qwen3-Embedding + ONNX reranker) and download-on-first-use policy.
 
