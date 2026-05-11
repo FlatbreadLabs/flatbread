@@ -29,9 +29,15 @@ You (the parent agent) author the DAG inline using your understanding of the use
 {
   "title": "<short human-readable title for the run>",
   "models": {
-    "HIGH": "gpt-5.3-codex",
+    "HIGH": {
+      "id": "gpt-5.4",
+      "params": [{ "id": "reasoning", "value": "high" }]
+    },
     "MED": "composer-2",
-    "LOW": "auto-low"
+    "LOW": {
+      "id": "gpt-5.4-nano",
+      "params": [{ "id": "reasoning", "value": "low" }]
+    }
   },
   "tasks": [
     {
@@ -49,7 +55,7 @@ Rules:
 - Every `depends_on` entry must reference another task's `id`.
 - No cycles. The runner rejects cyclic DAGs at parse time.
 - `complexity` controls the model the subagent uses (see table below). Pick `HIGH` for novel/complex reasoning, `MED` for typical implementation, `LOW` for mechanical/lookup tasks.
-- Optional top-level `models` can override the default complexity → model map for this DAG.
+- Optional top-level `models` can override the default complexity → model map for this DAG. Values can be plain SDK model id strings or model selection objects of the shape `{ "id": "...", "params": [{ "id": "...", "value": "..." }] }`, with `params` omitted when unused.
 - `subtask_prompt` should read like a standalone request — the runner automatically prepends a short summary of upstream task outputs, so you do not need to repeat them.
 - Do **not** put two tasks that write to the same file in the same rank (siblings within a rank run concurrently and would race).
 
@@ -173,11 +179,24 @@ After the runner exits, briefly summarize what completed/failed and re-link the 
 | MED        | `composer-2`      |
 | LOW        | `gpt-5.4-nano`    |
 
-Override any subset inline with top-level DAG `models`, or pass a reusable profile with `--models-file <path>`. Precedence is defaults < DAG `models` < `--models-file`. The Cursor model catalog can vary by account.
+Override any subset inline with top-level DAG `models`, or pass a reusable profile with `--models-file <path>`. Values can be plain SDK model id strings or SDK model selections with `params`. At run time, Proof calls `Cursor.models.list()`, validates ids and param values, and expands partial selections to the closest valid preset variant using the model's default variant for omitted params. Precedence is defaults < DAG `models` < `--models-file`. The Cursor model catalog can vary by account.
+
+To use a cheaper high-capability GPT model, use the base SDK id plus params, not a suffix-style id:
+
+```json
+{
+  "models": {
+    "HIGH": {
+      "id": "gpt-5.4",
+      "params": [{ "id": "reasoning", "value": "high" }]
+    }
+  }
+}
+```
 
 ### Discovering valid model ids
 
-Many Cursor CLI catalog models encode reasoning effort and Max Mode as **slug suffixes** (e.g. `claude-opus-4-7-thinking-max`, `gpt-5.5-extra-high`, `gpt-5.3-codex-xhigh`), but the Cursor SDK may accept only base slugs. Do not compose SDK model ids from CLI suffixes by hand. For SDK-bound code, prefer `Cursor.models.list()` or the SDK's `ConfigurationError` catalog over `cursor-agent --list-models`.
+Many Cursor CLI catalog models encode reasoning effort and Max Mode as **slug suffixes** (e.g. `claude-opus-4-7-thinking-max`, `gpt-5.5-extra-high`, `gpt-5.3-codex-xhigh`), but the Cursor SDK may accept only base slugs plus `params`. Do not compose SDK model ids from CLI suffixes by hand: use `{ "id": "gpt-5.4", "params": [{ "id": "reasoning", "value": "high" }] }`, not `gpt-5.4-high`. For SDK-bound code, prefer `Cursor.models.list()` or the SDK's `ConfigurationError` catalog over `cursor-agent --list-models`.
 
 Ways to enumerate model ids:
 

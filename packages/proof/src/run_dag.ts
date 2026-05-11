@@ -77,7 +77,7 @@
  *                             newly edited source.
  */
 
-import { Agent } from '@cursor/sdk';
+import { Agent, Cursor } from '@cursor/sdk';
 import { existsSync } from 'node:fs';
 import { setMaxListeners } from 'node:events';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -89,13 +89,19 @@ import { fileURLToPath } from 'node:url';
 
 import {
   parseDAG,
+  COMPLEXITY_KEYS,
   computeRanks,
-  createModelResolver,
+  createCatalogBackedModelResolver,
+  createModelSelectionResolver,
+  formatModelSelection,
+  normalizeModelSelection,
   validateModelMap,
 } from './dag.js';
 import type {
   DAG,
   DAGBudget,
+  ModelSelection,
+  ModelSpec,
   ModelMapOverride,
   RawTask,
   TaskKind,
@@ -434,7 +440,7 @@ function defaultArtifactsDir(cwd: string, dagTitleSlug: string): string {
 async function loadResumedRunState(
   statePath: string,
   dag: DAG,
-  modelForComplexity: (c: RawTask['complexity']) => string
+  modelForComplexity: (c: RawTask['complexity']) => ModelSpec
 ): Promise<RunState> {
   const persisted = await readPersistedRunState(statePath);
   const state = persisted.state;
@@ -458,7 +464,12 @@ async function loadResumedRunState(
     ts.depends_on = task.depends_on;
     ts.complexity = task.complexity;
     ts.subtask_prompt = task.subtask_prompt;
-    ts.model = modelForComplexity(task.complexity);
+    const modelSelection = normalizeModelSelection(
+      modelForComplexity(task.complexity),
+      `model for task ${task.id}`
+    );
+    ts.model = formatModelSelection(modelSelection);
+    ts.modelSelection = modelSelection;
     ts.kind = task.kind ?? 'task';
     ts.command = task.kind === 'oracle' ? task.command : undefined;
     ts.expect = task.kind === 'oracle' ? task.expect : undefined;
@@ -487,6 +498,28 @@ function isResumeTerminalStatus(status: TaskState['status']): boolean {
   return (
     status === 'FINISHED' || status === 'ERROR' || status === 'BUDGET-EXCEEDED'
   );
+}
+
+function taskModelSelection(ts: TaskState): ModelSelection {
+  return (
+    ts.modelSelection ??
+    // Fallback path is for legacy persisted run-state (before modelSelection).
+    // In that shape ts.model is always a plain model id (not formatted output).
+    normalizeModelSelection(ts.model, `task ${ts.id} model`)
+  );
+}
+
+async function fetchCursorModelCatalog(): Promise<
+  Awaited<ReturnType<typeof Cursor.models.list>>
+> {
+  try {
+    return await Cursor.models.list();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Could not fetch Cursor model catalog. Check CURSOR_API_KEY and network connectivity. Original error: ${message}`
+    );
+  }
 }
 
 async function main(): Promise<void> {
@@ -532,9 +565,23 @@ async function main(): Promise<void> {
           ),
           `--models-file ${args.modelsFile}`
         );
-  const modelForComplexity = createModelResolver(
+  const unresolvedModelForComplexity = createModelSelectionResolver(
     mergeModelOverrides({ dagModels: dag.models, fileModels })
   );
+  const modelForComplexity = args.initOnly
+    ? unresolvedModelForComplexity
+    : createCatalogBackedModelResolver(
+        unresolvedModelForComplexity,
+        await fetchCursorModelCatalog()
+      );
+  if (!args.initOnly) {
+    for (const complexity of COMPLEXITY_KEYS) {
+      modelForComplexity(complexity);
+    }
+    console.log(
+      '[proof] validated model selections against Cursor.models.list()'
+    );
+  }
   const ranks = computeRanks(dag);
 
   if (args.convergeOn && !dag.tasks.some((t) => t.id === args.convergeOn)) {
@@ -1072,10 +1119,11 @@ async function runTask(
       ? options.framing.trimEnd() + '\n\n'
       : '';
   const stitched = framing + stitchedBody;
+  const modelSelection = taskModelSelection(ts);
 
   const agent = await Agent.create({
     apiKey: process.env.CURSOR_API_KEY!,
-    model: { id: ts.model },
+    model: modelSelection,
     local: { cwd },
   });
 

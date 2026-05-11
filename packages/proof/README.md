@@ -68,6 +68,33 @@ Every DAG has a `title` and a `tasks` array. Each task needs:
 
 Proof computes ranks with Kahn topological sort and runs sibling tasks in the same rank concurrently. Avoid placing two sibling tasks in the same rank if they write the same files.
 
+Optional top-level `models` can override the default complexity map with plain
+SDK model id strings or SDK model selections:
+
+```json
+{
+  "models": {
+    "HIGH": {
+      "id": "gpt-5.4",
+      "params": [{ "id": "reasoning", "value": "high" }]
+    },
+    "MED": "composer-2",
+    "LOW": {
+      "id": "gpt-5.4-nano",
+      "params": [{ "id": "reasoning", "value": "low" }]
+    }
+  }
+}
+```
+
+Use the object shape when you need `params`; use a string when the model id is
+enough. For example, use `{ "id": "gpt-5.4", "params": [{ "id": "reasoning", "value": "high" }] }`, not a suffix-style id like `gpt-5.4-high`.
+
+When a DAG runs, Proof calls `Cursor.models.list()`, validates model ids and
+param values, and expands partial selections to the closest valid SDK preset
+variant using that model's default variant for omitted params. `--init-only`
+does not call the SDK, so it can still render a canvas without `CURSOR_API_KEY`.
+
 Optional task kinds add control gates:
 
 - `kind: "oracle"` runs a shell command and records pass/fail evidence.
@@ -150,8 +177,9 @@ Proof also exposes helpers for tooling:
 ```ts
 import {
   computeRanks,
-  createModelResolver,
+  createModelSelectionResolver,
   parseDAG,
+  resolveModelSelectionFromCatalog,
   runDryCheck,
   type DAG,
   type TaskState,
