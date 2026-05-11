@@ -33,7 +33,7 @@ You (the parent agent) author the DAG inline using your understanding of the use
       "id": "claude-opus-4-7",
       "params": [{ "id": "effort", "value": "max" }]
     },
-    "MED": "composer-2",
+    "MED": { "id": "composer-2" },
     "LOW": {
       "id": "gpt-5.4-nano",
       "params": [{ "id": "reasoning", "value": "low" }]
@@ -55,7 +55,7 @@ Rules:
 - Every `depends_on` entry must reference another task's `id`.
 - No cycles. The runner rejects cyclic DAGs at parse time.
 - `complexity` controls the model the subagent uses (see table below). Pick `HIGH` for novel/complex reasoning, `MED` for typical implementation, `LOW` for mechanical/lookup tasks.
-- Optional top-level `models` can override the default complexity → model map for this DAG. Values can be either a plain SDK model id string or `{ "id": "...", "params": [{ "id": "...", "value": "..." }] }`.
+- Optional top-level `models` can override the default complexity → model map for this DAG. Values must be model selection objects of the shape `{ "id": "...", "params": [{ "id": "...", "value": "..." }] }`, with `params` omitted when unused.
 - `subtask_prompt` should read like a standalone request — the runner automatically prepends a short summary of upstream task outputs, so you do not need to repeat them.
 - Do **not** put two tasks that write to the same file in the same rank (siblings within a rank run concurrently and would race).
 

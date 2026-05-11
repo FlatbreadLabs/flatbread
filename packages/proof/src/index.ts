@@ -13,7 +13,6 @@ export {
   computeRanks,
   createCatalogBackedModelResolver,
   createModelSelectionResolver,
-  createModelResolver,
   formatModelSelection,
   isOracleTask,
   isPauseTask,

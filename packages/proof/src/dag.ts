@@ -16,7 +16,7 @@ export interface ModelSelection {
 }
 
 export type ModelSpec = string | ModelSelection;
-export type ModelMap = Record<Complexity, ModelSpec>;
+export type ModelMap = Record<Complexity, ModelSelection>;
 export type ModelMapOverride = Partial<ModelMap>;
 export type ResolvedModelMap = Record<Complexity, ModelSelection>;
 
@@ -148,9 +148,9 @@ export function isOracleTask(task: RawTask): boolean {
  * read the SDK's error-message catalog; do NOT trust `cursor-agent --list-models`.
  */
 export const DEFAULT_MODEL_MAP: ModelMap = {
-  HIGH: 'claude-opus-4-7',
-  MED: 'composer-2',
-  LOW: 'gpt-5.4-nano',
+  HIGH: { id: 'claude-opus-4-7' },
+  MED: { id: 'composer-2' },
+  LOW: { id: 'gpt-5.4-nano' },
 };
 
 export function parseDAG(raw: unknown): DAG {
@@ -516,37 +516,13 @@ export function validateModelMap(
   return models;
 }
 
-/**
- * @deprecated This backward-compat shim intentionally returns only `ModelSelection.id`
- * and silently discards any `params`.
- *
- * If you need param support (including preservation of the full `ModelSelection`),
- * migrate to `createModelSelectionResolver`.
- *
- * This helper is retained for backward compatibility and may be removed in a
- * future release.
- */
-export function createModelResolver(
-  overrides: ModelMapOverride = {}
-): (c: Complexity) => string {
-  const models: ModelMap = { ...DEFAULT_MODEL_MAP, ...overrides };
-  return (c: Complexity): string => {
-    if (!COMPLEXITY_KEYS.includes(c)) {
-      throw new Error(`Unknown complexity: ${c}`);
-    }
-    return normalizeModelSelection(models[c], `model for ${c}`).id;
-  };
-}
-
 export function createModelSelectionResolver(
   overrides: ModelMapOverride = {}
 ): (c: Complexity) => ModelSelection {
-  const models: ModelMap = { ...DEFAULT_MODEL_MAP, ...overrides };
+  const models = resolveModelMap(overrides);
   return (c: Complexity): ModelSelection => {
-    if (!COMPLEXITY_KEYS.includes(c)) {
-      throw new Error(`Unknown complexity: ${c}`);
-    }
-    return normalizeModelSelection(models[c], `model for ${c}`);
+    assertKnownComplexity(c);
+    return cloneModelSelection(models[c]);
   };
 }
 
@@ -568,69 +544,80 @@ export function createCatalogBackedModelResolver(
   };
 }
 
-/**
- * Validate a JSON model override without changing its nominal shape: plain
- * strings stay strings so `parseDAG` / `validateModelMap` remain
- * round-trip-stable for legacy configs. Use `normalizeModelSelection` when
- * you need a `ModelSelection` object (including `{ id }` for strings).
- */
+/** Validate a JSON model selection object. */
 export function validateModelSelection(
   raw: unknown,
   label = 'model'
-): ModelSpec {
-  if (typeof raw === 'string') {
-    const id = raw.trim();
-    if (id === '') {
-      throw new Error(`${label} must be a non-empty string or model object.`);
-    }
-    return id;
-  }
+): ModelSelection {
+  const obj = validateModelSelectionObject(raw, label);
+  const id = validateModelId(obj.id, `${label}.id`);
+  const params = validateModelParams(obj.params, label);
+  return createModelSelection(id, params);
+}
+
+function validateModelSelectionObject(
+  raw: unknown,
+  label: string
+): Record<string, unknown> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-    throw new Error(`${label} must be a non-empty string or model object.`);
+    throw new Error(`${label} must be a model object.`);
   }
-  const obj = raw as Record<string, unknown>;
-  const id = obj.id;
-  if (typeof id !== 'string' || id.trim() === '') {
-    throw new Error(`${label}.id must be a non-empty string.`);
+  return raw as Record<string, unknown>;
+}
+
+function validateModelId(raw: unknown, label: string): string {
+  if (typeof raw !== 'string' || raw.trim() === '') {
+    throw new Error(`${label} must be a non-empty string.`);
   }
-  if (obj.params === undefined) {
-    return { id: id.trim() };
-  }
-  if (!Array.isArray(obj.params)) {
+  return raw.trim();
+}
+
+function validateModelParams(
+  raw: unknown,
+  label: string
+): ModelParameterValue[] {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw)) {
     throw new Error(`${label}.params must be an array when set.`);
   }
+
   const params: ModelParameterValue[] = [];
   const seen = new Set<string>();
-  for (let i = 0; i < obj.params.length; i++) {
-    const rawParam = obj.params[i];
-    if (!rawParam || typeof rawParam !== 'object' || Array.isArray(rawParam)) {
-      throw new Error(`${label}.params[${i}] must be an object.`);
-    }
-    const param = rawParam as Record<string, unknown>;
-    if (typeof param.id !== 'string' || param.id.trim() === '') {
-      throw new Error(`${label}.params[${i}].id must be a non-empty string.`);
-    }
-    if (typeof param.value !== 'string' || param.value.trim() === '') {
-      throw new Error(
-        `${label}.params[${i}].value must be a non-empty string.`
-      );
-    }
-    const paramId = param.id.trim();
+  for (let i = 0; i < raw.length; i++) {
+    const param = validateModelParam(raw[i], label, i);
+    const paramId = param.id;
     if (seen.has(paramId)) {
       throw new Error(`${label}.params contains duplicate id: ${paramId}`);
     }
     seen.add(paramId);
-    params.push({ id: paramId, value: param.value.trim() });
+    params.push(param);
   }
-  return params.length > 0 ? { id: id.trim(), params } : { id: id.trim() };
+  return params;
+}
+
+function validateModelParam(
+  raw: unknown,
+  label: string,
+  index: number
+): ModelParameterValue {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error(`${label}.params[${index}] must be an object.`);
+  }
+  const param = raw as Record<string, unknown>;
+  return {
+    id: validateModelId(param.id, `${label}.params[${index}].id`),
+    value: validateModelId(param.value, `${label}.params[${index}].value`),
+  };
 }
 
 export function normalizeModelSelection(
   raw: ModelSpec,
   label = 'model'
 ): ModelSelection {
-  const spec = validateModelSelection(raw, label);
-  return typeof spec === 'string' ? { id: spec } : spec;
+  if (typeof raw === 'string') {
+    return createModelSelection(validateModelId(raw, label));
+  }
+  return validateModelSelection(raw, label);
 }
 
 export function formatModelSelection(model: ModelSelection): string {
@@ -748,6 +735,20 @@ function defaultVariant(
   return variants.find((variant) => variant.isDefault) ?? variants[0];
 }
 
+function assertKnownComplexity(c: Complexity): void {
+  if (!COMPLEXITY_KEYS.includes(c)) {
+    throw new Error(`Unknown complexity: ${c}`);
+  }
+}
+
+function resolveModelMap(overrides: ModelMapOverride = {}): ModelMap {
+  return {
+    HIGH: cloneModelSelection(overrides.HIGH ?? DEFAULT_MODEL_MAP.HIGH),
+    MED: cloneModelSelection(overrides.MED ?? DEFAULT_MODEL_MAP.MED),
+    LOW: cloneModelSelection(overrides.LOW ?? DEFAULT_MODEL_MAP.LOW),
+  };
+}
+
 function chooseMatchingVariant(
   requestedParams: readonly ModelParameterValue[],
   variants: ReadonlyArray<ModelCatalogVariant>
@@ -818,9 +819,15 @@ function formatVariants(variants: ReadonlyArray<ModelCatalogVariant>): string {
     .join('\n  ');
 }
 
+function createModelSelection(
+  id: string,
+  params: readonly ModelParameterValue[] = []
+): ModelSelection {
+  return params.length > 0
+    ? { id, params: params.map((param) => ({ ...param })) }
+    : { id };
+}
+
 function cloneModelSelection(selection: ModelSelection): ModelSelection {
-  const params = selection.params?.map((param) => ({ ...param }));
-  return params && params.length > 0
-    ? { id: selection.id, params }
-    : { id: selection.id };
+  return createModelSelection(selection.id, selection.params ?? []);
 }

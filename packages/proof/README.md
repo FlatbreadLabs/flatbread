@@ -68,8 +68,8 @@ Every DAG has a `title` and a `tasks` array. Each task needs:
 
 Proof computes ranks with Kahn topological sort and runs sibling tasks in the same rank concurrently. Avoid placing two sibling tasks in the same rank if they write the same files.
 
-Optional top-level `models` can override the default complexity map with either
-plain SDK model ids or SDK model selections:
+Optional top-level `models` can override the default complexity map with SDK
+model selections:
 
 ```json
 {
@@ -81,7 +81,7 @@ plain SDK model ids or SDK model selections:
         { "id": "effort", "value": "max" }
       ]
     },
-    "MED": "composer-2",
+    "MED": { "id": "composer-2" },
     "LOW": {
       "id": "gpt-5.4-nano",
       "params": [{ "id": "reasoning", "value": "low" }]
@@ -146,7 +146,6 @@ Proof also exposes helpers for tooling:
 import {
   computeRanks,
   createModelSelectionResolver,
-  createModelResolver,
   parseDAG,
   resolveModelSelectionFromCatalog,
   runDryCheck,
@@ -154,7 +153,5 @@ import {
   type TaskState,
 } from '@flatbread/proof';
 ```
-
-Note: `createModelResolver` is deprecated in favor of `createModelSelectionResolver` when you need param support (the deprecated helper only returns `ModelSelection.id` and drops `params`).
 
 The public API includes DAG parsing and rank computation, model resolution, canvas state types, convergence helpers, dry command checks, oracle and pause helpers, and self-hosting state utilities.

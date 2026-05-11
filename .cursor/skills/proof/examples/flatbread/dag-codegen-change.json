@@ -2,9 +2,9 @@
   "title": "Flatbread codegen-only change (no sub-sub-agents)",
   "framing": "Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.",
   "models": {
-    "HIGH": "claude-opus-4-7",
-    "MED": "gpt-5.5",
-    "LOW": "gpt-5.4-mini"
+    "HIGH": { "id": "claude-opus-4-7" },
+    "MED": { "id": "gpt-5.5" },
+    "LOW": { "id": "gpt-5.4-mini" }
   },
   "tasks": [
     {
