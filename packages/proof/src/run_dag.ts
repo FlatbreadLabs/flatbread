@@ -603,6 +603,7 @@ async function main(): Promise<void> {
   const writer = new CanvasWriter(args.canvasPath, args.debounceMs);
   let finalized = false;
   let interrupting = false;
+  let indexWritten = false;
 
   console.log(
     `[proof] DAG "${dag.title}" — ${dag.tasks.length} tasks across ${ranks.length} rank(s)`
@@ -709,6 +710,7 @@ async function main(): Promise<void> {
     streamPublishMs: args.streamPublishMs,
     streamIdleTimeoutMs: args.streamIdleTimeoutMs,
     fullOutputAbsoluteDir,
+    dagTitle: dag.title,
     framing: dag.framing,
   };
 
@@ -727,7 +729,8 @@ async function main(): Promise<void> {
         state,
         writer,
         failedDeps,
-        fullOutputAbsoluteDir
+        fullOutputAbsoluteDir,
+        dag.title
       );
     }
     if (effectiveTaskKind(task) === 'pause') {
@@ -751,7 +754,10 @@ async function main(): Promise<void> {
           dag.title,
           ts,
           ts.resultText ?? ''
-        );
+        ).catch((e: unknown) => {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.warn(`[proof] artifact write failed for ${task.id}: ${msg}`);
+        });
       }
       return;
     }
@@ -776,7 +782,10 @@ async function main(): Promise<void> {
           dag.title,
           ts,
           ts.resultText ?? ''
-        );
+        ).catch((e: unknown) => {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.warn(`[proof] artifact write failed for ${task.id}: ${msg}`);
+        });
       }
       return;
     }
@@ -913,6 +922,7 @@ async function main(): Promise<void> {
           runMessage: state.runMessage,
         }
       );
+      indexWritten = true;
     }
 
     const succeeded = state.tasks.length - errors.length - budgetHits.length;
@@ -953,6 +963,20 @@ async function main(): Promise<void> {
       writer.schedule(structuredCloneState(state));
       await writer.flush();
       finalized = true;
+      // process.exit() bypasses the finally block, so write _index.md here.
+      if (fullOutputAbsoluteDir && !indexWritten) {
+        await writeRunIndexMarkdown(
+          fullOutputAbsoluteDir,
+          dag.title,
+          state.tasks,
+          {
+            startedAt: state.startedAt,
+            finishedAt: state.finishedAt,
+            runOutcome: state.runOutcome,
+            runMessage: state.runMessage,
+          }
+        ).catch(() => {});
+      }
       console.error(`[proof] ${err.message}`);
       process.exit(EXIT_BUDGET_EXCEEDED);
     }
@@ -977,6 +1001,23 @@ async function main(): Promise<void> {
       );
       writer.schedule(structuredCloneState(state));
       await writer.flush();
+    }
+    // Best-effort _index.md on error / defensive-exit paths. The success path
+    // and BudgetExceededError path write it themselves (setting indexWritten);
+    // here we catch generic throws and unexpected exits. process.exit() does
+    // not reach this block, which is why BudgetExceededError is handled above.
+    if (fullOutputAbsoluteDir && state.runOutcome && !indexWritten) {
+      await writeRunIndexMarkdown(
+        fullOutputAbsoluteDir,
+        dag.title,
+        state.tasks,
+        {
+          startedAt: state.startedAt,
+          finishedAt: state.finishedAt,
+          runOutcome: state.runOutcome,
+          runMessage: state.runMessage,
+        }
+      ).catch(() => {});
     }
   }
 }
@@ -1155,10 +1196,13 @@ async function runTask(
     if (fullDir) {
       await persistTaskMarkdownFile(
         fullDir,
-        state.title,
+        options.dagTitle ?? state.title,
         ts,
         fullStreamChunks.join('')
-      );
+      ).catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.warn(`[proof] artifact write failed for ${task.id}: ${msg}`);
+      });
     }
     try {
       await (agent as unknown as AsyncDisposable)[Symbol.asyncDispose]();
@@ -1174,6 +1218,13 @@ interface RunTaskOptions {
   streamPublishMs: number;
   streamIdleTimeoutMs: number;
   fullOutputAbsoluteDir?: string;
+  /**
+   * The DAG title from the live-parsed DAG definition, used when writing
+   * per-task markdown files. Falls back to `state.title` when absent.
+   * Keeping this in sync with `dag.title` (rather than `state.title`) avoids
+   * stale-title disagreements in resumed runs.
+   */
+  dagTitle?: string;
   /**
    * Stitched in BETWEEN the upstream-context block and the task's own
    * `subtask_prompt`. Used by `--converge-on` re-runs to inject the latest
@@ -1646,13 +1697,14 @@ async function runConvergenceLoop(
   }
 }
 
-function skipTask(
+async function skipTask(
   task: RawTask,
   stateById: Map<string, TaskState>,
   state: RunState,
   writer: CanvasWriter,
   failedDeps: string[],
-  fullOutputAbsoluteDir?: string
+  fullOutputAbsoluteDir?: string,
+  dagTitle?: string
 ): Promise<void> {
   const ts = stateById.get(task.id)!;
   const now = Date.now();
@@ -1664,8 +1716,16 @@ function skipTask(
     `[proof] skipping ${task.id} — upstream ${failedDeps.join(', ')} failed`
   );
   writer.schedule(structuredCloneState(state));
-  if (!fullOutputAbsoluteDir) return Promise.resolve();
-  return persistTaskMarkdownFile(fullOutputAbsoluteDir, state.title, ts, '');
+  if (!fullOutputAbsoluteDir) return;
+  await persistTaskMarkdownFile(
+    fullOutputAbsoluteDir,
+    dagTitle ?? state.title,
+    ts,
+    ''
+  ).catch((e: unknown) => {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn(`[proof] artifact write failed for ${task.id}: ${msg}`);
+  });
 }
 
 async function markRunTerminated(

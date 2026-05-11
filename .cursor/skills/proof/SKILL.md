@@ -140,7 +140,10 @@ Same `--canvas-path` as Step 1. The runner:
 3. Automatically skips tasks whose upstream dependencies failed (marks them `ERROR` with a "Skipped: upstream task(s) … failed" message).
 4. Captures each subagent's final assistant text, status, token usage, and duration.
 5. Writes a final canvas with summary stats.
-6. Writes per-task markdown transcripts, `_index.md`, and `_dag.json` to a timestamped artifacts directory by default (suppress with `--no-artifacts` or override path with `--full-output-dir`).
+6. Artifact output (default, suppress with `--no-artifacts` or override path with `--full-output-dir`):
+   - **At run start:** writes `_dag.json` (the original DAG definition) to the artifacts directory.
+   - **As each task finishes:** writes `${taskId}.md` (full transcript for `kind: task`, `oracle`, and `pause`).
+   - **At run end (all exit paths including errors):** writes `_index.md` (run summary table with timestamps, outcome, and per-task links).
 7. On SIGINT/SIGTERM/SIGHUP, cancels all in-flight subagents before finalizing the canvas.
 
 #### CLI knobs
@@ -227,7 +230,9 @@ set -a && source .env && set +a
 
 ## Caveats
 
-- Per-task markdown transcripts, a run index (`_index.md`), and the DAG definition (`_dag.json`) are written to a timestamped artifacts directory by default. Pass `--no-artifacts` to suppress or `--full-output-dir` to override the path.
+- Per-task markdown transcripts, a run index (`_index.md`), and the DAG definition (`_dag.json`) are written to a timestamped artifacts directory by default. Pass `--no-artifacts` to suppress or `--full-output-dir` to override the path. In CI/headless environments without a persistent `~/.cursor/` you may want `--no-artifacts`.
+- When using `proof-supervisor`, each restart creates a fresh timestamped artifact directory (the supervisor does not forward `--full-output-dir` across restarts). Pass `--full-output-dir` explicitly for a single stable output path across restarts.
+- `--resume-state` creates a new artifact directory for the resumed session; tasks completed in prior sessions do not have transcripts in the new directory.
 - Local runtime only — every subagent runs against `--cwd` (defaults to wherever you invoke the runner).
 - Sibling tasks in the same rank run in parallel; do not let them write the same files.
 - Inline MCP servers and sub-sub-agents are not configured by this runner.
