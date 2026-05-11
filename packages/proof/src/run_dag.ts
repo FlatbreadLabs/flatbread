@@ -1022,7 +1022,10 @@ async function main(): Promise<void> {
             runOutcome: state.runOutcome,
             runMessage: state.runMessage,
           }
-        ).catch(() => {});
+        ).catch((e: unknown) => {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.warn(`[proof] _index.md write failed: ${msg}`);
+        });
       }
       console.error(`[proof] ${err.message}`);
       process.exit(EXIT_BUDGET_EXCEEDED);
@@ -1064,7 +1067,10 @@ async function main(): Promise<void> {
           runOutcome: state.runOutcome,
           runMessage: state.runMessage,
         }
-      ).catch(() => {});
+      ).catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.warn(`[proof] _index.md write failed: ${msg}`);
+      });
     }
   }
 }

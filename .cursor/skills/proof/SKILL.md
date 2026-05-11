@@ -146,10 +146,10 @@ Same `--canvas-path` as Step 1. The runner:
 3. Automatically skips tasks whose upstream dependencies failed (marks them `ERROR` with a "Skipped: upstream task(s) … failed" message).
 4. Captures each subagent's final assistant text, status, token usage, and duration.
 5. Writes a final canvas with summary stats.
-6. Artifact output (default, suppress with `--no-artifacts` or override path with `--full-output-dir`):
+6. Artifact output (default, suppress with `--no-artifacts` or override path with `--full-output-dir`; skipped entirely for `--init-only` and `--dry-check-cmds`):
    - **At run start:** writes `_dag.json` (the original DAG definition) to the artifacts directory.
    - **As each task finishes:** writes `${taskId}.md` (full transcript for `kind: task`, `oracle`, and `pause`).
-   - **At run end (all exit paths including errors):** writes `_index.md` (run summary table with timestamps, outcome, and per-task links).
+   - **At run end:** best-effort `_index.md` (run summary table with timestamps, outcome, and per-task links); write failures are logged as `[proof]` warnings rather than crashing the runner.
 7. On SIGINT/SIGTERM/SIGHUP, cancels all in-flight subagents before finalizing the canvas.
 
 #### CLI knobs
@@ -165,7 +165,7 @@ Same `--canvas-path` as Step 1. The runner:
 | `--stream-idle-timeout-ms <ms>` | `300000` (5 min)   | Marks a task `ERROR` if no stream events arrive.                                                                                                                          |
 | `--debounce <ms>`               | `200`              | Canvas write debounce interval.                                                                                                                                           |
 | `--full-output-dir <path>`      | computed default   | Per-task transcripts + `_index.md` + `_dag.json`. Default: `~/.cursor/projects/<workspace>/artifacts/dag-<title>-<ts>/`. Override path or suppress with `--no-artifacts`. |
-| `--no-artifacts`                | `false`            | Skip all artifact file output. Canvas is still written.                                                                                                                   |
+| `--no-artifacts`                | `false`            | Suppresses per-task transcripts, `_index.md`, and `_dag.json`; does **not** suppress `--findings-dir` JSON sidecars (separate code path). Canvas is still written.          |
 
 ### Step 4 — Summarize
 
@@ -237,7 +237,7 @@ set -a && source .env && set +a
 | `--debounce`                 | `200` (ms)          | Canvas write debounce interval.                                                                                                                                                                                      |
 | `--init-only`                | `false`             | Write the initial all-`PENDING` canvas and exit. No `CURSOR_API_KEY` required.                                                                                                                                       |
 | `--full-output-dir`          | computed default    | Per-task transcripts as `${taskId}.md` plus `_index.md` and `_dag.json`. Defaults to `~/.cursor/projects/<workspace>/artifacts/dag-<title>-<ts>/`. Override with an explicit path or suppress with `--no-artifacts`. |
-| `--no-artifacts`             | `false`             | Skip writing per-task transcripts, `_index.md`, and `_dag.json`. Canvas is still written.                                                                                                                            |
+| `--no-artifacts`             | `false`             | Suppresses per-task transcripts, `_index.md`, and `_dag.json`; does **not** suppress `--findings-dir` JSON sidecars (separate code path). Canvas is still written.                                                                                                                            |
 | `--findings-dir`             | —                   | Per-task JSON sidecars as `${taskId}.findings.json`. Schema: `{ taskId, iteration, status, durationMs, sections }`.                                                                                                  |
 | `--state-path`               | —                   | Persist resumable runner state. Defaults to `.proof/run-state.json` when `--restart-on-runner-change` is set.                                                                                                        |
 | `--resume-state`             | —                   | Load a persisted `RunState` and skip already terminal tasks.                                                                                                                                                         |
@@ -249,8 +249,8 @@ set -a && source .env && set +a
 
 ## Caveats
 
-- Per-task markdown transcripts, a run index (`_index.md`), and the DAG definition (`_dag.json`) are written to a timestamped artifacts directory by default. Pass `--no-artifacts` to suppress or `--full-output-dir` to override the path. In CI/headless environments without a persistent `~/.cursor/` you may want `--no-artifacts`.
-- When using `proof-supervisor`, each restart creates a fresh timestamped artifact directory (the supervisor does not forward `--full-output-dir` across restarts). Pass `--full-output-dir` explicitly for a single stable output path across restarts.
+- Per-task markdown transcripts, a run index (`_index.md`), and the DAG definition (`_dag.json`) are written to a timestamped artifacts directory by default on **full DAG runs** (not `--init-only` or `--dry-check-cmds`). Pass `--no-artifacts` to suppress transcripts/index/DAG JSON, or `--full-output-dir` to override the path. **`--no-artifacts` does not disable `--findings-dir`** — for fully clean disk output, omit `--findings-dir` as well. In CI/headless environments without a persistent `~/.cursor/` you may want `--no-artifacts`.
+- When using `proof-supervisor`, each **child runner process** recomputes the default artifacts path with a new timestamp unless you pin a stable directory. The supervisor forwards the full argv to each child (only `--max-runner-restarts` is stripped), so put **`--full-output-dir <path>` on the supervisor invocation** if every restart should write into the same artifacts folder.
 - `--resume-state` creates a new artifact directory for the resumed session; tasks completed in prior sessions do not have transcripts in the new directory.
 - Local runtime only — every subagent runs against `--cwd` (defaults to wherever you invoke the runner).
 - Sibling tasks in the same rank run in parallel; do not let them write the same files.

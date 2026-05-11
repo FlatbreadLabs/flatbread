@@ -102,7 +102,7 @@ Optional task kinds add control gates:
 
 ## Artifact Output
 
-By default, every run writes per-task markdown transcripts to a timestamped directory:
+By default, every **full DAG run** writes per-task markdown transcripts to a timestamped directory (not `--init-only`, which exits before artifact setup, and not `--dry-check-cmds`, which never enters the runner):
 
 ```
 ~/.cursor/projects/<workspace-slug>/artifacts/dag-<title-slug>-<timestamp>/
@@ -112,6 +112,10 @@ By default, every run writes per-task markdown transcripts to a timestamped dire
 ```
 
 This mirrors the canvas path scheme so artifacts and canvases live together under `~/.cursor/projects/<workspace-slug>/`.
+
+Previously, transcripts only appeared when you passed `--full-output-dir`; now they are on by default. Use `--no-artifacts` if you want the old opt-in behavior (no writes under `~/.cursor/…/artifacts/` except what other flags request).
+
+`--no-artifacts` suppresses transcripts, `_index.md`, and `_dag.json` only. **`--findings-dir` JSON sidecars use a separate path** — omit that flag (or point it elsewhere) if you need completely artifact-free output besides the canvas.
 
 To suppress artifact writing:
 
