@@ -5,6 +5,14 @@ Scope: read-only audit of the currently uncommitted diff in `packages/proof/src/
 
 The latest fixes close the prior review's three high-severity items: `TaskTranscriptStore.get` now reads `${taskId}.stream.txt` from disk when the in-memory map is empty, `main()` registers existing mirror paths from `loadResumedRunState` for any task whose persisted `transcriptPath` is set, `runConvergenceLoop` threads `includeSidecar: false` into the `buildConvergenceContext` source, and the README / SKILL.md docs are now scoped to `kind: 'task'` with an explicit "resumed runs can reconstruct that transcript when the same `--full-output-dir` is reused" clause. This pass focuses on what those fixes still leave open and on residual structural issues.
 
+Follow-up issues:
+
+- [#200 — Phase 0/1 follow-up hardening](https://github.com/FlatbreadLabs/flatbread/issues/200) covers the residual medium/low findings in this review.
+- [#201 — Phase 2: upstream prompt policy and budget preflight](https://github.com/FlatbreadLabs/flatbread/issues/201) covers prompt budgets and the planned `{ maxChars }` policy shape.
+- [#202 — Phase 3: resume, supervisor, and disk ergonomics](https://github.com/FlatbreadLabs/flatbread/issues/202) covers versioned resume state and supervisor restart ergonomics.
+- [#203 — Phase 4: oracle evidence alignment](https://github.com/FlatbreadLabs/flatbread/issues/203) covers full oracle stdout/stderr evidence.
+- [#204 — Phase 5: documentation and skill refresh](https://github.com/FlatbreadLabs/flatbread/issues/204) covers the final operator-facing docs pass.
+
 ---
 
 ## Blockers
