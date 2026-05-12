@@ -4,7 +4,7 @@ Proof is Flatbread's DAG task runner for Cursor agents. It decomposes a task int
 
 The package ships as `@flatbread/proof` and exposes:
 
-- `proof`: run a DAG or initialize its canvas.
+- `proof`: run a DAG, initialize its canvas, or generate `proof setup` artifacts.
 - `proof-supervisor`: run Proof in self-hosting mode so edits to `packages/proof/src/**` can be picked up between ranks.
 - Library exports for tooling that wants to author, validate, or inspect DAGs programmatically.
 
@@ -57,6 +57,39 @@ pnpm exec proof \
   --canvas-path /tmp/example-dag.canvas.tsx
 ```
 
+## `proof setup`
+
+`proof setup` prepares repo-owned Proof guidance without launching agents by default:
+
+```bash
+pnpm exec proof setup
+```
+
+Default output lives under `<cwd>/.flatbread/proof/setup/`:
+
+```text
+owned-guidelines.bundle.md
+owned-guidelines.manifest.json
+setup-dag.json
+setup-summary.md
+```
+
+Behavior:
+
+- Reuses the existing owned-guidelines bundle + manifest when the owned Proof guidance sources are still fresh.
+- Regenerates them when Proof guidance sources changed.
+- Computes setup gaps and writes a runnable setup DAG + summary, but does not launch agents unless you opt in.
+- When the generated DAG does launch agents, it inserts an explicit post-edit refresh step before review; that step rebuilds `@flatbread/proof` and then reruns `proof setup` so runtime edits do not regenerate artifacts through an old packaged CLI.
+- Bakes in an explicit maintenance contract: if Proof-related work changes rules, docs, skills, prompts, or runtime behavior, update the owned source files, rebuild `@flatbread/proof`, and rerun `proof setup` so the derived bundle does not become stale.
+
+Opt in to handing the generated DAG to the existing runner:
+
+```bash
+pnpm exec proof setup --run-agents --canvas proof-setup
+```
+
+The authoritative owned guidance sources currently include `AGENTS.md`, `.cursor/rules/proof-usage-guardrails.mdc`, `packages/proof/README.md`, `.cursor/skills/proof/SKILL.md`, and the legacy `.cursor/skills/dag-task-runner/SKILL.md` compatibility handoff so reruns notice stale redirects too.
+
 ## DAG Shape
 
 Every DAG has a `title` and a `tasks` array. Each task needs:
@@ -99,7 +132,6 @@ Optional task kinds add control gates:
 
 - `kind: "oracle"` runs a shell command and records pass/fail evidence.
 - `kind: "pause"` waits for a checkpoint sentinel so a human can inspect or approve before downstream work continues.
-
 
 ## `DAG.loops`
 
@@ -179,7 +211,7 @@ The canonical Cursor skill entrypoint lives at:
 .cursor/skills/proof/SKILL.md
 ```
 
-Use that skill when a request asks to decompose work, run subagents in parallel, or execute a task as a dependency graph. The legacy `.cursor/skills/dag-task-runner/SKILL.md` entry remains as a compatibility handoff and points to Proof.
+Use that skill when a request asks to decompose work, run subagents in parallel, or execute a task as a dependency graph. The legacy `.cursor/skills/dag-task-runner/SKILL.md` entry remains as a compatibility handoff, points to Proof, and is also tracked by `proof setup` as repo-owned guidance.
 
 ## Self-Hosting Mode
 
@@ -208,6 +240,7 @@ pnpm -F @flatbread/proof build
 pnpm -F @flatbread/proof typecheck
 pnpm -F @flatbread/proof build
 pnpm -F @flatbread/proof test
+pnpm -F @flatbread/proof build && pnpm exec proof setup
 pnpm test
 pnpm -F @flatbread/proof models:list
 pnpm exec proof --dry-check-cmds --dag .cursor/skills/proof/examples/example_dag.json

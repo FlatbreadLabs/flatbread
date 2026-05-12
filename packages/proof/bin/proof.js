@@ -2,6 +2,8 @@
 import { resolve } from 'path';
 import { existsSync } from 'fs';
 
+const entryFile = process.argv[2] === 'setup' ? 'setup.js' : 'run_dag.js';
+
 if (process.env.FLATBREAD_CI) {
   const cliPath = resolve(
     process.cwd(),
@@ -9,14 +11,14 @@ if (process.env.FLATBREAD_CI) {
     '@flatbread',
     'proof',
     'dist',
-    'run_dag.js'
+    entryFile
   );
 
   if (existsSync(cliPath)) {
-    import('../dist/run_dag.js');
+    import(`../dist/${entryFile}`);
   } else {
     console.log('@flatbread/proof CLI is not available');
   }
 } else {
-  import('../dist/run_dag.js');
+  import(`../dist/${entryFile}`);
 }

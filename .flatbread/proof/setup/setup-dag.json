@@ -1,0 +1,20 @@
+{
+  "title": "Proof setup for flatbread",
+  "framing": "You are working on Proof setup for this repository.\n\nThe derived owned-guidelines bundle is `.flatbread/proof/setup/owned-guidelines.bundle.md` and its manifest is `.flatbread/proof/setup/owned-guidelines.manifest.json`.\n\nIf Proof-related work changes rules, docs, skills, prompts, or runtime behavior, update the authoritative source files, run `pnpm -F @flatbread/proof build`, and rerun `pnpm exec proof setup` before concluding so the owned-guidelines bundle and manifest do not go stale.",
+  "tasks": [
+    {
+      "id": "inspect-proof-setup-context",
+      "depends_on": [],
+      "complexity": "LOW",
+      "subtask_prompt": "Read `.flatbread/proof/setup/setup-summary.md`, `.flatbread/proof/setup/owned-guidelines.bundle.md`, and `.flatbread/proof/setup/owned-guidelines.manifest.json`.\nSummarize the repo-owned Proof guidance, the current setup status, and the exact gaps that remain.\nTreat the source files summarized in `.flatbread/proof/setup/owned-guidelines.bundle.md` as authoritative for edits; the bundle itself is derived context.\nIf Proof-related work changes rules, docs, skills, prompts, or runtime behavior, update the authoritative source files, run `pnpm -F @flatbread/proof build`, and rerun `pnpm exec proof setup` before concluding so the owned-guidelines bundle and manifest do not go stale.",
+      "kind": "task"
+    },
+    {
+      "id": "review-proof-setup",
+      "depends_on": ["inspect-proof-setup-context"],
+      "complexity": "HIGH",
+      "subtask_prompt": "Review the current Proof setup state and any edits made by upstream tasks.\n\nIf setup gaps remain, or if Proof-related work changed behavior without the refresh step re-running `proof setup` and re-ingesting the owned guidelines artifacts, report that under `## Blockers` or `## High-severity findings`.\n\nRe-check `.flatbread/proof/setup/setup-summary.md`, `.flatbread/proof/setup/owned-guidelines.bundle.md`, and `.flatbread/proof/setup/owned-guidelines.manifest.json` before concluding.",
+      "kind": "task"
+    }
+  ]
+}

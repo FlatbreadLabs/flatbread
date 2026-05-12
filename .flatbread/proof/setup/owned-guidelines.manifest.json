@@ -1,0 +1,56 @@
+{
+  "version": 2,
+  "generatedAt": "2026-05-12T01:54:22.285Z",
+  "generator": "proof setup",
+  "bundlePath": ".flatbread/proof/setup/owned-guidelines.bundle.md",
+  "bundleSha256": "8953c043b164bee9fcacf0bf18a98d7df5bf093ec95037ddb4be2f53ce0f3188",
+  "missingExpectedGuidelines": [],
+  "updateDirective": "If Proof-related work changes rules, docs, skills, prompts, or runtime behavior, update the authoritative source files, run `pnpm -F @flatbread/proof build`, and rerun `pnpm exec proof setup` before concluding so the owned-guidelines bundle and manifest do not go stale.",
+  "sources": [
+    {
+      "id": "proof-usage-guardrails",
+      "title": "Proof usage guardrails",
+      "category": "workspace-rule",
+      "path": ".cursor/rules/proof-usage-guardrails.mdc",
+      "sha256": "e0c1aca4f65a87de7151f399b79bcf16df7ae83e96c6d098ab98cf57ec3a602d",
+      "sizeBytes": 1490,
+      "mtimeMs": 1778550732279.1948
+    },
+    {
+      "id": "workspace-agents",
+      "title": "Workspace agent contract",
+      "category": "workspace-contract",
+      "path": "AGENTS.md",
+      "sha256": "f7b38cb7d9b82ed2384f6c2f4bc5ae6f5cfe35d86712215650326115bdd7b76c",
+      "sizeBytes": 4227,
+      "mtimeMs": 1778550712353.7864
+    },
+    {
+      "id": "proof-readme",
+      "title": "@flatbread/proof README",
+      "category": "package-readme",
+      "path": "packages/proof/README.md",
+      "sha256": "fe2a8378e21fe8b3ea32600c5cf9f7f82d095085ce3229efe9bf9a06f858fa38",
+      "sizeBytes": 9835,
+      "mtimeMs": 1778550794057.0764
+    },
+    {
+      "id": "proof-skill",
+      "title": "Proof skill guide",
+      "category": "skill",
+      "path": ".cursor/skills/proof/SKILL.md",
+      "sha256": "fb8b12568afc9c42175412af7d5d61d9904fc895eb0cb3268e6e29cf5d3bf43d",
+      "sizeBytes": 23024,
+      "mtimeMs": 1778550732255.417
+    },
+    {
+      "id": "dag-task-runner-compat-skill",
+      "title": "Legacy dag-task-runner compatibility skill",
+      "category": "skill",
+      "path": ".cursor/skills/dag-task-runner/SKILL.md",
+      "sha256": "8e3071f34dedf182a8cebd763e84bae5144d99d5758d3edf815ed6051f8baac1",
+      "sizeBytes": 2539,
+      "mtimeMs": 1778203951049.3923
+    }
+  ]
+}
