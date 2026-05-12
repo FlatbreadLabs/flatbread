@@ -28,6 +28,7 @@ export type {
   DAG,
   DAGBudget,
   DAGConvergenceLoop,
+  DAGOutputPolicy,
   LoopReexecute,
   ModelCatalogItem,
   ModelMap,
@@ -52,6 +53,21 @@ export {
 } from './converge_loop.js';
 export { transitiveAncestorIds } from './dag.js';
 export type { ConvergenceFindings } from './converge_loop.js';
+
+export {
+  CANVAS_DISPLAY_CAP,
+  DISPLAY_TRUNCATION_BANNER_RE,
+  UPSTREAM_SNIPPET_CAP,
+  excerptUpstreamForPrompt,
+  parseUpstreamSections,
+  renderUpstreamSections,
+  summarizeUpstreamForPrompt,
+} from './upstream_policy.js';
+export type {
+  UpstreamPolicyMode,
+  UpstreamSection,
+  UpstreamSummarizeStats,
+} from './upstream_policy.js';
 
 export {
   findingsFileName,

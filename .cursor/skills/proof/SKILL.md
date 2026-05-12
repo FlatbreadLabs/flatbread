@@ -256,8 +256,8 @@ set -a && source .env && set +a
 - Local runtime only — every subagent runs against `--cwd` (defaults to wherever you invoke the runner).
 - Sibling tasks in the same rank run in parallel; do not let them write the same files.
 - Inline MCP servers and sub-sub-agents are not configured by this runner.
-- A failed task automatically skips all downstream dependents (they are marked `ERROR` with a "Skipped: upstream task(s) … failed" message). This prevents wasted API calls on tasks whose inputs are missing.
-- Per-task streamed text is capped at `STREAM_CAP = 4000` chars to keep the canvas file modest. Upstream context passed to child tasks is capped at 2000 chars per parent, with section-aware truncation when the parent output contains multiple `##` sections.
+- A failed upstream task skips downstream dependents (`ERROR` with `Skipped:` when any upstream is **`ERROR`** or **`BUDGET-EXCEEDED`**).
+- Canvas-inlined streamed text stays bounded (**`CANVAS_DISPLAY_CAP = 4000`** tail per task plus the existing `[...truncated N earlier chars...]` banner). For `kind: 'task'`, child prompts, in-process convergence loops, findings sidecars, and artifact markdown use a separate **execution transcript**; resumed runs can reconstruct it when the same `--full-output-dir` is reused and `transcriptPath` points at the mirrored stream file. Pause/oracle tasks still use their bounded status/output text. Upstream excerpts default to the same **2000-char section-aware policy** as before, now with explicit counted banners when trimming. Set **`DAG.outputPolicy.upstream`** to **`"full"`** to stitch full parent transcripts (mind model context limits).
 - Timed-out tasks are marked `ERROR` instead of staying indefinitely in `RUNNING`.
 - SIGINT/SIGTERM/SIGHUP gracefully cancel all in-flight subagents and finalize the canvas before exiting.
 - Unexpected unhandled rejections from SDK internals are suppressed to prevent runner crashes; uncaught exceptions are logged and trigger a clean shutdown.

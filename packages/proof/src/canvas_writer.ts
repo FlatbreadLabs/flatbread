@@ -49,6 +49,12 @@ export interface TaskState {
   startedAt?: number;
   finishedAt?: number;
   resultText?: string;
+  /**
+   * Relative path (under the run artifact directory) to the append-only stream
+   * mirror for this task's full assistant transcript. Canvas shows bounded
+   * `resultText`; this pointer is for locating the authoritative stream file.
+   */
+  transcriptPath?: string;
   errorMessage?: string;
   inputTokens?: number;
   outputTokens?: number;
@@ -201,7 +207,7 @@ export class CanvasWriter {
   }
 }
 
-function renderCanvasSource(state: RunState): string {
+export function renderCanvasSource(state: RunState): string {
   const stateLiteral = JSON.stringify(state, null, 2);
   return `${HEADER}\n\nconst STATE: RunState = ${stateLiteral};\n\n${BODY}\n`;
 }
@@ -258,6 +264,11 @@ interface TaskState {
   startedAt?: number;
   finishedAt?: number;
   resultText?: string;
+  /**
+   * Relative path (artifact dir) for the authoritative stream transcript.
+   * Canvas shows bounded resultText strings; transcriptPath reveals the mirror file path.
+   */
+  transcriptPath?: string;
   errorMessage?: string;
   inputTokens?: number;
   outputTokens?: number;
@@ -793,6 +804,12 @@ function TaskList({
                       {t.resultText}
                       {t.status === 'RUNNING' ? '\u2588' : ''}
                     </pre>
+                    {t.transcriptPath ? (
+                      <Text size="small" tone="tertiary">
+                        Full transcript file (relative to artifact dir):{' '}
+                        {t.transcriptPath}
+                      </Text>
+                    ) : null}
                   </Stack>
                 ) : t.status === 'RUNNING' ? (
                   <Text size="small" tone="tertiary" italic>

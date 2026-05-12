@@ -47,8 +47,11 @@
  *                             convergence re-runs). Schema:
  *                             `{ taskId, iteration, status, durationMs,
  *                                sections }`. When set, `--converge-on`
- *                             reads sidecars instead of re-parsing live
- *                             `resultText`. Relative paths resolve against
+ *                             reads sidecars as a fallback when only bounded
+ *                             `resultText` is available cross-process (the
+ *                             live runner prefers the authoritative in-memory
+ *                             transcript whenever the same process executes the
+ *                             loop). Relative paths resolve against
  *                             --cwd. Oracle tasks are included — their
  *                             standardized `## Pass` / `## Command` /
  *                             `## Exit code` / `## Stdout (tail)` /
@@ -57,8 +60,10 @@
  *   --checkpoint-dir <path>  Directory for `kind: 'pause'` sentinel files
  *                             (default `.proof/` under --cwd).
  *   --converge-on <task-id>  After the main DAG run, parse the named task's
- *                             `resultText` for `## Blockers` /
- *                             `## High-severity findings`. If non-empty,
+ *                             authoritative transcript for `## Blockers` /
+ *                             `## High-severity findings` (fallbacks to bounded
+ *                             `resultText` / `--findings-dir` after restarts).
+ *                             If non-empty,
  *                             re-execute the entire upstream ancestor
  *                             subtree with the convergence task's latest
  *                             result appended as context, then re-execute
@@ -138,6 +143,15 @@ import {
   writePersistedRunState,
   type RunnerFileSnapshot,
 } from './self_hosting.js';
+import {
+  TaskTranscriptStore,
+  taskStreamArtifactRelPath,
+} from './task_transcript.js';
+import {
+  CANVAS_DISPLAY_CAP,
+  excerptUpstreamForPrompt,
+  type UpstreamPolicyMode,
+} from './upstream_policy.js';
 
 const SCRIPTS_DIR = dirname(fileURLToPath(import.meta.url));
 /**
@@ -660,6 +674,20 @@ async function main(): Promise<void> {
   const stateById = new Map<string, TaskState>(
     state.tasks.map((t) => [t.id, t])
   );
+  const transcriptStore = new TaskTranscriptStore();
+  if (fullOutputAbsoluteDir) {
+    for (const taskState of state.tasks) {
+      if (taskState.transcriptPath) {
+        transcriptStore.registerExistingMirror(
+          taskState.id,
+          fullOutputAbsoluteDir,
+          taskState.transcriptPath
+        );
+      }
+    }
+  }
+  const upstreamMode: UpstreamPolicyMode =
+    dag.outputPolicy?.upstream === 'full' ? 'full' : 'summarize';
   const runnerSnapshot = args.restartOnRunnerChange
     ? await snapshotRunnerRuntimeFiles(RUNNER_SOURCE_DIR)
     : undefined;
@@ -793,6 +821,8 @@ async function main(): Promise<void> {
     fullOutputAbsoluteDir,
     dagTitle: dag.title,
     framing: dag.framing,
+    upstreamMode,
+    transcriptStore,
   };
 
   const runOne = async (
@@ -801,7 +831,10 @@ async function main(): Promise<void> {
   ): Promise<void> => {
     const failedDeps = task.depends_on.filter((depId) => {
       const dep = stateById.get(depId);
-      return dep !== undefined && dep.status === 'ERROR';
+      return (
+        dep !== undefined &&
+        (dep.status === 'ERROR' || dep.status === 'BUDGET-EXCEEDED')
+      );
     });
     if (failedDeps.length > 0) {
       return skipTask(
@@ -894,7 +927,14 @@ async function main(): Promise<void> {
       const ts = stateById.get(task.id);
       if (ts) {
         try {
-          await writeFindingsSidecar(findingsAbsoluteDir, ts);
+          const transcriptBody = transcriptStore.getJoined(task.id);
+          const parseSource =
+            effectiveTaskKind(task) === 'task' && transcriptBody.length > 0
+              ? transcriptBody
+              : undefined;
+          await writeFindingsSidecar(findingsAbsoluteDir, ts, {
+            parseSource,
+          });
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           console.error(
@@ -950,6 +990,8 @@ async function main(): Promise<void> {
         reExecIds,
         ranks,
         stateById,
+        transcriptStore,
+        upstreamMode,
         dispatchTask,
         writer,
         state,
@@ -1138,7 +1180,12 @@ async function runTask(
   ts.startedAt = Date.now();
   writer.schedule(structuredCloneState(state));
 
-  const upstreamContext = buildUpstreamContext(task, stateById);
+  const upstreamContext = buildUpstreamContext(
+    task,
+    stateById,
+    options.transcriptStore,
+    options.upstreamMode
+  );
   const promptParts: string[] = [];
   if (upstreamContext) promptParts.push(upstreamContext);
   if (options.extraContext && options.extraContext.trim() !== '') {
@@ -1164,10 +1211,25 @@ async function runTask(
     local: { cwd },
   });
 
+  options.transcriptStore.resetTask(task.id);
+  ts.transcriptPath = undefined;
+  const artifactDir = options.fullOutputAbsoluteDir;
+  if (artifactDir) {
+    await options.transcriptStore.beginMirroredAppend(
+      task.id,
+      artifactDir,
+      (_, msg) => {
+        console.warn(msg);
+      }
+    );
+    if (options.transcriptStore.mirrorEnabledForTask(task.id)) {
+      ts.transcriptPath = taskStreamArtifactRelPath(task.id);
+    }
+  }
+
+  /** Uncapped execution transcript is accumulated in `options.transcriptStore`. */
   let run: RunnerTaskRun | undefined;
-  const buffer = new BoundedTextBuffer(STREAM_CAP);
-  /** Uncapped capture for `--full-output-dir` (canvas still uses bounded buffer). */
-  const fullStreamChunks: string[] = [];
+  const buffer = new BoundedTextBuffer(CANVAS_DISPLAY_CAP);
   let lastPublishAt = 0;
   const publishIfDue = (force = false): void => {
     const now = Date.now();
@@ -1176,6 +1238,9 @@ async function runTask(
     if (text.trim()) ts.resultText = text;
     writer.schedule(structuredCloneState(state));
     lastPublishAt = now;
+    void options.transcriptStore.flushStreamMirror(task.id, (_, msg) => {
+      console.warn(msg);
+    });
   };
   const deadline = Date.now() + taskTimeoutMs;
 
@@ -1214,7 +1279,7 @@ async function runTask(
         for (const block of blocks) {
           if (block.type === 'text' && typeof block.text === 'string') {
             buffer.append(block.text);
-            fullStreamChunks.push(block.text);
+            options.transcriptStore.append(task.id, block.text);
             appended = true;
           }
         }
@@ -1295,18 +1360,22 @@ async function runTask(
       await bestEffortCancel(run, task.id);
     }
     publishIfDue(true);
+    await options.transcriptStore.flushStreamMirror(task.id, (_, msg) => {
+      console.warn(msg);
+    });
     const fullDir = options.fullOutputAbsoluteDir;
     if (fullDir) {
       await persistTaskMarkdownFile(
         fullDir,
         options.dagTitle ?? state.title,
         ts,
-        fullStreamChunks.join('')
+        options.transcriptStore.getJoined(task.id)
       ).catch((e: unknown) => {
         const msg = e instanceof Error ? e.message : String(e);
         console.warn(`[proof] artifact write failed for ${task.id}: ${msg}`);
       });
     }
+    options.transcriptStore.finalizeTaskMirrorsDone(task.id);
     try {
       await (agent as unknown as AsyncDisposable)[Symbol.asyncDispose]();
     } catch {
@@ -1340,6 +1409,10 @@ interface RunTaskOptions {
    * is called. Pause and oracle tasks ignore framing (they never run an LLM).
    */
   framing?: string;
+  /** How parent transcripts are excerpted for this process. */
+  upstreamMode: UpstreamPolicyMode;
+  /** Full streamed assistant transcripts for `kind: 'task'` invocations. */
+  transcriptStore: TaskTranscriptStore;
 }
 
 /** Single source of truth for the "undefined kind === task" rule. */
@@ -1347,8 +1420,6 @@ function effectiveTaskKind(task: RawTask): TaskKind {
   return task.kind ?? 'task';
 }
 
-/** Cap on per-task `resultText` size — applies to live streaming and final state. */
-const STREAM_CAP = 4000;
 /** Hard timeout per task to prevent stale RUNNING tasks. */
 const DEFAULT_TASK_TIMEOUT_MS = 20 * 60 * 1000;
 /** Throttle live state writes to avoid excessive full-state cloning churn. */
@@ -1357,8 +1428,6 @@ const DEFAULT_STREAM_PUBLISH_MS = 500;
 const DEFAULT_STREAM_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
 /** Avoid hanging indefinitely in wait() when stream is already done. */
 const WAIT_AFTER_STREAM_GRACE_MS = 15 * 1000;
-/** Chars of each parent's output included in the child prompt. */
-const UPSTREAM_SNIPPET_CAP = 2000;
 /** Raised listener ceiling to avoid false-positive AbortSignal warnings from SDK internals. */
 const ABORT_SIGNAL_LISTENER_LIMIT = 100;
 /** Default cap on `--converge-on` re-execution attempts after the initial run. */
@@ -1598,6 +1667,10 @@ interface RunConvergenceLoopOptions {
   reExecIds: Set<string>;
   ranks: RawTask[][];
   stateById: Map<string, TaskState>;
+  /** Authoritative reviewer transcript store for in-process fidelity. */
+  transcriptStore: TaskTranscriptStore;
+  /** Same excerpt policy enforced on child upstream blocks. */
+  upstreamMode: UpstreamPolicyMode;
   dispatchTask: (
     task: RawTask,
     overrides?: Partial<RunTaskOptions>
@@ -1605,10 +1678,9 @@ interface RunConvergenceLoopOptions {
   writer: CanvasWriter;
   state: RunState;
   /**
-   * When set, the loop reads the convergence task's `findings-dir` JSON
-   * sidecar instead of re-parsing live `resultText`. Falls back to the live
-   * text on missing/malformed sidecars so a stale findings dir cannot wedge
-   * the loop.
+   * When set, the loop prefers the findings-dir JSON sidecar ONLY when no
+   * in-memory authoritative transcript exists (e.g. resumed runs). Same-process
+   * execution always parses the reviewer transcript backing store first.
    */
   findingsDir?: string;
   /**
@@ -1624,17 +1696,38 @@ interface RunConvergenceLoopOptions {
   afterIteration?: (iteration: number) => Promise<void>;
 }
 
+function resolveConvergenceReviewerSource(opts: {
+  transcriptStore: TaskTranscriptStore;
+  convergeOn: string;
+  sidecarText: string | null;
+  resultText: string | undefined;
+  includeSidecar: boolean;
+}): string {
+  const fromStore = opts.transcriptStore.getJoined(opts.convergeOn);
+  if (fromStore.trim().length > 0) return fromStore;
+  if (
+    opts.includeSidecar &&
+    opts.sidecarText !== null &&
+    opts.sidecarText.trim().length > 0
+  ) {
+    return opts.sidecarText;
+  }
+  return opts.resultText ?? '';
+}
+
 /**
  * Implements the `--converge-on` re-execution loop. Iteration 0 happened in
  * the main rank loop. Each subsequent iteration:
  *
- *   1. Parses the convergence task's current `resultText` for `## Blockers`
- *      and `## High-severity findings`. If both sections are empty, exit.
+ *   1. Parses the convergence task's authoritative reviewer transcript
+ *      (in-memory store; sidecars/backed `resultText` are fallbacks after
+ *      restarts) for `## Blockers` and `## High-severity findings`. If both
+ *      sections are empty, exit.
  *   2. Resets the convergence task and every transitive ancestor back to
  *      `PENDING` and bumps their `iteration` counter.
  *   3. Re-executes the affected subset of the DAG in the original
- *      topological order, threading the convergence task's previous
- *      `resultText` into ancestor prompts as `extraContext`.
+ *      topological order, threading the excerpt-policied reviewer feedback
+ *      into ancestor prompts as `extraContext`.
  *   4. Re-executes the convergence task itself.
  */
 async function runConvergenceLoop(
@@ -1647,6 +1740,8 @@ async function runConvergenceLoop(
     reExecIds,
     ranks,
     stateById,
+    transcriptStore,
+    upstreamMode,
     dispatchTask,
     writer,
     state,
@@ -1671,10 +1766,6 @@ async function runConvergenceLoop(
 
   const startingIteration = (convergeTs.iteration ?? 0) + 1;
   for (let iter = startingIteration; iter <= maxIterations; iter++) {
-    // Prefer the findings-dir JSON sidecar when one was written for the most
-    // recent run of the convergence task; the sidecar is captured at task
-    // completion, so it survives the streaming buffer churn that can occasionally
-    // truncate live `resultText` mid-section. Falls back to live text on miss.
     const sidecarText =
       findingsDir !== undefined
         ? await readFindingsSidecarAsText(
@@ -1683,9 +1774,14 @@ async function runConvergenceLoop(
             convergeTs.iteration ?? 0
           )
         : null;
-    const findings = extractConvergenceFindings(
-      sidecarText ?? convergeTs.resultText
-    );
+    const reviewerSource = resolveConvergenceReviewerSource({
+      transcriptStore,
+      convergeOn,
+      sidecarText,
+      resultText: convergeTs.resultText,
+      includeSidecar: true,
+    });
+    const findings = extractConvergenceFindings(reviewerSource);
     if (!findings.hasIssues) {
       console.log(
         `[proof] ${loopId} (converge-on ${convergeOn}): clean — no Blockers / High-severity findings after ${
@@ -1729,7 +1825,14 @@ async function runConvergenceLoop(
     const convergenceContext = buildConvergenceContext(
       convergeOn,
       iter,
-      convergeTs.resultText
+      resolveConvergenceReviewerSource({
+        transcriptStore,
+        convergeOn,
+        sidecarText,
+        resultText: convergeTs.resultText,
+        includeSidecar: false,
+      }),
+      upstreamMode
     );
 
     // Reset state on every re-executed task. We deliberately do not clear
@@ -1777,9 +1880,14 @@ async function runConvergenceLoop(
           convergeTs.iteration ?? 0
         )
       : null;
-  const finalFindings = extractConvergenceFindings(
-    finalSidecarText ?? convergeTs.resultText
-  );
+  const finalReviewerSource = resolveConvergenceReviewerSource({
+    transcriptStore,
+    convergeOn,
+    sidecarText: finalSidecarText,
+    resultText: convergeTs.resultText,
+    includeSidecar: true,
+  });
+  const finalFindings = extractConvergenceFindings(finalReviewerSource);
   if (finalFindings.hasIssues) {
     const now = Date.now();
     convergeTs.status = 'BUDGET-EXCEEDED';
@@ -1793,7 +1901,11 @@ async function runConvergenceLoop(
     // authoritative.
     if (findingsDir !== undefined) {
       try {
-        await writeFindingsSidecar(findingsDir, convergeTs);
+        const reviewerJoined = transcriptStore.getJoined(convergeOn);
+        await writeFindingsSidecar(findingsDir, convergeTs, {
+          parseSource:
+            reviewerJoined.trim().length > 0 ? reviewerJoined : undefined,
+        });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error(
@@ -1825,9 +1937,13 @@ async function skipTask(
   ts.status = 'ERROR';
   ts.finishedAt = now;
   ts.durationMs = 0;
-  ts.errorMessage = `Skipped: upstream task(s) ${failedDeps.join(', ')} failed`;
+  ts.errorMessage = `Skipped: upstream task(s) ${failedDeps.join(
+    ', '
+  )} blocked this task (upstream ERROR or BUDGET-EXCEEDED)`;
   console.log(
-    `[proof] skipping ${task.id} — upstream ${failedDeps.join(', ')} failed`
+    `[proof] skipping ${task.id} — upstream ${failedDeps.join(
+      ', '
+    )} in ERROR/BUDGET-EXCEEDED`
   );
   writer.schedule(structuredCloneState(state));
   if (!fullOutputAbsoluteDir) return;
@@ -1878,7 +1994,9 @@ async function markRunTerminated(
 
 function buildUpstreamContext(
   task: RawTask,
-  stateById: Map<string, TaskState>
+  stateById: Map<string, TaskState>,
+  transcripts: TaskTranscriptStore,
+  upstreamMode: UpstreamPolicyMode
 ): string {
   if (task.depends_on.length === 0) return '';
   const lines: string[] = [
@@ -1889,124 +2007,24 @@ function buildUpstreamContext(
     const dep = stateById.get(depId);
     if (!dep) continue;
     const status = dep.status;
-    const snippet = dep.resultText
-      ? truncateUpstreamSnippet(dep.resultText, UPSTREAM_SNIPPET_CAP)
-      : dep.errorMessage
-      ? `(failed: ${dep.errorMessage})`
-      : '(no output)';
+    let snippet: string;
+    if (dep.status === 'ERROR' || dep.status === 'BUDGET-EXCEEDED') {
+      snippet = dep.errorMessage
+        ? `(failed: ${dep.errorMessage})`
+        : `(${status.toLowerCase()})`;
+    } else {
+      const authoritative =
+        transcripts.getJoined(depId) || (dep.resultText ?? '').trim();
+      snippet =
+        authoritative.length > 0
+          ? excerptUpstreamForPrompt(authoritative, upstreamMode)
+          : '(no output)';
+    }
     lines.push(`### ${depId} [${status}]`);
     lines.push(snippet);
     lines.push('');
   }
   return lines.join('\n');
-}
-
-/**
- * Section-aware truncation for upstream parent results stitched into a
- * downstream prompt.
- *
- * The runner used to slice `resultText` at `UPSTREAM_SNIPPET_CAP`, which
- * could decapitate the most actionable section (e.g. `## Proposed contract`)
- * mid-sentence whenever earlier sections were verbose. This helper instead:
- *
- *   1. Parses the text into `## Heading` blocks (`### …` and below stay
- *      attached to their parent).
- *   2. If fewer than 2 `## ` headings are present (unstructured output),
- *      falls back to the existing `slice(…)` truncate so we never make
- *      legacy / freeform output worse.
- *   3. Otherwise drops whole sections in `SECTION_DROP_PRIORITY` order
- *      (`Current contract` first, `Proposed contract` last) until the
- *      rendered text fits within the cap. The leading section in the
- *      original document is *always* preserved — it is the parent task's
- *      primary output (`## Proposed contract`, `## Files changed`, etc.)
- *      and dropping it would defeat the whole context-stitching pattern.
- *   4. If sections we are willing to drop are exhausted and the text still
- *      exceeds the cap, slices the remaining rendered text as a last
- *      resort. This guarantees we always return something that fits.
- *
- * Section name comparisons are case-insensitive and trim-tolerant; only
- * the names listed in `SECTION_DROP_PRIORITY` are eligible to be dropped.
- * Any other heading (e.g. agent-specific sections like `## Files changed`,
- * `## Blockers`) is treated as preserve-by-default for safety.
- */
-function truncateUpstreamSnippet(text: string, cap: number): string {
-  if (text.length <= cap) return text;
-  const sections = parseUpstreamSections(text);
-  if (sections.length < 2) return truncate(text, cap);
-  // Walk the drop priority list once. Each pass that succeeds rebuilds the
-  // rendered text and re-checks the cap; we stop as soon as we fit.
-  const kept = sections.slice();
-  for (const dropTarget of SECTION_DROP_PRIORITY) {
-    if (renderUpstreamSections(kept).length <= cap) break;
-    // Preserve index 0 (the leading section) regardless of name match.
-    const idx = kept.findIndex((s, i) => i > 0 && s.normalized === dropTarget);
-    if (idx === -1) continue;
-    kept.splice(idx, 1);
-  }
-  const rendered = renderUpstreamSections(kept);
-  if (rendered.length <= cap) return rendered;
-  return truncate(rendered, cap);
-}
-
-interface UpstreamSection {
-  /** Original heading text minus the leading `## `, trimmed. */
-  heading: string;
-  /** Lower-cased trimmed heading for drop-priority comparisons. */
-  normalized: string;
-  /** Body lines below the heading (sub-headings stay attached). */
-  bodyLines: string[];
-}
-
-/**
- * Drop priority used by `truncateUpstreamSnippet`. Last entry is the last
- * one we will give up — i.e. `## Proposed contract` is the highest-value
- * section and is preserved as long as anything else can be dropped first.
- */
-const SECTION_DROP_PRIORITY: readonly string[] = [
-  'current contract',
-  'validation plan',
-  'human checkpoints',
-  'migration impact',
-  'proposed contract',
-];
-
-/** Mirrors converge_loop's heading regex: `## …` only, never `### …`. */
-const UPSTREAM_HEADING_RE = /^##(?!#)\s*(.+?)\s*$/;
-
-function parseUpstreamSections(text: string): UpstreamSection[] {
-  const sections: UpstreamSection[] = [];
-  const lines = text.split(/\r?\n/);
-  let current: UpstreamSection | null = null;
-  for (const line of lines) {
-    const m = UPSTREAM_HEADING_RE.exec(line);
-    if (m) {
-      if (current) sections.push(current);
-      const heading = m[1].trim();
-      current = {
-        heading,
-        normalized: heading.toLowerCase(),
-        bodyLines: [],
-      };
-    } else if (current) {
-      current.bodyLines.push(line);
-    }
-    // Lines before the first `## ` heading are intentionally dropped — the
-    // section-aware truncate only applies to outputs that lead with a
-    // heading; freeform preludes fall through to `truncate()`.
-  }
-  if (current) sections.push(current);
-  return sections;
-}
-
-function renderUpstreamSections(sections: UpstreamSection[]): string {
-  return sections
-    .map((s) => `## ${s.heading}\n${s.bodyLines.join('\n')}`.trimEnd())
-    .join('\n\n');
-}
-
-function truncate(s: string, n: number): string {
-  if (s.length <= n) return s;
-  return s.slice(0, n - 1) + '…';
 }
 
 function formatMs(ms: number): string {
