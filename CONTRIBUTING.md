@@ -12,7 +12,6 @@ For the **canonical posts / authors / tags** onboarding narrative (collections, 
 - pnpm 10.33.x via Corepack (`corepack enable && corepack prepare pnpm@10.33.0 --activate`)
 - Clean git working tree (commit/stash your work first)
 
-
 ## Recommended onboarding (try Flatbread in the Next.js example)
 
 Use this single path first; it matches how CI and most contributors exercise the stack (**shared content** under `examples/content`, symlinked from the Next app as `content/`):

@@ -100,7 +100,6 @@ Optional task kinds add control gates:
 - `kind: "oracle"` runs a shell command and records pass/fail evidence.
 - `kind: "pause"` waits for a checkpoint sentinel so a human can inspect or approve before downstream work continues.
 
-
 ## `DAG.loops`
 
 Bounded convergence loops can live in the DAG itself instead of only on the CLI. This keeps the run reproducible: contributors do not need to remember a matching `--converge-on ... --max-iterations ...` flag pair.

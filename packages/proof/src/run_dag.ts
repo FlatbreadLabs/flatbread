@@ -95,6 +95,7 @@ import {
   createModelSelectionResolver,
   formatModelSelection,
   normalizeModelSelection,
+  resolveConvergenceLoops,
   validateModelMap,
 } from './dag.js';
 import type {
