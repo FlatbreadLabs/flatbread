@@ -48,7 +48,7 @@ export interface OracleTaskDeps {
   cloneState: (state: RunState) => RunState;
 }
 
-/** Cap on per-stream tail captured into `resultText`. Mirrors `STREAM_CAP` in run_dag.ts to keep canvas payload bounded. */
+/** Cap on per-stream tail captured into `resultText`; matches `CANVAS_DISPLAY_CAP` in run_dag.ts so canvas payloads stay bounded. */
 const ORACLE_TAIL_CAP = 4000;
 /** SIGTERM → SIGKILL escalation window for hung oracle commands. */
 const KILL_GRACE_MS = 2000;

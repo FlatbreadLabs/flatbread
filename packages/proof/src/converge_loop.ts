@@ -2,7 +2,7 @@
  * --converge-on <task-id> + --max-iterations <N> loop helpers.
  *
  * The convergence task is expected to be a `flatbread-adversarial-reviewer`
- * style node — its `resultText` follows the schema:
+ * style node — its bounded canvas `resultText` follows the schema:
  *
  *   ## Blockers
  *   …
@@ -27,6 +27,10 @@ import {
   type DAG,
   type ResolvedConvergenceLoop,
 } from './dag.js';
+import {
+  type UpstreamPolicyMode,
+  excerptUpstreamForPrompt,
+} from './upstream_policy.js';
 
 export interface ConvergenceFindings {
   hasIssues: boolean;
@@ -151,18 +155,29 @@ export function resolveLoopReexecuteIds(
 }
 
 /**
- * Renders the convergence task's `resultText` into the standard "extra
+ * Renders the convergence task's reviewer transcript into the standard "extra
  * upstream context" preamble we stitch into ancestor prompts on re-run. The
  * iteration index lets re-runs distinguish their feedback from any future
- * iterations.
+ * iterations. The body is excerpted via the same upstream policy as child
+ * `buildUpstreamContext` — never silently truncated mid-review.
  */
 export function buildConvergenceContext(
   convergeTaskId: string,
   iteration: number,
-  resultText: string | undefined
+  reviewerTranscript: string | undefined,
+  upstreamMode: UpstreamPolicyMode = 'summarize'
 ): string {
-  const trimmed = (resultText ?? '').trim();
-  const body = trimmed === '' ? '(empty result text)' : trimmed;
+  const trimmed = (reviewerTranscript ?? '').trim();
+  if (trimmed === '') {
+    return [
+      `Convergence feedback from "${convergeTaskId}" (iteration ${
+        iteration - 1
+      }):`,
+      '',
+      '(empty result text)',
+    ].join('\n');
+  }
+  const body = excerptUpstreamForPrompt(trimmed, upstreamMode);
   return [
     `Convergence feedback from "${convergeTaskId}" (iteration ${
       iteration - 1

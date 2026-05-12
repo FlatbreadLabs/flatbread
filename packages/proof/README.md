@@ -149,7 +149,15 @@ By default, every **full DAG run** writes per-task markdown transcripts to a tim
   _dag.json      # The original DAG definition
   _index.md      # Run summary: outcome, timings, and links to all transcripts
   <task-id>.md   # Full agent output for each task (kind: task, oracle, or pause)
+  <task-id>.stream.txt   # Append-only assistant transcript mirror (`kind: task` only)
 ```
+
+**Execution vs canvas:**
+
+- For `kind: "task"` only, stitched prompts, in-process convergence parsing (`--converge-on` / `DAG.loops`), `${task-id}.findings.json` payloads (`--findings-dir`), and `<task-id>.md` derive from an **execution-authoritative** transcript. Resumed runs can reconstruct that transcript when the same `--full-output-dir` is reused and `transcriptPath` points at `${task-id}.stream.txt`; otherwise legacy bounded `resultText` remains the fallback.
+- The inlined canvas payload snapshots only a **4000-character display tail** (`CANVAS_DISPLAY_CAP`) per task plus an optional **`transcriptPath`** when `${task-id}.stream.txt` is mirrored.
+- Author `DAG.outputPolicy.upstream` as `"full"` or `"summarize"` (default) to widen or keep the upstream excerpt policy; trims carry visible counted banners.
+- Downstream nodes are skipped with `ERROR` when any upstream is `ERROR` or `BUDGET-EXCEEDED`.
 
 Paths resolve from `--cwd` (defaults to the process working directory). The live canvas still defaults under `~/.cursor/projects/<workspace-slug>/canvases/` when using `--canvas` without `--canvas-path`.
 

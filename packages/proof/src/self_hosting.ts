@@ -30,6 +30,8 @@ export const RUNNER_RUNTIME_FILES: readonly string[] = [
   'oracle_task.ts',
   'pause_task.ts',
   'self_hosting.ts',
+  'task_transcript.ts',
+  'upstream_policy.ts',
 ];
 
 export async function writePersistedRunState(

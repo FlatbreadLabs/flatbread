@@ -92,11 +92,23 @@ export interface RawTask {
   allowNonZeroExit?: boolean;
 }
 
+/**
+ * Optional per-DAG policy for how parent task output is excerpted into child
+ * prompts and convergence `extraContext`. Phase 1 defaults match historical
+ * behavior (`summarize` with a 2000-char section-aware cap plus explicit banners).
+ */
+export interface DAGOutputPolicy {
+  /** When `full`, upstream snippets are not structurally capped (still subject to model context). */
+  upstream?: 'full' | 'summarize';
+}
+
 export interface DAG {
   title: string;
   models?: ModelMapOverride;
   framing?: string;
   budget?: DAGBudget;
+  /** How much of each parent transcript is stitched into downstream prompts. */
+  outputPolicy?: DAGOutputPolicy;
   tasks: RawTask[];
   /**
    * Optional first-class bounded convergence loops. Each entry generalizes
@@ -254,10 +266,47 @@ export function parseDAG(raw: unknown): DAG {
     obj.framing === undefined ? undefined : validateFraming(obj.framing);
   const budget =
     obj.budget === undefined ? undefined : validateBudget(obj.budget);
+  const outputPolicy =
+    obj.outputPolicy === undefined
+      ? undefined
+      : validateOutputPolicy(obj.outputPolicy);
   const loops =
     obj.loops === undefined ? undefined : validateLoops(obj.loops, tasks);
 
-  return { title: obj.title, models, framing, budget, tasks, loops };
+  return {
+    title: obj.title,
+    models,
+    framing,
+    budget,
+    outputPolicy,
+    tasks,
+    loops,
+  };
+}
+
+function validateOutputPolicy(raw: unknown): DAGOutputPolicy {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error('DAG.outputPolicy must be a JSON object when set.');
+  }
+  const obj = raw as Record<string, unknown>;
+  const allowedKeys = new Set(['upstream']);
+  for (const key of Object.keys(obj)) {
+    if (!allowedKeys.has(key)) {
+      throw new Error(
+        `DAG.outputPolicy.${key} is not supported. Supported keys: upstream.`
+      );
+    }
+  }
+  const upstream = obj.upstream;
+  if (upstream === undefined) {
+    return {};
+  }
+  if (upstream !== 'full' && upstream !== 'summarize') {
+    throw new Error(
+      'DAG.outputPolicy.upstream must be "full" or "summarize" when set.'
+    );
+  }
+  return { upstream };
 }
 
 /**
