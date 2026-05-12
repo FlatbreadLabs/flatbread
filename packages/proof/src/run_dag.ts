@@ -95,6 +95,7 @@ import {
   createModelSelectionResolver,
   formatModelSelection,
   normalizeModelSelection,
+  resolveConvergenceLoops,
   validateModelMap,
 } from './dag.js';
 import type {
@@ -151,6 +152,9 @@ const RUNNER_SOURCE_DIR = SCRIPTS_DIR.endsWith('/src')
   ? SCRIPTS_DIR
   : resolve(SCRIPTS_DIR, '..', 'src');
 
+const SUPPRESS_AUTO_RUN_KEY = Symbol.for(
+  '@flatbread/proof.run_dag.suppress_auto_main'
+);
 interface CliArgs {
   dag: string;
   /** Empty in `--dry-check-cmds` mode (no canvas is written). */
@@ -528,8 +532,10 @@ async function fetchCursorModelCatalog(): Promise<
   }
 }
 
-async function main(): Promise<void> {
-  const args = parseArgs(process.argv.slice(2));
+export async function runDagCli(
+  argv: string[] = process.argv.slice(2)
+): Promise<void> {
+  const args = parseArgs(argv);
 
   // --dry-check-cmds: short-circuit before any SDK / canvas / API-key work.
   // The contract here is "given a DAG file and a workspace, would these
@@ -1122,7 +1128,6 @@ async function main(): Promise<void> {
     }
   }
 }
-
 async function runTask(
   task: RawTask,
   stateById: Map<string, TaskState>,
@@ -2022,9 +2027,11 @@ function structuredCloneState(state: RunState): RunState {
   return JSON.parse(JSON.stringify(state)) as RunState;
 }
 
-main().catch((err) => {
-  console.error(
-    `[proof] fatal: ${err instanceof Error ? err.stack ?? err.message : err}`
-  );
-  process.exit(1);
-});
+if (!(globalThis as Record<PropertyKey, unknown>)[SUPPRESS_AUTO_RUN_KEY]) {
+  runDagCli().catch((err) => {
+    console.error(
+      `[proof] fatal: ${err instanceof Error ? err.stack ?? err.message : err}`
+    );
+    process.exit(1);
+  });
+}

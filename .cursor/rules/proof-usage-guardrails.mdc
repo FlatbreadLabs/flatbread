@@ -1,0 +1,21 @@
+---
+description: Proof DAG guardrails for one-shot verification commands
+alwaysApply: true
+---
+
+# Proof Usage Guardrails
+
+When using `/proof` or authoring a DAG for `@flatbread/proof` in this repo:
+
+- Write verifier/test-task prompts so they require **one-shot commands only**. Say this explicitly in the prompt.
+- Before using a package `test` script in a verifier task, check whether it is watch mode in that package's `package.json` or in `AGENTS.md`.
+- Never use bare `vitest` in Proof verification tasks. Use `vitest run` via the package manager instead.
+- Avoid generic commands like `pnpm --filter <pkg> test` when that package's `test` script may watch. Prefer explicit one-shot commands.
+- Repo-specific safe examples:
+  - `pnpm exec ava <path-to-test-file>`
+  - `pnpm -F @flatbread/codegen exec vitest run`
+  - `pnpm -F @flatbread/utils exec vitest run`
+  - `pnpm -F @flatbread/proof test`
+- In verification/review rungs, prefer naming the exact commands to run instead of saying "run relevant tests".
+- If a Proof verification task accidentally starts a watcher or other non-terminating process, stop it, treat that as a prompt bug, and rerun with an explicit one-shot command.
+- If Proof-related work changes rules, docs, skills, prompts, or runtime behavior, update the authoritative Proof guidance sources, run `pnpm -F @flatbread/proof build`, and rerun `pnpm exec proof setup` so the owned-guidelines bundle and manifest do not self-stale through stale packaged setup code.

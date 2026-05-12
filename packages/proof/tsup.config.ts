@@ -6,6 +6,7 @@ export const tsup: Options = {
   clean: true,
   entryPoints: [
     'src/index.ts',
+    'src/setup.ts',
     'src/run_dag.ts',
     'src/run_dag_supervisor.ts',
     'src/list_models.ts',
