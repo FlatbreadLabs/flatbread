@@ -6,6 +6,20 @@ Scope: `@flatbread/proof` (`packages/proof`)
 
 ---
 
+## GitHub issue tracking
+
+These follow-ups were created from the Cursor cloud-agent review of PR
+[#199](https://github.com/FlatbreadLabs/flatbread/pull/199). The issue bodies
+link back to this proposal, the adversarial review, and the judge artifact.
+
+- [#200 — Phase 0/1 follow-up hardening](https://github.com/FlatbreadLabs/flatbread/issues/200)
+- [#201 — Phase 2: upstream prompt policy and budget preflight](https://github.com/FlatbreadLabs/flatbread/issues/201)
+- [#202 — Phase 3: resume, supervisor, and disk ergonomics](https://github.com/FlatbreadLabs/flatbread/issues/202)
+- [#203 — Phase 4: oracle evidence alignment](https://github.com/FlatbreadLabs/flatbread/issues/203)
+- [#204 — Phase 5: documentation and skill refresh](https://github.com/FlatbreadLabs/flatbread/issues/204)
+
+---
+
 ## TL;DR
 
 Today, the runner in `packages/proof/src/run_dag.ts` stores each task's assistant output through a `BoundedTextBuffer(STREAM_CAP=4000)` that **drops the leading characters** as the stream grows past the cap. That bounded string is the **only** copy used for: the canvas `STATE` literal, the parent context stitched into child prompts (capped a second time at `UPSTREAM_SNIPPET_CAP=2000` by `buildUpstreamContext` / `truncateUpstreamSnippet`), the `--findings-dir` JSON sidecar payload, the convergence `extraContext` re-injection, and the persisted `--state-path` snapshot. Only the per-task `${taskId}.md` artifact, written from a separate uncapped `fullStreamChunks` array in `runTask`, ever retains the complete stream — and only when artifacts are enabled.
@@ -174,6 +188,8 @@ Each phase is independently shippable. Phases 1 and 2 together carry the "remove
 
 ### Phase 0 — Contracts, inventory, and feasibility spikes (no behavior change)
 
+Tracking issue: [#200](https://github.com/FlatbreadLabs/flatbread/issues/200).
+
 **Deliverables**
 
 - **Consumer inventory document** committed alongside this proposal (or inlined as a stable section of the README's "Internal layout" appendix) that explicitly names every read site of `TaskState.resultText` in `packages/proof/src/**`:
@@ -231,6 +247,8 @@ Each of the following is a named test that must pass; the test names below are m
 
 ### Phase 2 — Upstream prompt policy with honest budgets
 
+Tracking issue: [#201](https://github.com/FlatbreadLabs/flatbread/issues/201).
+
 **Deliverables**
 
 - `DAG.outputPolicy` (top-level, optional) added to `packages/proof/src/dag.ts` with `parseDAG` validation:
@@ -256,6 +274,8 @@ Each of the following is a named test that must pass; the test names below are m
 
 ### Phase 3 — Resume, supervisor, and disk ergonomics
 
+Tracking issue: [#202](https://github.com/FlatbreadLabs/flatbread/issues/202).
+
 **Deliverables**
 
 - `PersistedRunState` schema bumped to `version: 2` in `self_hosting.ts`:
@@ -280,6 +300,8 @@ Each of the following is a named test that must pass; the test names below are m
 
 ### Phase 4 — Oracle evidence alignment
 
+Tracking issue: [#203](https://github.com/FlatbreadLabs/flatbread/issues/203).
+
 **Deliverables**
 
 - `oracle_task.ts` writes `${taskId}.stdout.log` and `${taskId}.stderr.log` under the artifact directory when artifacts are enabled. These are written atomically at task completion (oracle commands are short-lived; we can capture into in-memory strings, as today, and flush once).
@@ -294,6 +316,8 @@ Each of the following is a named test that must pass; the test names below are m
 3. **Downstream task depending on oracle sees policy-bounded upstream.** With `policy: 'full'` and a long oracle stderr, the child task's prompt contains stderr lines past the legacy 4000-char tail. With `policy: 'summarize'`, the prompt sees the existing tail behavior and a visible banner.
 
 ### Phase 5 — Documentation and skill refresh
+
+Tracking issue: [#204](https://github.com/FlatbreadLabs/flatbread/issues/204).
 
 **Deliverables**
 
