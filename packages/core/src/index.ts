@@ -1,4 +1,9 @@
 export { generateSchema } from './generators/schema';
+export {
+  buildContentGraph,
+  patchContentGraph,
+} from './generators/contentGraph';
+export { createLiveSchemaReloader } from './reload/liveSchema';
 export { exportCollectionsAsCsv } from './export/csv';
 export type { CsvExportOptions, CsvExportResult } from './export/csv';
 export { exportCollectionsAsJson } from './export/json';

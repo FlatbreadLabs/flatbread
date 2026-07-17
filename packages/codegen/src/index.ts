@@ -29,3 +29,9 @@ export {
 export { loadCache, saveCache, isCacheValid, clearCache } from './cache.js';
 
 export { createCodegenCommand } from './cli.js';
+
+export {
+  deriveFlatbreadWatchPatterns,
+  flattenFlatbreadWatchPatterns,
+} from './watchPatterns.js';
+export type { FlatbreadWatchPatterns } from './watchPatterns.js';

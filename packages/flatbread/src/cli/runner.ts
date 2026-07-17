@@ -12,6 +12,7 @@ export interface OrchestraOptions {
   corunner: string;
   flatbreadPort: number;
   https?: boolean;
+  watch?: boolean;
   packageManager: string | null;
 }
 
@@ -26,6 +27,7 @@ export default function orchestrateProcesses({
   corunner,
   flatbreadPort,
   https = false,
+  watch = false,
   packageManager = null,
 }: OrchestraOptions) {
   const pkgManager = packageManager || getRunCommand(process.cwd());
@@ -40,6 +42,7 @@ export default function orchestrateProcesses({
       NODE_OPTIONS: '--experimental-vm-modules',
       FLATBREAD_PORT: String(flatbreadPort),
       FLATBREAD_HTTPS: String(https),
+      FLATBREAD_WATCH: watch ? '1' : '0',
     },
   });
   let runningScripts = [gql];

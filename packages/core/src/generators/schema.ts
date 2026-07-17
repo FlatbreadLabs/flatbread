@@ -12,6 +12,7 @@ import {
 import resolveQueryArgs from '../resolvers/arguments';
 import {
   ConfigResult,
+  ContentGraphSnapshot,
   ContentNode,
   EntryNode,
   LoadedFlatbreadConfig,
@@ -41,7 +42,10 @@ interface ResolverPayload {
  * @param configResult the result of the config file processing
  */
 export async function generateSchema(
-  configResult: ConfigResult<LoadedFlatbreadConfig>
+  configResult: ConfigResult<LoadedFlatbreadConfig> & {
+    contentGraph?: ContentGraphSnapshot;
+    useSchemaCache?: boolean;
+  }
 ) {
   const { config } = configResult;
   if (!config) {
@@ -49,23 +53,29 @@ export async function generateSchema(
   }
 
   // Invoke initialize function if it exists and provide loaded config
-  config.source.initialize?.(config);
-
-  // Invoke the content source resolver to retrieve the content nodes
-  const allContentNodes = await config.source.fetch(config.content);
-
-  // Transform the content nodes to the expected JSON format if needed
-  const allContentNodesJSON = optionallyTransformContentNodes(
-    allContentNodes,
-    config
-  );
-  const contentNodesByCollection =
-    validateCollectionIdentifiers(allContentNodesJSON);
-  validateCollectionReferences(allContentNodesJSON, config.content);
+  let allContentNodesJSON: Record<string, EntryNode[]>;
+  let contentNodesByCollection: Record<string, ContentNode[]>;
+  if (configResult.contentGraph) {
+    allContentNodesJSON = configResult.contentGraph.nodesByCollection;
+    contentNodesByCollection = configResult.contentGraph.nodesByCollection;
+  } else {
+    config.source.initialize?.(config);
+    const allContentNodes = await config.source.fetch(config.content);
+    allContentNodesJSON = optionallyTransformContentNodes(
+      allContentNodes,
+      config
+    );
+    contentNodesByCollection =
+      validateCollectionIdentifiers(allContentNodesJSON);
+    validateCollectionReferences(allContentNodesJSON, config.content);
+  }
 
   // Content validation must run before returning a cached schema because the
   // cache key is derived from config, while invalid IDs/refs live in content.
-  const cachedSchema = checkCacheForSchema(config);
+  const cachedSchema =
+    configResult.useSchemaCache === false
+      ? undefined
+      : checkCacheForSchema(config);
 
   if (cachedSchema) {
     return cachedSchema;
@@ -258,7 +268,7 @@ export async function generateSchema(
 
   const schema = schemaComposer.buildSchema();
 
-  cacheSchema(config, schema);
+  if (configResult.useSchemaCache !== false) cacheSchema(config, schema);
 
   return schema;
 }
@@ -279,7 +289,7 @@ const fetchPreknownSchemaFragments = (
   );
 };
 
-function validateCollectionIdentifiers(
+export function validateCollectionIdentifiers(
   allContentNodesJSON: Record<string, EntryNode[]>
 ): Record<string, ContentNode[]> {
   const errors: string[] = [];
@@ -344,7 +354,7 @@ function getTransformerExtensionMap(
  * @param allContentNodes an object of keys and values - content type and content nodes to transform, respectively
  * @param config Flatbread config object
  */
-const optionallyTransformContentNodes = (
+export const optionallyTransformContentNodes = (
   allContentNodes: Record<string, VFile[]>,
   config: LoadedFlatbreadConfig
 ): Record<string, EntryNode[]> => {

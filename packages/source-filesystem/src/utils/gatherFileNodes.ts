@@ -18,6 +18,28 @@ function getSegmentData(node: { name: string }, segment: { remove: number }) {
   return node.name.slice(0, node.name.length - segment.remove);
 }
 
+export function getCaptureData(
+  path: string,
+  pattern: string
+): Record<string, string> {
+  const patternParts = pattern.split('/').filter(Boolean);
+  const pathParts = path.split('/').filter(Boolean);
+  if (patternParts.length !== pathParts.length) return {};
+  const data: Record<string, string> = {};
+  for (const [index, part] of patternParts.entries()) {
+    const value = pathParts[index];
+    const capture = /^\[([^\]]+)\](.*)$/.exec(part);
+    if (capture) {
+      const suffix = capture[2];
+      if (suffix && !value.endsWith(suffix)) return {};
+      data[capture[1]] = suffix ? value.slice(0, -suffix.length) : value;
+    } else if (part !== value && !part.includes('*')) {
+      return {};
+    }
+  }
+  return data;
+}
+
 function processFile(segment: Segment, node: FileNode) {
   return (file: FileNode) => {
     if (!segment) return file;
