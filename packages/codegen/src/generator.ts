@@ -16,8 +16,12 @@ import { readFile, writeFile } from 'node:fs/promises';
 import kleur from 'kleur';
 // @ts-ignore - chokidar types will be available after npm install
 import chokidar from 'chokidar';
-import { generateSchema } from '@flatbread/core';
-import type { LoadedFlatbreadConfig } from '@flatbread/core';
+import { createWatchCoordinator, generateSchema } from '@flatbread/core';
+import type {
+  LoadedFlatbreadConfig,
+  WatchCoordinatorResult,
+  WatchEventType,
+} from '@flatbread/core';
 import { generateInstallCommand } from '@flatbread/utils';
 import type { CodegenOptions, CodegenResult, CodegenCache } from './types.js';
 import { DEFAULT_CODEGEN_OPTIONS, PLUGIN_PRESETS } from './types.js';
@@ -38,6 +42,29 @@ function emitMissingDepsWarning(missingDeps: string[]) {
   console.warn(
     kleur.yellow(formatMissingDepsWarning(missingDeps, installCommand))
   );
+}
+
+function deriveOptionsFromConfig(
+  loadedConfig: LoadedFlatbreadConfig,
+  previous: CodegenOptions
+): CodegenOptions {
+  const cfg = loadedConfig.codegen || {};
+  return {
+    // Always enable in watch
+    enabled: true,
+    // Prefer latest config for dynamic fields changed via config
+    outputDir: cfg.outputDir ?? DEFAULT_CODEGEN_OPTIONS.outputDir,
+    outputFile: cfg.outputFile ?? DEFAULT_CODEGEN_OPTIONS.outputFile,
+    documents: cfg.documents ?? [],
+    plugins: cfg.plugins ?? previous.plugins,
+    pluginConfig: cfg.pluginConfig ?? previous.pluginConfig,
+    schema: cfg.schema ?? previous.schema,
+    codegenConfig: cfg.codegenConfig ?? previous.codegenConfig,
+    // Preserve runtime flags
+    watch: true,
+    cache: previous.cache,
+    preset: previous.preset,
+  };
 }
 
 /**
@@ -599,32 +626,11 @@ export async function watchAndGenerate(
   // Maintain a mutable set of options that can be refreshed when the config changes
   let currentOptions: CodegenOptions = { ...options };
 
-  // Helper to derive effective codegen options from the latest config
-  const deriveOptionsFromConfig = (
-    loadedConfig: LoadedFlatbreadConfig,
-    previous: CodegenOptions
-  ): CodegenOptions => {
-    const cfg = loadedConfig.codegen || {};
-    return {
-      // Always enable in watch
-      enabled: true,
-      // Prefer latest config for dynamic fields changed via config
-      outputDir: cfg.outputDir ?? DEFAULT_CODEGEN_OPTIONS.outputDir,
-      outputFile: cfg.outputFile ?? DEFAULT_CODEGEN_OPTIONS.outputFile,
-      documents: cfg.documents ?? [],
-      plugins: cfg.plugins ?? previous.plugins,
-      pluginConfig: cfg.pluginConfig ?? previous.pluginConfig,
-      schema: cfg.schema ?? previous.schema,
-      codegenConfig: cfg.codegenConfig ?? previous.codegenConfig,
-      // Preserve runtime flags
-      watch: true,
-      cache: previous.cache,
-      preset: previous.preset,
-    };
-  };
-
   // Initial generation using the current options
   await generateTypes(schema, config, currentOptions);
+
+  let currentConfig = config;
+  let currentSchema = schema;
 
   // Set up file watchers
   const patterns = flattenFlatbreadWatchPatterns(
@@ -650,81 +656,76 @@ export async function watchAndGenerate(
     persistent: true,
   });
 
-  let regenerating = false;
-
-  const regenerateTypes = async (path: string, event: string) => {
-    if (regenerating) {
-      return; // Avoid concurrent regenerations
-    }
-
-    regenerating = true;
-
-    try {
-      console.log(kleur.yellow(`\n📝 ${event}: ${path}`));
-      console.log(kleur.blue('🔄 Regenerating schema and types...'));
-
-      let currentConfig = config;
-
-      // If a config file changed, reload the configuration
-      if (path.includes('flatbread.config.')) {
-        try {
-          const { loadConfig } = await import('@flatbread/config');
-          const configResult = await loadConfig({ cwd: process.cwd() });
-
-          if (configResult.config) {
-            currentConfig = configResult.config;
-            console.log(kleur.dim('🔧 Configuration reloaded'));
-            // Refresh codegen options from the updated config so changes like outputFile/outputDir/documents are applied
-            currentOptions = deriveOptionsFromConfig(
-              currentConfig,
-              currentOptions
-            );
-          }
-        } catch (error) {
-          console.warn(
-            kleur.yellow(
-              `⚠️  Failed to reload config, using existing: ${
-                error instanceof Error ? error.message : 'Unknown error'
-              }`
-            )
-          );
-        }
-      }
-
-      // Regenerate the schema first since the source files may have changed
-      const newSchema = await generateSchema({ config: currentConfig });
-
-      // Generate types with the new schema
+  const coordinator = createWatchCoordinator({
+    config: currentConfig,
+    documentPatterns: (cfg) => cfg.codegen?.documents ?? [],
+    loadConfig: async () => {
+      const { loadConfig } = await import('@flatbread/config');
+      return (await loadConfig({ cwd: process.cwd() })).config!;
+    },
+    applyConfig: async (cfg) => {
+      currentConfig = cfg;
+      currentOptions = deriveOptionsFromConfig(cfg, currentOptions);
+      currentSchema = await generateSchema({ config: cfg });
+      return { status: 'committed' };
+    },
+    reindexContent: async () => {
+      currentSchema = await generateSchema({ config: currentConfig });
+      return { status: 'committed' };
+    },
+    refreshCodegen: async () => {
       const result = await generateTypes(
-        newSchema,
+        currentSchema,
         currentConfig,
         currentOptions
       );
-
-      if (result.success) {
-        console.log(kleur.green('✅ Types regenerated successfully'));
-      } else {
-        console.error(
-          kleur.red('❌ Failed to regenerate types:'),
-          result.error
-        );
+      if (!result.success) {
+        throw new Error(result.error ?? 'Codegen failed');
       }
-    } catch (error) {
-      console.error(kleur.red('❌ Error during regeneration:'), error);
-    } finally {
-      regenerating = false;
+    },
+  });
+
+  const resultMessage = (result: WatchCoordinatorResult): void => {
+    if (result.status === 'rejected') {
+      const phase =
+        result.kind === 'config'
+          ? 'reload config'
+          : result.kind === 'content'
+          ? 'reindex content'
+          : result.kind === 'documents'
+          ? 'refresh documents'
+          : 'regenerate types';
+      console.error(kleur.red(`❌ Failed to ${phase}:`), result.error);
+      return;
     }
+
+    if (result.kind === 'config') {
+      console.log(kleur.dim('🔧 Configuration reloaded'));
+    } else if (result.kind === 'codegen' || result.kind === 'documents') {
+      console.log(kleur.green('✅ Types regenerated successfully'));
+    }
+  };
+
+  coordinator.subscribe(resultMessage);
+
+  const eventLabels: Record<WatchEventType, string> = {
+    create: 'File added',
+    update: 'File changed',
+    delete: 'File removed',
+  };
+  const pushEvent = (path: string, type: WatchEventType) => {
+    console.log(kleur.yellow(`\n📝 ${eventLabels[type]}: ${path}`));
+    console.log(kleur.blue('🔄 Regenerating schema and types...'));
+    coordinator.push([{ path, type }]);
   };
 
   // Set up event handlers
   watcher
-    .on('add', (path: string) => regenerateTypes(path, 'File added'))
-    .on('change', (path: string) => regenerateTypes(path, 'File changed'))
-    .on('unlink', (path: string) => regenerateTypes(path, 'File removed'))
-    .on('addDir', (path: string) => regenerateTypes(path, 'Directory added'))
-    .on('unlinkDir', (path: string) =>
-      regenerateTypes(path, 'Directory removed')
-    )
+    .on('add', (path: string) => pushEvent(path, 'create'))
+    .on('change', (path: string) => pushEvent(path, 'update'))
+    .on('unlink', (path: string) => pushEvent(path, 'delete'))
+    .on('addDir', (path: string) => pushEvent(path, 'create'))
+    .on('unlinkDir', (path: string) => pushEvent(path, 'delete'))
     .on('error', (error: Error) =>
       console.error(kleur.red('Watcher error:'), error)
     )
@@ -733,6 +734,7 @@ export async function watchAndGenerate(
   // Handle graceful shutdown
   const shutdown = () => {
     console.log(kleur.yellow('\n🛑 Shutting down watcher...'));
+    void coordinator.dispose();
     watcher.close();
     process.exit(0);
   };

@@ -6,8 +6,8 @@ Flatbread's local loop has four moving parts:
    content paths.
 2. **Schema rebuild** — `@flatbread/core` turns loaded records and refs into a
    GraphQL schema after ID/ref validation.
-3. **Codegen refresh** — `flatbread codegen --watch` regenerates TypeScript
-   artifacts when config, content, or GraphQL documents change.
+3. **Codegen refresh** — the unified watcher regenerates TypeScript artifacts
+   when config, content, or GraphQL documents change.
 4. **Framework restart / refresh** — `flatbread start -- <framework command>`
    runs the GraphQL server beside your app command.
 
@@ -26,24 +26,21 @@ cd examples/nextjs
 pnpm exec flatbread codegen --verbose
 ```
 
-For development, use two terminals. This path avoids the example package's
-HTTPS convenience script and keeps the Flatbread GraphQL endpoint on plain HTTP
-port `5057`.
+For development, use the unified watcher. This path avoids the example
+package's HTTPS convenience script and keeps the Flatbread GraphQL endpoint on
+plain HTTP port `5057`.
 
 ```bash
-# terminal 1 — regenerate TypeScript artifacts
-pnpm exec flatbread codegen --watch --verbose
-```
-
-```bash
-# terminal 2 — serve GraphQL + Next.js without HTTPS for headless/dev agents
+# serve GraphQL, refresh generated artifacts, and run Next.js without HTTPS
 pnpm exec flatbread start --watch -- next dev --turbopack
 ```
 
 Expected behavior:
 
+- One unified watcher owns config/content/document classification, GraphQL
+  hot-swaps, and generated artifact refreshes.
 - Editing a `.graphql` document or a content/config file refreshes
-  `generated/graphql.ts`.
+  `generated/graphql.ts`; do not run `flatbread codegen --watch` beside it.
 - The generated content-model types and prototype read API are refreshed by
   the same codegen command.
 - The running GraphQL endpoint at `http://localhost:5057/graphql` hot-swaps
@@ -51,20 +48,20 @@ Expected behavior:
 
 ## Current reload matrix
 
-| Change                                  | Codegen watcher behavior                | Running GraphQL server                           | Framework app                                            | Action required today                                    |
-| --------------------------------------- | --------------------------------------- | ------------------------------------------------ | -------------------------------------------------------- | -------------------------------------------------------- |
-| Markdown/YAML field value               | Refreshes types if watched path matches | Hot-swaps after validation                       | Keeps rendering whatever the endpoint returns            | None; framework refresh remains explicit                 |
-| New/removed content file                | Refreshes types if watched path matches | Hot-swaps after validation                       | Keeps rendering whatever the endpoint returns            | None; framework refresh remains explicit                 |
-| `.graphql` document                     | Regenerates operation types             | No restart unless query text used by app changed | Framework dev server normally recompiles importing files | No Flatbread restart unless app code needs it            |
-| `flatbread.config.*` content/ref change | Reloads config and refreshes types      | Rebuilds and hot-swaps after validation          | Keeps rendering whatever the endpoint returns            | None; framework refresh remains explicit                 |
-| Transformer/source package code         | Does not rebuild package code           | Keeps previous imported package code             | May keep previous imported package code                  | Rebuild/watch package separately, rerun codegen, restart |
-| `generated/graphql.ts`                  | Output of codegen                       | No direct effect                                 | Framework dev server recompiles imports                  | No Flatbread restart                                     |
+| Change                                  | Unified watcher behavior                                                       | Running GraphQL server                           | Framework app                                            | Action required today                                    |
+| --------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------ | -------------------------------------------------------- | -------------------------------------------------------- |
+| Markdown/YAML field value               | Atomically reindexes/hot-swaps, then refreshes codegen                         | Hot-swaps after validation                       | Keeps rendering whatever the endpoint returns            | None; framework refresh remains explicit                 |
+| New/removed content file                | Atomically reindexes/hot-swaps, then refreshes codegen                         | Hot-swaps after validation                       | Keeps rendering whatever the endpoint returns            | None; framework refresh remains explicit                 |
+| `.graphql` document                     | Refreshes codegen only                                                         | No restart unless query text used by app changed | Framework dev server normally recompiles importing files | No Flatbread restart unless app code needs it            |
+| `flatbread.config.*` content/ref change | Reloads config/matchers, atomically rebuilds/hot-swaps, then refreshes codegen | Rebuilds and hot-swaps after validation          | Keeps rendering whatever the endpoint returns            | None; framework refresh remains explicit                 |
+| Transformer/source package code         | Does not rebuild package code                                                  | Keeps previous imported package code             | May keep previous imported package code                  | Rebuild/watch package separately, rerun codegen, restart |
+| `generated/graphql.ts`                  | Output of codegen                                                              | No direct effect                                 | Framework dev server recompiles imports                  | No Flatbread restart                                     |
 
 ## Failure semantics today
 
-- If content becomes invalid while `flatbread codegen --watch` is running, the
-  watcher logs the validation/codegen error and keeps watching. Existing
-  generated files are left as-is until a later successful regeneration.
+- Rejected config, content, or codegen phases are logged and keep the unified
+  watch loop alive. Existing generated files are left as-is until a later
+  successful regeneration.
 - In one-shot mode (`flatbread codegen` without `--watch`), validation or
   codegen errors exit non-zero and do not prove the live server changed.
 - If the running GraphQL server was started before the invalid edit, it keeps
@@ -72,40 +69,41 @@ Expected behavior:
   validation error at startup.
 - In unified watch mode, invalid candidates are rejected atomically: generated
   artifacts and the live GraphQL server remain on the previous committed graph.
+  A codegen failure does not undo an already committed GraphQL generation, and
+  edits received during an in-flight generation are queued for the next
+  serialized batch.
 
-## Draft unified watch design (implemented)
+## Unified watch coordinator contract
 
-The unified loop should eventually make this one command:
+The unified loop is started with:
 
 ```bash
-flatbread start --watch -- next dev --turbopack
+pnpm exec flatbread start --watch -- next dev --turbopack
 ```
 
-Design contract:
+The coordinator contract is:
 
-1. Watch the same content/config/document paths that `flatbread codegen --watch`
-   already derives from `LoadedFlatbreadConfig`.
-2. On content changes, reload records, rerun ID/ref/cardinality validation,
-   rebuild the schema, refresh generated TypeScript, and swap the GraphQL
-   server schema only if the new graph validates. If validation fails, keep the
-   previous schema active and log the failure.
-3. On config changes, reload config, rebuild watch globs, rebuild schema,
-   refresh generated TypeScript, and restart only the Flatbread GraphQL server
-   boundary if a safe hot swap is not possible. A safe hot swap means replacing
-   schema/data without losing the child framework process, open port, or
-   in-flight request handling state.
-4. On GraphQL document changes, refresh generated TypeScript only.
-5. Keep framework restarts explicit. Flatbread should not assume every
-   framework can be restarted safely; it should document whether the app command
-   is left running, restarted, or expected to recompile through its own dev
-   server.
+1. A single coordinator classifies config, content, and document events, then
+   serializes all rebuild and codegen phases.
+2. Content changes reindex records and atomically hot-swap the GraphQL schema
+   before refreshing generated TypeScript.
+3. Config changes reload the config and matchers, rebuild and atomically
+   hot-swap the schema, then refresh generated TypeScript.
+4. GraphQL document changes refresh generated TypeScript without reindexing
+   content.
+5. Rejected phases emit an error but do not stop the loop. Committed GraphQL
+   generations are not rolled back when a later codegen phase fails.
+6. Events received during an in-flight generation are queued and processed
+   serially.
+7. Framework restarts remain explicit. Flatbread keeps the framework child
+   process running and relies on its own dev server to recompile or refresh.
 
 ## Known limitations
 
 - `flatbread start --watch` hot-swaps valid content/config generations; invalid
   candidates leave the prior schema active.
-- `flatbread codegen --watch` is a long-running process; do not use it in CI or
-  one-shot scripts.
+- Unified watch mode is a long-running process; do not use it in CI or one-shot
+  scripts.
 - The Next.js example `pnpm dev` includes `--https` for local convenience, but
   the Flatbread GraphQL endpoint remains documented as HTTP on `5057`. In
   headless environments prefer `pnpm exec flatbread start -- next dev --turbopack`.
