@@ -55,7 +55,7 @@ export interface WriterLockOptions {
 }
 export interface EffortGraphWriterOptions {
   rootDir: string;
-  index?: EffortGraphIndex;
+  index?: import('./snapshot.js').EffortGraphSnapshotSource;
   indexer?: EffortGraphIndexer;
   clock?: () => Date;
   randomBytes?: (length: number) => Uint8Array;

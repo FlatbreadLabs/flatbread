@@ -1,14 +1,19 @@
-import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { EffortGraphValidationError } from './errors.js';
+import { serializeDocument } from './frontmatter.js';
 import {
   generateArtifactId,
   KIND_DIRECTORY,
   validateArtifactId,
 } from './ids.js';
-import { serializeDocument } from './frontmatter.js';
-import type { EffortGraphIndex, PlannedWrite, PrimitiveKind } from './types.js';
+import {
+  acceptDecisionLifecycle,
+  supersedeDecisionLifecycle,
+} from './decision-lifecycle.js';
+import type { EffortGraphSnapshot } from './snapshot.js';
+import type { PlannedWrite, PrimitiveKind } from './types.js';
 import type { EffortGraphMutation } from './schemas.js';
+
 const kinds: Record<string, PrimitiveKind> = {
   WriteIssue: 'issue',
   WriteFinding: 'finding',
@@ -16,20 +21,21 @@ const kinds: Record<string, PrimitiveKind> = {
   WriteConstraint: 'constraint',
   WriteRisk: 'risk',
 };
-export async function planMutation(
+
+export function planMutation(
   input: EffortGraphMutation,
-  index: EffortGraphIndex,
+  snapshot: EffortGraphSnapshot,
   root: string,
   now: Date,
-  randomBytes?: (n: number) => Uint8Array
-): Promise<PlannedWrite[]> {
+  randomBytes?: (length: number) => Uint8Array
+): PlannedWrite[] {
   const writes = new Map<string, PlannedWrite>();
-  const get = async (id: string) => {
-    const r = await index.getRecord(id);
+  const get = (id: string) => {
+    const r = snapshot.getRecord(id);
     if (!r) throw new EffortGraphValidationError(`Unknown artifact ${id}`);
     return r;
   };
-  const add = async (
+  const add = (
     id: string,
     kind: PrimitiveKind,
     fm: Record<string, unknown>,
@@ -37,16 +43,18 @@ export async function planMutation(
     operation: 'create' | 'update' = 'update'
   ) => {
     const path = join(root, KIND_DIRECTORY[kind], `${id}.md`);
-    const before =
-      operation === 'update'
-        ? await readFile(path).catch(() => undefined)
-        : undefined;
+    const beforeBytes =
+      operation === 'update' ? snapshot.getRawBytes(id) : undefined;
+    if (operation === 'update' && !beforeBytes)
+      throw new EffortGraphValidationError(
+        `Missing snapshot bytes for update ${id}`
+      );
     writes.set(path, {
       id,
       kind,
       absolutePath: path,
       relativePath: join(KIND_DIRECTORY[kind], `${id}.md`),
-      beforeBytes: before,
+      beforeBytes,
       afterBytes: serializeDocument(body, fm),
       operation,
     });
@@ -54,16 +62,18 @@ export async function planMutation(
   if (input.type === 'CreateEffort') {
     const id =
       input.id ?? generateArtifactId('effort', input.title, randomBytes);
-    if (!validateArtifactId(id, 'effort') || (await index.hasId(id)))
+    if (!validateArtifactId(id, 'effort') || snapshot.hasId(id))
       throw new EffortGraphValidationError(`Invalid or duplicate id ${id}`);
-    if (input.slug) {
-      const existingEfforts = await index.recordsByKind('effort');
-      if (existingEfforts.some((r) => r.frontmatter.slug === input.slug))
-        throw new EffortGraphValidationError(
-          `Duplicate effort slug ${input.slug}`
-        );
-    }
-    await add(
+    if (
+      input.slug &&
+      snapshot
+        .recordsByKind('effort')
+        .some((r) => r.frontmatter.slug === input.slug)
+    )
+      throw new EffortGraphValidationError(
+        `Duplicate effort slug ${input.slug}`
+      );
+    add(
       id,
       'effort',
       {
@@ -85,39 +95,38 @@ export async function planMutation(
     return [...writes.values()];
   }
   if (input.type === 'SetEffortStatus') {
-    const r = await get(input.effortId);
+    const r = get(input.effortId);
     if (r.kind !== 'effort')
       throw new EffortGraphValidationError('Not an effort');
     const old = String(r.frontmatter.status);
     if (old === input.status || old === 'completed' || old === 'abandoned')
       throw new EffortGraphValidationError('Illegal effort transition');
-    await add(r.id, r.kind, { ...r.frontmatter, status: input.status }, r.body);
+    add(r.id, r.kind, { ...r.frontmatter, status: input.status }, r.body);
     return [...writes.values()];
   }
   if (input.type in kinds) {
     const kind = kinds[input.type];
-    const id =
-      (input as any).id ??
-      generateArtifactId(kind, (input as any).title, randomBytes);
-    if (!validateArtifactId(id, kind) || (await index.hasId(id)))
+    const raw = input as any;
+    const id = raw.id ?? generateArtifactId(kind, raw.title, randomBytes);
+    if (!validateArtifactId(id, kind) || snapshot.hasId(id))
       throw new EffortGraphValidationError('Invalid or duplicate id');
-    const effort = await get((input as any).effort);
+    const effort = get(raw.effort);
     if (effort.kind !== 'effort')
       throw new EffortGraphValidationError('Invalid effort');
-    const fm: any = {
-      ...input,
+    const fm: Record<string, unknown> = {
+      ...raw,
       id,
-      created_at: (input as any).created_at ?? now.toISOString(),
+      created_at: raw.created_at ?? now.toISOString(),
     };
     delete fm.type;
     delete fm.body;
     if (kind === 'issue') fm.status = 'open';
     if (kind === 'decision') fm.state = 'proposed';
     if (kind === 'risk') fm.state = 'open';
-    await add(id, kind, fm, (input as any).body, 'create');
-    for (const edge of ['supersedes', 'invalidates'] as const) {
+    add(id, kind, fm, raw.body, 'create');
+    for (const edge of ['supersedes', 'invalidates'] as const)
       for (const targetId of (fm[edge] as string[] | undefined) ?? []) {
-        const target = await get(targetId);
+        const target = get(targetId);
         if (edge === 'supersedes' && target.kind !== kind)
           throw new EffortGraphValidationError(
             'Supersedes must target the same kind'
@@ -136,7 +145,7 @@ export async function planMutation(
           );
         const reverse =
           edge === 'supersedes' ? 'superseded_by' : 'invalidated_by';
-        await add(
+        add(
           target.id,
           target.kind,
           {
@@ -149,14 +158,13 @@ export async function planMutation(
           target.body
         );
       }
-    }
     return [...writes.values()];
   }
   if (input.type === 'Supersede' || input.type === 'Invalidate') {
-    const a = await get(
+    const a = get(
       input.type === 'Supersede' ? input.supersederId : input.findingId
     );
-    const b = await get(input.targetId);
+    const b = get(input.targetId);
     const edge = input.type === 'Supersede' ? 'supersedes' : 'invalidates';
     const back =
       input.type === 'Supersede' ? 'superseded_by' : 'invalidated_by';
@@ -183,7 +191,7 @@ export async function planMutation(
       throw new EffortGraphValidationError('Target already superseded');
     if (((a.frontmatter[edge] as string[] | undefined) ?? []).includes(b.id))
       throw new EffortGraphValidationError('Duplicate edge');
-    await add(
+    add(
       a.id,
       a.kind,
       {
@@ -192,30 +200,29 @@ export async function planMutation(
       },
       a.body
     );
-    await add(
-      b.id,
-      b.kind,
-      {
-        ...b.frontmatter,
-        [back]: [...((b.frontmatter[back] as string[]) || []), a.id],
-        ...(input.type === 'Supersede' && b.kind === 'decision'
-          ? { state: 'superseded' }
-          : {}),
-      },
-      b.body
-    );
+    const targetFm =
+      input.type === 'Supersede' && b.kind === 'decision'
+        ? supersedeDecisionLifecycle(snapshot, b.id).nextFrontmatter
+        : {
+            ...b.frontmatter,
+            [back]: [...((b.frontmatter[back] as string[]) || []), a.id],
+          };
+    if (input.type === 'Supersede' && b.kind === 'decision')
+      (targetFm as Record<string, unknown>)[back] = [
+        ...((b.frontmatter[back] as string[]) || []),
+        a.id,
+      ];
+    add(b.id, b.kind, targetFm as Record<string, unknown>, b.body);
     return [...writes.values()];
   }
   if (input.type === 'ResolveIssue') {
-    const r = await get(input.issueId);
+    const r = get(input.issueId);
     if (r.kind !== 'issue' || r.frontmatter.status !== 'open')
       throw new EffortGraphValidationError('Issue is not open');
-    for (const id of input.resolvedBy) {
-      const x = await get(id);
-      if (x.frontmatter.effort !== r.frontmatter.effort)
+    for (const id of input.resolvedBy)
+      if (get(id).frontmatter.effort !== r.frontmatter.effort)
         throw new EffortGraphValidationError('Different effort');
-    }
-    await add(
+    add(
       r.id,
       r.kind,
       {
@@ -228,26 +235,21 @@ export async function planMutation(
     return [...writes.values()];
   }
   if (input.type === 'AcceptDecision') {
-    const r = await get(input.decisionId);
-    if (r.kind !== 'decision' || r.frontmatter.state !== 'proposed')
-      throw new EffortGraphValidationError('Decision is not proposed');
-    await add(r.id, r.kind, { ...r.frontmatter, state: 'accepted' }, r.body);
-    if (input.rejectSiblings !== false)
-      for (const s of await index.siblingDecisions(
-        String(r.frontmatter.effort),
-        { state: 'proposed', excludeId: r.id }
-      ))
-        await add(
-          s.id,
-          s.kind,
-          { ...s.frontmatter, state: 'rejected', rejected_by: r.id },
-          s.body
-        );
+    for (const change of acceptDecisionLifecycle(snapshot, {
+      decisionId: input.decisionId,
+      rejectSiblings: input.rejectSiblings !== false,
+    }))
+      add(
+        change.record.id,
+        change.record.kind,
+        { ...change.nextFrontmatter },
+        change.record.body
+      );
     return [...writes.values()];
   }
   if (input.type === 'MitigateRisk') {
-    const r = await get(input.riskId),
-      d = await get(input.decisionId);
+    const r = get(input.riskId),
+      d = get(input.decisionId);
     if (
       r.kind !== 'risk' ||
       r.frontmatter.state !== 'open' ||
@@ -256,7 +258,7 @@ export async function planMutation(
       r.frontmatter.effort !== d.frontmatter.effort
     )
       throw new EffortGraphValidationError('Cannot mitigate risk');
-    await add(
+    add(
       r.id,
       r.kind,
       { ...r.frontmatter, state: 'mitigated', mitigated_by: d.id },
@@ -265,10 +267,10 @@ export async function planMutation(
     return [...writes.values()];
   }
   if (input.type === 'SetRiskState') {
-    const r = await get(input.riskId);
+    const r = get(input.riskId);
     if (r.kind !== 'risk' || r.frontmatter.state !== 'open')
       throw new EffortGraphValidationError('Risk is not open');
-    const evidence = await Promise.all(input.evidence.map(get));
+    const evidence = input.evidence.map(get);
     for (const x of evidence)
       if (x.frontmatter.effort !== r.frontmatter.effort)
         throw new EffortGraphValidationError('Different effort');
@@ -277,7 +279,7 @@ export async function planMutation(
       !evidence.some((x) => x.kind === 'finding')
     )
       throw new EffortGraphValidationError('Realized risk requires finding');
-    await add(
+    add(
       r.id,
       r.kind,
       { ...r.frontmatter, state: input.state, evidence: input.evidence },

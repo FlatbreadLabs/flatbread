@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { acquireWriterLock } from './lock.js';
 import { commitJournal, recoverJournal } from './journal.js';
 import { planMutation } from './planner.js';
-import { createFilesystemEffortGraphIndex } from './index-store.js';
+import { filesystemEffortGraphSnapshotSource } from './snapshot.js';
 import { parseDocument } from './frontmatter.js';
 import type {
   EffortGraphWriter,
@@ -14,8 +14,7 @@ import type {
 export function createEffortGraphWriter(
   options: EffortGraphWriterOptions
 ): EffortGraphWriter {
-  const index =
-      options.index ?? createFilesystemEffortGraphIndex(options.rootDir),
+  const snapshotSource = options.index ?? filesystemEffortGraphSnapshotSource,
     indexer = options.indexer ?? { reindex: async () => {} },
     clock = options.clock ?? (() => new Date());
   async function recover() {
@@ -40,9 +39,10 @@ export function createEffortGraphWriter(
             )
           ).generation || 0;
       } catch {}
-      const writes = await planMutation(
+      const snapshot = await snapshotSource.buildSnapshot(options.rootDir);
+      const writes = planMutation(
         input,
-        index,
+        snapshot,
         options.rootDir,
         clock(),
         options.randomBytes
