@@ -1,4 +1,3 @@
-import { subscribe } from '@parcel/watcher';
 import { generateTypes } from '@flatbread/codegen';
 import type {
   ConfigResult,
@@ -11,6 +10,7 @@ import {
   createWatchCoordinator,
   type WatchCoordinator,
 } from '@flatbread/core';
+import type { EffortGraphLiveBridge } from '@flatbread/effort-graph';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@as-integrations/express5';
 import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache';
@@ -18,6 +18,7 @@ import cors from 'cors';
 import express, { type RequestHandler } from 'express';
 import http from 'http';
 import { loadFlatbreadConfig } from '../utils/getSchema';
+import { createEffortGraphComposition } from './effortGraphComposition';
 
 export interface GraphqlServerOptions {
   port?: number;
@@ -28,6 +29,7 @@ export interface GraphqlServerOptions {
 export interface RunningGraphqlServer {
   readonly port: number;
   readonly reloader: LiveSchemaReloader;
+  readonly effortGraph?: EffortGraphLiveBridge;
   close(): Promise<void>;
 }
 
@@ -37,6 +39,12 @@ export async function startGraphqlServer(
   const cwd = options.cwd ?? process.cwd();
   if (!options.config.config) throw new Error('Config is not defined');
   const config = options.config.config;
+  const composition = createEffortGraphComposition(config.content, { cwd });
+  if (composition && !config.source.fetchPaths) {
+    throw new Error(
+      'Flatbread effort-graph mode requires the configured source to implement fetchPaths(paths).'
+    );
+  }
   if (options.watch && !config.source.fetchPaths) {
     throw new Error(
       'Flatbread watch mode requires the configured source to implement fetchPaths(paths).'
@@ -91,6 +99,7 @@ export async function startGraphqlServer(
   );
   const reloader = await createLiveSchemaReloader({
     config,
+    barrier: composition?.barrier,
     commitSchema: async (candidate) => {
       const next = await startGeneration(candidate.schema);
       const old = current;
@@ -100,6 +109,14 @@ export async function startGraphqlServer(
     },
   });
   app.use((req, res, next) => currentMiddleware(req, res, next));
+  const effortGraph = await composition?.attach(reloader);
+  if (effortGraph) {
+    try {
+      await effortGraph.writer.recover();
+    } catch (error) {
+      console.error('Flatbread effort-graph recovery failed:', error);
+    }
+  }
   await new Promise<void>((listenResolve) =>
     httpServer.listen({ port: options.port ?? 5050 }, listenResolve)
   );
@@ -111,6 +128,7 @@ export async function startGraphqlServer(
   let subscription: { unsubscribe(): Promise<void> } | undefined;
   let coordinator: WatchCoordinator | undefined;
   if (options.watch) {
+    const { subscribe } = await import('@parcel/watcher');
     coordinator = createWatchCoordinator({
       config,
       cwd,
@@ -166,6 +184,7 @@ export async function startGraphqlServer(
   return {
     port,
     reloader,
+    effortGraph,
     async close() {
       if (closed) return;
       closed = true;
