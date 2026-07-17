@@ -1,0 +1,44 @@
+{
+  "name": "@flatbread/effort-graph",
+  "version": "0.1.0-alpha.0",
+  "description": "Standalone semantic writer for the Flatbread Effort Graph — journaled multi-file mutations over epistemic markdown artifacts.",
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch src",
+    "test": "pnpm --dir ../.. exec ava \"packages/effort-graph/src/__tests__/**/*.test.ts\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FlatbreadLabs/flatbread.git",
+    "directory": "packages/effort-graph"
+  },
+  "homepage": "https://github.com/FlatbreadLabs/flatbread#readme",
+  "author": "Tony Ketcham <ketcham.dev@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/FlatbreadLabs/flatbread/issues"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "*.d.ts"
+  ],
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@flatbread/core": "workspace:*",
+    "@flatbread/transformer-markdown": "workspace:*",
+    "@types/node": "25.6.2",
+    "tsup": "8.5.1",
+    "typescript": "6.0.3"
+  }
+}
