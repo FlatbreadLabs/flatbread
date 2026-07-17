@@ -256,7 +256,7 @@ test.serial('relational filter query', async (t) => {
 });
 
 test.serial(
-  'validates duplicate IDs before returning a cached schema',
+  'revalidates duplicate IDs when rebuilding with the same config',
   async (t) => {
     let authorEntries: EntryNode[] = [{ id: 'author-one', name: 'Author One' }];
     const collection = 'CacheDuplicateAuthor';
@@ -301,5 +301,54 @@ test.serial(
     );
     t.regex(error?.message ?? '', /virtual\/authors\/author-one\.json/);
     t.regex(error?.message ?? '', /virtual\/authors\/ author-one \.json/);
+  }
+);
+
+test.serial(
+  'rebuilds providers from changed content with the same config object',
+  async (t) => {
+    let authorEntries: EntryNode[] = [{ id: 'author-one', name: 'Author One' }];
+    const source = {
+      fetch: async () => ({
+        VirtualAuthor: authorEntries.map((entry) => {
+          const file = new VFile({
+            path: `virtual/authors/${String(entry.id)}.json`,
+          });
+          file.data.entry = entry;
+          return file;
+        }),
+      }),
+    };
+    const config = {
+      source,
+      transformer: {
+        extensions: ['.json'],
+        inspect: (input: EntryNode) => JSON.stringify(input),
+        parse: (input: VFile) => input.data.entry as EntryNode,
+      },
+      content: [
+        {
+          path: 'virtual/authors',
+          collection: 'VirtualAuthor',
+        },
+      ],
+    };
+
+    const firstProvider = new FlatbreadProvider(config);
+    const firstResult = await firstProvider.query({
+      source: `query { allVirtualAuthors { name } }`,
+    });
+    t.deepEqual(firstResult.data, {
+      allVirtualAuthors: [{ name: 'Author One' }],
+    });
+
+    authorEntries = [{ id: 'author-one', name: 'Updated Author' }];
+    const secondProvider = new FlatbreadProvider(config);
+    const secondResult = await secondProvider.query({
+      source: `query { allVirtualAuthors { name } }`,
+    });
+    t.deepEqual(secondResult.data, {
+      allVirtualAuthors: [{ name: 'Updated Author' }],
+    });
   }
 );
