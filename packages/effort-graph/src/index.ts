@@ -10,3 +10,5 @@ export * from './snapshot.js';
 export * from './decision-lifecycle.js';
 export { acquireWriterLock } from './lock.js';
 export { recoverJournal } from './journal.js';
+export * from './live.js';
+export * from './journalBarrier.js';

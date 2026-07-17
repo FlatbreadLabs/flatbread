@@ -15,12 +15,12 @@ export function createEffortGraphWriter(
   options: EffortGraphWriterOptions
 ): EffortGraphWriter {
   const snapshotSource = options.index ?? filesystemEffortGraphSnapshotSource,
-    indexer = options.indexer ?? { reindex: async () => {} },
+    publisher = options.publisher ?? { publish: async () => {} },
     clock = options.clock ?? (() => new Date());
   async function recover() {
     const lock = await acquireWriterLock(options.rootDir, options.lockOptions);
     try {
-      return await recoverJournal(options.rootDir, (r) => indexer.reindex(r));
+      return await recoverJournal(options.rootDir, (p) => publisher.publish(p));
     } finally {
       await lock.release();
     }
@@ -28,7 +28,7 @@ export function createEffortGraphWriter(
   async function mutate(input: any): Promise<MutationResult> {
     const lock = await acquireWriterLock(options.rootDir, options.lockOptions);
     try {
-      await recoverJournal(options.rootDir, (r) => indexer.reindex(r));
+      await recoverJournal(options.rootDir, (p) => publisher.publish(p));
       let current = 0;
       try {
         current =
@@ -53,7 +53,7 @@ export function createEffortGraphWriter(
         lock.token,
         writes,
         generation,
-        (r) => indexer.reindex(r),
+        (p) => publisher.publish(p),
         () => lock.verify()
       );
       const artifacts: WrittenArtifact[] = writes.map((w) => {

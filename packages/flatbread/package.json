@@ -37,6 +37,7 @@
     "@flatbread/codegen": "workspace:*",
     "@flatbread/config": "workspace:*",
     "@flatbread/core": "workspace:*",
+    "@flatbread/effort-graph": "workspace:*",
     "@flatbread/source-filesystem": "workspace:*",
     "@flatbread/transformer-markdown": "workspace:*",
     "@flatbread/transformer-yaml": "workspace:*",

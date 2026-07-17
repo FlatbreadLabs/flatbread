@@ -23,15 +23,15 @@ export interface MutationResult {
   artifacts: WrittenArtifact[];
   touched: TouchedArtifact[];
 }
-export interface ReindexRequest {
+export interface CommittedGenerationPublication {
   rootDir: string;
   transactionId: string;
   targetGeneration: GenerationToken;
   changedPaths: readonly string[];
   touchedIds: readonly string[];
 }
-export interface EffortGraphIndexer {
-  reindex(request: ReindexRequest): Promise<void>;
+export interface CommittedGenerationPublisher {
+  publish(publication: CommittedGenerationPublication): Promise<void>;
 }
 export interface IndexedArtifact {
   id: string;
@@ -56,7 +56,7 @@ export interface WriterLockOptions {
 export interface EffortGraphWriterOptions {
   rootDir: string;
   index?: import('./snapshot.js').EffortGraphSnapshotSource;
-  indexer?: EffortGraphIndexer;
+  publisher?: CommittedGenerationPublisher;
   clock?: () => Date;
   randomBytes?: (length: number) => Uint8Array;
   lockOptions?: Partial<WriterLockOptions>;

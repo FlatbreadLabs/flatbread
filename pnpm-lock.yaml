@@ -372,6 +372,9 @@ importers:
       '@flatbread/core':
         specifier: workspace:*
         version: link:../core
+      '@flatbread/effort-graph':
+        specifier: workspace:*
+        version: link:../effort-graph
       '@flatbread/source-filesystem':
         specifier: workspace:*
         version: link:../source-filesystem

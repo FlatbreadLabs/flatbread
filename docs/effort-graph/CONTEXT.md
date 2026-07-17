@@ -8,6 +8,8 @@ The Effort Graph is **built on top of** Flatbread's content-layer vocabulary (se
 
 **Operational provenance** (which session produced this, which agent, which model, which DAG run) is captured as **frontmatter fields** on these primitives, not as peer collections. The durable transcript record lives next to the graph under `.flatbread/artifacts/` (see [`packages/proof/README.md`](../../packages/proof/README.md) §Artifact Output).
 
+**Committed generation.** The opaque journal generation token returned by an Effort Graph mutation. It is published only after the full save group has produced a committed live schema (the `CommittedGenerationPublisher` seam — not to be confused with `EffortGraphIndex`, the plan-time read interface). It is a different counter from any process-local live-schema generation; the committed-generation bridge maps the former to the latter for strict readers.
+
 ---
 
 ### Effort

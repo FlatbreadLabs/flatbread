@@ -15,7 +15,11 @@ import {
   EffortGraphLockedError,
   EffortGraphReindexFailedError,
 } from './errors.js';
-import type { PlannedWrite, RecoveryResult, ReindexRequest } from './types.js';
+import type {
+  PlannedWrite,
+  RecoveryResult,
+  CommittedGenerationPublication,
+} from './types.js';
 
 async function fsyncFile(path: string): Promise<void> {
   const handle = await open(path, 'r+');
@@ -81,7 +85,7 @@ async function removeTempRemnants(root: string, relativePaths: string[]) {
 
 export async function recoverJournal(
   root: string,
-  reindex: (r: ReindexRequest) => Promise<void>
+  publish: (r: CommittedGenerationPublication) => Promise<void>
 ): Promise<RecoveryResult> {
   const dir = join(root, '.journal', 'txns');
   await mkdir(dir, { recursive: true });
@@ -134,7 +138,7 @@ export async function recoverJournal(
         }
       }
       try {
-        await reindex({
+        await publish({
           rootDir: root,
           transactionId: intent.transactionId,
           targetGeneration: String(intent.targetGeneration),
@@ -164,7 +168,7 @@ export async function commitJournal(
   token: string,
   writes: PlannedWrite[],
   generation: number,
-  reindex: (r: ReindexRequest) => Promise<void>,
+  publish: (r: CommittedGenerationPublication) => Promise<void>,
   verifyLock: () => Promise<boolean> = async () => true
 ): Promise<string> {
   const transactionId = `${Date.now()}-${token.slice(0, 8)}`,
@@ -205,7 +209,7 @@ export async function commitJournal(
   await writeFileDurable(join(td, 'committed'), '');
   await fsyncDir(td);
   try {
-    await reindex({
+    await publish({
       rootDir: root,
       transactionId,
       targetGeneration: String(generation),
