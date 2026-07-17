@@ -10,6 +10,9 @@ export * from './types';
 
 /**
  * Transforms a markdown file (content node) to JSON containing any frontmatter data or content.
+ * `_filename` and `_path` are provisional source context; core overwrites them
+ * after parsing. `_slug` is transformer-derived. Input captures are spread
+ * before document data, so document data wins conflicts.
  *
  * @param {VFile} input - A VFile object representing a content node.
  * @param {MarkdownTransformerConfig} config - A configuration object.

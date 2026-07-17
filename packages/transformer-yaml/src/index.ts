@@ -6,6 +6,9 @@ import type { VFile } from 'vfile';
 
 /**
  * Transforms a yaml file (content node) to JSON.
+ * `_filename` and `_path` are provisional source context; core overwrites them
+ * after parsing. `_slug` is transformer-derived. Input captures are spread
+ * before document data, so document data wins conflicts.
  *
  * @param {VFile} input - A VFile object representing a content node.
  */

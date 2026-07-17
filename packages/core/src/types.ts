@@ -76,12 +76,16 @@ export interface ConfigResult<O> {
  */
 export interface Transformer {
   /**
-   * Parse a given source file into its contained data fields and an unnormalized representation of the content.
+   * Parse a source file into its data. Transformers that want source path
+   * captures must spread `input.data`; document data wins conflicts when it is
+   * spread after captures. Core overwrites `_path` and `_filename` after parse.
    * @param input Node to transform
    */
   parse?: (input: VFile) => EntryNode;
+  /** GraphQL-schema-construction-only fragments; never used by record production or validation. */
   preknownSchemaFragments?: () => Record<string, unknown>;
   inspect: (input: EntryNode) => string;
+  /** Parser-routing keys match exact `VFile.extname`; later transformers win duplicates. */
   extensions: string[];
 }
 
@@ -109,10 +113,27 @@ export interface ContentEntry<
 export interface Source {
   initialize?: (flatbreadConfig: LoadedFlatbreadConfig) => void;
   fetchByType?: (path: string) => Promise<VFile[]>;
+  /** Fetch grouped files; fetchPaths fetches flat files. Capture patterns place values in VFile.data. */
   fetchPaths?: (paths: readonly string[]) => Promise<VFile[]>;
   fetch: (allContentTypes: Content) => Promise<Record<string, VFile[]>>;
 }
 
+/**
+ * Source-context fields on a produced record. Transformers may stamp `_path`
+ * and `_filename` provisionally, but record production overwrites both from
+ * the source VFile after parse returns — core is authoritative. `_slug` is
+ * transformer-derived and is never stamped by core.
+ */
+export type SourceContextFields = {
+  _path?: string;
+  _filename?: string;
+  _slug?: string;
+};
+
+/**
+ * A valid snapshot is built from a complete produceRecords→validateRecords
+ * pass; generateSchema trusts a supplied graph as already validated.
+ */
 export interface ContentGraphSnapshot {
   readonly config: LoadedFlatbreadConfig;
   readonly nodesByCollection: Readonly<Record<string, ContentNode[]>>;

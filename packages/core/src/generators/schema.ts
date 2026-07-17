@@ -2,7 +2,6 @@ import { schemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
 import { cloneDeep, merge } from 'lodash-es';
 import plur from 'plur';
-import { VFile } from 'vfile';
 import { cacheSchema, checkCacheForSchema } from '../cache/cache';
 import {
   generateArgsForAllItemQuery,
@@ -16,15 +15,13 @@ import {
   ContentNode,
   EntryNode,
   LoadedFlatbreadConfig,
-  Transformer,
 } from '../types';
-import { map } from '../utils/map';
 import {
   getNodeIdentifier,
   normalizeIdentifier,
   normalizeOptionalIdentifier,
 } from '../utils/ids';
-import { validateCollectionReferences } from '../utils/references';
+import { produceRecords, validateRecords } from '../records';
 import { generateCollection } from './generateCollection';
 
 interface RootQueries {
@@ -37,7 +34,8 @@ interface ResolverPayload {
 }
 
 /**
- * Generates a GraphQL schema from content nodes.
+ * Generates a GraphQL schema from content nodes. A supplied content graph is
+ * trusted as already validated by buildContentGraph or patchContentGraph.
  *
  * @param configResult the result of the config file processing
  */
@@ -61,13 +59,8 @@ export async function generateSchema(
   } else {
     config.source.initialize?.(config);
     const allContentNodes = await config.source.fetch(config.content);
-    allContentNodesJSON = optionallyTransformContentNodes(
-      allContentNodes,
-      config
-    );
-    contentNodesByCollection =
-      validateCollectionIdentifiers(allContentNodesJSON);
-    validateCollectionReferences(allContentNodesJSON, config.content);
+    allContentNodesJSON = produceRecords(allContentNodes, config);
+    contentNodesByCollection = validateRecords(allContentNodesJSON, config);
   }
 
   // Content validation must run before returning a cached schema because the
@@ -288,104 +281,3 @@ const fetchPreknownSchemaFragments = (
     {}
   );
 };
-
-export function validateCollectionIdentifiers(
-  allContentNodesJSON: Record<string, EntryNode[]>
-): Record<string, ContentNode[]> {
-  const errors: string[] = [];
-  const contentNodesByCollection: Record<string, ContentNode[]> = {};
-
-  Object.entries(allContentNodesJSON).forEach(([collection, nodes]) => {
-    const seen = new Map<string, EntryNode>();
-    contentNodesByCollection[collection] = [];
-
-    nodes.forEach((node) => {
-      try {
-        const normalizedId = getNodeIdentifier(node, collection);
-        const existing = seen.get(normalizedId);
-
-        if (existing) {
-          errors.push(
-            `${collection} record id "${normalizedId}" is duplicated after normalization${sourceContext(
-              existing
-            )}${sourceContext(node)}`
-          );
-        } else {
-          seen.set(normalizedId, node);
-        }
-        contentNodesByCollection[collection].push(node as ContentNode);
-      } catch (error) {
-        errors.push(error instanceof Error ? error.message : String(error));
-      }
-    });
-  });
-
-  if (errors.length > 0) {
-    errors.sort();
-    throw new Error(
-      `Flatbread found ${errors.length} invalid record ID${
-        errors.length === 1 ? '' : 's'
-      }:\n${errors.map((message) => `- ${message}`).join('\n')}`
-    );
-  }
-
-  return contentNodesByCollection;
-}
-
-function sourceContext(node: EntryNode): string {
-  return typeof node._path === 'string' ? ` (${node._path})` : '';
-}
-
-function getTransformerExtensionMap(
-  transformer: Transformer[]
-): Map<string, Transformer> {
-  const transformerMap = new Map<string, Transformer>();
-  transformer.forEach((t) => {
-    t.extensions.forEach((extension) => {
-      transformerMap.set(extension, t);
-    });
-  });
-  return transformerMap;
-}
-
-/**
- * Transforms the content nodes to the expected JSON format. If no transformer is defined, the content nodes are returned as is.
- *
- * @param allContentNodes an object of keys and values - content type and content nodes to transform, respectively
- * @param config Flatbread config object
- */
-export const optionallyTransformContentNodes = (
-  allContentNodes: Record<string, VFile[]>,
-  config: LoadedFlatbreadConfig
-): Record<string, EntryNode[]> => {
-  if (config.transformer) {
-    const transformerMap = getTransformerExtensionMap(config.transformer);
-    // const globs = Object.entries(transformers);
-
-    /**
-     * Map through each content type,
-     * then map through each content node
-     * and transform it with the provided parser
-     *
-     * @todo if this becomes a performance bottleneck, consider overloading the source plugin API to accept a transform function so we can avoid mapping through the content nodes twice
-     * */
-
-    return map(allContentNodes, (node: VFile) => {
-      const transformer = transformerMap.get(node.extname ?? '');
-      if (!transformer?.parse) {
-        throw new Error(`no transformer found for ${node.path}`);
-      }
-      return withSourceContext(transformer.parse(node), node);
-    });
-  }
-
-  return allContentNodes as unknown as Record<string, EntryNode[]>;
-};
-
-function withSourceContext(entry: EntryNode, sourceNode: VFile): EntryNode {
-  return {
-    ...entry,
-    _path: sourceNode.path,
-    _filename: sourceNode.basename,
-  };
-}

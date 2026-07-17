@@ -1,4 +1,4 @@
-import { extname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import type { VFile } from 'vfile';
 import type {
   ContentGraphSnapshot,
@@ -8,11 +8,7 @@ import type {
   LoadedFlatbreadConfig,
 } from '../types';
 import { getNodeIdentifier, normalizeIdentifier } from '../utils/ids';
-import { validateCollectionReferences } from '../utils/references';
-import {
-  optionallyTransformContentNodes,
-  validateCollectionIdentifiers,
-} from './schema';
+import { classifyPath, produceRecords, validateRecords } from '../records';
 
 const keyFor = (collection: string, id: string) => `${collection}\u0000${id}`;
 
@@ -21,9 +17,8 @@ export async function buildContentGraph(
 ): Promise<ContentGraphSnapshot> {
   config.source.initialize?.(config);
   const fetched = await config.source.fetch(config.content);
-  const transformed = optionallyTransformContentNodes(fetched, config);
-  const nodesByCollection = validateCollectionIdentifiers(transformed);
-  validateCollectionReferences(transformed, config.content);
+  const produced = produceRecords(fetched, config);
+  const nodesByCollection = validateRecords(produced, config);
   return makeSnapshot(config, nodesByCollection);
 }
 
@@ -102,8 +97,7 @@ export async function patchContentGraph(
       indexed.node as ContentNode
     );
   }
-  validateCollectionIdentifiers(nodesByCollection);
-  validateCollectionReferences(nodesByCollection, previous.config.content);
+  validateRecords(nodesByCollection, previous.config);
   return makeSnapshot(previous.config, nodesByCollection);
 }
 
@@ -113,10 +107,13 @@ function transformFiles(
 ): Map<string, IndexedContentNode> {
   const grouped: Record<string, VFile[]> = {};
   for (const file of files) {
-    const collection = collectionForPath(resolve(file.path), config);
-    if (collection) (grouped[collection] ??= []).push(file);
+    const classification = classifyPath(resolve(file.path), config);
+    if (classification) {
+      file.data = { ...file.data, ...classification.captures };
+      (grouped[classification.collection] ??= []).push(file);
+    }
   }
-  const transformed = optionallyTransformContentNodes(grouped, config);
+  const transformed = produceRecords(grouped, config);
   const result = new Map<string, IndexedContentNode>();
   for (const [collection, nodes] of Object.entries(transformed)) {
     for (const node of nodes) {
@@ -186,37 +183,4 @@ function referencesFor(
     }
   }
   return result;
-}
-
-function collectionForPath(
-  path: string,
-  config: LoadedFlatbreadConfig
-): string | undefined {
-  const extension = extname(path).toLowerCase();
-  if (
-    !(config.loaded.extensions ?? []).some(
-      (item) => `.${item.replace(/^\./, '')}`.toLowerCase() === extension
-    )
-  ) {
-    return undefined;
-  }
-  return config.content.find((entry) => {
-    if (!entry.path) return false;
-    const root = resolve(entry.path);
-    if (path === root || path.startsWith(`${root}/`)) return true;
-    return pathPatternMatches(path, root);
-  })?.collection;
-}
-
-function pathPatternMatches(path: string, pattern: string): boolean {
-  const escaped = pattern
-    .split('/')
-    .map((segment) => {
-      if (/^\[[^\]]+\]/.test(segment)) {
-        return '[^/]+';
-      }
-      return segment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    })
-    .join('/');
-  return new RegExp(`^${escaped}(?:/|$)`).test(path);
 }

@@ -3,6 +3,7 @@ import filesystem from '@flatbread/source-filesystem';
 import markdownTransformer from '@flatbread/transformer-markdown';
 import { exportCollectionsAsJson } from '../json';
 import { initializeConfig } from '../../utils/initializeConfig';
+import { VFile } from 'vfile';
 
 test('exports selected collections as stable normalized JSON', async (t) => {
   const config = initializeConfig({
@@ -89,4 +90,28 @@ test('reuses validation diagnostics before exporting JSON', async (t) => {
   );
 
   t.regex(error?.message ?? '', /Author record id "123" is duplicated/);
+});
+
+test('fetches content exactly once per export', async (t) => {
+  const events: string[] = [];
+  const config = initializeConfig({
+    source: {
+      initialize: () => events.push('initialize'),
+      fetch: async () => {
+        events.push('fetch');
+        return { Post: [new VFile({ path: 'post.md', value: 'id: post' })] };
+      },
+    },
+    transformer: {
+      extensions: ['.md'],
+      inspect: String,
+      parse: () => ({ id: 'post' }),
+    },
+    content: [{ collection: 'Post', path: 'content' }],
+  });
+
+  const result = await exportCollectionsAsJson({ config });
+  t.is(events.filter((event) => event === 'fetch').length, 1);
+  t.deepEqual(events.slice(0, 2), ['initialize', 'fetch']);
+  t.is(result.Post[0].id, 'post');
 });
