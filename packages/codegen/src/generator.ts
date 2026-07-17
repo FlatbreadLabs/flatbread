@@ -669,11 +669,10 @@ export async function watchAndGenerate(
       if (path.includes('flatbread.config.')) {
         try {
           const { loadConfig } = await import('@flatbread/config');
-          const { initializeConfig } = await import('@flatbread/core');
           const configResult = await loadConfig({ cwd: process.cwd() });
 
           if (configResult.config) {
-            currentConfig = initializeConfig(configResult.config);
+            currentConfig = configResult.config;
             console.log(kleur.dim('🔧 Configuration reloaded'));
             // Refresh codegen options from the updated config so changes like outputFile/outputDir/documents are applied
             currentOptions = deriveOptionsFromConfig(
