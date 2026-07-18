@@ -167,19 +167,33 @@ export async function startGraphqlServer(
           : 'codegen refresh';
       console.error(`Flatbread ${label} failed:`, result.error);
     });
-    subscription = await subscribe(
-      cwd,
-      (error, events) => {
-        if (error) {
-          console.error('Flatbread watcher error:', error);
-          return;
-        }
-        coordinator!.push(
-          events.map((event) => ({ path: event.path, type: event.type }))
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        subscription = await subscribe(
+          cwd,
+          (error, events) => {
+            if (error) {
+              console.error('Flatbread watcher error:', error);
+              return;
+            }
+            coordinator!.push(
+              events.map((event) => ({ path: event.path, type: event.type }))
+            );
+          },
+          { ignore: ['**/node_modules/**', '**/.git/**', '**/dist/**'] }
         );
-      },
-      { ignore: ['**/node_modules/**', '**/.git/**', '**/dist/**'] }
-    );
+        break;
+      } catch (error: unknown) {
+        const isEnoent =
+          error instanceof Error &&
+          ((error as NodeJS.ErrnoException).code === 'ENOENT' ||
+            error.message.includes('No such file or directory'));
+        if (!isEnoent || attempt === 2) throw error;
+        await new Promise<void>((resolve) =>
+          setTimeout(resolve, 100 * (attempt + 1))
+        );
+      }
+    }
   }
   return {
     port,
