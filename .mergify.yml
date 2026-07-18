@@ -23,6 +23,7 @@ shared:
 
 queue_rules:
   - name: owner-bypass
+    merge_bot_account: tonyketcham
     queue_conditions:
       - author = tonyketcham
       - check-success = build (20.x, ubuntu-latest)
