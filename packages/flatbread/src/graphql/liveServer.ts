@@ -1,23 +1,22 @@
 import { subscribe } from '@parcel/watcher';
-import {
-  deriveFlatbreadWatchPatterns,
-  generateTypes,
-} from '@flatbread/codegen';
+import { generateTypes } from '@flatbread/codegen';
 import type {
   ConfigResult,
   LoadedFlatbreadConfig,
   LiveSchemaReloader,
   SchemaSnapshot,
 } from '@flatbread/core';
-import { createLiveSchemaReloader } from '@flatbread/core';
+import {
+  createLiveSchemaReloader,
+  createWatchCoordinator,
+  type WatchCoordinator,
+} from '@flatbread/core';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@as-integrations/express5';
 import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache';
 import cors from 'cors';
 import express, { type RequestHandler } from 'express';
 import http from 'http';
-import picomatch from 'picomatch';
-import { relative, resolve } from 'node:path';
 import { loadFlatbreadConfig } from '../utils/getSchema';
 
 export interface GraphqlServerOptions {
@@ -41,6 +40,11 @@ export async function startGraphqlServer(
   if (options.watch && !config.source.fetchPaths) {
     throw new Error(
       'Flatbread watch mode requires the configured source to implement fetchPaths(paths).'
+    );
+  }
+  if (options.watch && cwd !== process.cwd()) {
+    throw new Error(
+      `Flatbread watch mode requires cwd to equal process.cwd() (${process.cwd()}).`
     );
   }
   const app = express();
@@ -105,30 +109,46 @@ export async function startGraphqlServer(
       ? address.port
       : options.port ?? 5050;
   let subscription: { unsubscribe(): Promise<void> } | undefined;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const pending = new Set<string>();
-  const pendingDeleted = new Set<string>();
-  let pendingConfig = false;
-  let pendingDocuments = false;
-  let matchers = compileMatchers(config);
-  const refreshCodegen = async (
-    snapshot: SchemaSnapshot,
-    loadedConfig = snapshot.graph.config
-  ) => {
-    const cfg = loadedConfig.codegen;
-    // No codegen section in the config → nothing to refresh; avoids writing
-    // generated artifacts the user never asked for.
-    if (!cfg) return;
-    const result = await generateTypes(snapshot.schema, loadedConfig, {
-      ...cfg,
-      enabled: cfg.enabled ?? true,
-      documents: cfg.documents ?? [],
-    });
-    if (!result.success) {
-      console.error('Flatbread codegen refresh failed:', result.error);
-    }
-  };
+  let coordinator: WatchCoordinator | undefined;
   if (options.watch) {
+    coordinator = createWatchCoordinator({
+      config,
+      cwd,
+      documentPatterns: (cfg) => cfg.codegen?.documents ?? [],
+      loadConfig: async () => (await loadFlatbreadConfig(cwd)).config!,
+      applyConfig: async (cfg) => reloader.replaceConfig(cfg),
+      reindexContent: async (changes) =>
+        reloader.notifyChanged({
+          paths: changes.map(({ path }) => path),
+          source: 'watcher',
+        }),
+      refreshCodegen: async ({ config: loadedConfig }) => {
+        const cfg = loadedConfig.codegen;
+        if (!cfg) return;
+        const result = await generateTypes(
+          reloader.getSnapshot().schema,
+          loadedConfig,
+          {
+            ...cfg,
+            enabled: cfg.enabled ?? true,
+            documents: cfg.documents ?? [],
+          }
+        );
+        if (!result.success) {
+          throw new Error(result.error ?? 'Codegen refresh failed');
+        }
+      },
+    });
+    coordinator.subscribe((result) => {
+      if (result.status !== 'rejected') return;
+      const label =
+        result.kind === 'config'
+          ? 'config reload'
+          : result.kind === 'content'
+          ? 'content reindex'
+          : 'codegen refresh';
+      console.error(`Flatbread ${label} failed:`, result.error);
+    });
     subscription = await subscribe(
       cwd,
       (error, events) => {
@@ -136,54 +156,9 @@ export async function startGraphqlServer(
           console.error('Flatbread watcher error:', error);
           return;
         }
-        for (const event of events) {
-          const path = resolve(event.path);
-          const kind = classifyPath(path, matchers, cwd);
-          if (kind === 'config') pendingConfig = true;
-          else if (kind === 'document') pendingDocuments = true;
-          else if (kind === 'content') {
-            if (event.type === 'delete') {
-              pendingDeleted.add(path);
-              pending.add(path);
-            } else if (!pendingDeleted.has(path)) {
-              pending.add(path);
-            }
-          }
-        }
-        if (!timer) {
-          timer = setTimeout(async () => {
-            timer = undefined;
-            const paths = [...pending];
-            pending.clear();
-            pendingDeleted.clear();
-            if (pendingConfig) {
-              pendingConfig = false;
-              try {
-                const loaded = await loadFlatbreadConfig(cwd);
-                const result = await reloader.replaceConfig(loaded.config!);
-                if (result.status === 'committed') {
-                  matchers = compileMatchers(loaded.config!);
-                  await refreshCodegen(reloader.getSnapshot(), loaded.config);
-                } else console.error(result.error);
-              } catch (error) {
-                console.error('Flatbread config reload failed:', error);
-              }
-            }
-            if (paths.length > 0) {
-              const result = await reloader.notifyChanged({
-                paths,
-                source: 'watcher',
-              });
-              if (result.status === 'committed') {
-                await refreshCodegen(reloader.getSnapshot());
-              } else console.error(result.error);
-            }
-            if (pendingDocuments) {
-              pendingDocuments = false;
-              await refreshCodegen(reloader.getSnapshot());
-            }
-          }, 150);
-        }
+        coordinator!.push(
+          events.map((event) => ({ path: event.path, type: event.type }))
+        );
       },
       { ignore: ['**/node_modules/**', '**/.git/**', '**/dist/**'] }
     );
@@ -194,7 +169,7 @@ export async function startGraphqlServer(
     async close() {
       if (closed) return;
       closed = true;
-      if (timer) clearTimeout(timer);
+      await coordinator?.dispose();
       await subscription?.unsubscribe();
       await current?.stop();
       await new Promise<void>((closeResolve) => {
@@ -245,27 +220,4 @@ async function startGeneration(
     return middleware(req, res, next);
   };
   return { middleware: wrapped, stopWhenDrained, stop };
-}
-function compileMatchers(config: LoadedFlatbreadConfig) {
-  const patterns = deriveFlatbreadWatchPatterns(config, {
-    documents: config.codegen?.documents ?? [],
-  });
-  return {
-    config: patterns.config.map((pattern) => picomatch(pattern)),
-    content: patterns.content.map((pattern) => picomatch(pattern)),
-    documents: patterns.documents.map((pattern) => picomatch(pattern)),
-  };
-}
-function classifyPath(
-  path: string,
-  matchers: ReturnType<typeof compileMatchers>,
-  cwd: string
-): 'config' | 'content' | 'document' | undefined {
-  const relativePath = relative(cwd, path).split('\\').join('/');
-  if (matchers.config.some((matcher) => matcher(relativePath))) return 'config';
-  if (matchers.content.some((matcher) => matcher(relativePath)))
-    return 'content';
-  if (matchers.documents.some((matcher) => matcher(relativePath)))
-    return 'document';
-  return undefined;
 }

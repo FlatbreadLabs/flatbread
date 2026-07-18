@@ -22,6 +22,19 @@ export type {
   PathClassification,
   RecordsByCollection,
 } from './records';
+export {
+  createWatchCoordinator,
+  type WatchAdapterGeneration,
+  type WatchContentChange,
+  type WatchCoordinator,
+  type WatchCoordinatorOptions,
+  type WatchCoordinatorResult,
+  type WatchEvent,
+  type WatchEventType,
+  type WatchGenerationKind,
+  type WatchScheduler,
+  type WatchTimer,
+} from './watch/coordinator';
 
 export * from './types';
 export { FlatbreadProvider } from './providers/base';
