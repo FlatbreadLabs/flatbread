@@ -1,3 +1,8 @@
+import type {
+  CommittedGenerationPublication,
+  GenerationToken,
+} from './types.js';
+
 export class EffortGraphError extends Error {
   constructor(message: string, readonly code: string) {
     super(message);
@@ -24,5 +29,33 @@ export class EffortGraphReindexFailedError extends EffortGraphError {
 export class EffortGraphCorruptJournalError extends EffortGraphError {
   constructor(message: string) {
     super(message, 'EFFORT_GRAPH_CORRUPT_JOURNAL');
+  }
+}
+
+export class EffortGraphLiveSchemaRejectedError extends EffortGraphError {
+  constructor(
+    readonly publication: CommittedGenerationPublication,
+    readonly originalError: Error
+  ) {
+    super(
+      `Live schema rejected generation ${publication.targetGeneration}: ${originalError.message}`,
+      'EFFORT_GRAPH_LIVE_SCHEMA_REJECTED'
+    );
+  }
+}
+export class EffortGraphGenerationWaitTimeoutError extends EffortGraphError {
+  constructor(readonly token: GenerationToken, readonly timeoutMs: number) {
+    super(
+      `Timed out waiting for committed generation ${token} after ${timeoutMs}ms`,
+      'EFFORT_GRAPH_GENERATION_WAIT_TIMEOUT'
+    );
+  }
+}
+export class EffortGraphBarrierTimeoutError extends EffortGraphError {
+  constructor(readonly paths: readonly string[], readonly maxWaitMs: number) {
+    super(
+      `Timed out waiting for journal readability after ${maxWaitMs}ms`,
+      'EFFORT_GRAPH_BARRIER_TIMEOUT'
+    );
   }
 }
