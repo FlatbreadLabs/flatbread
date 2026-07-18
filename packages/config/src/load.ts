@@ -1,6 +1,7 @@
 import {
   ConfigResult,
   FlatbreadConfig,
+  LoadedFlatbreadConfig,
   initializeConfig,
 } from '@flatbread/core';
 import { build } from 'esbuild';
@@ -62,7 +63,7 @@ async function loadConfigFromBundledFile(
  * @returns Promise that resolves to the user config object.
  */
 export async function loadConfig({ cwd = process.cwd() } = {}): Promise<
-  ConfigResult<FlatbreadConfig>
+  ConfigResult<LoadedFlatbreadConfig>
 > {
   let configFileName: ConfigFileName;
   const files = await fs.readdir(cwd);

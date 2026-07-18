@@ -29,6 +29,5 @@ export async function loadFlatbreadConfig(
   const { loadConfig } = await import('@flatbread/config');
   const result = await loadConfig({ cwd });
   if (!result.config) throw new Error('Flatbread configuration was not found');
-  const { initializeConfig } = await import('@flatbread/core');
-  return { ...result, config: initializeConfig(result.config) };
+  return result;
 }

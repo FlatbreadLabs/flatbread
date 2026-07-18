@@ -1,4 +1,4 @@
-import { generateSchema, type LoadedFlatbreadConfig } from '@flatbread/core';
+import { generateSchema } from '@flatbread/core';
 import { loadConfig } from '@flatbread/config';
 import kleur from 'kleur';
 import type { CodegenOptions } from './types.js';
@@ -63,14 +63,7 @@ export function createCodegenCommand() {
         cwd: options.config ? dirname(options.config) : process.cwd(),
       });
 
-      if (!configResult.config) {
-        console.error(kleur.red('✗ Failed to load Flatbread configuration'));
-        process.exit(1);
-      }
-
-      // Initialize the configuration first
-      const { initializeConfig } = await import('@flatbread/core');
-      const loadedConfig = initializeConfig(configResult.config);
+      const loadedConfig = configResult.config!;
 
       // Generate GraphQL schema
       if (options.verbose) {
