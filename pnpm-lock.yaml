@@ -295,15 +295,9 @@ importers:
       graphql-compose:
         specifier: 9.0.8
         version: 9.0.8(graphql@16.5.0)
-      graphql-compose-json:
-        specifier: 6.2.0
-        version: 6.2.0(graphql-compose@9.0.8(graphql@16.5.0))
       lodash-es:
         specifier: 4.17.21
         version: 4.17.21
-      lru-cache:
-        specifier: 7.13.2
-        version: 7.13.2
       matcher:
         specifier: 5.0.0
         version: 5.0.0
@@ -5533,11 +5527,6 @@ packages:
   graphemer@1.4.0:
     resolution: {integrity: sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==}
 
-  graphql-compose-json@6.2.0:
-    resolution: {integrity: sha512-EfY6VPu6/Rah8xCEXa7WT1W/Hyd+wJZ08HFRDtEsZx3z/WRguDXDGi0kppGXWNQDc66PtEMfWvhDDsM/J8kiRQ==}
-    peerDependencies:
-      graphql-compose: ^7.0.4 || ^8.0.0 || ^9.0.0
-
   graphql-compose@9.0.8:
     resolution: {integrity: sha512-I3zvygpVz5hOWk2cYL6yhbgfKbNWbiZFNXlWkv/55U+lX6Y3tL+SyY3zunw7QWrN/qtwG2DqZb13SHTv2MgdEQ==}
     peerDependencies:
@@ -6569,10 +6558,6 @@ packages:
 
   lru-cache@7.13.1:
     resolution: {integrity: sha512-CHqbAq7NFlW3RSnoWXLJBxCWaZVBrfa9UEHId2M3AW8iEBurbqduNexEUCGc3SHc6iCYXNJCDi903LajSVAEPQ==}
-    engines: {node: '>=12'}
-
-  lru-cache@7.13.2:
-    resolution: {integrity: sha512-VJL3nIpA79TodY/ctmZEfhASgqekbT574/c4j3jn4bKXbSCnTTCH/KltZyvL2GlV+tGSMtsWyem8DCX7qKTMBA==}
     engines: {node: '>=12'}
 
   magic-string@0.30.17:
@@ -14512,10 +14497,6 @@ snapshots:
 
   graphemer@1.4.0: {}
 
-  graphql-compose-json@6.2.0(graphql-compose@9.0.8(graphql@16.5.0)):
-    dependencies:
-      graphql-compose: 9.0.8(graphql@16.5.0)
-
   graphql-compose@9.0.8(graphql@16.5.0):
     dependencies:
       graphql: 16.5.0
@@ -15744,8 +15725,6 @@ snapshots:
       yallist: 4.0.0
 
   lru-cache@7.13.1: {}
-
-  lru-cache@7.13.2: {}
 
   magic-string@0.30.17:
     dependencies:
