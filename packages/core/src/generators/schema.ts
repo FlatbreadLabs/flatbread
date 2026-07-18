@@ -1,14 +1,14 @@
 import { schemaComposer } from 'graphql-compose';
 import { composeWithJson } from 'graphql-compose-json';
-import { cloneDeep, merge } from 'lodash-es';
+import { merge } from 'lodash-es';
 import plur from 'plur';
 import { cacheSchema, checkCacheForSchema } from '../cache/cache';
 import {
   generateArgsForAllItemQuery,
   generateArgsForManyItemQuery,
   generateArgsForSingleItemQuery,
-} from '../generators/arguments';
-import resolveQueryArgs from '../resolvers/arguments';
+} from '../query-executor/graphql-arguments';
+import { createQueryExecutor } from '../query-executor';
 import {
   ConfigResult,
   ContentGraphSnapshot,
@@ -16,11 +16,6 @@ import {
   EntryNode,
   LoadedFlatbreadConfig,
 } from '../types';
-import {
-  getNodeIdentifier,
-  normalizeIdentifier,
-  normalizeOptionalIdentifier,
-} from '../utils/ids';
 import { produceRecords, validateRecords } from '../records';
 import { generateCollection } from './generateCollection';
 
@@ -80,6 +75,17 @@ export async function generateSchema(
   schemaComposer.clear();
 
   const preknownSchemaFragments = fetchPreknownSchemaFragments(config);
+  const executor = createQueryExecutor({
+    collections: contentNodesByCollection,
+    relations: Object.fromEntries(
+      config.content.map(({ collection, refs }) => [collection, refs ?? {}])
+    ),
+    fieldNameTransform: config.fieldNameTransform,
+    preknownSchemaFragments,
+    overridesByCollection: Object.fromEntries(
+      config.content.map(({ collection, overrides }) => [collection, overrides])
+    ),
+  });
 
   /**
    * For each content collection, reduce the nodes therein to one singular node containing the set of all fields in the collection. This reduced node for each collection then is fed into a GraphQL collection composer to recursively generate a GraphQL schema.
@@ -113,6 +119,8 @@ export async function generateSchema(
 
   // Main builder loop - iterate through each content type and generate query resolvers + relationships for it
   for (const [type, schema] of Object.entries(schemaArray)) {
+    const refs =
+      config.content.find((content) => content.collection === type)?.refs ?? {};
     const pluralType = plur(type, 2);
     const pluralTypeQueryName = 'all' + pluralType;
 
@@ -136,68 +144,27 @@ export async function generateSchema(
       name: 'findById',
       type: () => schema,
       description: `Find one ${type} by its ID`,
-      args: generateArgsForSingleItemQuery(),
-      resolve: (rp: ResolverPayload) => {
-        const idToFind = normalizeOptionalIdentifier(
-          rp.args.id,
-          `${type} query argument "id"`
-        );
-
-        if (idToFind === undefined) {
-          return undefined;
-        }
-
-        return cloneDeep(contentNodesByCollection[type]).find(
-          (node: ContentNode) => getNodeIdentifier(node, type) === idToFind
-        );
-      },
+      args: generateArgsForSingleItemQuery() as never,
+      resolve: (rp: ResolverPayload) =>
+        executor.findById({ name: type, refs }, rp.args.id),
     });
 
     schema.addResolver({
       name: 'findMany',
       type: () => [schema],
       description: `Find many ${pluralType} by their IDs`,
-      args: generateArgsForManyItemQuery(pluralType),
-      resolve: (rp: ResolverPayload) => {
-        if (rp.args.ids !== undefined && !Array.isArray(rp.args.ids)) {
-          throw new Error(
-            `${type} query argument "ids" must be an array of identifiers.`
-          );
-        }
-        const idsArg = rp.args.ids ?? [];
-        const idsToFind = idsArg.map((id: unknown): string =>
-          normalizeIdentifier(id, `${type} query argument "ids"`)
-        );
-        const matches =
-          cloneDeep(contentNodesByCollection[type])?.filter(
-            (node: ContentNode) =>
-              idsToFind?.includes(getNodeIdentifier(node, type))
-          ) ?? [];
-        return resolveQueryArgs(matches, rp.args, config, {
-          type: {
-            name: type,
-            pluralName: pluralType,
-            pluralQueryName: pluralTypeQueryName,
-          },
-        });
-      },
+      args: generateArgsForManyItemQuery(pluralType) as never,
+      resolve: (rp: ResolverPayload) =>
+        executor.findMany({ name: type, refs }, rp.args.ids, rp.args),
     });
 
     schema.addResolver({
       name: 'all',
-      args: generateArgsForAllItemQuery(pluralType),
+      args: generateArgsForAllItemQuery(pluralType) as never,
       type: () => [schema],
       description: `Return a set of ${pluralType}`,
-      resolve: (rp: ResolverPayload) => {
-        const nodes = cloneDeep(contentNodesByCollection[type]);
-        return resolveQueryArgs(nodes, rp.args, config, {
-          type: {
-            name: type,
-            pluralName: pluralType,
-            pluralQueryName: pluralTypeQueryName,
-          },
-        });
-      },
+      resolve: (rp: ResolverPayload) =>
+        executor.all({ name: type, refs }, rp.args),
     });
 
     schemaComposer.Query.addFields({
