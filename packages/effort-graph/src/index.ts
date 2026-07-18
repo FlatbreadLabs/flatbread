@@ -6,5 +6,7 @@ export * from './index-store.js';
 export * from './writer.js';
 export * from './preset.js';
 export * from './errors.js';
+export * from './snapshot.js';
+export * from './decision-lifecycle.js';
 export { acquireWriterLock } from './lock.js';
 export { recoverJournal } from './journal.js';

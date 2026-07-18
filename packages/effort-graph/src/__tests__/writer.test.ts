@@ -1,5 +1,5 @@
 import test from 'ava';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import matter from 'gray-matter';
@@ -351,4 +351,85 @@ test('generation tokens increment across successive mutations', async (t) => {
   t.is(third.generation, '3');
   t.truthy(third.artifacts[0].frontmatter);
   t.is(third.artifacts[0].frontmatter.status, 'paused');
+});
+
+test('writer uses one injected snapshot source', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'eg-snapshot-writer-'));
+  const id = 'eff-active--0123456789abcdef';
+  const snapshot = (await import('../snapshot.js')).createEffortGraphSnapshot([
+    {
+      id,
+      kind: 'effort',
+      path: `efforts/${id}.md`,
+      frontmatter: {
+        id,
+        title: 'E',
+        status: 'active',
+        created_at: '2025-01-01T00:00:00.000Z',
+      },
+      body: '',
+      rawBytes: Buffer.from('captured'),
+    },
+  ]);
+  let count = 0;
+  const writer = createEffortGraphWriter({
+    rootDir: root,
+    index: {
+      async buildSnapshot() {
+        count++;
+        return snapshot;
+      },
+    },
+  });
+  const result = await writer.mutate({
+    type: 'SetEffortStatus',
+    effortId: id,
+    status: 'paused',
+  });
+  t.is(count, 1);
+  t.is(result.artifacts.length, 1);
+  t.is(result.artifacts[0].id, id);
+});
+
+test('snapshot before-image drives journal-compatible end-to-end output', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'eg-snapshot-before-'));
+  const id = 'eff-captured--0123456789abcdef';
+  const captured = (await import('../snapshot.js')).createEffortGraphSnapshot([
+    {
+      id,
+      kind: 'effort',
+      path: `efforts/${id}.md`,
+      frontmatter: {
+        id,
+        title: 'Captured',
+        status: 'active',
+        created_at: '2025-01-01T00:00:00.000Z',
+      },
+      body: 'captured body',
+      rawBytes: Buffer.from('captured raw bytes'),
+    },
+  ]);
+  const writer = createEffortGraphWriter({
+    rootDir: root,
+    index: {
+      async buildSnapshot() {
+        await mkdir(join(root, 'efforts'), { recursive: true });
+        await import('node:fs/promises').then(({ writeFile }) =>
+          writeFile(
+            join(root, 'efforts', `${id}.md`),
+            'distinguishable disk bytes'
+          )
+        );
+        return captured;
+      },
+    },
+  });
+  const result = await writer.mutate({
+    type: 'SetEffortStatus',
+    effortId: id,
+    status: 'paused',
+  });
+  t.is(result.artifacts[0].frontmatter.title, 'Captured');
+  t.is(result.artifacts[0].frontmatter.status, 'paused');
+  t.is(result.artifacts[0].body, 'captured body\n');
 });
