@@ -1,4 +1,3 @@
-import { subscribe } from '@parcel/watcher';
 import { generateTypes } from '@flatbread/codegen';
 import type {
   ConfigResult,
@@ -167,19 +166,38 @@ export async function startGraphqlServer(
           : 'codegen refresh';
       console.error(`Flatbread ${label} failed:`, result.error);
     });
-    subscription = await subscribe(
-      cwd,
-      (error, events) => {
-        if (error) {
-          console.error('Flatbread watcher error:', error);
-          return;
-        }
-        coordinator!.push(
-          events.map((event) => ({ path: event.path, type: event.type }))
+    const { subscribe } = await import('@parcel/watcher');
+    const watcherIgnore = ['**/node_modules/**', '**/.git/**', '**/dist/**'];
+    for (let attempt = 0; ; attempt++) {
+      try {
+        subscription = await subscribe(
+          cwd,
+          (error, events) => {
+            if (error) {
+              console.error('Flatbread watcher error:', error);
+              return;
+            }
+            coordinator!.push(
+              events.map((event) => ({ path: event.path, type: event.type }))
+            );
+          },
+          { ignore: watcherIgnore }
         );
-      },
-      { ignore: ['**/node_modules/**', '**/.git/**', '**/dist/**'] }
-    );
+        break;
+      } catch (error) {
+        if (
+          attempt < 3 &&
+          error instanceof Error &&
+          error.message === 'No such file or directory'
+        ) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, 100 * (attempt + 1))
+          );
+          continue;
+        }
+        throw error;
+      }
+    }
   }
   return {
     port,
