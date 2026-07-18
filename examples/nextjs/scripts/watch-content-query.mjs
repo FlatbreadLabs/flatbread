@@ -42,18 +42,7 @@ async function loadFreshProvider() {
     throw new Error('Flatbread config did not load.');
   }
 
-  // generateSchema caches by config, but this demo intentionally rebuilds the
-  // content graph on every file event to show edit -> query update without a
-  // server restart.
-  const config = {
-    ...result.config,
-    content: result.config.content.map((entry) => ({
-      ...entry,
-      __demoCacheBust: Date.now(),
-    })),
-  };
-
-  return new FlatbreadProvider(config);
+  return new FlatbreadProvider(result.config);
 }
 
 async function render() {

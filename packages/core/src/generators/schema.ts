@@ -1,8 +1,6 @@
-import { schemaComposer } from 'graphql-compose';
-import { composeWithJson } from 'graphql-compose-json';
+import { SchemaComposer } from 'graphql-compose';
 import { merge } from 'lodash-es';
 import plur from 'plur';
-import { cacheSchema, checkCacheForSchema } from '../cache/cache';
 import {
   generateArgsForAllItemQuery,
   generateArgsForManyItemQuery,
@@ -17,6 +15,7 @@ import {
   LoadedFlatbreadConfig,
 } from '../types';
 import { produceRecords, validateRecords } from '../records';
+import { composeCollectionTC } from './composeCollection';
 import { generateCollection } from './generateCollection';
 
 interface RootQueries {
@@ -37,7 +36,6 @@ interface ResolverPayload {
 export async function generateSchema(
   configResult: ConfigResult<LoadedFlatbreadConfig> & {
     contentGraph?: ContentGraphSnapshot;
-    useSchemaCache?: boolean;
   }
 ) {
   const { config } = configResult;
@@ -58,21 +56,7 @@ export async function generateSchema(
     contentNodesByCollection = validateRecords(allContentNodesJSON, config);
   }
 
-  // Content validation must run before returning a cached schema because the
-  // cache key is derived from config, while invalid IDs/refs live in content.
-  const cachedSchema =
-    configResult.useSchemaCache === false
-      ? undefined
-      : checkCacheForSchema(config);
-
-  if (cachedSchema) {
-    return cachedSchema;
-  }
-
-  // graphql-compose's default schemaComposer is process-global. Reset it before
-  // building a fresh Flatbread schema so prior schemas with the same collection
-  // names do not leak fields or resolvers into this generation pass.
-  schemaComposer.clear();
+  const composer = new SchemaComposer();
 
   const preknownSchemaFragments = fetchPreknownSchemaFragments(config);
   const executor = createQueryExecutor({
@@ -96,15 +80,15 @@ export async function generateSchema(
   const schemaArray = Object.fromEntries(
     Object.entries(allContentNodesJSON).map(([collection, nodes]) => [
       collection,
-      composeWithJson(
+      composeCollectionTC(
+        composer,
         collection,
         generateCollection({
           collection,
           nodes,
           config,
           preknownSchemaFragments,
-        }),
-        { schemaComposer }
+        })
       ),
     ])
   );
@@ -167,7 +151,7 @@ export async function generateSchema(
         executor.all({ name: type, refs }, rp.args),
     });
 
-    schemaComposer.Query.addFields({
+    composer.Query.addFields({
       /**
        * Add find by ID to each content type
        */
@@ -188,12 +172,12 @@ export async function generateSchema(
 
   // Create map of references on each content node
   for (const { collection, refs } of config.content) {
-    const typeTC = schemaComposer.getOTC(collection);
+    const typeTC = composer.getOTC(collection);
 
     if (!refs) continue;
 
     Object.entries(refs).forEach(([refField, refType]) => {
-      const refTypeTC = schemaComposer.getOTC(refType);
+      const refTypeTC = composer.getOTC(refType);
 
       // If the current content type has this valid reference field as declared in the config, we'll add a resolver for this reference
       if (!typeTC.hasField(refField)) return;
@@ -226,11 +210,7 @@ export async function generateSchema(
     });
   }
 
-  const schema = schemaComposer.buildSchema();
-
-  if (configResult.useSchemaCache !== false) cacheSchema(config, schema);
-
-  return schema;
+  return composer.buildSchema();
 }
 
 /**

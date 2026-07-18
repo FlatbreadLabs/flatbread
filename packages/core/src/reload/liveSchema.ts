@@ -37,7 +37,6 @@ export async function createLiveSchemaReloader(
   const initialSchema = await generateSchema({
     config: options.config,
     contentGraph: initialGraph,
-    useSchemaCache: false,
   });
   await options.commitSchema({ schema: initialSchema, graph: initialGraph });
   snapshot = { schema: initialSchema, graph: initialGraph, generation: 0 };
@@ -50,7 +49,6 @@ export async function createLiveSchemaReloader(
       const schema = await generateSchema({
         config,
         contentGraph: graph,
-        useSchemaCache: false,
       });
       await options.commitSchema({ schema, graph });
       generation += 1;

@@ -173,8 +173,7 @@ test.serial(
     // p1 references a1, so it is a ref-affected neighbor and must be re-read.
     t.true(requestedPaths.includes(postPath));
 
-    // useSchemaCache: false → a fresh schema object per committed generation
-    // even though the config is identical.
+    // Each committed generation builds an isolated schema object even when the config is identical.
     t.not(reloader.getSnapshot().schema, initialSchema);
 
     const data = await queryData(
