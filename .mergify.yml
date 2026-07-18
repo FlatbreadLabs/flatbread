@@ -1,0 +1,38 @@
+# Keep the normal review requirement for contributors while allowing the
+# repository owner to use the same required CI through Mergify's queue.
+shared:
+  owner_conditions: &owner_conditions
+    - author = tonyketcham
+    - check-success = build (20.x, ubuntu-latest)
+    - check-success = build (22.x, ubuntu-latest)
+    - check-success = integration-nextjs (20.x, macos-latest)
+    - check-success = integration-nextjs (20.x, ubuntu-latest)
+    - check-success = integration-nextjs (20.x, windows-latest)
+    - check-success = integration-nextjs (22.x, macos-latest)
+    - check-success = integration-nextjs (22.x, ubuntu-latest)
+    - check-success = integration-nextjs (22.x, windows-latest)
+    - check-success = integration-sveltekit (20.x, macos-latest)
+    - check-success = integration-sveltekit (20.x, ubuntu-latest)
+    - check-success = integration-sveltekit (20.x, windows-latest)
+    - check-success = integration-sveltekit (22.x, macos-latest)
+    - check-success = integration-sveltekit (22.x, ubuntu-latest)
+    - check-success = integration-sveltekit (22.x, windows-latest)
+    - check-success = lint (20.x, ubuntu-latest)
+    - check-success = lint (22.x, ubuntu-latest)
+    - check-success = test (20.x, ubuntu-latest)
+    - check-success = test (22.x, ubuntu-latest)
+
+queue_rules:
+  - name: owner-bypass
+    batch_size: 1
+    merge_bot_account: tonyketcham
+    queue_conditions: *owner_conditions
+    merge_conditions: *owner_conditions
+    branch_protection_injection_mode: none
+
+  - name: default
+    batch_size: 1
+    branch_protection_injection_mode: queue
+
+merge_queue:
+  max_parallel_checks: 1
