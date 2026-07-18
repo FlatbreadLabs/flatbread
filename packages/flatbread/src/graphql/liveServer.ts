@@ -1,4 +1,3 @@
-import { subscribe } from '@parcel/watcher';
 import { generateTypes } from '@flatbread/codegen';
 import type {
   ConfigResult,
@@ -167,6 +166,7 @@ export async function startGraphqlServer(
           : 'codegen refresh';
       console.error(`Flatbread ${label} failed:`, result.error);
     });
+    const { subscribe } = await import('@parcel/watcher');
     subscription = await subscribe(
       cwd,
       (error, events) => {
