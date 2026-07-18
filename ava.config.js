@@ -1,8 +1,10 @@
 export default {
-  // GraphQL schema generation currently uses graphql-compose's process-global
-  // schemaComposer. Run AVA files serially so schema-building tests do not
-  // mutate that shared composer concurrently.
-  concurrency: 1,
+  // AVA isolates test files in worker processes. Test writers use unique
+  // mkdtemp directories (including the cwd-relative watcher fixtures), bind
+  // ephemeral ports, and close their servers; no test changes process.cwd().
+  // Four workers provide parallelism without over-subscribing real filesystem
+  // watchers during the suite's integration tests.
+  concurrency: 4,
   files: [
     'packages/**/*.test.(j|t)s',
     // Codegen + utils use Vitest under src/__tests__. Keep those out of the

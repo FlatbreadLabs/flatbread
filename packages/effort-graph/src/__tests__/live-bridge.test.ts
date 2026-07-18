@@ -91,7 +91,12 @@ test.serial('no journal publish before the live reindex commits', async (t) => {
   let txns: string[] = [];
   for (let attempt = 0; attempt < 20; attempt++) {
     await new Promise((resolve) => setTimeout(resolve, 5));
-    txns = await readdir(join(root, '.journal', 'txns'));
+    txns = await readdir(join(root, '.journal', 'txns')).catch(
+      (error: NodeJS.ErrnoException) => {
+        if (error.code === 'ENOENT') return [];
+        throw error;
+      }
+    );
     if (
       txns[0] &&
       (await readFile(join(root, '.journal', 'txns', txns[0], 'committed'))
