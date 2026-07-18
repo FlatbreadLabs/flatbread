@@ -1,4 +1,8 @@
-import { GraphQLFieldConfigArgumentMap, GraphQLInputType } from 'graphql';
+import {
+  GraphQLFieldConfigArgumentMap,
+  GraphQLInputType,
+  GraphQLSchema,
+} from 'graphql';
 import { Maybe } from 'graphql/jsutils/Maybe';
 import type { VFile } from 'vfile';
 
@@ -105,7 +109,51 @@ export interface ContentEntry<
 export interface Source {
   initialize?: (flatbreadConfig: LoadedFlatbreadConfig) => void;
   fetchByType?: (path: string) => Promise<VFile[]>;
+  fetchPaths?: (paths: readonly string[]) => Promise<VFile[]>;
   fetch: (allContentTypes: Content) => Promise<Record<string, VFile[]>>;
+}
+
+export interface ContentGraphSnapshot {
+  readonly config: LoadedFlatbreadConfig;
+  readonly nodesByCollection: Readonly<Record<string, ContentNode[]>>;
+  readonly nodeByPath: ReadonlyMap<string, IndexedContentNode>;
+  readonly pathByCollectionAndId: ReadonlyMap<string, string>;
+  readonly inboundReferences: ReadonlyMap<string, ReadonlySet<string>>;
+  readonly outboundReferences: ReadonlyMap<string, readonly string[]>;
+}
+
+export interface IndexedContentNode {
+  readonly collection: string;
+  readonly id: string;
+  readonly path: string;
+  readonly node: EntryNode;
+}
+
+export interface ChangedPaths {
+  readonly paths: readonly string[];
+  readonly source?: 'watcher' | 'writer';
+}
+
+export interface SchemaSnapshot {
+  readonly schema: GraphQLSchema;
+  readonly graph: ContentGraphSnapshot;
+  readonly generation: number;
+}
+
+export type ReindexResult =
+  | { status: 'committed'; generation: number }
+  | { status: 'rejected'; generation: number; error: Error };
+
+export interface ReindexBarrier {
+  waitUntilReadable(paths: readonly string[]): Promise<void>;
+}
+
+export interface LiveSchemaReloader {
+  readonly generation: number;
+  getSnapshot(): SchemaSnapshot;
+  notifyChanged(change: ChangedPaths): Promise<ReindexResult>;
+  replaceConfig(config: LoadedFlatbreadConfig): Promise<ReindexResult>;
+  waitForGeneration(minimumGeneration: number): Promise<SchemaSnapshot>;
 }
 
 export type SourcePlugin<

@@ -10,12 +10,9 @@ import type { ConfigResult, LoadedFlatbreadConfig } from '../';
 export async function getConfig(): Promise<
   ConfigResult<LoadedFlatbreadConfig>
 > {
-  const { loadConfig } = await import('@flatbread/config');
-
   try {
-    return await loadConfig();
+    return await loadFlatbreadConfig();
   } catch (err) {
-    // Provide a helpful error message if the config file is not found
     console.error(
       colors.red('\nFlatbread was not supplied a valid') +
         colors.bold(' config') +
@@ -24,4 +21,14 @@ export async function getConfig(): Promise<
     console.error(err);
     process.exit(1);
   }
+}
+
+export async function loadFlatbreadConfig(
+  cwd = process.cwd()
+): Promise<ConfigResult<LoadedFlatbreadConfig>> {
+  const { loadConfig } = await import('@flatbread/config');
+  const result = await loadConfig({ cwd });
+  if (!result.config) throw new Error('Flatbread configuration was not found');
+  const { initializeConfig } = await import('@flatbread/core');
+  return { ...result, config: initializeConfig(result.config) };
 }

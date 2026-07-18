@@ -27,6 +27,10 @@ import {
   checkPluginDependencies,
   formatMissingDepsWarning,
 } from './dependencyCheck.js';
+import {
+  deriveFlatbreadWatchPatterns,
+  flattenFlatbreadWatchPatterns,
+} from './watchPatterns.js';
 
 function emitMissingDepsWarning(missingDeps: string[]) {
   if (missingDeps.length === 0) return;
@@ -569,56 +573,6 @@ export async function generateTypesWithDocuments(
 }
 
 /**
- * Get file patterns to watch based on the Flatbread configuration.
- *
- * Builds a list of glob patterns that includes:
- * - Flatbread config files (flatbread.config.*)
- * - Content directories with supported file extensions
- * - GraphQL document files if specified in options
- *
- * @param config Loaded Flatbread configuration
- * @param options Codegen options that may include document paths
- * @returns Array of glob patterns to watch
- */
-function getWatchPatterns(
-  config: LoadedFlatbreadConfig,
-  options: CodegenOptions
-): string[] {
-  const patterns: string[] = [];
-
-  // Watch Flatbread config files
-  patterns.push('flatbread.config.*');
-
-  // Watch content directories from the configuration
-  if (config.content) {
-    for (const contentType of config.content) {
-      if (contentType.path) {
-        // Watch for all supported file extensions in content directories
-        const rawExtensions = config.loaded?.extensions || [
-          '.md',
-          '.mdx',
-          '.markdown',
-        ];
-        // Remove dots from extensions since we'll add one in the pattern
-        const extensions = rawExtensions.map((ext) =>
-          ext.startsWith('.') ? ext.slice(1) : ext
-        );
-        const extensionPattern =
-          extensions.length > 1 ? `{${extensions.join(',')}}` : extensions[0];
-        patterns.push(`${contentType.path}/**/*.${extensionPattern}`);
-      }
-    }
-  }
-
-  // Watch GraphQL document files if provided
-  if (options.documents && options.documents.length > 0) {
-    patterns.push(...options.documents);
-  }
-
-  return patterns;
-}
-
-/**
  * Watch for changes and regenerate types automatically.
  *
  * Monitors Flatbread config files, content directories, and GraphQL documents
@@ -673,7 +627,9 @@ export async function watchAndGenerate(
   await generateTypes(schema, config, currentOptions);
 
   // Set up file watchers
-  const patterns = getWatchPatterns(config, currentOptions);
+  const patterns = flattenFlatbreadWatchPatterns(
+    deriveFlatbreadWatchPatterns(config, currentOptions)
+  );
   console.log(kleur.dim(`Watching patterns: ${patterns.join(', ')}`));
 
   const ignored = [

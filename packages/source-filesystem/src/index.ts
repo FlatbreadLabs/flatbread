@@ -1,4 +1,5 @@
 import { defaultsDeep } from 'lodash-es';
+import { resolve, extname } from 'node:path';
 import { read } from 'to-vfile';
 
 import type { LoadedFlatbreadConfig, SourcePlugin } from '@flatbread/core';
@@ -8,7 +9,7 @@ import type {
   InitializedSourceFilesystemConfig,
   sourceFilesystemConfig,
 } from './types';
-import gatherFileNodes from './utils/gatherFileNodes';
+import gatherFileNodes, { getCaptureData } from './utils/gatherFileNodes';
 
 /**
  * Get nodes (files) from the directory
@@ -62,6 +63,47 @@ async function getAllNodes(
   return nodes;
 }
 
+async function getNodesFromPaths(
+  paths: readonly string[],
+  content: LoadedFlatbreadConfig['content'],
+  config: InitializedSourceFilesystemConfig
+): Promise<VFile[]> {
+  const extensions = config.extensions.map((extension) =>
+    extension.startsWith('.')
+      ? extension.toLowerCase()
+      : `.${extension.toLowerCase()}`
+  );
+  const files = await Promise.all(
+    paths
+      .filter((path) => extensions.includes(extname(path).toLowerCase()))
+      .map(async (path) => {
+        try {
+          const file = await read(path);
+          const entry = content.find((candidate) => {
+            if (!candidate.path) return false;
+            const patternParts = resolve(candidate.path)
+              .split('/')
+              .filter(Boolean);
+            const pathParts = resolve(path).split('/').filter(Boolean);
+            if (patternParts.length !== pathParts.length) return false;
+            return patternParts.every((part, index) => {
+              if (/^\[[^\]]+\].*$/.test(part) || part.includes('*'))
+                return true;
+              return part === pathParts[index];
+            });
+          });
+          if (entry?.path) {
+            file.data = getCaptureData(resolve(path), resolve(entry.path));
+          }
+          return file;
+        } catch {
+          return undefined;
+        }
+      })
+  );
+  return files.filter((file): file is VFile => Boolean(file));
+}
+
 /**
  * Source filesystem plugin for fetching flat-file content nodes from directories on disk.
  *
@@ -70,15 +112,19 @@ async function getAllNodes(
  */
 export const source: SourcePlugin = (sourceConfig?: sourceFilesystemConfig) => {
   let config: InitializedSourceFilesystemConfig;
+  let content: LoadedFlatbreadConfig['content'] = [];
 
   return {
     initialize: (flatbreadConfig: LoadedFlatbreadConfig) => {
       const { extensions } = flatbreadConfig.loaded;
       config = defaultsDeep(sourceConfig ?? {}, { extensions });
+      content = flatbreadConfig.content;
     },
     fetchByType: (path: string) => getNodesFromDirectory(path, config),
     fetch: (allContentTypes: Record<string, any>[]) =>
       getAllNodes(allContentTypes, config),
+    fetchPaths: (paths: readonly string[]) =>
+      getNodesFromPaths(paths, content, config),
   };
 };
 
