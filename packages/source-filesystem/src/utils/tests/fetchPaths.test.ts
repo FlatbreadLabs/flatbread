@@ -85,3 +85,26 @@ test('fetchPaths produces the same capture metadata as fetch for a [category]/[s
   );
   t.deepEqual(pathByPath.get(resolve(WORLD_PATH))!.data, fetchedWorld!.data);
 });
+
+test('fetchPaths supports globstar capture patterns', async (t) => {
+  const plugin = source();
+  plugin.initialize?.({
+    content: [
+      {
+        path: 'packages/source-filesystem/src/utils/tests/fixtures/captures/**/[slug].md',
+        collection: 'Recursive',
+      },
+    ],
+    loaded: { extensions: ['.md'] },
+  } as unknown as LoadedFlatbreadConfig);
+
+  const files = await plugin.fetchPaths!([HELLO_PATH, WORLD_PATH]);
+  t.is(files.length, 2);
+  t.deepEqual(
+    Object.fromEntries(files.map((file) => [resolve(file.path), file.data])),
+    {
+      [resolve(HELLO_PATH)]: { slug: 'hello' },
+      [resolve(WORLD_PATH)]: { slug: 'world' },
+    }
+  );
+});

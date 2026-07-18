@@ -172,7 +172,7 @@ function collectIdsByCollection(
       try {
         ids.add(getNodeIdentifier(node, collection));
       } catch {
-        // Invalid ids are surfaced by validateCollectionIdentifiers; skip
+        // Invalid ids are surfaced by validateRecords; skip
         // them here so the missing-ref pass can still report what it can.
       }
     }

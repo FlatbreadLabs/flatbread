@@ -47,6 +47,13 @@ When GraphQL is your **query interface**, the **generated GraphQL schema** descr
 
 **One loaded item** in a collection: the structured result of reading a file (metadata, body, derived fields) that your app treats as a single unit. “Record” here means **a document-shaped object in memory**, not a row in a remote database.
 
+### Record production
+
+The transformation of collection-grouped source files into records, with core
+stamping source context (`_path`, `_filename`) last. Record production excludes
+validation and path ownership, which are handled by `validateRecords` and
+`classifyPath`.
+
 ### Relation
 
 A **configured link** from entries in one collection to another (for example, `refs` in config mapping a post field to an `Author` collection). Relations express **associations between flat-file content**, not foreign keys managed by a separate database server.

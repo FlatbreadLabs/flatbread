@@ -1,14 +1,12 @@
-import { VFile } from 'vfile';
 import { relative } from 'node:path';
-import { generateSchema } from '../generators/schema';
 import {
   ConfigResult,
   ContentEntry,
   EntryNode,
   LoadedFlatbreadConfig,
-  Transformer,
 } from '../types';
 import { normalizeIdentifier } from '../utils/ids';
+import { produceRecords, validateRecords } from '../records';
 
 export interface JsonExportOptions {
   collections?: readonly string[];
@@ -26,7 +24,7 @@ export type JsonExportResult = Record<string, EntryNode[]>;
  * - record IDs and configured relation fields are normalized with the same ID
  *   semantics used by query resolvers;
  * - `_path` is emitted relative to `pathRoot` (default: `process.cwd()`);
- * - invalid IDs/refs fail through the same validation gate as schema
+ * - invalid IDs/refs fail through the same record validation seam as schema
  *   generation before export output is returned.
  */
 export async function exportCollectionsAsJson(
@@ -38,13 +36,10 @@ export async function exportCollectionsAsJson(
     throw new Error('Config is not defined');
   }
 
-  // Reuse schema generation as the validation gate so exports cannot silently
-  // serialize broken ids or refs.
-  await generateSchema(configResult);
-
   config.source.initialize?.(config);
   const rawNodes = await config.source.fetch(config.content);
-  const transformerByExtension = getTransformerExtensionMap(config.transformer);
+  const produced = produceRecords(rawNodes, config);
+  validateRecords(produced, config);
   const selected = new Set(
     options.collections ?? config.content.map((entry) => entry.collection)
   );
@@ -63,12 +58,11 @@ export async function exportCollectionsAsJson(
   }
   const result: JsonExportResult = {};
 
-  for (const [collection, nodes] of Object.entries(rawNodes)) {
+  for (const [collection, nodes] of Object.entries(produced)) {
     if (!selected.has(collection)) continue;
 
     const contentEntry = contentByCollection.get(collection);
     const records = nodes
-      .map((node) => parseNode(node, transformerByExtension))
       .map((entry) =>
         normalizeRecord(entry, contentEntry, options.pathRoot ?? process.cwd())
       )
@@ -87,34 +81,6 @@ export async function exportCollectionsAsJson(
       compareCodepoint(collectionA, collectionB)
     )
   );
-}
-
-function getTransformerExtensionMap(
-  transformer: Transformer[]
-): Map<string, Transformer> {
-  const transformerMap = new Map<string, Transformer>();
-  transformer.forEach((nextTransformer) => {
-    nextTransformer.extensions.forEach((extension) => {
-      transformerMap.set(extension, nextTransformer);
-    });
-  });
-  return transformerMap;
-}
-
-function parseNode(
-  node: VFile,
-  transformerByExtension: Map<string, Transformer>
-): EntryNode {
-  const transformer = transformerByExtension.get(node.extname ?? '');
-  if (!transformer?.parse) {
-    throw new Error(`no transformer found for ${node.path}`);
-  }
-
-  return {
-    ...transformer.parse(node),
-    _path: node.path,
-    _filename: node.basename,
-  };
 }
 
 function normalizeRecord(

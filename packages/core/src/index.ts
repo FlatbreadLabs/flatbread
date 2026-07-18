@@ -16,6 +16,12 @@ export {
   normalizeOptionalIdentifier,
 } from './utils/ids';
 export { validateCollectionReferences } from './utils/references';
+export { classifyPath, produceRecords, validateRecords } from './records';
+export type {
+  FilesByCollection,
+  PathClassification,
+  RecordsByCollection,
+} from './records';
 
 export * from './types';
 export { FlatbreadProvider } from './providers/base';
