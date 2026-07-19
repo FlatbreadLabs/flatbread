@@ -29,6 +29,7 @@
     "lint:fix:prettier": "pretty-quick --staged",
     "typecheck": "pnpm --filter @flatbread/proof typecheck",
     "play": "cd examples/nextjs && pnpm dev",
+    "play:efforts": "cd examples/effort-viz && pnpm dev",
     "play:build": "pnpm build && cd examples/nextjs && pnpm build",
     "prepublish:ci": "pnpm install --frozen-lockfile && pnpm build:types",
     "publish:ci": "esno scripts/publish.ts",

@@ -423,3 +423,38 @@ test.serial(
     );
   }
 );
+
+test.serial(
+  'subscribe notifies on committed generations and unsubscribe stops delivery',
+  async (t) => {
+    const project = makeProject(basicEntries());
+    const reloader = await createLiveSchemaReloader({
+      config: project.config,
+      commitSchema: async () => {},
+    });
+    const gens: number[] = [];
+    const unsub = reloader.subscribe((snapshot) => {
+      gens.push(snapshot.generation);
+    });
+
+    const postPath = project.path(`${POSTS_ROOT}/p1.json`);
+    project.store.set(postPath, {
+      id: 'p1',
+      title: 'Edited Once',
+      author: 'a1',
+    });
+    const first = await reloader.notifyChanged({ paths: [postPath] });
+    t.deepEqual(first, { status: 'committed', generation: 1 });
+    t.deepEqual(gens, [1]);
+
+    unsub();
+    project.store.set(postPath, {
+      id: 'p1',
+      title: 'Edited Twice',
+      author: 'a1',
+    });
+    const second = await reloader.notifyChanged({ paths: [postPath] });
+    t.deepEqual(second, { status: 'committed', generation: 2 });
+    t.deepEqual(gens, [1]);
+  }
+);

@@ -31,6 +31,7 @@ export async function createLiveSchemaReloader(
     generation: number;
     resolve: (value: SchemaSnapshot) => void;
   }> = [];
+  const listeners = new Set<(snapshot: SchemaSnapshot) => void>();
   const barrier = options.barrier ?? { waitUntilReadable: async () => {} };
 
   const initialGraph = await buildContentGraph(options.config);
@@ -56,6 +57,13 @@ export async function createLiveSchemaReloader(
       for (const waiter of waiters.splice(0)) {
         if (waiter.generation <= generation) waiter.resolve(snapshot);
         else waiters.push(waiter);
+      }
+      for (const listener of listeners) {
+        try {
+          listener(snapshot);
+        } catch (error) {
+          console.error('LiveSchemaReloader subscriber error:', error);
+        }
       }
       return { status: 'committed', generation };
     } catch (error) {
@@ -116,5 +124,11 @@ export async function createLiveSchemaReloader(
         : new Promise((resolve) =>
             waiters.push({ generation: minimumGeneration, resolve })
           ),
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
   };
 }

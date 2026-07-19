@@ -1,0 +1,139 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: light dark;
+  --background: #ffffff;
+  --foreground: #171717;
+  --muted: #737373;
+  --muted-foreground: #737373;
+  --border: #eaeaea;
+  --accent: #0070f3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --muted: #888888;
+    --muted-foreground: #888888;
+    --border: #262626;
+    --accent: #3291ff;
+  }
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #171717;
+  --muted: #737373;
+  --muted-foreground: #737373;
+  --border: #eaeaea;
+  --accent: #0070f3;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --muted: #888888;
+  --muted-foreground: #888888;
+  --border: #262626;
+  --accent: #3291ff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* Subtle atmospheric field behind the graph — not a flat wash. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(
+      120% 80% at 12% -10%,
+      color-mix(in srgb, var(--accent) 10%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      90% 70% at 88% 110%,
+      color-mix(in srgb, var(--foreground) 4%, transparent),
+      transparent 50%
+    );
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  color: var(--foreground);
+}
+
+/* R3F canvas: fill available space, transparent to CSS bg. */
+canvas {
+  outline: none;
+  touch-action: none;
+}
+
+/* Floating DOM labels anchored to graph nodes. Kept crisp + understated. */
+.effort-label {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 10.5px;
+  line-height: 1.15;
+  letter-spacing: -0.005em;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--background) 82%, transparent);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transform-origin: center bottom;
+}
+
+.effort-label-primary {
+  font-weight: 600;
+}
+
+.effort-label-selected {
+  font-weight: 600;
+  border-color: color-mix(in srgb, var(--foreground) 40%, transparent);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 4%);
+}
