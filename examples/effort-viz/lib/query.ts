@@ -46,10 +46,6 @@ export const EFFORT_GRAPH_QUERY = `
         id
       }
       derives_from
-      invalidates
-      rejected_by {
-        id
-      }
       supersedes {
         id
       }
@@ -75,9 +71,6 @@ export const EFFORT_GRAPH_QUERY = `
       severity
       created_at
       effort {
-        id
-      }
-      mitigated_by {
         id
       }
     }
@@ -129,7 +122,6 @@ export interface DecisionRecord {
   derives_from?: unknown;
   supersedes?: GraphRef[] | null;
   superseded_by?: GraphRef[] | null;
-  rejected_by?: GraphRef[] | null;
 }
 
 export interface ConstraintRecord {
@@ -149,7 +141,6 @@ export interface RiskRecord {
   severity?: string | null;
   created_at?: string | null;
   effort?: GraphRef | null;
-  mitigated_by?: GraphRef[] | null;
 }
 
 export interface EffortGraphQueryResult {
