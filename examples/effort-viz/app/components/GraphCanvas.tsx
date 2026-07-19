@@ -1,10 +1,16 @@
 'use client';
 
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Html, OrbitControls } from '@react-three/drei';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import type { Group, Mesh } from 'three';
+import type { Group, Mesh, OrthographicCamera } from 'three';
+
+/** Minimal controls surface used by FitCamera (drei OrbitControls instance). */
+interface PanZoomControlsHandle {
+  target: THREE.Vector3;
+  update: () => void;
+}
 
 import {
   createGraphSimulation,
@@ -122,9 +128,12 @@ function GraphScene({ nodes, edges, selectedId, onSelect, mode }: GraphSceneProp
     return map;
   }, [nodes]);
 
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
   return (
     <>
       <PanZoomControls />
+      <FitCamera sim={sim} nodeCount={nodes.length} />
       <group>
         {state.edges.map((edge) => (
           <EdgeLine
@@ -148,6 +157,7 @@ function GraphScene({ nodes, edges, selectedId, onSelect, mode }: GraphSceneProp
               mode={mode}
               selected={selectedId === node.id}
               onSelect={onSelect}
+              onHover={setHoveredId}
             />
           );
         })}
@@ -157,7 +167,9 @@ function GraphScene({ nodes, edges, selectedId, onSelect, mode }: GraphSceneProp
           const meta = nodeMetaById.get(node.id);
           if (!meta) return null;
           const isSelected = selectedId === node.id;
-          const shouldLabel = meta.kind === 'effort' || isSelected;
+          const isHovered = hoveredId === node.id;
+          const shouldLabel =
+            meta.kind === 'effort' || isSelected || isHovered;
           if (!shouldLabel) return null;
           return (
             <NodeLabel
@@ -172,6 +184,80 @@ function GraphScene({ nodes, edges, selectedId, onSelect, mode }: GraphSceneProp
       <CursorReset />
     </>
   );
+}
+
+/**
+ * Frame the orthographic camera on the live simulation bounds once the
+ * layout has mostly settled (or after a short timeout). Re-fits when the
+ * node count changes substantially (live add/remove bursts).
+ */
+function FitCamera({
+  sim,
+  nodeCount,
+}: {
+  sim: GraphSimulation;
+  nodeCount: number;
+}) {
+  const camera = useThree((s) => s.camera) as OrthographicCamera;
+  const controls = useThree((s) => s.controls) as PanZoomControlsHandle | null;
+  const size = useThree((s) => s.size);
+  const fittedForCount = useRef<number | null>(null);
+  const elapsedRef = useRef(0);
+
+  useEffect(() => {
+    fittedForCount.current = null;
+    elapsedRef.current = 0;
+  }, [nodeCount]);
+
+  useFrame((_, delta) => {
+    if (fittedForCount.current === nodeCount) return;
+    elapsedRef.current += delta;
+
+    const { nodes } = sim.getState();
+    const alive = nodes.filter(
+      (n) => n.growth > 0.35 && n.state !== 'retracting'
+    );
+    if (alive.length === 0) return;
+
+    let kinetic = 0;
+    for (const n of alive) kinetic += n.vx * n.vx + n.vy * n.vy;
+    const settled = kinetic < 2.5 || elapsedRef.current > 2.4;
+    if (!settled) return;
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (const n of alive) {
+      const r = Math.max(effectiveRadius(n), 1);
+      if (n.x - r < minX) minX = n.x - r;
+      if (n.x + r > maxX) maxX = n.x + r;
+      if (n.y - r < minY) minY = n.y - r;
+      if (n.y + r > maxY) maxY = n.y + r;
+    }
+
+    const width = Math.max(maxX - minX, 20);
+    const height = Math.max(maxY - minY, 20);
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    const pad = 1.35;
+    const zoom = Math.min(
+      size.width / (width * pad),
+      size.height / (height * pad),
+      12
+    );
+
+    camera.position.set(cx, cy, 100);
+    camera.zoom = Math.max(zoom, 0.75);
+    camera.updateProjectionMatrix();
+    if (controls) {
+      controls.target.set(cx, cy, 0);
+      controls.update();
+    }
+    fittedForCount.current = nodeCount;
+  });
+
+  return null;
 }
 
 /**
@@ -205,11 +291,19 @@ interface NodeMeshProps {
   mode: ColorMode;
   selected: boolean;
   onSelect: (id: string | null) => void;
+  onHover: (id: string | null) => void;
 }
 
 const CIRCLE_SEGMENTS = 40;
 
-function NodeMesh({ node, meta, mode, selected, onSelect }: NodeMeshProps) {
+function NodeMesh({
+  node,
+  meta,
+  mode,
+  selected,
+  onSelect,
+  onHover,
+}: NodeMeshProps) {
   const groupRef = useRef<Group>(null);
   const bodyRef = useRef<Mesh>(null);
   const ringRef = useRef<Mesh>(null);
@@ -260,9 +354,11 @@ function NodeMesh({ node, meta, mode, selected, onSelect }: NodeMeshProps) {
         onPointerOver={(e) => {
           e.stopPropagation();
           document.body.style.cursor = 'pointer';
+          onHover(node.id);
         }}
         onPointerOut={() => {
           document.body.style.cursor = '';
+          onHover(null);
         }}
       >
         <circleGeometry args={[1, CIRCLE_SEGMENTS]} />

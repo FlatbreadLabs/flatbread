@@ -46,6 +46,10 @@ export const EFFORT_GRAPH_QUERY = `
         id
       }
       derives_from
+      invalidates
+      rejected_by {
+        id
+      }
       supersedes {
         id
       }
@@ -71,6 +75,9 @@ export const EFFORT_GRAPH_QUERY = `
       severity
       created_at
       effort {
+        id
+      }
+      mitigated_by {
         id
       }
     }
