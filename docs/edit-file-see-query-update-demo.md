@@ -1,15 +1,16 @@
 # Edit file → see query update demo
 
 This is a single-process demo harness, not the long-running `flatbread start`
-server. Production live-editing still requires the unified watch design
-described in [local-dev-loop.md](./local-dev-loop.md).
+server. Production live-editing uses the unified watch path described in
+[local-dev-loop.md](./local-dev-loop.md).
 
-This demo is the current reproducible path for issue #158. It proves the core
-edit/query loop for the canonical **posts → authors + tags** model without
-requiring a manual process restart in this focused demo path.
+This demo is the current reproducible path for issue #158. It shows the
+edit/query loop for posts, authors, and tags without requiring a manual
+restart.
 
-The full `flatbread start` GraphQL server still builds its schema at startup
-(see [local dev loop boundaries](./local-dev-loop.md)). This demo therefore
+One-shot `flatbread start` builds its schema at startup; use
+`flatbread start --watch` for live content/config updates (see
+[local dev loop boundaries](./local-dev-loop.md)). This demo therefore
 uses a tiny watcher script that rebuilds the Flatbread schema per file event
 and executes the same posts/authors/tags query shape the generated TypeScript
 read API uses in the Next.js example.
@@ -82,6 +83,5 @@ pnpm --filter nextjs run demo:restore
 - ✅ The query includes post fields, tag facets, resolved Markdown author
   records, and resolved YAML author records.
 - ✅ The demo is reproducible from the monorepo root with pnpm commands.
-- ⚠️ The long-running `flatbread start` server still needs restart for content
-  and schema changes today.
-- ⚠️ The watcher script is a demo harness, not the final `flatbread start --watch` implementation described in [local-dev-loop.md](./local-dev-loop.md).
+- ⚠️ The demo watcher is a focused harness, not a replacement for the unified
+  `flatbread start --watch` path.

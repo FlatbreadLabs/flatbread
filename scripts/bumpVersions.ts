@@ -1,7 +1,9 @@
 import { execSync } from 'child_process';
+import { promises as fs } from 'node:fs';
 import inquirer from 'inquirer';
 import colors from 'kleur';
 import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   getMonorepoPublicPackages,
   PathedFlatbreadPackage,
@@ -11,6 +13,13 @@ type PackageChangeInfo = PathedFlatbreadPackage & {
   changedSinceLastPublish: boolean;
   lastPublishedAt?: string | null;
 };
+
+export interface WorkspaceBumpPackage {
+  name: string;
+  dependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+}
 
 const DEBUG = Boolean(process.env.FLATBREAD_BUMP_DEBUG);
 
@@ -226,35 +235,152 @@ async function detectChangedPackages(): Promise<PackageChangeInfo[]> {
   });
 }
 
-// Discover changed packages since last publish and prompt to bump only those
-const allPackages = await detectChangedPackages();
-const changedPackages = allPackages.filter((p) => p.changedSinceLastPublish);
-
-if (changedPackages.length === 0) {
-  console.log(
-    colors.bold().green('No package changes since last publish detected.')
-  );
-  process.exit(0);
+function getWorkspaceDependencies(pkg: WorkspaceBumpPackage): string[] {
+  return [
+    ...Object.entries(pkg.dependencies ?? {}),
+    ...Object.entries(pkg.optionalDependencies ?? {}),
+    ...Object.entries(pkg.peerDependencies ?? {}),
+  ]
+    .filter(([, range]) => range.startsWith('workspace:'))
+    .map(([name]) => name);
 }
 
-const { selectedPackages }: Record<string, PathedFlatbreadPackage[]> =
-  await inquirer.prompt([
-    {
-      type: 'checkbox',
-      name: 'selectedPackages',
-      message: 'Packages changed since last publish. Select which to bump:',
-      choices: changedPackages.map((pkg) => ({
-        name: `${getPkgName(pkg)}`,
-        value: pkg,
-        checked: true,
-      })),
-    },
-  ]);
+export function getWorkspaceDependentClosure(
+  packages: readonly WorkspaceBumpPackage[],
+  packageNames: readonly string[]
+): Set<string> {
+  const closure = new Set(packageNames);
+  let changed = true;
 
-selectedPackages.forEach((selectedPackage) => {
-  console.log(colors.bold(colors.yellow(`Bumping ${selectedPackage.name}`)));
-  execSync('pnpm bumpp --no-commit --no-push --no-tag', {
-    stdio: 'inherit',
-    cwd: path.resolve(path.join('packages', selectedPackage.dirName)),
-  });
-});
+  while (changed) {
+    changed = false;
+    for (const pkg of packages) {
+      if (
+        !closure.has(pkg.name) &&
+        getWorkspaceDependencies(pkg).some((dependency) =>
+          closure.has(dependency)
+        )
+      ) {
+        closure.add(pkg.name);
+        changed = true;
+      }
+    }
+  }
+
+  return closure;
+}
+
+export function markWorkspaceDependentsChanged<
+  T extends WorkspaceBumpPackage & { changedSinceLastPublish: boolean }
+>(packages: readonly T[]): T[] {
+  const changedNames = packages
+    .filter((pkg) => pkg.changedSinceLastPublish)
+    .map((pkg) => pkg.name);
+  const closure = getWorkspaceDependentClosure(packages, changedNames);
+
+  return packages.map((pkg) =>
+    closure.has(pkg.name) ? { ...pkg, changedSinceLastPublish: true } : pkg
+  );
+}
+
+export function validateBumpSelection(
+  packages: readonly WorkspaceBumpPackage[],
+  changedPackageNames: readonly string[],
+  selectedPackageNames: readonly string[]
+): string[] {
+  const changedNames = new Set(changedPackageNames);
+  const required = new Set<string>();
+  for (const selectedName of selectedPackageNames) {
+    for (const dependentName of getWorkspaceDependentClosure(packages, [
+      selectedName,
+    ])) {
+      if (dependentName !== selectedName && changedNames.has(dependentName)) {
+        required.add(dependentName);
+      }
+    }
+  }
+
+  return [...required]
+    .filter((name) => !selectedPackageNames.includes(name))
+    .sort();
+}
+
+async function main(): Promise<void> {
+  const allPackages = markWorkspaceDependentsChanged(
+    await detectChangedPackages()
+  );
+  const changedPackages = allPackages.filter((p) => p.changedSinceLastPublish);
+
+  if (changedPackages.length === 0) {
+    console.log(
+      colors.bold().green('No package changes since last publish detected.')
+    );
+    return;
+  }
+
+  const { selectedPackages }: Record<string, PathedFlatbreadPackage[]> =
+    await inquirer.prompt([
+      {
+        type: 'checkbox',
+        name: 'selectedPackages',
+        message:
+          'Packages changed since last publish (including workspace dependents). Select which to bump:',
+        choices: changedPackages.map((pkg) => ({
+          name: `${getPkgName(pkg)}`,
+          value: pkg,
+          checked: true,
+        })),
+      },
+    ]);
+  const missingDependents = validateBumpSelection(
+    allPackages,
+    changedPackages.map(getPkgName),
+    selectedPackages.map(getPkgName)
+  );
+  if (missingDependents.length > 0) {
+    throw new Error(
+      `Cannot deselect required workspace dependents: ${missingDependents.join(
+        ', '
+      )}`
+    );
+  }
+
+  for (const selectedPackage of selectedPackages) {
+    console.log(colors.bold(colors.yellow(`Bumping ${selectedPackage.name}`)));
+    execSync('pnpm bumpp --no-commit --no-push --no-tag', {
+      stdio: 'inherit',
+      cwd: path.resolve(path.join('packages', selectedPackage.dirName)),
+    });
+  }
+
+  const flatbreadManifest = JSON.parse(
+    await fs.readFile('packages/flatbread/package.json', 'utf8')
+  );
+  const effortGraphManifest = JSON.parse(
+    await fs.readFile('packages/effort-graph/package.json', 'utf8')
+  );
+  await fs.writeFile(
+    'packages/effort-graph/skills/effort-graph/release.json',
+    `${JSON.stringify(
+      {
+        format: 1,
+        flatbreadVersion: flatbreadManifest.version,
+        effortGraphVersion: effortGraphManifest.version,
+        gitTag: `v${flatbreadManifest.version}`,
+      },
+      null,
+      2
+    )}\n`
+  );
+  execSync('pnpm skills:sync', { stdio: 'inherit' });
+}
+
+const invokedScript = process.argv[1]
+  ? pathToFileURL(path.resolve(process.argv[1])).href
+  : '';
+if (
+  import.meta.url === invokedScript ||
+  fileURLToPath(import.meta.url) === process.argv[1]
+) {
+  void main();
+}

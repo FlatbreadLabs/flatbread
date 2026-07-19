@@ -11,7 +11,7 @@ stable collection snapshots and `exportCollectionsAsCsv(configResult, options)`
 for flat collection views. They are currently API surfaces rather than CLI
 commands.
 
-## Stability contract
+## What stays the same
 
 - Selected collection names are sorted by Unicode codepoint order.
 - Records are sorted by normalized record ID.

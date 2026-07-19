@@ -11,7 +11,7 @@ const common = {
   produced_in: z.string().optional(),
   created_by: z.string().optional(),
 };
-// Forward edges only; back-edges are writer-materialized projections (ADR-0004).
+// Forward edges are canonical; the writer materializes reverse projections.
 const edges = {
   derives_from: id.array().optional(),
   supersedes: id.array().optional(),

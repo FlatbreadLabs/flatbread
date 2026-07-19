@@ -16,39 +16,57 @@
   </a>
 </p>
 
-Turn flat files in Git into typed, relational content for your TypeScript app. **[GraphQL](https://graphql.org/)** and codegen are a common **read interface** for that content graph—not the only surface you can build; see [docs/positioning.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/positioning.md).
+Turn files in Git into typed, related content for your TypeScript app.
+**[GraphQL](https://graphql.org/)** and codegen are common ways to read that
+content, but they are not the only options. See
+[Flatbread positioning](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/positioning.md).
 
-**Flatbread** is a Git-native relational flat-file content layer for TypeScript apps. Your repo and filesystem are the source of truth; plugins (sources, transformers, and resolvers) extend how content is loaded and shaped.
+**Flatbread** reads content from your repository and file system. Plugins control
+how it reads files and turns them into data.
 
-**Who it's for:** Teams shipping TypeScript sites, internal tools, and starters who want **versioned, reviewable content** and **relationships between entries**—without standing up a CMS database or giving up ownership of where content lives.
+**Who it is for:** Teams building TypeScript sites, internal tools, and starter
+projects that want versioned, reviewable content and links between entries
+without setting up a CMS database.
 
-**Non-goals:**
+**What Flatbread does not do:**
 
-- Not a hosted CMS, dashboard, or authoring UI: Flatbread is a library and local workflow, not a full content-management product you log into.
-- Not a general-purpose GraphQL platform or a substitute for a general-purpose database (transactions, granular access control, and high-scale multi-writer workloads are out of scope).
-- Reliable live reload of content while the dev server runs is [not a supported pillar yet](https://github.com/FlatbreadLabs/flatbread/issues/65); expect to restart to pick up file changes.
+- It is not a hosted CMS, dashboard, or writing UI.
+- It is not a general-purpose GraphQL platform or database. Transactions,
+  detailed access control, and many concurrent writers are outside its scope.
+- Run `flatbread start --watch` to update valid content and config changes
+  while you work. Changes to Flatbread packages still need their own rebuild or
+  restart. See the
+  [local development loop](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/local-dev-loop.md).
 
-**GraphQL:** In the default toolkit, GraphQL is a common **read interface** for the content graph—schema generation and codegen are how many apps reach the data, not the definition of the product. More detail: [docs/positioning.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/positioning.md).
+**GraphQL:** GraphQL is a common way to read Flatbread data. It does not define
+the product. For more detail, see
+[Flatbread positioning](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/positioning.md).
 
-**Glossary:** Quick definitions for **collection**, **relation**, **ID**, **cardinality**, **validation**, **query interface**, and how the **generated GraphQL schema / operation types** map to those terms (GraphQL as one read path, not the whole product)—see [docs/glossary.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md).
+**Glossary:** Definitions for collections, relations, IDs, validation, and the
+generated GraphQL types are in the
+[glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md).
 
-**Local dev loop:** Codegen watch, schema rebuild, content reload, and framework restart boundaries are documented in [docs/local-dev-loop.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/local-dev-loop.md).
+**Local development:** Learn what updates automatically and what needs a
+restart in the
+[local development loop](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/local-dev-loop.md).
 
-**Portability:** Stable JSON snapshot export is available as a core API and documented in [docs/json-export.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/json-export.md).
+**Export:** The core API can create stable JSON snapshots. See
+[JSON export](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/json-export.md).
 
-**Ownership and exit:** Raw files, Git history, JSON/CSV exports, GraphQL introspection, and generated TypeScript all fit one portability story in [docs/data-ownership.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/data-ownership.md).
-
-**Roadmap:** Current keep/kill/iterate decisions from validation work live in [docs/roadmap.md](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/roadmap.md).
+**Keeping your data:** Your files, Git history, JSON/CSV exports, GraphQL
+introspection, and generated TypeScript remain available when you move away
+from Flatbread. See
+[data ownership](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/data-ownership.md).
 
 For contributing to this monorepo, use Node 20.19+ with pnpm 10.33.x. Runtime support for published packages is tracked by each package's own metadata.
-
-Born out of a desire to [Gridsome](https://gridsome.org/) (or [Gatsby](https://www.gatsbyjs.com/)) anything, this project harnesses a plugin architecture to be easily customizable to fit your use cases.
 
 ## Quickstart (posts, authors, and tags)
 
 🚧 This project is experimental; the API may change before `v1.0`.
 
-This repo’s **canonical first success path** is the **Next.js example** (`examples/nextjs`). It reads shared markdown under **`examples/content`** (mounted in that app as `content/` via symlink). Commands below are exact for that layout.
+Start with the **Next.js example** in `examples/nextjs`. It reads shared
+Markdown from `examples/content` through its `content/` symlink. The commands
+below use that layout.
 
 ### 1 · What you are modeling
 
@@ -123,7 +141,8 @@ Add **`tags`** (and any other fields) to your **`.graphql`** documents and rerun
 
 ### 3 · Run it from the repo root
 
-Prerequisites: **Node 20.19+**, **pnpm 10.33.x** (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+Prerequisites: **Node 20.19+** and **pnpm 10.33.x**. See
+[CONTRIBUTING.md](https://github.com/FlatbreadLabs/flatbread/blob/main/CONTRIBUTING.md).
 
 ```bash
 pnpm install
@@ -160,7 +179,10 @@ The generated file also exposes a prototype **TypeScript read API** derived from
 
 #### Choosing a read interface
 
-Flatbread starts with **Git-native relational content** for TypeScript apps: flat files define records, frontmatter fields, ids, and refs; `flatbread.config.js` tells Flatbread how those files become typed collections. **GraphQL is one interface over that typed model**, and the generated TypeScript read API is another app-facing surface generated from the same model.
+Flatbread starts with related content files for TypeScript apps. Files define
+records, frontmatter fields, IDs, and `refs`; `flatbread.config.js` tells
+Flatbread how to group them into typed collections. **GraphQL** and the
+generated TypeScript API are two ways for your app to read the same data.
 
 Use **GraphQL operations** when your app needs explicit query documents, custom selections, Apollo or other GraphQL clients, persisted operations, or direct access to the GraphQL endpoint. Add `.graphql` documents, include fields like **`tags`** and **`authors`**, and rerun codegen so operation types such as **`GetPostsAuthorsAndTagsQuery`** match the posts/authors/tags graph.
 
@@ -205,21 +227,29 @@ Wire your framework so the CLI wraps dev/build (**`flatbread start`** passes thr
 // package.json scripts (adapt the part after `--` to your framework)
 {
   "scripts": {
-    "dev": "flatbread start -- next dev --turbopack",
+    "dev": "flatbread start --watch -- next dev --turbopack",
     "build": "flatbread start -- next build"
   }
 }
 ```
 
-In the Next example from **`examples/nextjs`**, **`pnpm dev`** enables HTTPS locally and pairs Next with Flatbread. The GraphQL HTTP endpoint defaults to **`http://localhost:5057/graphql`**; the Next app is on **`3000`**. **`pnpm run dev`** here is distinct from **`next start`** alone (production Next without Flatbread unless you arrange serving yourself).
+In the Next.js example, **`pnpm dev`** starts Next with local HTTPS and starts
+Flatbread in watch mode. The GraphQL endpoint is
+**`http://localhost:5057/graphql`** and the Next app is on **`3000`**.
+**`pnpm start`** runs production Next without Flatbread.
 
 ```bash
 pnpm dev
 ```
 
-If the server starts cleanly, Flatbread prints the **`graphql`** URL. Opening it launches Apollo Studio against the generated schema—you can iterate on queries there, then freeze them into **`.graphql`** files and rerun **`flatbread codegen`**.
+When the server starts, Flatbread prints the **`graphql`** URL. Open it to use
+Apollo Studio with the generated schema. You can then save queries in
+**`.graphql`** files and run **`flatbread codegen`** again.
 
-Live reload of markdown while the process runs is **[not reliable yet](https://github.com/FlatbreadLabs/flatbread/issues/65)**—restart dev after content changes.
+With `--watch`, valid content and config changes update the running GraphQL
+server. See the
+[local development loop](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/local-dev-loop.md)
+for the cases that still need a rebuild or restart.
 
 ## Install Flatbread in your own repo
 
@@ -237,7 +267,8 @@ pnpm exec flatbread init
 
 Point **`content`** entries at **your** `posts/` and **`authors/`** folders, reuse the relational ideas above, and add **`codegen`** in config when you want **`generated/graphql.ts`**. Browse [`packages`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages) for plugins and resolver helpers.
 
-More detail on the bundled example (scripts, codegen watch, troubleshooting): **`examples/nextjs/README.md`**.
+More detail on the bundled example is in the
+[Next.js example README](https://github.com/FlatbreadLabs/flatbread/blob/main/examples/nextjs/README.md).
 
 ## Query arguments (GraphQL read interface)
 
@@ -367,7 +398,10 @@ Limits the number of returned entries to the specified amount. Accepts an intege
 
 ## Query from your app
 
-Follow [Quickstart (posts, authors, and tags)](#quickstart-posts-authors-and-tags) for the relational model, **codegen**, and typed results. For framework wiring and scripts, use **[examples/nextjs](https://github.com/FlatbreadLabs/flatbread/tree/main/examples/nextjs)** or [other examples](https://github.com/FlatbreadLabs/flatbread/tree/main/examples) (for example SvelteKit).
+Follow [Quickstart (posts, authors, and tags)](#quickstart-posts-authors-and-tags)
+to model related content, run codegen, and get typed results. For scripts and
+framework setup, use the
+[Next.js example](https://github.com/FlatbreadLabs/flatbread/tree/main/examples/nextjs).
 
 ## Field overrides
 
@@ -376,22 +410,20 @@ Field overrides allow you to define custom GraphQL types or resolvers on top of 
 ### Example
 
 ```js
-{
+const config = {
   content: {
-    ...
     overrides: [
       {
-        // using the field name
-        field: 'name'
-        // the resulting type is string
-        // this can be a custom gql type
+        // The source field name.
+        field: 'name',
+        // The GraphQL type to expose.
         type: 'String',
-        // capitalize the name
-        resolve: name => capitalize(name)
+        // Capitalize the value before returning it.
+        resolve: (name) => capitalize(name),
       },
-    ]
-  }
-}
+    ],
+  },
+};
 ```
 
 ### Supported syntax for field
@@ -427,4 +459,5 @@ Accepts a function which takes in field names and transforms them for the GraphQ
 
 # ☀️ Contributing
 
-See [CONTRIBUTING.md](https://github.com/FlatbreadLabs/flatbread/blob/main/CONTRIBUTING.md) for the release workflow (bumping versions and publishing).
+See [CONTRIBUTING.md](https://github.com/FlatbreadLabs/flatbread/blob/main/CONTRIBUTING.md)
+for release steps, including version bumps and publishing.

@@ -18,6 +18,9 @@
     "build:examples": "pnpm -r --filter {examples/*} build",
     "build:types": "pnpm -r --filter !{examples/*} exec -- tsup --dts-only",
     "dev": "pnpm -r --parallel --filter !{examples/*} dev",
+    "skills:sync": "pnpm --filter @flatbread/effort-graph skills:sync",
+    "skills:check": "pnpm --filter @flatbread/effort-graph skills:check",
+    "skills:pack-check": "pnpm --filter @flatbread/effort-graph skills:pack-check",
     "lint:eslint": "eslint packages/**/src",
     "lint:prettier": "prettier --check --plugin-search-dir=. .",
     "lint": "pnpm lint:prettier",
@@ -33,7 +36,7 @@
     "test:ava": "ava",
     "test:vitest": "pnpm --filter @flatbread/codegen --filter @flatbread/utils test",
     "test": "pnpm build && pnpm test:ava && pnpm test:vitest",
-    "verify": "pnpm lint && pnpm typecheck && pnpm build && pnpm test",
+    "verify": "pnpm skills:check && pnpm skills:pack-check && pnpm lint && pnpm typecheck && pnpm build && pnpm test",
     "cursor:fetch-cloud-agent": "pnpm --filter @flatbread/proof exec node scripts/fetch-cloud-agent-conversation.mjs",
     "dev:test": "ava --watch --verbose",
     "prepare": "husky install"
@@ -60,6 +63,7 @@
   },
   "devDependencies": {
     "@ava/typescript": "3.0.1",
+    "@flatbread/effort-graph": "workspace:*",
     "@nrwl/workspace": "14.4.3",
     "@types/inquirer": "8.2.1",
     "@types/node": "16.11.47",

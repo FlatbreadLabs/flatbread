@@ -49,6 +49,12 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Check canonical skill projection
+        run: pnpm skills:check
+
+      - name: Check packed skill payload
+        run: pnpm skills:pack-check
+
   lint:
     runs-on: ${{ matrix.os }}
 

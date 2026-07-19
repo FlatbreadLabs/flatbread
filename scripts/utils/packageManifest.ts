@@ -1,4 +1,4 @@
-import { readdir } from 'fs/promises';
+import { readFile, readdir } from 'fs/promises';
 import colors from 'kleur';
 import { join } from 'path';
 import flatbreadPackage from '../../packages/flatbread/package.json';
@@ -24,15 +24,18 @@ export async function getPackagesManifest(
   const pkgManifest = 'package.json';
 
   const pkgs = await Promise.all(
-    dirs.map(async (dir) => ({
-      ...(await import(join(process.cwd() + '/packages', dir, pkgManifest))),
-      dirName: dir,
-    }))
+    dirs.map(async (dir) => {
+      const manifest = JSON.parse(
+        await readFile(
+          join(process.cwd() + '/packages', dir, pkgManifest),
+          'utf8'
+        )
+      );
+      return { ...manifest, dirName: dir };
+    })
   );
 
-  return pkgs.filter(
-    (pkg) => !(pkg.default.private && pkg.default.private === true)
-  );
+  return pkgs.filter((pkg) => !(pkg.private && pkg.private === true));
 }
 
 export async function getMonorepoPublicPackages(): Promise<

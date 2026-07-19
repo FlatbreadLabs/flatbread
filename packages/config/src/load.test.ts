@@ -68,3 +68,37 @@ test('loadConfig returns an initialized config', async (t) => {
     }
   );
 });
+
+test('loadConfig isolates concurrent temporary ESM modules', async (t) => {
+  await withTempConfig(
+    {
+      'flatbread.config.js': `
+        export default {
+          source: { fetch: async () => ({}) },
+          transformer: { extensions: ['.md'], inspect: (input) => String(input) },
+          content: [],
+        };
+      `,
+    },
+    async (cwd) => {
+      const results = await Promise.all(
+        Array.from({ length: 32 }, () => loadConfig({ cwd }))
+      );
+
+      t.is(results.length, 32);
+      t.true(
+        results.every(
+          (result) => result.filepath === path.join(cwd, 'flatbread.config.js')
+        )
+      );
+
+      const remainingFiles = await fs.readdir(cwd);
+      t.deepEqual(
+        remainingFiles.filter((filename) =>
+          filename.startsWith('.flatbread.config.js.timestamp-')
+        ),
+        []
+      );
+    }
+  );
+});

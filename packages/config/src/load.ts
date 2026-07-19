@@ -5,6 +5,7 @@ import {
   initializeConfig,
 } from '@flatbread/core';
 import { build } from 'esbuild';
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -39,9 +40,13 @@ async function loadConfigFromBundledFile(
   // for esm, before we can register loaders without requiring users to run node
   // with --experimental-loader themselves, we have to do a hack here:
   // write it to disk, load it with native Node ESM, then delete the file.
-  const fileBase = `${fileName}.timestamp-${Date.now()}`;
-  const fileNameTmp = `${fileBase}.mjs`;
-  const fileUrl = `${pathToFileURL(fileBase)}.mjs`;
+  const fileNameTmp = path.join(
+    path.dirname(fileName),
+    `.${path.basename(fileName)}.timestamp-${Date.now()}-${
+      process.pid
+    }-${randomUUID()}.mjs`
+  );
+  const fileUrl = pathToFileURL(fileNameTmp).href;
   await fs.writeFile(fileNameTmp, bundledCode);
 
   try {
@@ -50,7 +55,17 @@ async function loadConfigFromBundledFile(
 
     return configModule.default;
   } finally {
-    await fs.unlink(fileNameTmp);
+    try {
+      await fs.unlink(fileNameTmp);
+    } catch (error) {
+      const errorCode =
+        error instanceof Error
+          ? (error as Error & { code?: string }).code
+          : undefined;
+      if (errorCode !== 'ENOENT') {
+        throw error;
+      }
+    }
   }
 }
 
@@ -83,7 +98,7 @@ export async function loadConfig({ cwd = process.cwd() } = {}): Promise<
 
   const configFilePath = path.join(cwd, configFileName);
   const { code } = await bundleConfigFile(cwd, configFileName);
-  const rawConfig = await esmLoader(configFileName, code);
+  const rawConfig = await esmLoader(configFilePath, code);
   const config = initializeConfig(rawConfig);
 
   return {
@@ -118,7 +133,6 @@ async function bundleConfigFile(
     outExtension: {
       '.js': '.mjs',
     },
-    watch: true,
     plugins: [
       {
         //

@@ -12,3 +12,20 @@ export { acquireWriterLock } from './lock.js';
 export { recoverJournal } from './journal.js';
 export * from './live.js';
 export * from './journalBarrier.js';
+export * from './digest.js';
+export {
+  READ_RELATIONS,
+  EffortGraphConsistencyError,
+  EffortGraphInvalidCursorError,
+  EffortGraphReadValidationError,
+  canonicalizeReadQuery,
+  parseGenerationToken,
+  pruneReadCache,
+  readQueryHash,
+} from './read.js';
+export type {
+  ConsistencyErrorShape,
+  EffortStatus,
+  ReadOptions,
+  ReadQuery,
+} from './read.js';

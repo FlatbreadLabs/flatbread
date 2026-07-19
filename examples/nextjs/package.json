@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "flatbread start --https -- next dev --turbopack",
+    "dev": "flatbread start --watch --https -- next dev --turbopack",
     "codegen": "flatbread codegen --watch",
     "demo:edit": "node scripts/demo-edit.mjs",
     "demo:restore": "node scripts/demo-restore.mjs",

@@ -2,9 +2,12 @@
 
 Thanks for your interest in contributing! This guide covers local development and the release process (bumping versions and publishing packages).
 
-**Flatbread** is **relational, Git-tracked content for TypeScript apps**: flat files in the repo become a typed content graph. **GraphQL is one consumer** of that graph (see `docs/glossary.md`), not the whole product story.
+**Flatbread** turns related content files in Git into typed data for TypeScript
+apps. **GraphQL is one way to read that data** (see `docs/glossary.md`); it is
+not the whole product.
 
-For the **canonical posts / authors / tags** onboarding narrative (collections, `refs`, codegen, then GraphQL), see the [Flatbread package README quickstart](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/flatbread/README.md#quickstart-posts-authors-and-tags) (traceability: **files → config → query interface**, tied to **`docs/glossary.md`**).
+For a first project with posts, authors, and tags, see the
+[Flatbread package README quickstart](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/flatbread/README.md#quickstart-posts-authors-and-tags).
 
 ## Prerequisites
 
@@ -14,14 +17,15 @@ For the **canonical posts / authors / tags** onboarding narrative (collections, 
 
 ## Recommended onboarding (try Flatbread in the Next.js example)
 
-Use this single path first; it matches how CI and most contributors exercise the stack (**shared content** under `examples/content`, symlinked from the Next app as `content/`):
+Use this path first. The Next.js app reads shared content from
+`examples/content` through its `content/` symlink:
 
 1. From the **monorepo root**: `pnpm install` then `pnpm build` (builds all packages except `examples/*`).
 2. `cd examples/nextjs`
 3. One-shot codegen: `pnpm exec flatbread codegen --verbose` (output: `generated/graphql.ts`; globs and dirs come from `flatbread.config.js`).
 4. Run the app **and** Flatbread together with **`flatbread start`** (there is **no** `flatbread dev` subcommand):
-   - **`pnpm dev`** — Next dev with local HTTPS + Flatbread (GraphQL on **5057**, Next on **3000**).
-   - Headless / no HTTPS: `pnpm exec flatbread start -- next dev --turbopack`.
+   - **`pnpm dev`** — starts Next with local HTTPS and watches Flatbread content, config, and GraphQL documents. GraphQL runs on **5057** and Next on **3000**.
+   - Headless / no HTTPS: `pnpm exec flatbread start --watch -- next dev --turbopack`.
 
 Optional **`pnpm play`** from the repo root is a shortcut for **`cd examples/nextjs && pnpm dev`** — same as step 4 above, not a separate product command.
 
@@ -101,7 +105,8 @@ What the script does:
   - Comparing git commits in `packages/<name>` since that time
   - Ignoring commits that only change the `version` field in `package.json`
   - Skipping packages that are not yet published on npm
-- Preselects only changed packages for you to bump
+- Preselects changed packages and their workspace dependents for you to bump
+- Required workspace dependents must remain selected when a changed dependency is selected
 - Runs `pnpm bumpp --no-commit --no-push --no-tag` in each selected package directory
 
 Notes:
@@ -125,6 +130,21 @@ Notes:
 
 > Note: you must have access permissions on NPM
 
+When changing the Effort Graph skill, edit the source files under
+`packages/effort-graph/skills/effort-graph/`, then run these checks in order:
+
+```bash
+pnpm skills:sync
+pnpm skills:check
+pnpm skills:pack-check
+```
+
+Bump and publish `@flatbread/effort-graph` and `flatbread` together when the
+skill and runtime need matching versions. The publish script checks the copied
+skill files and package contents first. It then publishes ordinary packages,
+`@flatbread/effort-graph`, and finally `flatbread`, stopping at the first
+failure.
+
 Publish all public packages (the script builds first and then attempts to publish each package):
 
 ```bash
@@ -134,25 +154,47 @@ pnpm publish:ci
 Details:
 
 - Builds the repo: `pnpm run build`
-- Iterates public packages in `packages/*` and runs:
+- Iterates public packages in dependency-safe deterministic order and runs:
 
   ```bash
   pnpm publish --access public --no-git-checks
   ```
 
-- If a package's version was not changed, the publish for that package will error and the script will move on to the next
+- Before each publish, checks `npm view <name>@<version> version --json`. An
+  exact version already in the registry is reported as already published and
+  skipped; npm not-found responses proceed to publish, while authentication,
+  network, and other errors abort before that package is published.
+- If a release stops after some packages publish, rerun `pnpm publish:ci`
+  safely. Exact versions already published are skipped, and the script resumes
+  with the first package that still needs publishing.
 - Unpublished packages will be published for the first time
 - Dist-tags (alpha/beta) are currently disabled in the script. If you need them, bump with a pre-release version (`x.y.z-alpha.n`) and add tagging logic in `scripts/publish.ts`
 
 ### Post-publish
 
-- Push your commits:
+- Only after every package publishes successfully, create an annotated,
+  immutable `v<flatbread-version>` Git tag at the exact release commit SHA
+  printed by `pnpm publish:ci`, then push the release commit and tag:
 
   ```bash
+  git tag -a v<flatbread-version> <release-commit-sha> -m "Release v<flatbread-version>"
   git push
+  git push origin v<flatbread-version>
   ```
 
-- Tag a new release via Github and include a set of changes with Dev Experience in mind
+  Protect release tags in the repository settings so they cannot be moved or
+  deleted after publication.
+
+End users install the skill from that release tag and install the matching
+`flatbread` version:
+
+```bash
+npx skills add https://github.com/FlatbreadLabs/flatbread/tree/vX/packages/effort-graph/skills/effort-graph --skill effort-graph
+npm install --save-dev flatbread@X
+```
+
+`skills update` does not advance an immutable tag. To upgrade deliberately,
+install a newer release tag and its matching `flatbread` version.
 
 ## Troubleshooting
 
