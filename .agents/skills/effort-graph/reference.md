@@ -7,21 +7,26 @@ consumer ground truth.
 ## IDs
 
 Generated as `<prefix>-<slug>--<16-char-crockford>` with prefixes `eff`,
-`iss`, `fnd`, `dec`, `con`, `rsk`. Filenames never define identity. Let the
-writer generate ids; capture them from mutation results (`artifacts[0].id`
-for creates).
+`iss`, `fnd`, `dec`, `con`, `rsk`, `cit`, `blb`. Filenames never define
+identity. Let the writer generate ids; capture them from mutation results
+(`artifacts[0].id` for creates).
 
-## The 13 mutations (`flatbread effort write '<json>'`)
+## The 15 mutations (`flatbread effort write '<json>'`)
 
 Common optional fields on all creates: `id`, `created_at` (ISO with offset),
 `produced_in`, `created_by` (opaque provenance strings). Forward edge fields
-on all creates except `CreateEffort`: `derives_from[]`, `supersedes[]`,
-`invalidates[]` (arrays of existing ids; targets are validated).
+on all creates except `CreateEffort`, `WriteCitation`, and `WriteBlob`:
+`derives_from[]`, `supersedes[]`, `invalidates[]` (arrays of existing ids;
+targets are validated).
+
+Optional `cites[]` on all epistemic creates (`CreateEffort` and every `Write*`
+except `WriteCitation` / `WriteBlob`): existing **Citation** ids (homogeneous
+Flatbread `refs` → Citation).
 
 ### Effort lifecycle
 
 ```json
-{"type":"CreateEffort","title":"...","body":"...","slug":"optional"}
+{"type":"CreateEffort","title":"...","body":"...","slug":"optional","cites":["<cit-id>"]}
 {"type":"SetEffortStatus","effortId":"<eff-id>","status":"active|paused|completed|abandoned"}
 ```
 
@@ -33,10 +38,15 @@ on all creates except `CreateEffort`: `derives_from[]`, `supersedes[]`,
 {"type":"WriteDecision","effort":"<eff-id>","title":"...","body":"..."}
 {"type":"WriteConstraint","effort":"<eff-id>","title":"...","body":"...","kind":"hard|soft"}
 {"type":"WriteRisk","effort":"<eff-id>","title":"...","body":"...","likelihood":"low|medium|high","severity":"low|medium|high"}
+{"type":"WriteCitation","effort":"<eff-id>","title":"...","body":"https://example.com/...","role":"evidence|context|<free-form>","blob":"<blb-id>"}
+{"type":"WriteBlob","effort":"<eff-id>","title":"...","body":"...","kind":"markdown|json|<free-form>"}
 ```
 
 Initial states: Issue `status: open`; Decision `state: proposed`; Risk
-`state: open`.
+`state: open`. Citation and Blob have no lifecycle state.
+
+A Citation body alone is valid (commonly a URL). `blob` is optional — attach
+a Blob only when you need a longform/opaque payload behind the cite.
 
 ### Edge retro-linking (records must already exist)
 
@@ -96,9 +106,12 @@ The digest at `artifact_path` is deterministic markdown: YAML query header,
 anchor index, per-record sections (selected frontmatter, body, relation
 lists), one-hop related records, and an edge table. Body policy:
 
-- **`effort get`:** full record body (the normal zoom-in path).
+- **`effort get`:** full record body (the normal zoom-in path), including
+  Blob payloads and Citation bodies (URLs / short notes).
 - **`list` / `records` / `relations` / `blocking-decisions`:** body excerpt
-  capped at 600 chars / 12 lines (`[…truncated]`).
+  capped at 600 chars / 12 lines (`[…truncated]`). **Blob bodies are omitted**
+  from these digests — use `effort get` for the payload. Citation bodies
+  (usually short) still excerpt normally.
 
 Caps: 25 primary records, one hop, 50 edges, 64 KiB; hitting a cap sets
 `complete: false` with named `cap_reasons` — narrow the query or page rather
@@ -117,8 +130,8 @@ flatbread effort blocking-decisions <effortId> [consistency flags]
 flatbread effort cache prune
 ```
 
-- `--kinds`: `effort|issue|finding|decision|constraint|risk` (records:
-  default all non-effort kinds).
+- `--kinds`: `effort|issue|finding|decision|constraint|risk|citation|blob`
+  (records: default all non-effort kinds, including `citation` and `blob`).
 - `list --status`: defaults to `active`; valid values are exactly `active`,
   `paused`, `completed`, and `abandoned`. Values are ORed and results are
   ordered by `created_at` ascending, then `id`.
@@ -126,7 +139,7 @@ flatbread effort cache prune
   `--since`/`--until` bound `created_at` (gte/lte, ISO strings).
 - `--relations` values: `derives_from`, `supersedes`, `superseded_by`,
   `invalidates`, `invalidated_by`, `rejected_by`, `mitigated_by`,
-  `resolved_by`, `evidence` (one hop, explicit only).
+  `resolved_by`, `evidence`, `cites` (one hop, explicit only).
 - `--resolve head`: follow `superseded_by` to the current tip; ancestors
   render as checkpoint lines (max 5, then a count).
 - `blocking-decisions` membership (frozen): Decision in the effort with
@@ -145,14 +158,14 @@ flatbread effort cache prune
 
 ## Configuration surface
 
-| Option           | Where                                               | Default                                     | Notes                                                                                                         |
-| ---------------- | --------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Graph root       | `effortGraphContent(root)` in `flatbread.config.js` | `.flatbread-efforts`                        | All six collection paths + refs derive from it; the preset must appear complete and unmodified for detection. |
-| Config discovery | cwd of the CLI invocation                           | —                                           | Exactly one `flatbread.config.*` must exist in cwd.                                                           |
-| Digest cache     | fixed                                               | `<cwd>/.flatbread/effort-graph/read-cache/` | Generation-keyed; gitignore it. `cache prune`: >24h old deleted, then oldest-first to ≤100 MiB.               |
-| Journal          | fixed                                               | `<root>/.journal/`                          | Writer-owned; gitignored. Never edit.                                                                         |
-| Strict timeout   | `--timeout-ms` per read                             | 3000 ms                                     |                                                                                                               |
-| Page limit       | `--limit` per read                                  | 25                                          | Hard max 25.                                                                                                  |
+| Option           | Where                                               | Default                                     | Notes                                                                                                           |
+| ---------------- | --------------------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Graph root       | `effortGraphContent(root)` in `flatbread.config.js` | `.flatbread-efforts`                        | All eight collection paths + refs derive from it; the preset must appear complete and unmodified for detection. |
+| Config discovery | cwd of the CLI invocation                           | —                                           | Exactly one `flatbread.config.*` must exist in cwd.                                                             |
+| Digest cache     | fixed                                               | `<cwd>/.flatbread/effort-graph/read-cache/` | Generation-keyed; gitignore it. `cache prune`: >24h old deleted, then oldest-first to ≤100 MiB.                 |
+| Journal          | fixed                                               | `<root>/.journal/`                          | Writer-owned; gitignored. Never edit.                                                                           |
+| Strict timeout   | `--timeout-ms` per read                             | 3000 ms                                     |                                                                                                                 |
+| Page limit       | `--limit` per read                                  | 25                                          | Hard max 25.                                                                                                    |
 
 ## What not to do
 
@@ -164,3 +177,6 @@ flatbread effort cache prune
   server-side.
 - Do not model sessions/plans/agents as records — put provenance in
   `produced_in` / `created_by` fields.
+- Do not put citation metadata objects into `cites` — use Citation records
+  (body/role/optional blob) and bare Citation ids in `cites`.
+- Do not expect Blob bodies in list/records digests; zoom with `effort get`.

@@ -4,7 +4,9 @@ export type PrimitiveKind =
   | 'finding'
   | 'decision'
   | 'constraint'
-  | 'risk';
+  | 'risk'
+  | 'blob'
+  | 'citation';
 export type GenerationToken = string;
 export interface WrittenArtifact {
   id: string;

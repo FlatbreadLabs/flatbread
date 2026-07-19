@@ -12,7 +12,8 @@ export type ReadRelation =
   | 'rejected_by'
   | 'mitigated_by'
   | 'resolved_by'
-  | 'evidence';
+  | 'evidence'
+  | 'cites';
 
 export interface ReadRecord {
   id: string;
@@ -82,6 +83,8 @@ const FRONTMATTER_KEYS = [
   'rejected_by',
   'mitigated_by',
   'evidence',
+  'role',
+  'blob',
 ];
 
 function scalar(value: unknown): string {
@@ -149,6 +152,14 @@ function renderRecordBody(
   bodyMode: RecordBodyMode
 ): string {
   if (bodyMode === 'byte_cap_miss') return byteCapBodyBanner(record);
+  // Bounded digests cite Blob id/title/locator — never inline Blob bodies.
+  if (record.kind === 'blob' && bodyMode !== 'full') {
+    return [
+      '> Blob body omitted from bounded digests.',
+      `Source path: \`${record.path || '(unknown)'}\`.`,
+      'Use `effort get <blob-id>` to read the payload.',
+    ].join(' ');
+  }
   if (bodyMode === 'full') return normalizeBody(record.body_excerpt);
   return excerpt(record.body_excerpt);
 }

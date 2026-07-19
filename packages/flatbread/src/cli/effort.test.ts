@@ -130,6 +130,8 @@ test.serial(
       'decisions',
       'constraints',
       'risks',
+      'citations',
+      'blobs',
     ])
       await mkdir(join(cwd, '.flatbread-efforts', directory), {
         recursive: true,
@@ -230,6 +232,8 @@ test.serial(
       'decisions',
       'constraints',
       'risks',
+      'citations',
+      'blobs',
     ])
       await mkdir(join(cwd, '.flatbread-efforts', directory), {
         recursive: true,
@@ -264,6 +268,8 @@ test.serial(
       'decisions',
       'constraints',
       'risks',
+      'citations',
+      'blobs',
     ])
       await mkdir(join(cwd, '.flatbread-efforts', directory), {
         recursive: true,
@@ -331,6 +337,8 @@ test.serial(
       'decisions',
       'constraints',
       'risks',
+      'citations',
+      'blobs',
     ])
       await mkdir(join(cwd, '.flatbread-efforts', directory), {
         recursive: true,

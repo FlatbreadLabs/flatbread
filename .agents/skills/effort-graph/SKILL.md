@@ -49,7 +49,7 @@ The write journal is `<root>/.journal/`; read digests cache under
 
 ## Writing (journaling)
 
-One command for all 13 mutations — pass the payload as a single JSON argument:
+One command for all 15 mutations — pass the payload as a single JSON argument:
 
 ```bash
 flatbread effort write '{"type":"WriteDecision","effort":"<eff-id>","title":"...","body":"...","derives_from":["<id>"]}'
@@ -59,18 +59,23 @@ Response: `{"generation":"<token>","artifacts":[{"id","path","operation"}],"touc
 **Capture `artifacts[0].id`** to wire later edges, and **keep `generation`**
 for strict read-your-writes.
 
-Full payload shapes for all 13 mutations: read [reference.md](./reference.md).
+Full payload shapes for all 15 mutations: read [reference.md](./reference.md).
 Critical semantics:
 
 - Creates always start in the initial lifecycle state: `WriteDecision` →
   `proposed`, `WriteIssue` → `open`, `WriteRisk` → `open`. You cannot pass a
   state; use lifecycle mutations (`AcceptDecision`, `ResolveIssue`,
-  `MitigateRisk`, `SetRiskState`) to transition.
+  `MitigateRisk`, `SetRiskState`) to transition. `WriteCitation` and
+  `WriteBlob` have no lifecycle state.
 - `AcceptDecision` defaults `rejectSiblings: true`, which rejects ALL other
   proposed Decisions in the same Effort. Pass `"rejectSiblings": false`
   unless you deliberately want the competing proposals closed.
 - Edges are forward-only in payloads (`derives_from`, `supersedes`,
   `invalidates`); back-edges are materialized automatically.
+- Cites: `WriteCitation` (body may be a URL; optional `blob` + `role`), then
+  `cites: ["<cit-id>"]` on any epistemic create. Flatbread `refs` link
+  records → Citation → optional Blob. Bounded digests omit Blob bodies —
+  use `effort get`.
 - When superseding, open the new record's body with a short rollup of what
   changed and why — reads render ancestors only as one-line checkpoints.
 - For a hard-to-reverse, surprising decision made after a real trade-off, use

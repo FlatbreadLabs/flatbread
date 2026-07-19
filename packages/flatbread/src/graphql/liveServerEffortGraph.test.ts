@@ -19,6 +19,8 @@ async function makeDir() {
     'decisions',
     'constraints',
     'risks',
+    'citations',
+    'blobs',
   ])
     await mkdir(join(root, path), { recursive: true });
   await mkdir(join(root, 'plain'), { recursive: true });

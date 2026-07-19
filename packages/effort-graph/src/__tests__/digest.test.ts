@@ -170,6 +170,67 @@ test('pagination is incomplete without adding a cap reason', async (t) => {
   t.is(result.page.next_cursor, 'next');
 });
 
+test('renderDigest omits Blob bodies from bounded digests', async (t) => {
+  const cacheRoot = await mkdtemp(join(tmpdir(), 'eg-digest-blob-'));
+  const secret = 'SECRET_BLOB_PAYLOAD_SHOULD_NOT_APPEAR';
+  const result = await renderDigest({
+    query: { type: 'listRecords', effort: 'eff-one--0123456789abcdef' },
+    queryHash: 'blob-list',
+    generation: '4',
+    consistency: { mode: 'eventual' as const, min_generation: null },
+    cacheRoot,
+    records: [
+      {
+        id: 'blb-payload--0123456789abcdef',
+        kind: 'blob' as const,
+        path: 'blobs/blb-payload--0123456789abcdef.md',
+        frontmatter: {
+          id: 'blb-payload--0123456789abcdef',
+          title: 'Payload',
+          kind: 'markdown',
+        },
+        body_excerpt: secret,
+        relations: {},
+      },
+    ],
+    edges: [],
+  });
+  const digest = await readFile(result.artifact_path, 'utf8');
+  t.false(digest.includes(secret));
+  t.true(digest.includes('Blob body omitted from bounded digests'));
+  t.true(digest.includes('effort get <blob-id>'));
+});
+
+test('renderDigest includes Blob body on fullBody get', async (t) => {
+  const cacheRoot = await mkdtemp(join(tmpdir(), 'eg-digest-blob-full-'));
+  const secret = 'SECRET_BLOB_PAYLOAD_FULL_GET';
+  const result = await renderDigest({
+    query: { type: 'getRecord', id: 'blb-payload--0123456789abcdef' },
+    queryHash: 'blob-get',
+    generation: '4',
+    consistency: { mode: 'eventual' as const, min_generation: null },
+    cacheRoot,
+    fullBody: true,
+    records: [
+      {
+        id: 'blb-payload--0123456789abcdef',
+        kind: 'blob' as const,
+        path: 'blobs/blb-payload--0123456789abcdef.md',
+        frontmatter: {
+          id: 'blb-payload--0123456789abcdef',
+          title: 'Payload',
+        },
+        body_excerpt: secret,
+        relations: {},
+      },
+    ],
+    edges: [],
+  });
+  const digest = await readFile(result.artifact_path, 'utf8');
+  t.true(digest.includes(secret));
+  t.false(digest.includes('Blob body omitted'));
+});
+
 test('byte caps keep complete unicode sections and rows', async (t) => {
   const cacheRoot = await mkdtemp(join(tmpdir(), 'eg-digest-bytes-'));
   const result = await renderDigest({

@@ -56,6 +56,20 @@ const validMutations: Record<string, Record<string, unknown>> = {
     likelihood: 'low',
     severity: 'high',
   },
+  WriteCitation: {
+    type: 'WriteCitation',
+    effort: eff,
+    title: 'Paper',
+    body: 'https://example.com/paper',
+    role: 'evidence',
+  },
+  WriteBlob: {
+    type: 'WriteBlob',
+    effort: eff,
+    title: 'Payload',
+    body: '# longform\n',
+    kind: 'markdown',
+  },
   Supersede: { type: 'Supersede', supersederId: dec, targetId: dec },
   Invalidate: { type: 'Invalidate', findingId: fnd, targetId: dec },
   ResolveIssue: {
@@ -74,9 +88,9 @@ const validMutations: Record<string, Record<string, unknown>> = {
   },
 };
 
-test('each of the 13 mutation schemas accepts a valid input', (t) => {
+test('each of the 15 mutation schemas accepts a valid input', (t) => {
   const types = Object.keys(validMutations);
-  t.is(types.length, 13);
+  t.is(types.length, 15);
   for (const type of types) {
     t.notThrows(
       () => EffortGraphMutationSchema.parse(validMutations[type]),
@@ -134,6 +148,30 @@ test('rejects malformed ids', (t) => {
     EffortGraphMutationSchema.parse({
       ...validMutations.ResolveIssue,
       resolvedBy: ['dec-short--abc'],
+    })
+  );
+});
+
+test('WriteCitation allows URL body without blob; cites accept Citation ids', (t) => {
+  t.notThrows(() =>
+    EffortGraphMutationSchema.parse({
+      type: 'WriteCitation',
+      effort: eff,
+      title: 'External link',
+      body: 'https://example.com/research',
+    })
+  );
+  t.notThrows(() =>
+    EffortGraphMutationSchema.parse({
+      ...validMutations.WriteCitation,
+      blob: `blb-payload--${suffix}`,
+      role: 'context',
+    })
+  );
+  t.notThrows(() =>
+    EffortGraphMutationSchema.parse({
+      ...validMutations.WriteFinding,
+      cites: [`cit-paper--${suffix}`],
     })
   );
 });
