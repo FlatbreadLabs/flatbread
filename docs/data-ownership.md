@@ -82,9 +82,10 @@ durable exit surfaces.
 
 ## Current limitations
 
-- JSON/CSV export is currently an API surface, not a first-class CLI command.
+- JSON/CSV export is available through the API, not a CLI command.
 - CSV is a flat view: nested object fields are omitted, and relation fields are
   exported as reference IDs rather than expanded records.
 - Generated TypeScript read helpers execute through the GraphQL layer today.
-- Live content reload for the long-running `flatbread start` server remains a
-  separate watch-loop effort; see [local dev loop boundaries](./local-dev-loop.md).
+- Live content/config reload is available through `flatbread start --watch`;
+  package-code changes still require their own rebuild or restart. See
+  [local dev loop boundaries](./local-dev-loop.md).

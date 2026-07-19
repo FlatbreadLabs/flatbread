@@ -68,10 +68,10 @@ export default function BlogIndex({ posts }: BlogIndexProps) {
             No Posts Found
           </h2>
           <p className="mb-4 text-gray-600">
-            Start the Flatbread server to load content
+            From examples/nextjs, start Flatbread to load content
           </p>
           <code className="px-4 py-2 font-mono text-sm bg-gray-100 border-2 border-black">
-            npx flatbread dev
+            pnpm dev
           </code>
         </div>
       </div>

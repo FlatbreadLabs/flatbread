@@ -16,7 +16,7 @@ Pair this with a compatible source plugin in your `flatbread.config.js` file:
 
 ```js
 // flatbread.config.js
-import defineConfig from '@flatbread/config';
+import { defineConfig } from 'flatbread';
 import transformer from '@flatbread/transformer-markdown';
 import filesystem from '@flatbread/source-filesystem';
 

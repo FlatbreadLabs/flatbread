@@ -1,8 +1,13 @@
 # Flatbread Next.js Example with TypeScript Codegen
 
-This example is the repo’s **default first success path**: **relational Git-backed markdown** ( **`Post`** ↔ **`Author`** via `refs`; **`tags`** as string arrays on posts) compiled into a typed shape. **GraphQL plus codegen** are one read path baked into this demo, and the generated TypeScript read API gives simple app reads a collection-shaped interface over the same typed model; see [Choosing a read interface](../../packages/flatbread/README.md#choosing-a-read-interface).
+This example turns Markdown files in Git into typed data for a Next.js app.
+Posts link to authors through `refs`, and each post can have a list of string
+tags. GraphQL and codegen are one way to read that data. The generated
+TypeScript API is another; see
+[Choosing a read interface](../../packages/flatbread/README.md#choosing-a-read-interface).
 
-**Note:** `flatbread.config.js` here also declares **PostCategory**, **OverrideTest**, **YamlAuthor**, etc. for integration tests. Treat those as **secondary**; the onboarding narrative is **posts + authors + tags** on the **`Post`** row.
+**Note:** `flatbread.config.js` also includes collections used by integration
+tests. For this guide, focus on posts, authors, and tags.
 
 ## Quick start (from monorepo root)
 
@@ -27,10 +32,14 @@ This example is the repo’s **default first success path**: **relational Git-ba
 
    Add or edit **`.graphql`** files under `queries/` (or globs in config), then rerun codegen so **`tags`**, **`authors`**, and other fields stay in sync. Codegen also emits the prototype **generated TypeScript read API** in `generated/graphql.ts`; see `lib/read.ts` for the posts/authors/tags example that calls `createFlatbreadReadApi()`, and see [Choosing a read interface](../../packages/flatbread/README.md#choosing-a-read-interface) for when to use each read path.
 
-4. **Serve the GraphQL read interface alongside Next** (**there is no `flatbread dev`** — use **`flatbread start`**):
+4. **Start Flatbread and Next** (**there is no `flatbread dev`** — use
+   **`flatbread start`**):
 
-   - **Recommended / headless-safe:** `pnpm exec flatbread start -- next dev --turbopack`.
-   - **Package shortcut:** `pnpm dev` — currently passes `--https` for local convenience, but the Flatbread GraphQL endpoint remains documented as HTTP on `5057`.
+   - **With local HTTPS:** `pnpm dev`. This runs watch mode and starts Next.
+   - **Headless or no HTTPS:** `pnpm exec flatbread start --watch -- next dev --turbopack`.
+
+   With `--watch`, Flatbread reloads valid content and config changes and
+   refreshes generated types. You do not need a second codegen watcher.
 
 5. Open **[http://localhost:3000](http://localhost:3000)** for the app. Flatbread defaults to **`http://localhost:5057/graphql`** (not the Next port).
 
@@ -38,25 +47,28 @@ This example is the repo’s **default first success path**: **relational Git-ba
 
 | Script                                    | Purpose                                                                                             |
 | ----------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                                | **`flatbread start`** + Next dev (HTTPS). GraphQL on **5057**, Next on **3000**.                    |
+| `pnpm dev`                                | **`flatbread start --watch`** + Next dev (HTTPS). GraphQL on **5057**, Next on **3000**.            |
 | `pnpm build`                              | **`flatbread start`** wrapping **`next build`** so schema/codegen paths resolve during build.       |
 | `pnpm start`                              | **`next start` only** — production Next; does **not** run Flatbread unless you arrange it.          |
-| `pnpm run codegen`                        | **Watch-only:** `flatbread codegen --watch` — regenerate types when config/content/documents change. |
+| `pnpm run codegen`                        | Optional separate type watcher. Use it only when `flatbread start --watch` is not running.           |
 | `pnpm run demo:watch-query`               | Watch `example-post.md` and print updated posts/authors/tags query results.                         |
 | `pnpm run demo:edit` / `demo:restore`     | Edit and restore the watched post title for the demo loop.                                          |
 
-### Watch-only codegen
+### Separate codegen watcher
 
-For iterative work, run the watcher in a second terminal:
+`pnpm dev` already watches content, config, and GraphQL documents. Do not run
+this command beside it.
+
+Use this command only when Flatbread is started without `--watch` and you want
+generated types to update:
 
 ```bash
 pnpm run codegen
 ```
 
-For the full loader/schema/codegen/framework boundary contract, see
-[`docs/local-dev-loop.md`](../../docs/local-dev-loop.md). In short: codegen can
-watch content/config/document files, but the running GraphQL server still needs
-a restart for schema or content changes today.
+For details about what changes reload automatically, see
+[`docs/local-dev-loop.md`](../../docs/local-dev-loop.md). When Flatbread starts
+without `--watch`, restart it after content or config changes.
 
 To see a Markdown/YAML edit/query loop without manually restarting a server, run
 the focused demo watcher:
@@ -76,7 +88,10 @@ Markdown and YAML for this demo live under **`examples/content`**; this package 
 - **Posts:** `examples/content/markdown/posts/` (`tags` in frontmatter → `[String]` on **`Post`** in the schema.)
 - **Authors:** `examples/content/markdown/authors/` (referenced by id from **`Post`** **`authors`**.)
 
-Canonical layout, **backing files for tags** (facet on each post), **traceability** (same **relation model** from files through config to read interfaces and illustrative query JSON), and guidance on GraphQL versus the generated TypeScript read API are documented in the [Flatbread README quickstart](../../packages/flatbread/README.md#quickstart-posts-authors-and-tags), [Choosing a read interface](../../packages/flatbread/README.md#choosing-a-read-interface), and [glossary](../../docs/glossary.md).
+The [Flatbread README quickstart](../../packages/flatbread/README.md#quickstart-posts-authors-and-tags)
+explains the file layout, tags, and how files become app data. See
+[Choosing a read interface](../../packages/flatbread/README.md#choosing-a-read-interface)
+and the [glossary](../../docs/glossary.md) for more detail.
 
 ## Project structure
 
@@ -137,13 +152,22 @@ const authorNames = posts[0]?.authors?.map((author) => author.name);
 const tags = posts[0]?.tags;
 ```
 
-That path queries **posts**, **authors**, and **tags** through the generated TypeScript API while GraphQL remains the underlying execution layer. The lower-level generated methods still accept an optional GraphQL selection string for experimentation, but the canonical example uses the generated default selection so the call site does not hand-write a GraphQL document. For custom selections, persisted operations, or direct GraphQL clients, use operation documents instead; the root [Choosing a read interface](../../packages/flatbread/README.md#choosing-a-read-interface) section is the canonical contract.
+That path queries **posts**, **authors**, and **tags** through the generated
+TypeScript API while GraphQL handles the request underneath. Lower-level
+generated methods can also take a GraphQL selection string. This example uses
+the default selection, so the call site does not need a GraphQL document. For
+custom selections, persisted operations, or direct GraphQL clients, use
+operation documents instead; see
+[Choosing a read interface](../../packages/flatbread/README.md#choosing-a-read-interface).
 
 ## Troubleshooting
 
 ### "No posts found" or network errors
 
-Ensure something is serving Flatbread at **`http://localhost:5057/graphql`** — typically by running **`pnpm dev`** or **`pnpm exec flatbread start -- next dev --turbopack`** from this directory, not `pnpm start` alone.
+Ensure Flatbread is serving **`http://localhost:5057/graphql`**. From this
+directory, run **`pnpm dev`** or
+**`pnpm exec flatbread start --watch -- next dev --turbopack`**. `pnpm start`
+runs Next alone.
 
 ### TypeScript errors after schema changes
 
@@ -152,7 +176,7 @@ Run **`pnpm exec flatbread codegen --clear-cache --verbose`**.
 ## Learn more
 
 - [Flatbread package README](../../packages/flatbread/README.md) — quickstart, install, **`flatbread start`**, and choosing GraphQL or the generated TypeScript read API
-- [Glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md) — collections, relations; GraphQL as one surface
-- [Contributing / monorepo workflow](https://github.com/FlatbreadLabs/flatbread/blob/main/CONTRIBUTING.md)
+- [Glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md) — collections, relations, and GraphQL as one way to read data
+- [Contributing guide](https://github.com/FlatbreadLabs/flatbread/blob/main/CONTRIBUTING.md)
 - [GraphQL Code Generator](https://www.the-guild.dev/graphql/codegen)
 - [Next.js Documentation](https://nextjs.org/docs)

@@ -73,7 +73,7 @@ Expected behavior:
   edits received during an in-flight generation are queued for the next
   serialized batch.
 
-## Unified watch coordinator contract
+## How watch mode works
 
 The unified loop is started with:
 
@@ -81,7 +81,7 @@ The unified loop is started with:
 pnpm exec flatbread start --watch -- next dev --turbopack
 ```
 
-The coordinator contract is:
+Watch mode does the following:
 
 1. A single coordinator classifies config, content, and document events, then
    serializes all rebuild and codegen phases.
@@ -100,13 +100,14 @@ The coordinator contract is:
 
 ## Known limitations
 
-- `flatbread start --watch` hot-swaps valid content/config generations; invalid
-  candidates leave the prior schema active.
-- Unified watch mode is a long-running process; do not use it in CI or one-shot
+- `flatbread start --watch` replaces the running schema after a valid content
+  or config change. If a change is invalid, it keeps the previous schema.
+- Watch mode is a long-running process; do not use it in CI or one-shot
   scripts.
 - The Next.js example `pnpm dev` includes `--https` for local convenience, but
   the Flatbread GraphQL endpoint remains documented as HTTP on `5057`. In
-  headless environments prefer `pnpm exec flatbread start -- next dev --turbopack`.
+  headless environments prefer
+  `pnpm exec flatbread start --watch -- next dev --turbopack`.
 - Codegen failures are logged and do not undo a committed schema generation.
 - Watch mode requires a source plugin with `fetchPaths`; sources without it fail
   fast at startup.
@@ -114,5 +115,5 @@ The coordinator contract is:
 - Port `5057` collisions are not resolved automatically; stop the old
   Flatbread process before starting another server.
 
-Framework restarts remain explicit: Flatbread keeps the framework child process
-running and does not attempt to restart or control its own refresh behavior.
+Flatbread keeps the framework process running. It does not restart the
+framework or control how the framework refreshes its pages.

@@ -16,7 +16,7 @@ Add the source as a property of the default export within your `flatbread.config
 
 ```js
 // flatbread.config.js
-import defineConfig from '@flatbread/config';
+import { defineConfig } from 'flatbread';
 import transformer from '@flatbread/transformer-markdown';
 import filesystem from '@flatbread/source-filesystem';
 

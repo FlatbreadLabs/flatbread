@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch src",
-    "test": "pnpm --dir ../.. exec ava \"packages/effort-graph/src/__tests__/**/*.test.ts\"",
+    "dev": "node scripts/watch-skills.mjs",
+    "skills:sync": "node scripts/sync-skills.mjs",
+    "skills:check": "node scripts/sync-skills.mjs --check",
+    "skills:pack-check": "node scripts/pack-skills.mjs",
+    "test": "pnpm --dir ../.. exec ava \"packages/effort-graph/src/__tests__/**/*.test.{js,ts}\"",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "repository": {
@@ -28,6 +31,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
+    "skills",
     "*.d.ts"
   ],
   "dependencies": {

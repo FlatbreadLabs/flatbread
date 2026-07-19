@@ -6,6 +6,7 @@ import { networkInterfaces, release } from 'node:os';
 import orchestrateProcesses from './runner';
 import initConfig from './initConfig';
 import { createCodegenCommand } from '@flatbread/codegen';
+import { registerEffortCommands } from './effort';
 
 const GRAPHQL_ENDPOINT = '/graphql';
 
@@ -92,6 +93,8 @@ prog
       verbose: options.verbose,
     });
   });
+
+registerEffortCommands(prog);
 
 prog.parse(process.argv, { unknown: (arg) => `Unknown option: ${arg}` });
 
