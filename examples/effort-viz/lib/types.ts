@@ -30,6 +30,8 @@ export interface GraphNode {
   slug?: string;
   likelihood?: string;
   severity?: string;
+  /** Markdown body from `_content.raw`. */
+  body?: string;
 }
 
 export interface GraphEdge {

@@ -96,6 +96,15 @@ function lifecycleForRecord(
   return undefined;
 }
 
+function bodyFromRecord(record: RelationRecord): string | undefined {
+  const content = record._content;
+  if (!content || typeof content !== 'object') return undefined;
+  const raw = (content as { raw?: unknown }).raw;
+  if (typeof raw !== 'string') return undefined;
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 function makeNode(
   kind: GraphNodeKind,
   record: RelationRecord,
@@ -120,6 +129,7 @@ function makeNode(
     likelihood:
       typeof record.likelihood === 'string' ? record.likelihood : undefined,
     severity: typeof record.severity === 'string' ? record.severity : undefined,
+    body: bodyFromRecord(record),
   };
 }
 

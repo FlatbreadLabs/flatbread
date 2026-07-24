@@ -39,34 +39,38 @@ export function EffortGraphApp() {
   const selectedNode = selectedId ? (nodesById.get(selectedId) ?? null) : null;
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background text-foreground">
-      <TopBar
-        status={status}
-        generation={generation}
-        nodeCount={nodes.length}
-        edgeCount={edges.length}
-      />
+    <div className="flex h-[100dvh] min-h-[100svh] w-full flex-col overflow-hidden bg-background text-foreground">
+      <div className="safe-area-top shrink-0">
+        <TopBar
+          status={status}
+          generation={generation}
+          nodeCount={nodes.length}
+          edgeCount={edges.length}
+        />
+      </div>
 
       <main className="relative min-h-0 flex-1">
         {nodes.length === 0 ? (
           <EmptyState status={status} error={error} />
         ) : (
-          <GraphCanvas
-            nodes={nodes}
-            edges={edges}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-          />
+          <div className="absolute inset-0 min-h-0">
+            <GraphCanvas
+              nodes={nodes}
+              edges={edges}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+            />
+          </div>
         )}
 
-        <div className="pointer-events-none absolute inset-0 flex flex-col">
-          <div className="flex flex-1 items-end justify-start p-4 sm:p-5">
+        <div className="pointer-events-none absolute inset-0 flex flex-col safe-area-x">
+          <div className="flex flex-1 items-end justify-start p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5">
             <Legend />
           </div>
         </div>
 
         {selectedNode && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-end p-4 sm:inset-y-0 sm:left-auto sm:right-0 sm:w-auto sm:items-start sm:p-5">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-end p-4 pb-[max(1rem,env(safe-area-inset-bottom))] safe-area-x sm:inset-y-0 sm:left-auto sm:right-0 sm:w-auto sm:items-start sm:p-5">
             <DetailDrawer
               node={selectedNode}
               edges={edges}

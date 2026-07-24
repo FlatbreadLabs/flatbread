@@ -4,6 +4,15 @@ import { useMemo } from 'react';
 import { nodeColor } from '@/lib/oklch';
 import type { GraphEdge, GraphNode } from '@/lib/types';
 import { useTheme } from '../hooks/useTheme';
+import { MarkdownSurface } from './MarkdownSurface';
+import {
+  RELATION_GROUP_LABEL,
+  RELATION_GROUP_ORDER,
+  RELATION_META,
+  RelationLineSample,
+  lifecycleBadge,
+  type RelationGroupId,
+} from './RelationLegend';
 
 interface DetailDrawerProps {
   node: GraphNode | null;
@@ -22,6 +31,13 @@ const KIND_LABEL: Record<GraphNode['kind'], string> = {
   risk: 'Risk',
 };
 
+type DirectedEdge = GraphEdge & { direction: 'outgoing' | 'incoming' };
+
+interface GroupedRelations {
+  group: RelationGroupId;
+  edges: DirectedEdge[];
+}
+
 export function DetailDrawer({
   node,
   edges,
@@ -31,36 +47,77 @@ export function DetailDrawer({
 }: DetailDrawerProps) {
   const { mode } = useTheme();
 
-  const relations = useMemo(() => {
-    if (!node) return { outgoing: [], incoming: [] };
-    const outgoing: GraphEdge[] = [];
-    const incoming: GraphEdge[] = [];
-    for (const e of edges) {
-      if (e.source === node.id) outgoing.push(e);
-      if (e.target === node.id) incoming.push(e);
+  const groupedRelations = useMemo((): GroupedRelations[] => {
+    if (!node) return [];
+
+    const buckets = new Map<RelationGroupId, DirectedEdge[]>();
+    for (const edge of edges) {
+      let direction: DirectedEdge['direction'] | null = null;
+      if (edge.source === node.id) direction = 'outgoing';
+      else if (edge.target === node.id) direction = 'incoming';
+      if (!direction) continue;
+
+      const group = RELATION_META[edge.kind].group;
+      const list = buckets.get(group) ?? [];
+      list.push({ ...edge, direction });
+      buckets.set(group, list);
     }
-    return { outgoing, incoming };
+
+    return RELATION_GROUP_ORDER.flatMap((group) => {
+      const groupEdges = buckets.get(group);
+      if (!groupEdges || groupEdges.length === 0) return [];
+      groupEdges.sort((a, b) => {
+        if (a.direction !== b.direction) {
+          return a.direction === 'outgoing' ? -1 : 1;
+        }
+        return a.kind.localeCompare(b.kind);
+      });
+      return [{ group, edges: groupEdges }];
+    });
   }, [node, edges]);
+
+  const navigateTarget = useMemo(() => {
+    const bySlug = new Map<string, string>();
+    const byId = new Map<string, string>();
+    for (const n of nodesById.values()) {
+      byId.set(n.id, n.id);
+      if (n.slug) bySlug.set(n.slug, n.id);
+    }
+    return (target: string) => {
+      const id = byId.get(target) ?? bySlug.get(target);
+      if (id) onSelect(id);
+    };
+  }, [nodesById, onSelect]);
 
   if (!node) return null;
 
+  const lifecycle = node.lifecycle ?? node.status ?? node.state;
+  const badge = lifecycleBadge(lifecycle);
+  const hasRelations = groupedRelations.length > 0;
+  const hasBody = Boolean(node.body?.trim());
   const effortId = node.effortId ?? node.id;
   const swatch = nodeColor(effortId, node.kind, mode).css;
-  const lifecycle = node.lifecycle ?? node.status ?? node.state;
 
   return (
-    <aside className="pointer-events-auto flex w-full flex-col overflow-hidden rounded-xl border border-border bg-background/85 shadow-[0_1px_0_rgba(0,0,0,0.02),0_8px_24px_-8px_rgba(0,0,0,0.15)] backdrop-blur-md sm:w-[320px]">
-      <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
+    <aside className="pointer-events-auto flex max-h-[min(72vh,calc(100dvh-5.5rem))] w-full flex-col overflow-hidden rounded-xl border border-border bg-background/90 shadow-[0_1px_0_rgba(0,0,0,0.02),0_8px_24px_-8px_rgba(0,0,0,0.15)] backdrop-blur-md sm:max-h-[calc(100dvh-6rem)] sm:w-[min(24rem,calc(100vw-2.5rem))]">
+      <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex min-w-0 flex-col gap-1.5">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span
               aria-hidden
-              className="size-2.5 shrink-0 rounded-full"
+              className="size-2.5 shrink-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/10"
               style={{ background: swatch }}
             />
             <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted">
               {KIND_LABEL[node.kind]}
             </span>
+            {badge && (
+              <span
+                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.06em] ${badge.className}`}
+              >
+                {badge.label}
+              </span>
+            )}
           </div>
           <h2
             className="truncate text-sm font-semibold tracking-tight text-foreground"
@@ -94,46 +151,72 @@ export function DetailDrawer({
         </button>
       </header>
 
-      <div className="flex flex-col gap-3 px-4 py-3">
-        <MetaRow label="Kind" value={KIND_LABEL[node.kind]} />
-        {lifecycle && <MetaRow label="State" value={lifecycle} />}
-        {node.kindLabel && node.kind !== 'effort' && (
-          <MetaRow label="Subkind" value={node.kindLabel} />
-        )}
-        {node.effortId && (
-          <MetaRow
-            label="Effort"
-            value={
-              <button
-                type="button"
-                onClick={() => onSelect(node.effortId)}
-                className="truncate text-left font-mono text-[11px] text-foreground underline-offset-2 hover:underline"
-              >
-                {nodesById.get(node.effortId)?.title ?? node.effortId}
-              </button>
-            }
-          />
-        )}
-        {node.likelihood && (
-          <MetaRow label="Likelihood" value={node.likelihood} />
-        )}
-        {node.severity && <MetaRow label="Severity" value={node.severity} />}
-      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="flex flex-col gap-3 px-4 py-3">
+          <MetaRow label="Kind" value={KIND_LABEL[node.kind]} />
+          {lifecycle && !badge && <MetaRow label="State" value={lifecycle} />}
+          {node.kindLabel && node.kind !== 'effort' && (
+            <MetaRow label="Subkind" value={node.kindLabel} />
+          )}
+          {node.effortId && (
+            <MetaRow
+              label="Effort"
+              value={
+                <button
+                  type="button"
+                  onClick={() => onSelect(node.effortId)}
+                  className="truncate text-left font-mono text-[11px] text-foreground underline-offset-2 hover:underline"
+                >
+                  {nodesById.get(node.effortId)?.title ?? node.effortId}
+                </button>
+              }
+            />
+          )}
+          {node.likelihood && (
+            <MetaRow label="Likelihood" value={node.likelihood} />
+          )}
+          {node.severity && <MetaRow label="Severity" value={node.severity} />}
+        </div>
 
-      <RelationList
-        title="Outgoing"
-        edges={relations.outgoing}
-        peerFor={(edge) => edge.target}
-        nodesById={nodesById}
-        onSelect={onSelect}
-      />
-      <RelationList
-        title="Incoming"
-        edges={relations.incoming}
-        peerFor={(edge) => edge.source}
-        nodesById={nodesById}
-        onSelect={onSelect}
-      />
+        {hasBody && (
+          <section className="border-t border-border px-4 py-3">
+            <h3 className="mb-2 text-[10px] font-medium uppercase tracking-[0.08em] text-muted">
+              Content
+            </h3>
+            <MarkdownSurface
+              value={node.body!}
+              onNavigate={navigateTarget}
+            />
+          </section>
+        )}
+
+        {hasRelations && (
+          <section className="border-t border-border px-4 py-3">
+            <h3 className="mb-2 text-[10px] font-medium uppercase tracking-[0.08em] text-muted">
+              Decision chain
+            </h3>
+            <div className="flex flex-col gap-3">
+              {groupedRelations.map(({ group, edges: groupEdges }) => (
+                <div key={group}>
+                  <h4 className="mb-1.5 text-[9px] font-medium uppercase tracking-[0.08em] text-muted/90">
+                    {RELATION_GROUP_LABEL[group]}
+                  </h4>
+                  <ul className="flex flex-col gap-1">
+                    {groupEdges.map((edge) => (
+                      <RelationRow
+                        key={`${edge.direction}:${edge.id}`}
+                        edge={edge}
+                        nodesById={nodesById}
+                        onSelect={onSelect}
+                      />
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
     </aside>
   );
 }
@@ -157,47 +240,42 @@ function MetaRow({
   );
 }
 
-function RelationList({
-  title,
-  edges,
-  peerFor,
+function RelationRow({
+  edge,
   nodesById,
   onSelect,
 }: {
-  title: string;
-  edges: GraphEdge[];
-  peerFor: (edge: GraphEdge) => string;
+  edge: DirectedEdge;
   nodesById: Map<string, GraphNode>;
   onSelect: (id: string | null) => void;
 }) {
-  if (edges.length === 0) return null;
+  const meta = RELATION_META[edge.kind];
+  const peerId =
+    edge.direction === 'outgoing' ? edge.target : edge.source;
+  const peer = nodesById.get(peerId);
+  const arrow = edge.direction === 'outgoing' ? '→' : '←';
+
   return (
-    <section className="border-t border-border px-4 py-3">
-      <h3 className="mb-2 text-[10px] font-medium uppercase tracking-[0.08em] text-muted">
-        {title} · {edges.length}
-      </h3>
-      <ul className="flex flex-col gap-1">
-        {edges.map((edge) => {
-          const peerId = peerFor(edge);
-          const peer = nodesById.get(peerId);
-          return (
-            <li key={edge.id}>
-              <button
-                type="button"
-                onClick={() => onSelect(peerId)}
-                className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-left text-[11px] transition-colors hover:bg-muted/15 focus:outline-none focus-visible:bg-muted/15"
-              >
-                <span className="min-w-0 truncate text-foreground">
-                  {peer?.title ?? peerId}
-                </span>
-                <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.06em] text-muted">
-                  {edge.kind.replace(/_/g, ' ')}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
+    <li>
+      <button
+        type="button"
+        onClick={() => onSelect(peerId)}
+        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted/15 focus:outline-none focus-visible:bg-muted/15"
+      >
+        <RelationLineSample meta={meta} className="shrink-0" />
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-1.5 text-[11px] text-foreground">
+            <span className="shrink-0 font-mono text-[10px] text-muted" aria-hidden>
+              {arrow}
+            </span>
+            <span className="truncate">{peer?.title ?? peerId}</span>
+          </span>
+          <span className="mt-0.5 block text-[9px] text-muted">
+            {meta.label}
+            {peer?.kind ? ` · ${peer.kind}` : ''}
+          </span>
+        </span>
+      </button>
+    </li>
   );
 }

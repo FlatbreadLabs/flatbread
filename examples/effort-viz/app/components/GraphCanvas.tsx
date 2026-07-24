@@ -24,9 +24,10 @@ import {
   type SimNode,
   type VeinPoint,
 } from '@/lib/physics';
-import { nodeColor, oklchToThreeColor } from '@/lib/oklch';
-import type { GraphEdge, GraphNode } from '@/lib/types';
+import { nodeColor, oklchToThreeColor, type Oklch } from '@/lib/oklch';
+import type { GraphEdge, GraphEdgeKind, GraphNode } from '@/lib/types';
 import { useTheme, type ColorMode } from '../hooks/useTheme';
+import { RELATION_META, type RelationMeta } from './RelationLegend';
 
 export interface GraphCanvasProps {
   nodes: GraphNode[];
@@ -70,11 +71,12 @@ export default function GraphCanvas(props: GraphCanvasProps) {
   const { mode } = useTheme();
   return (
     <Canvas
+      className="h-full w-full touch-none"
       orthographic
       camera={{ position: [0, 0, 100], zoom: 4, near: 0.1, far: 1000 }}
       dpr={[1, 2]}
       gl={{ antialias: true, alpha: true }}
-      style={{ background: 'transparent' }}
+      style={{ background: 'transparent', width: '100%', height: '100%' }}
       onPointerMissed={() => props.onSelect(null)}
     >
       <ambientLight intensity={1} />
@@ -128,6 +130,12 @@ function GraphScene({ nodes, edges, selectedId, onSelect, mode }: GraphSceneProp
     return map;
   }, [nodes]);
 
+  const edgesById = useMemo(() => {
+    const map = new Map<string, GraphEdge>();
+    for (const e of edges) map.set(e.id, e);
+    return map;
+  }, [edges]);
+
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   return (
@@ -135,15 +143,22 @@ function GraphScene({ nodes, edges, selectedId, onSelect, mode }: GraphSceneProp
       <PanZoomControls />
       <FitCamera sim={sim} nodeCount={nodes.length} />
       <group>
-        {state.edges.map((edge) => (
-          <EdgeLine
-            key={edge.id}
-            edge={edge}
-            mode={mode}
-            nodesById={nodeMetaById}
-            selectedId={selectedId}
-          />
-        ))}
+        {state.edges.map((edge) => {
+          const graphEdge = edgesById.get(edge.id);
+          const edgeKind = graphEdge?.kind ?? edgeKindFromId(edge.id);
+          if (!edgeKind) return null;
+          return (
+            <EdgeLine
+              key={edge.id}
+              edge={edge}
+              edgeKind={edgeKind}
+              mode={mode}
+              nodesById={nodeMetaById}
+              selectedId={selectedId}
+              hoveredId={hoveredId}
+            />
+          );
+        })}
       </group>
       <group>
         {state.nodes.map((node) => {
@@ -186,10 +201,27 @@ function GraphScene({ nodes, edges, selectedId, onSelect, mode }: GraphSceneProp
   );
 }
 
+/** Screen-space padding so fitted nodes stay clear of floating chrome. */
+function fitChromeInsets(viewportWidth: number): {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+} {
+  const isWide = viewportWidth >= 640;
+  return {
+    top: 32,
+    bottom: isWide ? 104 : 128,
+    left: isWide ? 220 : 16,
+    right: isWide ? 348 : 16,
+  };
+}
+
 /**
  * Frame the orthographic camera on the live simulation bounds once the
  * layout has mostly settled (or after a short timeout). Re-fits when the
- * node count changes substantially (live add/remove bursts).
+ * node count changes substantially (live add/remove bursts) or the canvas
+ * viewport resizes.
  */
 function FitCamera({
   sim,
@@ -202,15 +234,31 @@ function FitCamera({
   const controls = useThree((s) => s.controls) as PanZoomControlsHandle | null;
   const size = useThree((s) => s.size);
   const fittedForCount = useRef<number | null>(null);
+  const fittedForSize = useRef<string | null>(null);
   const elapsedRef = useRef(0);
+  const reduceMotionRef = useRef(false);
+
+  useEffect(() => {
+    reduceMotionRef.current = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
+  }, []);
+
+  const sizeKey = `${size.width}x${size.height}`;
 
   useEffect(() => {
     fittedForCount.current = null;
+    fittedForSize.current = null;
     elapsedRef.current = 0;
-  }, [nodeCount]);
+  }, [nodeCount, sizeKey]);
 
   useFrame((_, delta) => {
-    if (fittedForCount.current === nodeCount) return;
+    if (
+      fittedForCount.current === nodeCount &&
+      fittedForSize.current === sizeKey
+    ) {
+      return;
+    }
     elapsedRef.current += delta;
 
     const { nodes } = sim.getState();
@@ -221,7 +269,10 @@ function FitCamera({
 
     let kinetic = 0;
     for (const n of alive) kinetic += n.vx * n.vx + n.vy * n.vy;
-    const settled = kinetic < 2.5 || elapsedRef.current > 2.4;
+    const settled =
+      reduceMotionRef.current ||
+      kinetic < 2.5 ||
+      elapsedRef.current > 2.4;
     if (!settled) return;
 
     let minX = Infinity;
@@ -241,20 +292,37 @@ function FitCamera({
     const cx = (minX + maxX) / 2;
     const cy = (minY + maxY) / 2;
     const pad = 1.35;
+
+    const insets = fitChromeInsets(size.width);
+    const availW = Math.max(
+      size.width - insets.left - insets.right,
+      64
+    );
+    const availH = Math.max(
+      size.height - insets.top - insets.bottom,
+      64
+    );
     const zoom = Math.min(
-      size.width / (width * pad),
-      size.height / (height * pad),
+      availW / (width * pad),
+      availH / (height * pad),
       12
     );
+    const clampedZoom = Math.max(zoom, 0.75);
 
-    camera.position.set(cx, cy, 100);
-    camera.zoom = Math.max(zoom, 0.75);
+    const offsetX = (insets.left - insets.right) / 2 / clampedZoom;
+    const offsetY = (insets.bottom - insets.top) / 2 / clampedZoom;
+    const fitCx = cx - offsetX;
+    const fitCy = cy - offsetY;
+
+    camera.position.set(fitCx, fitCy, 100);
+    camera.zoom = clampedZoom;
     camera.updateProjectionMatrix();
     if (controls) {
-      controls.target.set(cx, cy, 0);
+      controls.target.set(fitCx, fitCy, 0);
       controls.update();
     }
     fittedForCount.current = nodeCount;
+    fittedForSize.current = sizeKey;
   });
 
   return null;
@@ -370,74 +438,169 @@ function NodeMesh({
 
 interface EdgeLineProps {
   edge: SimEdge;
+  edgeKind: GraphEdgeKind;
   mode: ColorMode;
   nodesById: Map<string, GraphNode>;
   selectedId: string | null;
+  hoveredId: string | null;
+}
+
+/** Recover kind from `${source}:${kind}:${target}` ids when the map misses. */
+function edgeKindFromId(id: string): GraphEdgeKind | null {
+  const parts = id.split(':');
+  if (parts.length < 3) return null;
+  const kind = parts[1];
+  return kind in RELATION_META ? (kind as GraphEdgeKind) : null;
+}
+
+function relationEmphasisOpacity(emphasis: RelationMeta['emphasis']): number {
+  if (emphasis === 'subtle') return 0.45;
+  if (emphasis === 'medium') return 0.65;
+  if (emphasis === 'strong') return 0.9;
+  return 0.75;
+}
+
+function dashWorldUnits(
+  dash: RelationMeta['dash'],
+  weight: RelationMeta['weight']
+): { dashSize: number; gapSize: number } | null {
+  if (dash === 'solid') return null;
+  const scale = weight === 'medium' ? 1.15 : weight === 'bold' ? 1.3 : 1;
+  if (dash === 'dashed') {
+    return { dashSize: 1.0 * scale, gapSize: 0.65 * scale };
+  }
+  return { dashSize: 0.35 * scale, gapSize: 0.55 * scale };
+}
+
+function edgeStrokeOklch(
+  kind: GraphEdgeKind,
+  sourceMeta: GraphNode | undefined,
+  mode: ColorMode
+): Oklch {
+  const meta = RELATION_META[kind];
+  if (meta.group === 'membership') {
+    const effortId = sourceMeta?.effortId ?? sourceMeta?.id ?? 'unknown';
+    const nodeKind = sourceMeta?.kind ?? 'effort';
+    return nodeColor(effortId, nodeKind, mode).oklch;
+  }
+  if (meta.group === 'resolution') {
+    return mode === 'light'
+      ? { l: 0.52, c: 0.13, h: 160 }
+      : { l: 0.7, c: 0.11, h: 160 };
+  }
+  if (meta.group === 'rejection') {
+    return mode === 'light'
+      ? { l: 0.55, c: 0.02, h: 260 }
+      : { l: 0.62, c: 0.02, h: 260 };
+  }
+  return mode === 'light'
+    ? { l: 0.42, c: 0.02, h: 260 }
+    : { l: 0.78, c: 0.02, h: 260 };
 }
 
 /**
- * Renders a single vein/edge as a `<line>` primitive. Buffer positions are
- * refreshed in `useFrame` from `veinTipPolyline`, so the tip grows in and
- * retracts out with `edge.growth`.
+ * Renders a single vein/edge as a styled line (+ optional arrowhead). Buffer
+ * positions are refreshed in `useFrame` from `veinTipPolyline`, so the tip
+ * grows in and retracts out with `edge.growth`. Style matches RelationLegend.
  */
-function EdgeLine({ edge, mode, nodesById, selectedId }: EdgeLineProps) {
+function EdgeLine({
+  edge,
+  edgeKind,
+  mode,
+  nodesById,
+  selectedId,
+  hoveredId,
+}: EdgeLineProps) {
+  const meta = RELATION_META[edgeKind];
   const positionsRef = useRef<Float32Array>(new Float32Array(16 * 3));
   const scratchRef = useRef<VeinPoint[]>([]);
 
   const color = useMemo(() => {
     const sourceMeta = nodesById.get(edge.from);
-    const effortId =
-      sourceMeta?.effortId ?? sourceMeta?.id ?? edge.from ?? 'unknown';
-    const kind = sourceMeta?.kind ?? 'effort';
-    return oklchToThreeColor(nodeColor(effortId, kind, mode).oklch);
-  }, [edge.from, nodesById, mode]);
+    return oklchToThreeColor(edgeStrokeOklch(edgeKind, sourceMeta, mode));
+  }, [edge.from, edgeKind, nodesById, mode]);
 
-  // Build the line object once. Using `<primitive>` sidesteps the JSX conflict
-  // between three's `Line` and SVG's `line` element.
-  const line = useMemo(() => {
+  const { line, arrow } = useMemo(() => {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute(
       'position',
       new THREE.BufferAttribute(positionsRef.current, 3)
     );
     geometry.setDrawRange(0, 0);
-    const material = new THREE.LineBasicMaterial({
+
+    const pattern = dashWorldUnits(meta.dash, meta.weight);
+    const material =
+      pattern === null
+        ? new THREE.LineBasicMaterial({
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+          })
+        : new THREE.LineDashedMaterial({
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            dashSize: pattern.dashSize,
+            gapSize: pattern.gapSize,
+          });
+
+    const lineObj = new THREE.Line(geometry, material);
+    lineObj.renderOrder = -1;
+    lineObj.frustumCulled = false;
+
+    const arrowShape = new THREE.Shape();
+    arrowShape.moveTo(0, 0);
+    arrowShape.lineTo(-0.85, 0.38);
+    arrowShape.lineTo(-0.85, -0.38);
+    arrowShape.closePath();
+    const arrowGeom = new THREE.ShapeGeometry(arrowShape);
+    const arrowMat = new THREE.MeshBasicMaterial({
       transparent: true,
       opacity: 0,
       depthWrite: false,
     });
-    const obj = new THREE.Line(geometry, material);
-    obj.renderOrder = -1;
-    obj.frustumCulled = false;
-    return obj;
-  }, []);
+    const arrowMesh = new THREE.Mesh(arrowGeom, arrowMat);
+    arrowMesh.visible = false;
+    arrowMesh.renderOrder = 0;
+    arrowMesh.frustumCulled = false;
+
+    return { line: lineObj, arrow: arrowMesh };
+  }, [meta.dash, meta.weight]);
 
   useEffect(() => {
     (line.material as THREE.LineBasicMaterial).color.setHex(color);
-  }, [line, color]);
+    (arrow.material as THREE.MeshBasicMaterial).color.setHex(color);
+  }, [line, arrow, color]);
 
   useEffect(() => {
     return () => {
       line.geometry.dispose();
-      (line.material as THREE.LineBasicMaterial).dispose();
+      (line.material as THREE.Material).dispose();
+      arrow.geometry.dispose();
+      (arrow.material as THREE.Material).dispose();
     };
-  }, [line]);
+  }, [line, arrow]);
 
   useFrame(() => {
     const geom = line.geometry;
     const material = line.material as THREE.LineBasicMaterial;
+    const arrowMaterial = arrow.material as THREE.MeshBasicMaterial;
+
     if (isEdgeGone(edge)) {
       geom.setDrawRange(0, 0);
+      arrow.visible = false;
       return;
     }
     const path = edge.path;
     if (!path || path.length < 2) {
       geom.setDrawRange(0, 0);
+      arrow.visible = false;
       return;
     }
     const visible = veinTipPolyline(path, edge.growth, scratchRef.current);
     if (visible.length < 2) {
       geom.setDrawRange(0, 0);
+      arrow.visible = false;
       return;
     }
     const needed = visible.length * 3;
@@ -457,16 +620,49 @@ function EdgeLine({ edge, mode, nodesById, selectedId }: EdgeLineProps) {
       | undefined;
     if (attr) attr.needsUpdate = true;
     geom.setDrawRange(0, visible.length);
+    if (meta.dash !== 'solid') {
+      line.computeLineDistances();
+    }
 
     const isTouched =
       selectedId !== null &&
       (selectedId === edge.from || selectedId === edge.to);
-    const base = mode === 'dark' ? 0.42 : 0.36;
-    const target = isTouched ? Math.min(base + 0.4, 0.95) : base;
-    material.opacity = target * Math.max(0.001, edge.growth);
+    const isHovered =
+      hoveredId !== null &&
+      (hoveredId === edge.from || hoveredId === edge.to);
+    const highlighted = isTouched || isHovered;
+
+    const baseOpacity = relationEmphasisOpacity(meta.emphasis);
+    const modeScale = mode === 'dark' ? 1.05 : 0.95;
+    const target = highlighted
+      ? Math.min(baseOpacity * modeScale + 0.35, 0.98)
+      : baseOpacity * modeScale;
+    const growthOpacity = target * Math.max(0.001, edge.growth);
+    material.opacity = growthOpacity;
+    arrowMaterial.opacity = growthOpacity;
+
+    if (meta.arrow && visible.length >= 2) {
+      const tip = visible[visible.length - 1];
+      const prev = visible[visible.length - 2];
+      const dx = tip.x - prev.x;
+      const dy = tip.y - prev.y;
+      const angle = Math.atan2(dy, dx);
+      const scale = highlighted ? 1.2 : 1;
+      arrow.position.set(tip.x, tip.y, 0.02);
+      arrow.rotation.z = angle;
+      arrow.scale.set(scale, scale, 1);
+      arrow.visible = true;
+    } else {
+      arrow.visible = false;
+    }
   });
 
-  return <primitive object={line} />;
+  return (
+    <group>
+      <primitive object={line} />
+      {meta.arrow ? <primitive object={arrow} /> : null}
+    </group>
+  );
 }
 
 interface NodeLabelProps {

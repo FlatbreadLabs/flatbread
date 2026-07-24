@@ -1,3 +1,8 @@
+export interface ContentField {
+  raw?: string | null;
+  html?: string | null;
+}
+
 export const EFFORT_GRAPH_QUERY = `
   query EffortGraph {
     allEfforts {
@@ -6,6 +11,9 @@ export const EFFORT_GRAPH_QUERY = `
       slug
       status
       created_at
+      _content {
+        raw
+      }
     }
     allIssues {
       id
@@ -24,6 +32,9 @@ export const EFFORT_GRAPH_QUERY = `
       superseded_by {
         id
       }
+      _content {
+        raw
+      }
     }
     allFindings {
       id
@@ -36,6 +47,9 @@ export const EFFORT_GRAPH_QUERY = `
       derives_from
       invalidates
       invalidated_by
+      _content {
+        raw
+      }
     }
     allDecisions {
       id
@@ -52,6 +66,9 @@ export const EFFORT_GRAPH_QUERY = `
       superseded_by {
         id
       }
+      _content {
+        raw
+      }
     }
     allConstraints {
       id
@@ -62,6 +79,9 @@ export const EFFORT_GRAPH_QUERY = `
         id
       }
       derives_from
+      _content {
+        raw
+      }
     }
     allRisks {
       id
@@ -72,6 +92,9 @@ export const EFFORT_GRAPH_QUERY = `
       created_at
       effort {
         id
+      }
+      _content {
+        raw
       }
     }
   }
@@ -87,6 +110,7 @@ export interface EffortRecord {
   slug?: string | null;
   status?: string | null;
   created_at?: string | null;
+  _content?: ContentField | null;
 }
 
 export interface IssueRecord {
@@ -100,6 +124,7 @@ export interface IssueRecord {
   resolved_by?: unknown;
   supersedes?: GraphRef[] | null;
   superseded_by?: GraphRef[] | null;
+  _content?: ContentField | null;
 }
 
 export interface FindingRecord {
@@ -111,6 +136,7 @@ export interface FindingRecord {
   derives_from?: unknown;
   invalidates?: unknown;
   invalidated_by?: unknown;
+  _content?: ContentField | null;
 }
 
 export interface DecisionRecord {
@@ -122,6 +148,7 @@ export interface DecisionRecord {
   derives_from?: unknown;
   supersedes?: GraphRef[] | null;
   superseded_by?: GraphRef[] | null;
+  _content?: ContentField | null;
 }
 
 export interface ConstraintRecord {
@@ -131,6 +158,7 @@ export interface ConstraintRecord {
   created_at?: string | null;
   effort?: GraphRef | null;
   derives_from?: unknown;
+  _content?: ContentField | null;
 }
 
 export interface RiskRecord {
@@ -141,6 +169,7 @@ export interface RiskRecord {
   severity?: string | null;
   created_at?: string | null;
   effort?: GraphRef | null;
+  _content?: ContentField | null;
 }
 
 export interface EffortGraphQueryResult {

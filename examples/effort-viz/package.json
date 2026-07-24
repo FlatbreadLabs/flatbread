@@ -6,7 +6,7 @@
     "dev": "flatbread start --watch -- next dev --turbopack",
     "build": "flatbread start -- next build",
     "start": "next start",
-    "test": "node --import tsx --test lib/physics/*.test.ts"
+    "test": "node --import tsx --test lib/physics/*.test.ts lib/normalize.test.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.0.6",
@@ -15,6 +15,9 @@
     "next": "15.4.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-markdown": "10.1.0",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.1",
     "three": "^0.175.0"
   },
   "devDependencies": {

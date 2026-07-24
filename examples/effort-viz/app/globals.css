@@ -8,6 +8,10 @@
   --muted-foreground: #737373;
   --border: #eaeaea;
   --accent: #0070f3;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -56,12 +60,14 @@
   box-sizing: border-box;
 }
 
-html,
-body {
+html {
   height: 100%;
+  min-height: 100dvh;
 }
 
 body {
+  min-height: 100dvh;
+  height: 100%;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
@@ -70,6 +76,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
   overscroll-behavior: none;
+}
+
+.safe-area-top {
+  padding-top: var(--safe-area-top);
+}
+
+.safe-area-x {
+  padding-left: var(--safe-area-left);
+  padding-right: var(--safe-area-right);
 }
 
 /* Subtle atmospheric field behind the graph — not a flat wash. */
@@ -120,7 +135,7 @@ canvas {
   background: color-mix(in srgb, var(--background) 82%, transparent);
   border: 1px solid var(--border);
   white-space: nowrap;
-  max-width: 200px;
+  max-width: min(200px, 42vw);
   overflow: hidden;
   text-overflow: ellipsis;
   backdrop-filter: blur(6px);
@@ -136,4 +151,10 @@ canvas {
   font-weight: 600;
   border-color: color-mix(in srgb, var(--foreground) 40%, transparent);
   box-shadow: 0 1px 0 rgb(0 0 0 / 4%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .effort-label {
+    transition: none;
+  }
 }
