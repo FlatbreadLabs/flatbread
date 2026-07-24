@@ -15,12 +15,14 @@ import { join, relative } from 'node:path';
 import { tmpdir } from 'node:os';
 import { effortGraphContent } from '@flatbread/effort-graph';
 import { effortGraphContent as publicEffortGraphContent } from '../index.js';
+import { EffortGraphValidationError } from '@flatbread/effort-graph';
 import {
   handleEffortBlockingDecisions,
   handleEffortBootstrap,
   handleEffortGet,
   handleEffortList,
   handleEffortRecords,
+  handleEffortRelations,
   handleEffortWrite,
   inspectEffortBootstrap,
   mapEffortCliOptions,
@@ -435,6 +437,144 @@ export default { source: source(), transformer: transformer(), content: [{ colle
     const report = await inspectEffortBootstrap(cwd);
     t.is(report.requirements[0]?.code, 'EFFORT_BOOTSTRAP_PRESET_MISSING');
     t.is(await readFile(configPath, 'utf8'), config);
+  }
+);
+
+test.serial(
+  'effort handlers wire Blob, Citation cites, records browse, get, and relations',
+  async (t) => {
+    const cwd = await createTempProject('flatbread-effort-citation-blob-', t);
+    for (const directory of [
+      'efforts',
+      'issues',
+      'findings',
+      'decisions',
+      'constraints',
+      'risks',
+      'citations',
+      'blobs',
+    ])
+      await mkdir(join(cwd, '.flatbread-efforts', directory), {
+        recursive: true,
+      });
+    await writeFile(
+      join(cwd, 'flatbread.config.js'),
+      `import { source } from '@flatbread/source-filesystem';
+import { transformer } from '@flatbread/transformer-markdown';
+import { effortGraphContent } from '@flatbread/effort-graph';
+export default {
+  source: source(),
+  transformer: transformer(),
+  content: effortGraphContent('.flatbread-efforts'),
+};`
+    );
+    const effort = await handleEffortWrite(
+      JSON.stringify({ type: 'CreateEffort', title: 'Cite chain', body: '' }),
+      { cwd }
+    );
+    const effortId = effort.artifacts[0].id;
+    const otherEffort = await handleEffortWrite(
+      JSON.stringify({ type: 'CreateEffort', title: 'Other', body: '' }),
+      { cwd }
+    );
+    const blobBody = '# longform research payload\n\nDetailed content here.\n';
+    const blob = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteBlob',
+        effort: effortId,
+        title: 'Payload',
+        body: blobBody,
+        kind: 'markdown',
+      }),
+      { cwd }
+    );
+    const blobId = blob.artifacts[0].id;
+    const citation = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteCitation',
+        effort: effortId,
+        title: 'Paper',
+        body: 'https://example.com/paper',
+        role: 'evidence',
+        blob: blobId,
+      }),
+      { cwd }
+    );
+    const citationId = citation.artifacts[0].id;
+    const finding = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteFinding',
+        effort: effortId,
+        title: 'Measured',
+        body: 'short',
+        kind: 'measurement',
+        cites: [citationId],
+      }),
+      { cwd }
+    );
+    const findingId = finding.artifacts[0].id;
+    const foreignCitation = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteCitation',
+        effort: otherEffort.artifacts[0].id,
+        title: 'Foreign',
+        body: 'https://example.com/foreign',
+      }),
+      { cwd }
+    );
+    await t.throwsAsync(
+      () =>
+        handleEffortWrite(
+          JSON.stringify({
+            type: 'WriteFinding',
+            effort: effortId,
+            title: 'Bad cite',
+            body: '',
+            kind: 'measurement',
+            cites: [foreignCitation.artifacts[0].id],
+          }),
+          { cwd }
+        ),
+      { instanceOf: EffortGraphValidationError, message: /Different effort/ }
+    );
+
+    const browse = await handleEffortRecords(effortId, { cwd });
+    const browseDigest = await readFile(browse.artifact_path, 'utf8');
+    t.is(browse.page.returned, 2);
+    t.true(browseDigest.includes(citationId));
+    t.true(browseDigest.includes(findingId));
+    t.false(browseDigest.includes(`### ${blobId}`));
+    t.false(browseDigest.includes('longform research payload'));
+
+    const explicitBlob = await handleEffortRecords(effortId, {
+      cwd,
+      kinds: ['blob'],
+    });
+    const blobBrowseDigest = await readFile(explicitBlob.artifact_path, 'utf8');
+    t.true(blobBrowseDigest.includes(blobId));
+    t.true(blobBrowseDigest.includes('Blob body omitted from bounded digests'));
+    t.false(blobBrowseDigest.includes('Detailed content here.'));
+
+    const blobGet = await handleEffortGet(blobId, { cwd });
+    const blobGetDigest = await readFile(blobGet.artifact_path, 'utf8');
+    t.true(blobGetDigest.includes('longform research payload'));
+    t.true(blobGetDigest.includes('Detailed content here.'));
+    t.false(blobGetDigest.includes('Blob body omitted from bounded digests'));
+
+    const citesRelations = await handleEffortRelations(effortId, findingId, {
+      cwd,
+      relations: ['cites'],
+    });
+    const citesDigest = await readFile(citesRelations.artifact_path, 'utf8');
+    t.is(citesRelations.page.returned, 1);
+    t.true(citesDigest.includes(`### ${citationId}`));
+    t.false(citesDigest.includes(`### ${blobId}`));
+
+    const effortRelations = await handleEffortRelations(effortId, effortId, {
+      cwd,
+      relations: ['cites'],
+    });
+    t.is(effortRelations.page.returned, 0);
   }
 );
 

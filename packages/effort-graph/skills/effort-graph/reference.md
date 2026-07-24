@@ -19,14 +19,15 @@ on all creates except `CreateEffort`, `WriteCitation`, and `WriteBlob`:
 `derives_from[]`, `supersedes[]`, `invalidates[]` (arrays of existing ids;
 targets are validated).
 
-Optional `cites[]` on all epistemic creates (`CreateEffort` and every `Write*`
-except `WriteCitation` / `WriteBlob`): existing **Citation** ids (homogeneous
-Flatbread `refs` → Citation).
+Optional `cites[]` on epistemic creates (every `Write*` except `WriteCitation`
+/ `WriteBlob`): existing **Citation** ids in the **same effort** (homogeneous
+Flatbread `refs` → Citation). Create Citations first, then cite them from
+Findings, Decisions, Issues, etc. — `CreateEffort` does not take `cites`.
 
 ### Effort lifecycle
 
 ```json
-{"type":"CreateEffort","title":"...","body":"...","slug":"optional","cites":["<cit-id>"]}
+{"type":"CreateEffort","title":"...","body":"...","slug":"optional"}
 {"type":"SetEffortStatus","effortId":"<eff-id>","status":"active|paused|completed|abandoned"}
 ```
 
@@ -131,7 +132,8 @@ flatbread effort cache prune
 ```
 
 - `--kinds`: `effort|issue|finding|decision|constraint|risk|citation|blob`
-  (records: default all non-effort kinds, including `citation` and `blob`).
+  (records: default all non-effort kinds including `citation`; `blob` is
+  opt-in via `--kinds`).
 - `list --status`: defaults to `active`; valid values are exactly `active`,
   `paused`, `completed`, and `abandoned`. Values are ORed and results are
   ordered by `created_at` ascending, then `id`.

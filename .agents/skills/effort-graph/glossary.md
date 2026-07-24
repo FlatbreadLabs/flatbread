@@ -75,7 +75,8 @@ writer-materialized reverse projections.
 
 `cites` is a homogeneous Flatbread `refs` edge to Citation on every epistemic
 record (Effort, Issue, Finding, Decision, Constraint, Risk). Citation may
-optionally `blob` → Blob.
+optionally `blob` → Blob. Bounded `effort relations` walks `cites` but not
+`blob`; zoom with `effort get`.
 
 New edge vocabulary needs a dogfooded query the existing vocabulary cannot
 express.

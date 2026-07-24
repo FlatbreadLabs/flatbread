@@ -8,15 +8,17 @@ derives_from:
   - con-mutation-enum-stays-deliberately-small--45v1ae3neq26g1rz
 ---
 
+Rollup: cite mechanism clarified by dec-ship-citation-collection-with-optional-blob — epistemic records use `cites`→Citation (optional `blob`→Blob on the Citation); direct Blob cites and derives_from/evidence-style Blob refs are not the v1 model.
+
 ## Context
 
 Crumb Graph primitives (Effort, Issue, Finding, Decision, Constraint, Risk) are epistemic and deliberately bounded. Longform plans, research troves, JSON dumps, and media do not fit record bodies or digest caps, and Artifact/Plan were intentional non-models in v1. Agents and humans still need a place to put bulky, experimental content in git (or another Flatbread source) and cite it from a short Finding or Decision.
 
 ## Decision
 
-Adopt **Blob** as the name for a citeable, non-epistemic payload collection that Crumb Graph records can reference.
+Adopt **Blob** as the name for a citeable, non-epistemic payload collection that Crumb Graph records reach via Citation indirection.
 
-A Blob is opaque content of any format (markdown, JSON, images, etc.). It has no proposed/accepted lifecycle — it is storage, not judgment. Epistemic records stay short and point at Blobs via refs (e.g. `derives_from` / evidence-style edges).
+A Blob is opaque content of any format (markdown, JSON, images, etc.). It has no proposed/accepted lifecycle — it is storage, not judgment. Epistemic records stay short and cite **Citation** ids in `cites[]`; a Citation body alone is valid (e.g. URL), and optional `blob`→Blob attaches longform payloads.
 
 Blobs are ordinary Flatbread content: they may live in the filesystem source or in another source plugin (S3, CDN, file host, …). The graph stores ids/refs; the configured source resolves bytes.
 

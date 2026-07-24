@@ -25,5 +25,10 @@ What becomes easier, harder, required, or intentionally deferred?
 What evidence would justify revisiting this?
 ```
 
-The body belongs to the Decision record. Cite related Findings, Constraints,
-Risks, and Issues through `derives_from` when creating it.
+The body belongs to the Decision record. Wire epistemic upstream through
+`derives_from` when creating it — the Findings, Constraints, Risks, and Issues
+this Decision responds to or weighs.
+
+For external evidence (URLs, docs, longform captures), do not paste the source
+into the body. Use `WriteBlob` when the payload is longform, then
+`WriteCitation`, then pass `cites: ["<cit-id>"]` on the Decision create.

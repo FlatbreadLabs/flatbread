@@ -326,6 +326,78 @@ test('SetRiskState realized requires at least one Finding in evidence', async (t
   t.deepEqual(result.artifacts[0].frontmatter.evidence, [finding]);
 });
 
+test('WriteBlob, WriteCitation(blob), and WriteFinding(cites) persist same-effort links', async (t) => {
+  const { root, writer } = await makeWriter();
+  const effort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E', body: '' })
+  );
+  const blobId = soleId(
+    await writer.mutate({
+      type: 'WriteBlob',
+      effort,
+      title: 'Payload',
+      body: '# longform research\n',
+      kind: 'markdown',
+    })
+  );
+  const blobDoc = await readFrontmatter(root, `blobs/${blobId}.md`);
+  t.is(blobDoc.data.effort, effort);
+  t.is(blobDoc.content.trim(), '# longform research');
+  const citationId = soleId(
+    await writer.mutate({
+      type: 'WriteCitation',
+      effort,
+      title: 'Paper',
+      body: 'https://example.com/paper',
+      role: 'evidence',
+      blob: blobId,
+    })
+  );
+  const citationDoc = await readFrontmatter(root, `citations/${citationId}.md`);
+  t.is(citationDoc.data.blob, blobId);
+  const findingId = soleId(
+    await writer.mutate({
+      type: 'WriteFinding',
+      effort,
+      title: 'F',
+      body: 'short',
+      kind: 'measurement',
+      cites: [citationId],
+    })
+  );
+  const findingDoc = await readFrontmatter(root, `findings/${findingId}.md`);
+  t.deepEqual(findingDoc.data.cites, [citationId]);
+});
+
+test('WriteFinding rejects cites from another effort', async (t) => {
+  const { writer } = await makeWriter();
+  const effort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E1', body: '' })
+  );
+  const otherEffort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E2', body: '' })
+  );
+  const foreignCitation = soleId(
+    await writer.mutate({
+      type: 'WriteCitation',
+      effort: otherEffort,
+      title: 'Foreign',
+      body: 'https://example.com/foreign',
+    })
+  );
+  await t.throwsAsync(
+    writer.mutate({
+      type: 'WriteFinding',
+      effort,
+      title: 'F',
+      body: '',
+      kind: 'measurement',
+      cites: [foreignCitation],
+    }),
+    { instanceOf: EffortGraphValidationError, message: /Different effort/ }
+  );
+});
+
 test('generation tokens increment across successive mutations', async (t) => {
   const { writer } = await makeWriter();
   const first = await writer.mutate({

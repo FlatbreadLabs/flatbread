@@ -1,16 +1,17 @@
 ---
 name: effort-graph
-description: Journal reasoning (decisions, findings, issues, constraints, risks) into a Flatbread Effort Graph and recall it with bounded reads. Use when starting or resuming a thread of work, recording a decision or finding, resolving an issue, checking what is blocking or still open on an effort, or when the user mentions effort graph, journaling, blocking decisions, or agent memory.
+description: Journal reasoning (decisions, findings, issues, constraints, risks, citations, blobs) into a Flatbread Effort Graph and recall it with bounded reads. Use when starting or resuming a thread of work, recording a decision or finding, resolving an issue, checking what is blocking or still open on an effort, or when the user mentions effort graph, journaling, blocking decisions, agent memory, citation, blob, cites, longform, WriteCitation, or WriteBlob.
 ---
 
 # Effort Graph — agent journaling and recall
 
 The Effort Graph is persistent, queryable memory for long-horizon work, stored
-as markdown records in the repo. Six primitives: **Effort** (the anchor thread
-of work), **Issue**, **Finding**, **Decision**, **Constraint**, **Risk**.
-Every record belongs to exactly one Effort. You write through 13 typed
-mutations and read through 5 bounded queries — never by hand-editing record
-frontmatter (bodies may be edited freely).
+as markdown records in the repo. Eight collections/primitives: epistemic
+**Effort**, **Issue**, **Finding**, **Decision**, **Constraint**, and
+**Risk**, plus non-epistemic **Citation** and **Blob**. Every record belongs
+to exactly one Effort. You write through 15 typed mutations and read through
+5 bounded queries — never by hand-editing record frontmatter (bodies may be
+edited freely).
 
 Read [glossary.md](./glossary.md) for the primitive and edge semantics before
 inventing a new record kind or relation.
@@ -43,7 +44,7 @@ export default defineConfig({
 });
 ```
 
-Records live under `<root>/{efforts,issues,findings,decisions,constraints,risks}/`.
+Records live under `<root>/{efforts,issues,findings,decisions,constraints,risks,citations,blobs}/`.
 The write journal is `<root>/.journal/`; read digests cache under
 `.flatbread/effort-graph/read-cache/` (both gitignored).
 
@@ -151,9 +152,13 @@ server-side.
    for the full body. Reserve opening `.flatbread-efforts/**/*.md` for rare
    cases (e.g. digest byte-cap miss on an oversized record), not normal
    zoom-in.
-3. **During work:** journal Findings as evidence lands; open Issues for real
-   gaps/blockers; record Decisions with `derives_from` citing the Findings,
-   Constraints, and Issues they respond to.
+3. **During work:** if the source artifact needs capture, teach Blob first with
+   `WriteBlob`; then create the source with `WriteCitation`; then do the
+   epistemic write using `cites: ["<cit-id>"]`. There is no cite retro-link
+   mutation, so create the Citation before the Finding/Decision/Constraint/Risk
+   that should cite it. Open Issues for real gaps/blockers, and record
+   Decisions with `derives_from` citing the Findings, Constraints, and Issues
+   they respond to.
 4. **On commitment:** `AcceptDecision` (mind `rejectSiblings`), `ResolveIssue`
    with `resolvedBy` citing the closing Decision/Findings.
 5. Maintenance: `flatbread effort cache prune` deletes digests older than

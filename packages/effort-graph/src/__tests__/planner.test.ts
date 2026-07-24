@@ -572,3 +572,141 @@ test('25 cites must target Citation', (t) => {
     { message: /cites must target a Citation/ }
   );
 });
+test('26 cites must belong to same effort', (t) => {
+  const otherEffort = 'eff-two--0123456789abcdef';
+  const citId = 'cit-paper--0123456789abcdef';
+  const citation = record(
+    citId,
+    'citation',
+    {
+      id: citId,
+      effort: otherEffort,
+      title: 'Paper',
+      created_at: '2025-01-01T00:00:00.000Z',
+    },
+    'https://example.com/paper'
+  );
+  const otherEffortRecord = record(otherEffort, 'effort', {
+    id: otherEffort,
+    title: 'Other',
+    created_at: '2025-01-01T00:00:00.000Z',
+    status: 'active',
+  });
+  t.throws(
+    () =>
+      planMutation(
+        {
+          type: 'WriteFinding',
+          id: ids.finding,
+          effort: E,
+          title: 'F',
+          body: '',
+          kind: 'measurement',
+          cites: [citId],
+        },
+        snap([otherEffortRecord, citation]),
+        '/root',
+        now
+      ),
+    { message: /Different effort/ }
+  );
+});
+test('27 Citation.blob must belong to same effort', (t) => {
+  const otherEffort = 'eff-two--0123456789abcdef';
+  const blobId = 'blb-payload--0123456789abcdef';
+  const blob = record(blobId, 'blob', {
+    id: blobId,
+    effort: otherEffort,
+    title: 'Payload',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const otherEffortRecord = record(otherEffort, 'effort', {
+    id: otherEffort,
+    title: 'Other',
+    created_at: '2025-01-01T00:00:00.000Z',
+    status: 'active',
+  });
+  t.throws(
+    () =>
+      planMutation(
+        {
+          type: 'WriteCitation',
+          id: 'cit-dump--0123456789abcdef',
+          effort: E,
+          title: 'Dump cite',
+          body: 'Local research dump',
+          blob: blobId,
+        },
+        snap([otherEffortRecord, blob]),
+        '/root',
+        now
+      ),
+    { message: /Different effort/ }
+  );
+});
+test('28 Citation.blob must target Blob', (t) => {
+  const finding = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'F',
+    created_at: '2025-01-01T00:00:00.000Z',
+    kind: 'x',
+  });
+  t.throws(
+    () =>
+      planMutation(
+        {
+          type: 'WriteCitation',
+          id: 'cit-bad--0123456789abcdef',
+          effort: E,
+          title: 'Bad cite',
+          body: 'note',
+          blob: ids.finding,
+        },
+        snap([finding]),
+        '/root',
+        now
+      ),
+    { message: /Citation\.blob must target a Blob/ }
+  );
+});
+test('29 same-effort cites and blob happy path', (t) => {
+  const blobId = 'blb-payload--0123456789abcdef';
+  const citId = 'cit-paper--0123456789abcdef';
+  const blob = record(blobId, 'blob', {
+    id: blobId,
+    effort: E,
+    title: 'Payload',
+    created_at: '2025-01-01T00:00:00.000Z',
+    kind: 'markdown',
+  });
+  const citation = record(
+    citId,
+    'citation',
+    {
+      id: citId,
+      effort: E,
+      title: 'Paper',
+      created_at: '2025-01-01T00:00:00.000Z',
+      blob: blobId,
+      role: 'evidence',
+    },
+    'https://example.com/paper'
+  );
+  const w = planMutation(
+    {
+      type: 'WriteDecision',
+      id: ids.decision,
+      effort: E,
+      title: 'D',
+      body: 'rationale',
+      cites: [citId],
+    },
+    snap([blob, citation]),
+    '/root',
+    now
+  );
+  t.deepEqual(parseDocument(w[0].afterBytes, 'decision').frontmatter.cites, [
+    citId,
+  ]);
+});

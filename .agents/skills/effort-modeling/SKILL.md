@@ -44,6 +44,33 @@ Use `flatbread effort write` for the current Effort, following
 - **Risk** — a prospective negative outcome with likelihood and severity.
 - **Decision** — a proposed or accepted commitment among alternatives.
 
+### Three ways to "cite"
+
+Do not conflate these:
+
+- **Vernacular "cite"** — ordinary language for pointing at evidence.
+- **`cites`** — typed Flatbread `refs` edge from an epistemic record to a
+  **Citation** (external URL, doc, or longform capture). Records never cite
+  Blobs directly.
+- **`derives_from`** — causal upstream **epistemic** context: the Findings,
+  Constraints, Risks, and Issues this record responds to or weighs.
+
+A Decision typically `derives_from` the epistemic records it synthesizes and
+`cites` Citations for outside sources.
+
+### External evidence (URL or longform)
+
+When a Finding, Decision, Constraint, or Risk rests on external evidence, journal
+it as a Citation — do not duplicate the source in the epistemic body:
+
+1. **`WriteBlob`** — only when the source is longform or opaque content that
+   needs capture (markdown, JSON, image, etc.).
+2. **`WriteCitation`** — body is often the URL string; pass optional `blob` and
+   `role` when needed.
+3. **Epistemic write** — pass `cites: ["<cit-id>"]` on the create. There is no
+   cite retro-link mutation, so create the Citation before the record that
+   should cite it.
+
 Record a Decision when it is hard to reverse, surprising without context, and
 the result of a real trade-off. Create it as proposed while the user is still
 deciding; call `AcceptDecision` only after they commit. Always pass

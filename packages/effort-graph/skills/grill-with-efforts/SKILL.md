@@ -13,3 +13,10 @@ Offer a recommended answer for each decision, wait for the user's response,
 and resolve dependent choices in order. Explore the codebase for facts, but
 leave choices to the user. Do not implement the plan until shared understanding
 is confirmed.
+
+When external evidence informs a choice, journal it through the Citation
+workflow (`WriteBlob` if longform → `WriteCitation` → epistemic write with
+`cites`) rather than pasting URLs or longform into epistemic bodies. Use
+`derives_from` for in-graph epistemic upstream; typed `cites` are for
+Citation records only — see effort-modeling for vernacular cite vs `cites` vs
+`derives_from`.

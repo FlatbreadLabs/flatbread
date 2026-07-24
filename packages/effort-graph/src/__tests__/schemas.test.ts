@@ -176,6 +176,15 @@ test('WriteCitation allows URL body without blob; cites accept Citation ids', (t
   );
 });
 
+test('CreateEffort rejects cites', (t) => {
+  t.throws(() =>
+    EffortGraphMutationSchema.parse({
+      ...validMutations.CreateEffort,
+      cites: [`cit-paper--${suffix}`],
+    })
+  );
+});
+
 test('frontmatter schemas passthrough unknown keys', (t) => {
   const parsed = EffortFrontmatterSchema.parse({
     id: eff,

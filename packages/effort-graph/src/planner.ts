@@ -36,6 +36,7 @@ function assertCites(
   get: (
     id: string
   ) => NonNullable<ReturnType<EffortGraphSnapshot['getRecord']>>,
+  effortId: string,
   cites: string[] | undefined
 ): void {
   for (const citeId of cites ?? []) {
@@ -44,6 +45,8 @@ function assertCites(
       throw new EffortGraphValidationError(
         `cites must target a Citation, got ${target.kind} (${citeId})`
       );
+    if (target.frontmatter.effort !== effortId)
+      throw new EffortGraphValidationError('Different effort');
   }
 }
 
@@ -98,7 +101,6 @@ export function planMutation(
       throw new EffortGraphValidationError(
         `Duplicate effort slug ${input.slug}`
       );
-    assertCites(get, input.cites);
     add(
       id,
       'effort',
@@ -114,7 +116,6 @@ export function planMutation(
         ...(input.created_by !== undefined
           ? { created_by: input.created_by }
           : {}),
-        ...(input.cites !== undefined ? { cites: input.cites } : {}),
       },
       input.body,
       'create'
@@ -146,9 +147,10 @@ export function planMutation(
         throw new EffortGraphValidationError(
           `Citation.blob must target a Blob, got ${blob.kind}`
         );
+      if (blob.frontmatter.effort !== raw.effort)
+        throw new EffortGraphValidationError('Different effort');
     }
-    if (EPISTEMIC_CREATE.has(kind) || kind === 'effort')
-      assertCites(get, raw.cites);
+    if (EPISTEMIC_CREATE.has(kind)) assertCites(get, raw.effort, raw.cites);
     const fm: Record<string, unknown> = {
       ...raw,
       id,
