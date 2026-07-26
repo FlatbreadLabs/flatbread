@@ -6,6 +6,8 @@ kind: retrospective
 created_at: '2026-07-26T02:38:53.500Z'
 invalidates:
   - fnd-cites-and-citation-blob-skip-same-effort-checks--pts8c8ar72vaevvh
+invalidated_by:
+  - fnd-citation-and-blob-records-now-match-the-current--p6c37v29mx4jjfr2
 ---
 
 The Citation and Blob implementation now rejects cross-Effort `cites` and `Citation.blob` links. `CreateEffort` rejects `cites`, and relation reads accept an Effort as their own root record. This Finding replaces the earlier report of missing validation.

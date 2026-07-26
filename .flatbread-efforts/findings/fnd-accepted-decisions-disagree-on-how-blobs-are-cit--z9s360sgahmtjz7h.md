@@ -8,6 +8,8 @@ derives_from:
   - dec-name-citeable-longform-payloads-blob--9b11q14fgsx2ytve
   - dec-ship-citation-collection-with-optional-blob--fyga3x876n7rcnmn
   - iss-implement-blob-collection-and-crumb-graph-cites--g2c7m6j39we5xy3z
+invalidated_by:
+  - fnd-citation-and-blob-records-now-match-the-current--p6c37v29mx4jjfr2
 ---
 
 dec-name-citeable-longform-payloads-blob (accepted, #224) says epistemic records point at Blobs via derives_from / evidence-style edges. dec-ship-citation-collection-with-optional-blob (accepted, #225) ships cites→Citation (optional blob→Blob) and forbids direct Blob cites. The shipping Decision does not supersede the cite-mechanism part of the naming Decision. Resolved Issue iss-implement-blob-collection-and-crumb-graph-cites still scopes ref Blob ids and Finding that cites a Blob. Graph memory currently teaches two models.

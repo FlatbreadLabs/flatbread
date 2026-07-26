@@ -77,8 +77,10 @@ Critical semantics:
 - External sources: create a `WriteCitation` record (its body may be a URL,
   with optional `blob` and `role` fields), then add
   `cites: ["<cit-id>"]` when creating an Issue, Finding, Decision,
-  Constraint, or Risk. A Citation may point to a Blob for attached content.
-  Bounded digests omit Blob bodies; use `effort get <blob-id>` to read one.
+  Constraint, or Risk. Both the Citation in `cites` and the Blob in
+  `Citation.blob` must belong to the same Effort as the record that links to
+  them. Bounded digests omit Blob bodies; use `effort get <blob-id>` to read
+  one.
 - When superseding, open the new record's body with a short rollup of what
   changed and why — reads render ancestors only as one-line checkpoints.
 - For a hard-to-reverse, surprising decision made after a real trade-off, use

@@ -74,9 +74,8 @@ writer-materialized reverse projections.
 
 `cites` links an Issue, Finding, Decision, Constraint, or Risk to a Citation.
 It accepts Citation ids only, never Blob ids. A Citation may optionally point
-to a Blob. `flatbread effort relations` follows `cites` links, but does not
-follow Blob attachments; use `flatbread effort get <blob-id>` to read an
-attachment.
+to a Blob. Both links must stay within the same Effort. `flatbread effort relations` follows `cites` links, but does not follow Blob attachments; use
+`flatbread effort get <blob-id>` to read an attachment.
 
 New edge vocabulary needs a dogfooded query the existing vocabulary cannot
 express.
