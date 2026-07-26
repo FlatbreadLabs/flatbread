@@ -1,16 +1,18 @@
 ---
 name: effort-graph
-description: Journal reasoning (decisions, findings, issues, constraints, risks) into a Flatbread Effort Graph and recall it with bounded reads. Use when starting or resuming a thread of work, recording a decision or finding, resolving an issue, checking what is blocking or still open on an effort, or when the user mentions effort graph, journaling, blocking decisions, or agent memory.
+description: Journal reasoning (decisions, findings, issues, constraints, risks, citations, blobs) into a Flatbread Effort Graph and recall it with bounded reads. Use when starting or resuming a thread of work, recording a decision or finding, resolving an issue, checking what is blocking or still open on an effort, or when the user mentions effort graph, journaling, blocking decisions, agent memory, citation, blob, cites, longform, WriteCitation, or WriteBlob.
 ---
 
 # Effort Graph — agent journaling and recall
 
-The Effort Graph is persistent, queryable memory for long-horizon work, stored
-as markdown records in the repo. Six primitives: **Effort** (the anchor thread
-of work), **Issue**, **Finding**, **Decision**, **Constraint**, **Risk**.
-Every record belongs to exactly one Effort. You write through 13 typed
-mutations and read through 5 bounded queries — never by hand-editing record
-frontmatter (bodies may be edited freely).
+The Effort Graph stores durable project memory as markdown records in the
+repository. It has eight record types: **Effort**, **Issue**, **Finding**,
+**Decision**, **Constraint**, and **Risk** capture the work and reasoning;
+**Citation** stores a source or reference; and **Blob** stores attached
+content such as a document, JSON, or image. Every record belongs to one
+Effort. Create and update records through 15 typed mutations, and read them
+through 5 bounded queries. Do not hand-edit record frontmatter, although you
+may edit record bodies freely.
 
 Read [glossary.md](./glossary.md) for the primitive and edge semantics before
 inventing a new record kind or relation.
@@ -43,7 +45,7 @@ export default defineConfig({
 });
 ```
 
-Records live under `<root>/{efforts,issues,findings,decisions,constraints,risks}/`.
+Records live under `<root>/{efforts,issues,findings,decisions,constraints,risks,citations,blobs}/`.
 The write journal is `<root>/.journal/`; read digests cache under
 `.flatbread/effort-graph/read-cache/` (both gitignored).
 
@@ -72,10 +74,13 @@ Critical semantics:
   unless you deliberately want the competing proposals closed.
 - Edges are forward-only in payloads (`derives_from`, `supersedes`,
   `invalidates`); back-edges are materialized automatically.
-- Cites: `WriteCitation` (body may be a URL; optional `blob` + `role`), then
-  `cites: ["<cit-id>"]` on any epistemic create. Flatbread `refs` link
-  records → Citation → optional Blob. Bounded digests omit Blob bodies —
-  use `effort get`.
+- External sources: create a `WriteCitation` record (its body may be a URL,
+  with optional `blob` and `role` fields), then add
+  `cites: ["<cit-id>"]` when creating an Issue, Finding, Decision,
+  Constraint, or Risk. Both the Citation in `cites` and the Blob in
+  `Citation.blob` must belong to the same Effort as the record that links to
+  them. Bounded digests omit Blob bodies; use `effort get <blob-id>` to read
+  one.
 - When superseding, open the new record's body with a short rollup of what
   changed and why — reads render ancestors only as one-line checkpoints.
 - For a hard-to-reverse, surprising decision made after a real trade-off, use
@@ -151,9 +156,13 @@ server-side.
    for the full body. Reserve opening `.flatbread-efforts/**/*.md` for rare
    cases (e.g. digest byte-cap miss on an oversized record), not normal
    zoom-in.
-3. **During work:** journal Findings as evidence lands; open Issues for real
-   gaps/blockers; record Decisions with `derives_from` citing the Findings,
-   Constraints, and Issues they respond to.
+3. **During work:** when outside material supports a record, save large
+   content with `WriteBlob` if needed, then create a `WriteCitation`, then
+   create the Issue, Finding, Decision, Constraint, or Risk with
+   `cites: ["<cit-id>"]`. You cannot add a citation later, so create the
+   Citation first. Open Issues for real gaps or blockers, and use
+   `derives_from` on Decisions to link the Findings, Constraints, and Issues
+   they respond to.
 4. **On commitment:** `AcceptDecision` (mind `rejectSiblings`), `ResolveIssue`
    with `resolvedBy` citing the closing Decision/Findings.
 5. Maintenance: `flatbread effort cache prune` deletes digests older than

@@ -20,12 +20,13 @@ const edges = {
   supersedes: id.array().optional(),
   invalidates: id.array().optional(),
 };
-export const CreateEffortSchema = z.object({
-  type: z.literal('CreateEffort'),
-  ...common,
-  ...cites,
-  slug: z.string().optional(),
-});
+export const CreateEffortSchema = z
+  .object({
+    type: z.literal('CreateEffort'),
+    ...common,
+    slug: z.string().optional(),
+  })
+  .strict();
 export const SetEffortStatusSchema = z.object({
   type: z.literal('SetEffortStatus'),
   effortId: id,

@@ -8,15 +8,30 @@ derives_from:
   - con-mutation-enum-stays-deliberately-small--45v1ae3neq26g1rz
 ---
 
+Update: records use `cites[]` to link to Citations. A Citation can optionally
+point to a Blob that stores large content. Records cannot cite Blobs directly,
+and Blobs are not used with `derives_from` or evidence links in the first
+release.
+
 ## Context
 
-Crumb Graph primitives (Effort, Issue, Finding, Decision, Constraint, Risk) are epistemic and deliberately bounded. Longform plans, research troves, JSON dumps, and media do not fit record bodies or digest caps, and Artifact/Plan were intentional non-models in v1. Agents and humans still need a place to put bulky, experimental content in git (or another Flatbread source) and cite it from a short Finding or Decision.
+Crumb Graph records (Effort, Issue, Finding, Decision, Constraint, and Risk)
+capture work and reasoning in deliberately small records. Long plans, research
+material, JSON dumps, and media do not fit well in record bodies or digest
+limits. Artifact and Plan are not record types in the first release. Agents
+and humans still need a place to store large, experimental content in git (or
+another Flatbread source) and link to it from a Finding or Decision.
 
 ## Decision
 
-Adopt **Blob** as the name for a citeable, non-epistemic payload collection that Crumb Graph records can reference.
+Adopt **Blob** as the name for a collection of stored content that Crumb Graph
+records reach through Citations.
 
-A Blob is opaque content of any format (markdown, JSON, images, etc.). It has no proposed/accepted lifecycle — it is storage, not judgment. Epistemic records stay short and point at Blobs via refs (e.g. `derives_from` / evidence-style edges).
+A Blob stores content of any format (markdown, JSON, images, and more). It has
+no proposed/accepted lifecycle because it is storage, not a judgment. Records
+stay short and cite **Citation** ids in `cites[]`. A Citation body alone is
+valid (for example, a URL), and its optional `blob` field attaches saved
+content.
 
 Blobs are ordinary Flatbread content: they may live in the filesystem source or in another source plugin (S3, CDN, file host, …). The graph stores ids/refs; the configured source resolves bytes.
 

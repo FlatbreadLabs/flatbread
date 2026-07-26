@@ -19,14 +19,15 @@ on all creates except `CreateEffort`, `WriteCitation`, and `WriteBlob`:
 `derives_from[]`, `supersedes[]`, `invalidates[]` (arrays of existing ids;
 targets are validated).
 
-Optional `cites[]` on all epistemic creates (`CreateEffort` and every `Write*`
-except `WriteCitation` / `WriteBlob`): existing **Citation** ids (homogeneous
-Flatbread `refs` → Citation).
+Optional `cites[]` on Issue, Finding, Decision, Constraint, and Risk creates:
+existing **Citation** ids in the **same Effort**. Create Citations first, then
+add their ids when creating Findings, Decisions, Issues, and other records.
+`CreateEffort` does not accept `cites`.
 
 ### Effort lifecycle
 
 ```json
-{"type":"CreateEffort","title":"...","body":"...","slug":"optional","cites":["<cit-id>"]}
+{"type":"CreateEffort","title":"...","body":"...","slug":"optional"}
 {"type":"SetEffortStatus","effortId":"<eff-id>","status":"active|paused|completed|abandoned"}
 ```
 
@@ -45,10 +46,11 @@ Flatbread `refs` → Citation).
 Initial states: Issue `status: open`; Decision `state: proposed`; Risk
 `state: open`. Citation and Blob have no lifecycle state.
 
-A Citation body alone is valid (commonly a URL). `blob` is optional — attach
-a Blob only when you need a longform/opaque payload behind the cite.
+A Citation body alone is valid (commonly a URL). `blob` is optional; use it
+only when you need to attach stored content such as a document or JSON. When
+provided, `blob` must be the id of a Blob in the same Effort as the Citation.
 
-### Edge retro-linking (records must already exist)
+### Add links between existing records
 
 ```json
 {"type":"Supersede","supersederId":"<id>","targetId":"<same-kind-id>"}
@@ -130,8 +132,9 @@ flatbread effort blocking-decisions <effortId> [consistency flags]
 flatbread effort cache prune
 ```
 
-- `--kinds`: `effort|issue|finding|decision|constraint|risk|citation|blob`
-  (records: default all non-effort kinds, including `citation` and `blob`).
+- `--kinds`: `effort|issue|finding|decision|constraint|risk|citation|blob`.
+  `records` includes every non-Effort kind except Blob by default. Add
+  `--kinds blob` when you need Blob records.
 - `list --status`: defaults to `active`; valid values are exactly `active`,
   `paused`, `completed`, and `abandoned`. Values are ORed and results are
   ordered by `created_at` ascending, then `id`.

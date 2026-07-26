@@ -13,3 +13,10 @@ Offer a recommended answer for each decision, wait for the user's response,
 and resolve dependent choices in order. Explore the codebase for facts, but
 leave choices to the user. Do not implement the plan until shared understanding
 is confirmed.
+
+When an external source informs a choice, create a `WriteCitation` record
+instead of pasting the source into another record. Save large content first
+with `WriteBlob` when needed, then create the Citation, then create the
+Finding or Decision with `cites`. Use `derives_from` to link Findings, Issues,
+Constraints, and Risks within the project; use `cites` only for Citation
+records. See effort-modeling for details.

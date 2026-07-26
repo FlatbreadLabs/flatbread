@@ -5,6 +5,7 @@ import {
   pruneReadCache,
   createEffortGraphWriter,
   EffortGraphMutationSchema,
+  EffortGraphValidationError,
   EffortGraphReadValidationError,
   parseGenerationToken,
   findEffortGraphContentRoot,
@@ -116,7 +117,17 @@ export async function handleEffortWrite(
   artifacts: { id: string; path: string; operation: string }[];
   touched: { id: string; path: string }[];
 }> {
-  const input = EffortGraphMutationSchema.parse(JSON.parse(json));
+  const raw: unknown = JSON.parse(json);
+  if (
+    raw !== null &&
+    typeof raw === 'object' &&
+    (raw as Record<string, unknown>).type === 'CreateEffort' &&
+    'cites' in raw
+  )
+    throw new EffortGraphValidationError(
+      'CreateEffort does not accept cites; create the Effort before its Citations.'
+    );
+  const input = EffortGraphMutationSchema.parse(raw);
   const cwd = options.cwd ?? process.cwd();
   const writer = createEffortGraphWriter({ rootDir: await rootFor(cwd) });
   const result = await writer.mutate(input);

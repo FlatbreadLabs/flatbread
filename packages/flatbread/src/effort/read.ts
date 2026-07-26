@@ -549,12 +549,12 @@ export async function effortRecords(
         'constraint',
         'risk',
         'citation',
-        'blob',
       ] as PrimitiveKind[]);
   const where = options.where ?? {};
-  // The generated relation field materializes as an object, so its `eq`
-  // comparator does not match the stored identifier. Scalar predicates still
-  // execute in Flatbread; effort ownership is normalized and intersected here.
+  // Default kinds include citation but omit blob (opt in via --kinds). The
+  // generated relation field materializes as an object, so its `eq` comparator
+  // does not match the stored identifier. Scalar predicates still execute in
+  // Flatbread; effort ownership is normalized and intersected here.
   const filter: Record<string, unknown> = {};
   if (where.state?.length) filter.state = { in: where.state };
   if (where.status?.length) filter.status = { in: where.status };
@@ -656,7 +656,11 @@ export async function relations(
   const source = collection
     ? await projection.one(collection, fromId)
     : undefined;
-  if (!source || source.frontmatter.effort !== effortId)
+  const sourceInEffort =
+    source?.kind === 'effort' && fromId === effortId
+      ? true
+      : source?.frontmatter.effort === effortId;
+  if (!source || !sourceInEffort)
     throw new Error(`Record ${fromId} does not exist in effort ${effortId}`);
   const selected = new Map<string, ReadRecord>();
   for (const relation of relationNames) {

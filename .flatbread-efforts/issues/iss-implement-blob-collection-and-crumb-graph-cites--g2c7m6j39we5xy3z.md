@@ -13,16 +13,21 @@ resolved_by:
   - fnd-citation-collection-keeps-flatbread-refs-intact--z33ar5vyjxzr7ys0
 ---
 
-Implement the accepted Blob decision so Crumb Graph records can cite longform/dynamic payloads.
+Implement the accepted Blob decision so Crumb Graph records can refer to large
+or changing content through Citations.
 
 ## Scope
 
-- Add a **Blob** content collection (non-epistemic; no proposed/accepted lifecycle).
+- Add a **Blob** content collection with no proposed/accepted lifecycle.
+- Add a **Citation** collection. Records use `cites` to link to a Citation,
+  which may optionally point to a Blob.
 - Allow Blobs to be backed by ordinary Flatbread sources (filesystem first; design for S3/CDN/other source plugins).
-- Let Findings, Decisions, Issues (and other primitives as needed) ref Blob ids; keep epistemic bodies short.
-- Bounded reads: digests cite Blob id/title/locator — do not inline Blob bodies by default.
+- Keep record bodies short; attach large content through Citation → Blob, not
+  direct Blob references.
+- Bounded reads: show a Citation's id, title, and location in digests, while
+  omitting Blob bodies by default.
 - Update glossary (intentional non-models), preset/skills/CLI/mutations as needed; keep the mutation enum deliberately small (additive only with clear semantics).
-- Dogfood: at least one Finding that cites a Blob (e.g. research markdown or JSON dump).
+- Dogfood: at least one Finding that cites a Citation (with optional Blob payload).
 
 ## Out of scope for first slice
 

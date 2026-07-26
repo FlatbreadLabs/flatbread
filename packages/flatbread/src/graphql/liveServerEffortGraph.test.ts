@@ -92,6 +92,51 @@ test.serial(
 );
 
 test.serial(
+  'Citation and Blob mutations are queryable through the live GraphQL bridge',
+  async (t) => {
+    const fixture = await makeDir();
+    t.teardown(() => rm(fixture.dir, { recursive: true, force: true }));
+    const server = await startGraphqlServer({
+      config: config(fixture.relativeRoot, true),
+      port: 0,
+    });
+    t.teardown(() => server.close());
+    const effort = await server.effortGraph!.writer.mutate({
+      type: 'CreateEffort',
+      title: 'GraphQL cite chain',
+      body: '',
+    });
+    const effortId = effort.artifacts[0].id;
+    const blob = await server.effortGraph!.writer.mutate({
+      type: 'WriteBlob',
+      effort: effortId,
+      title: 'Payload',
+      body: '# longform research\n',
+      kind: 'markdown',
+    });
+    const blobId = blob.artifacts[0].id;
+    const citation = await server.effortGraph!.writer.mutate({
+      type: 'WriteCitation',
+      effort: effortId,
+      title: 'Paper',
+      body: 'https://example.com/paper',
+      role: 'evidence',
+      blob: blobId,
+    });
+    await server.effortGraph!.waitForCommittedGeneration(citation.generation);
+    const response = await query(
+      server.port,
+      `{ allCitations { title blob { id title } } allBlobs { id title } }`
+    );
+    t.deepEqual(response.errors, undefined);
+    t.deepEqual(response.data?.allCitations, [
+      { title: 'Paper', blob: { id: blobId, title: 'Payload' } },
+    ]);
+    t.deepEqual(response.data?.allBlobs, [{ id: blobId, title: 'Payload' }]);
+  }
+);
+
+test.serial(
   'boot recovery completes a committed-unpublished transaction before listen',
   async (t) => {
     const fixture = await makeDir();

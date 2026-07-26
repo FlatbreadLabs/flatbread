@@ -36,6 +36,7 @@ function assertCites(
   get: (
     id: string
   ) => NonNullable<ReturnType<EffortGraphSnapshot['getRecord']>>,
+  effortId: string,
   cites: string[] | undefined
 ): void {
   for (const citeId of cites ?? []) {
@@ -43,6 +44,10 @@ function assertCites(
     if (target.kind !== 'citation')
       throw new EffortGraphValidationError(
         `cites must target a Citation, got ${target.kind} (${citeId})`
+      );
+    if (target.frontmatter.effort !== effortId)
+      throw new EffortGraphValidationError(
+        `cites target ${citeId} belongs to a different effort`
       );
   }
 }
@@ -85,6 +90,10 @@ export function planMutation(
     });
   };
   if (input.type === 'CreateEffort') {
+    if ('cites' in input)
+      throw new EffortGraphValidationError(
+        'CreateEffort does not accept cites; create the Effort before its Citations.'
+      );
     const id =
       input.id ?? generateArtifactId('effort', input.title, randomBytes);
     if (!validateArtifactId(id, 'effort') || snapshot.hasId(id))
@@ -98,7 +107,6 @@ export function planMutation(
       throw new EffortGraphValidationError(
         `Duplicate effort slug ${input.slug}`
       );
-    assertCites(get, input.cites);
     add(
       id,
       'effort',
@@ -114,7 +122,6 @@ export function planMutation(
         ...(input.created_by !== undefined
           ? { created_by: input.created_by }
           : {}),
-        ...(input.cites !== undefined ? { cites: input.cites } : {}),
       },
       input.body,
       'create'
@@ -146,9 +153,12 @@ export function planMutation(
         throw new EffortGraphValidationError(
           `Citation.blob must target a Blob, got ${blob.kind}`
         );
+      if (blob.frontmatter.effort !== raw.effort)
+        throw new EffortGraphValidationError(
+          `Citation.blob ${raw.blob} belongs to a different effort`
+        );
     }
-    if (EPISTEMIC_CREATE.has(kind) || kind === 'effort')
-      assertCites(get, raw.cites);
+    if (EPISTEMIC_CREATE.has(kind)) assertCites(get, raw.effort, raw.cites);
     const fm: Record<string, unknown> = {
       ...raw,
       id,
