@@ -4,8 +4,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { graphqlFetch } from './graphql';
 import { normalizeEffortGraph } from './normalize';
 import {
-  EFFORT_GRAPH_QUERY,
+  SCHEMA_PROBE_QUERY,
+  buildEffortGraphQuery,
   type EffortGraphQueryResult,
+  type SchemaProbeResult,
 } from './query';
 import type { GraphEdge, GraphNode } from './types';
 
@@ -59,11 +61,31 @@ export function useEffortGraphLive(
   const retryMsRef = useRef(INITIAL_RETRY_MS);
   const sourceRef = useRef<EventSource | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
-  const fetchGenerationRef = useRef<number | null>(null);
+  /** Highest generation a fetch has been started for. */
+  const requestedGenerationRef = useRef<number | null>(null);
+  /** Highest generation whose data actually landed in state. */
+  const committedGenerationRef = useRef<number | null>(null);
 
   const refetch = useCallback(async () => {
+    /*
+     * Re-probe each generation. Flatbread derives its schema from the records
+     * on disk, so a relation field appears the moment the first record uses it
+     * — and selecting one that does not exist yet is a hard query error.
+     */
+    let schema: SchemaProbeResult | null = null;
+    try {
+      schema = await graphqlFetch<SchemaProbeResult>(
+        SCHEMA_PROBE_QUERY,
+        undefined,
+        endpoint
+      );
+    } catch {
+      // Fall back to selecting every known relation field; if the schema is
+      // reachable at all the main query will report what is actually missing.
+    }
+
     const data = await graphqlFetch<EffortGraphQueryResult>(
-      EFFORT_GRAPH_QUERY,
+      buildEffortGraphQuery(schema),
       undefined,
       endpoint
     );
@@ -101,28 +123,41 @@ export function useEffortGraphLive(
     const maybeRefetch = async (nextGeneration: number | null) => {
       if (nextGeneration === null) return;
       if (
-        fetchGenerationRef.current !== null &&
-        nextGeneration <= fetchGenerationRef.current
+        requestedGenerationRef.current !== null &&
+        nextGeneration <= requestedGenerationRef.current
       ) {
         return;
       }
 
-      fetchGenerationRef.current = nextGeneration;
+      requestedGenerationRef.current = nextGeneration;
       setGeneration(nextGeneration);
 
       try {
         await refetch();
-        if (!cancelled) {
-          setStatus('live');
-          setError(null);
+        if (cancelled) return;
+        // Out-of-order responses: never let an older payload overwrite a newer
+        // one that already landed.
+        if (
+          committedGenerationRef.current !== null &&
+          nextGeneration < committedGenerationRef.current
+        ) {
+          return;
         }
+        committedGenerationRef.current = nextGeneration;
+        setStatus('live');
+        setError(null);
       } catch (cause) {
-        if (!cancelled) {
-          setStatus('error');
-          setError(
-            cause instanceof Error ? cause : new Error(String(cause))
-          );
+        if (cancelled) return;
+        /*
+         * Roll the request marker back so this generation can be retried.
+         * Advancing it before the fetch (as this used to) meant a single
+         * failed request pinned the view to stale data until the next write.
+         */
+        if (requestedGenerationRef.current === nextGeneration) {
+          requestedGenerationRef.current = committedGenerationRef.current;
         }
+        setStatus('error');
+        setError(cause instanceof Error ? cause : new Error(String(cause)));
       }
     };
 

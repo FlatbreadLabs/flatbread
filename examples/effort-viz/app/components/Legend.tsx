@@ -2,7 +2,13 @@
 
 import { useId, useState } from 'react';
 
-import { effortColor, oklchCss, retiredOklch, structuralOklch } from '@/lib/oklch';
+import {
+  effortColor,
+  oklchCss,
+  retiredOklch,
+  structuralOklch,
+  type ColorMode,
+} from '@/lib/oklch';
 import { PRIMITIVES, PRIMITIVE_ORDER, primitiveOklch } from '@/lib/primitives';
 import type { GraphNode } from '@/lib/types';
 import { useTheme } from '../hooks/useTheme';
@@ -127,7 +133,7 @@ export function Legend({ efforts, presentGroups }: LegendProps) {
             Rejected, superseded, invalidated, or won&apos;t fix.
           </p>
           <div className="mt-2 flex items-center gap-2">
-            <BlockerSample />
+            <BlockerSample mode={mode} />
             <span className="text-foreground/85">Blocker</span>
             <span className="truncate text-[11px] text-muted">open, gating work</span>
           </div>
@@ -169,14 +175,18 @@ export function Legend({ efforts, presentGroups }: LegendProps) {
         {efforts.length > 0 && (
           <section>
             <SectionHeading>Efforts</SectionHeading>
+            {/*
+              Plain tint chips rather than miniature hubs: at legend scale a
+              hub's core is under 3px across, which is not enough pixels to
+              tell five tints apart.
+            */}
             <ul className="flex flex-col gap-1">
               {efforts.map((effort) => (
-                <li key={effort.id} className="flex items-center gap-1.5">
-                  <PrimitiveGlyph
-                    kind="effort"
-                    mode={mode}
-                    size={13}
-                    core={effortColor(effort.id, mode).css}
+                <li key={effort.id} className="flex items-center gap-2">
+                  <span
+                    aria-hidden
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={{ background: effortColor(effort.id, mode).css }}
                   />
                   <span className="truncate text-foreground/85" title={effort.title}>
                     {effort.title}
@@ -184,6 +194,9 @@ export function Legend({ efforts, presentGroups }: LegendProps) {
                 </li>
               ))}
             </ul>
+            <p className="mt-1.5 text-[11px] leading-snug text-muted">
+              Each tint fills its Effort hub&apos;s core.
+            </p>
           </section>
         )}
       </div>
@@ -199,18 +212,25 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Mirrors the canvas blocker ring: a triangular outline around the glyph. */
-function BlockerSample() {
+/**
+ * Mirrors the canvas blocker treatment: a triangular warning outline around an
+ * Issue. The inner shape is the Issue diamond, not another triangle — a blocker
+ * is always an Issue, and showing a triangle inside would read as a Risk.
+ */
+function BlockerSample({ mode }: { mode: ColorMode }) {
   return (
-    <svg aria-hidden viewBox="0 0 13 13" width="13" height="13" className="shrink-0">
+    <svg aria-hidden viewBox="0 0 14 14" width="14" height="14" className="shrink-0">
       <polygon
-        points="6.5,0.9 12.1,10.8 0.9,10.8"
+        points="7,0.9 13.1,11.6 0.9,11.6"
         fill="none"
         stroke="#f59e0b"
-        strokeWidth="1.4"
-        opacity="0.85"
+        strokeWidth="1.3"
+        opacity="0.9"
       />
-      <polygon points="6.5,4.2 9.3,9.1 3.7,9.1" fill="oklch(70% 0.15 72)" />
+      <polygon
+        points="7,5 9.4,8.4 7,10.6 4.6,8.4"
+        fill={oklchCss(primitiveOklch('issue', mode))}
+      />
     </svg>
   );
 }

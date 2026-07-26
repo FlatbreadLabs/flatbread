@@ -43,17 +43,40 @@ export function DetailDrawer({
   onSelect,
 }: DetailDrawerProps) {
   const { mode } = useTheme();
-  const closeRef = useRef<HTMLButtonElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const nodeId = node?.id ?? null;
 
   // Escape closes from anywhere, including while the graph canvas has focus.
   useEffect(() => {
-    if (!node) return;
+    if (!nodeId) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [node, onClose]);
+  }, [nodeId, onClose]);
+
+  /*
+   * Move focus to the heading whenever a different record is shown, and hand it
+   * back to the graph on close.
+   *
+   * Without this, opening the panel from the keyboard leaves focus on the canvas
+   * and a screen reader is told nothing: the body and relations — the entire
+   * reason to open a record — stay unreachable. Following a relation also
+   * unmounts the button that was focused, which would otherwise drop focus to
+   * the document body.
+   */
+  useEffect(() => {
+    if (!nodeId) return;
+    headingRef.current?.focus();
+    return () => {
+      const canvas = document.querySelector<HTMLElement>('[role="application"]');
+      // Only reclaim focus if it is still inside the panel being torn down.
+      if (document.activeElement?.closest('aside[aria-labelledby]')) {
+        canvas?.focus();
+      }
+    };
+  }, [nodeId]);
 
   const groupedRelations = useMemo((): GroupedRelations[] => {
     if (!node) return [];
@@ -139,7 +162,9 @@ export function DetailDrawer({
           </div>
           <h2
             id="detail-drawer-title"
-            className="text-[15px] font-semibold leading-snug tracking-tight text-foreground"
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-[15px] font-semibold leading-snug tracking-tight text-foreground outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             {node.title}
           </h2>
@@ -148,7 +173,6 @@ export function DetailDrawer({
           </span>
         </div>
         <button
-          ref={closeRef}
           type="button"
           onClick={onClose}
           aria-label="Close record details"
@@ -177,11 +201,12 @@ export function DetailDrawer({
             <p className="rounded-md border border-border bg-muted/10 px-2.5 py-2 text-[12px] leading-snug text-muted">
               {life.state === 'invalidated'
                 ? 'Marked wrong by a later Finding. Its own frontmatter still records the state it was in when written.'
-                : 'Replaced by a later record. Its own frontmatter still records the state it was in when written.'}
+                : 'Replaced by a later record. Its own frontmatter still records the state it was in when written.'}{' '}
+              Read from the graph edges, which are authoritative.
             </p>
           )}
           {node.kindLabel && node.kind !== 'effort' && (
-            <MetaRow label="Kind" value={node.kindLabel} />
+            <MetaRow label="Kind" value={sentenceCase(node.kindLabel)} />
           )}
           {node.effortId && (
             <MetaRow
@@ -197,8 +222,12 @@ export function DetailDrawer({
               }
             />
           )}
-          {node.likelihood && <MetaRow label="Likelihood" value={node.likelihood} />}
-          {node.severity && <MetaRow label="Severity" value={node.severity} />}
+          {node.likelihood && (
+            <MetaRow label="Likelihood" value={sentenceCase(node.likelihood)} />
+          )}
+          {node.severity && (
+            <MetaRow label="Severity" value={sentenceCase(node.severity)} />
+          )}
           {node.createdAt && (
             <MetaRow label="Journaled" value={formatDate(node.createdAt)} />
           )}
@@ -248,6 +277,11 @@ export function DetailDrawer({
       </div>
     </aside>
   );
+}
+
+/** Frontmatter values are lowercase tokens; display them as prose. */
+function sentenceCase(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function formatDate(iso: string): string {

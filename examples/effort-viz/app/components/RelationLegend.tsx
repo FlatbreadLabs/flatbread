@@ -2,9 +2,9 @@
 
 import type { GraphEdgeKind, GraphNodeKind } from '@/lib/types';
 import type { ColorMode } from '@/lib/oklch';
-import { oklchCss, structuralOklch, toColor } from '@/lib/oklch';
+import { oklchCss, structuralOklch } from '@/lib/oklch';
 import { PRIMITIVES, primitiveOklch } from '@/lib/primitives';
-import { CIRCLE_SEGMENTS, RING_INNER_RATIO, glyphSvgPoints } from '@/lib/glyphs';
+import { RING_INNER_RATIO, glyphSvgPoints } from '@/lib/glyphs';
 
 export type RelationGroupId =
   | 'lineage'
@@ -175,19 +175,28 @@ export const RELATION_GROUP_SAMPLE: Record<RelationGroupId, GraphEdgeKind> = {
 };
 
 /**
- * Stroke colour for a relation group. Membership resolves per Effort at the
- * call site, so the legend passes `null` and renders a neutral sample with a
- * caption instead of picking an arbitrary cluster's tint.
+ * Stroke colour for a relation group.
+ *
+ * Primitives own the hue budget, so edges get one accent between them and
+ * otherwise stay neutral. Resolution takes it because "this Issue is closed" is
+ * the one relation whose meaning is not already visible on its endpoints. The
+ * accent sits at h196, in the gap the primitive hues leave between Constraint
+ * (152) and Finding (250).
+ *
+ * Invalidation deliberately has no hue: every candidate warning colour collides
+ * with the Risk red, and the claim is already carried more precisely by ghosting
+ * the invalidated record itself rather than tinting the line pointing at it.
+ *
+ * Membership resolves per Effort at the call site, so the legend passes no
+ * colour and renders a neutral sample rather than picking an arbitrary
+ * cluster's tint.
  */
 export function relationStrokeOklch(
   group: RelationGroupId,
   mode: ColorMode
 ): { l: number; c: number; h: number } {
   if (group === 'resolution' || group === 'mitigation') {
-    return mode === 'light' ? { l: 0.5, c: 0.13, h: 158 } : { l: 0.7, c: 0.11, h: 158 };
-  }
-  if (group === 'invalidation') {
-    return mode === 'light' ? { l: 0.52, c: 0.16, h: 22 } : { l: 0.7, c: 0.14, h: 22 };
+    return mode === 'light' ? { l: 0.52, c: 0.12, h: 196 } : { l: 0.72, c: 0.1, h: 196 };
   }
   return mode === 'light' ? { l: 0.42, c: 0.015, h: 260 } : { l: 0.76, c: 0.015, h: 260 };
 }
@@ -304,17 +313,24 @@ export function lifecycleBadge(
   );
 }
 
-function strokeDash(dash: RelationMeta['dash']): string | undefined {
-  if (dash === 'dashed') return '5 3';
-  if (dash === 'dotted') return '2 3';
-  return undefined;
+/**
+ * Dash pattern, scaled by `weight` exactly as `dashWorldUnits` scales it on the
+ * canvas. `weight` deliberately does *not* drive stroke width here: three.js
+ * `LineBasicMaterial` ignores `linewidth` on every major platform, so a legend
+ * drawing 1.25/2/2.5px strokes would advertise a distinction the canvas cannot
+ * render. Dash length and opacity are what actually vary.
+ */
+function strokeDash(
+  dash: RelationMeta['dash'],
+  weight: RelationMeta['weight']
+): string | undefined {
+  if (dash === 'solid') return undefined;
+  const scale = weight === 'medium' ? 1.15 : weight === 'bold' ? 1.3 : 1;
+  if (dash === 'dashed') return `${(5 * scale).toFixed(1)} ${(3 * scale).toFixed(1)}`;
+  return `${(1.6 * scale).toFixed(1)} ${(2.6 * scale).toFixed(1)}`;
 }
 
-function strokeWidth(weight: RelationMeta['weight']): number {
-  if (weight === 'bold') return 2.5;
-  if (weight === 'medium') return 2;
-  return 1.25;
-}
+const LEGEND_STROKE_WIDTH = 1.6;
 
 function lineOpacity(emphasis: RelationMeta['emphasis']): number {
   if (emphasis === 'subtle') return 0.5;
@@ -337,8 +353,7 @@ export function RelationLineSample({
   className?: string;
 }) {
   const opacity = lineOpacity(meta.emphasis);
-  const width = strokeWidth(meta.weight);
-  const dash = strokeDash(meta.dash);
+  const dash = strokeDash(meta.dash, meta.weight);
 
   return (
     <svg
@@ -353,7 +368,7 @@ export function RelationLineSample({
         x2={meta.arrow ? '30' : '39'}
         y2="4"
         stroke="currentColor"
-        strokeWidth={width}
+        strokeWidth={LEGEND_STROKE_WIDTH}
         strokeDasharray={dash}
         strokeLinecap="round"
         opacity={opacity}
@@ -423,5 +438,3 @@ export function PrimitiveGlyph({
     </svg>
   );
 }
-
-export { CIRCLE_SEGMENTS, toColor };

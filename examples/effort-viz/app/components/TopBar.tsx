@@ -35,10 +35,10 @@ export function TopBar({ status, generation, summary }: TopBarProps) {
           <Count value={summary.openIssues} label="open Issue" />
           {' · '}
           <Count value={summary.proposedDecisions} label="proposed Decision" />
-          {summary.openRisks > 0 && (
+          {summary.liveRisks > 0 && (
             <>
               {' · '}
-              <Count value={summary.openRisks} label="open Risk" />
+              <Count value={summary.liveRisks} label="live Risk" />
             </>
           )}
           {summary.retired > 0 && (

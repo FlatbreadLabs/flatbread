@@ -37,9 +37,17 @@ export interface PrimitiveMeta {
 }
 
 /**
- * Hues are spaced around the wheel and paired with silhouettes so that any
- * two primitives differ on at least one channel that survives colour-vision
- * deficiency: amber diamond vs red triangle, blue circle vs violet square.
+ * Hues are spaced around the wheel and paired with silhouettes so that any two
+ * primitives differ on at least one channel that survives colour-vision
+ * deficiency. The pairs that actually collapse, and their rescues:
+ *
+ * - amber Issue / red Risk merge under deuteranopia → diamond vs triangle
+ * - blue Finding / violet Decision merge under protanopia → circle vs square
+ * - blue Finding / green Constraint are closest under tritanopia → circle vs bar
+ *
+ * Chroma is also kept near-level across records. Varying it made the lowest one
+ * read as the least important primitive, which is a claim the datamodel does
+ * not make.
  */
 export const PRIMITIVES: Record<GraphNodeKind, PrimitiveMeta> = {
   effort: {
@@ -65,7 +73,7 @@ export const PRIMITIVES: Record<GraphNodeKind, PrimitiveMeta> = {
     plural: 'Findings',
     description: 'A grounded observation about code, users, literature, or runtime.',
     glyph: 'circle',
-    tone: { c: 0.14, h: 248 },
+    tone: { c: 0.15, h: 250 },
   },
   decision: {
     kind: 'decision',
@@ -80,8 +88,8 @@ export const PRIMITIVES: Record<GraphNodeKind, PrimitiveMeta> = {
     label: 'Constraint',
     plural: 'Constraints',
     description: 'A sticky hard or soft boundary that limits the decision space.',
-    glyph: 'hexagon',
-    tone: { c: 0.11, h: 188 },
+    glyph: 'slab',
+    tone: { c: 0.15, h: 152 },
   },
   risk: {
     kind: 'risk',

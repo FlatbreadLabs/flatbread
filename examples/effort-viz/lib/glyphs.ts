@@ -14,7 +14,7 @@
  * constraints purely because of their silhouette.
  */
 
-export type GlyphId = 'circle' | 'diamond' | 'square' | 'hexagon' | 'triangle' | 'ring';
+export type GlyphId = 'circle' | 'diamond' | 'square' | 'slab' | 'triangle' | 'ring';
 
 export interface GlyphPoint {
   x: number;
@@ -53,12 +53,29 @@ function regularPolygon(sides: number, rotation: number): GlyphPoint[] {
 
 const QUARTER = Math.PI / 2;
 
+/** Axis-aligned rectangle of the given width:height ratio. */
+function rectangle(ratio: number): GlyphPoint[] {
+  const w = ratio;
+  const h = 1;
+  return [
+    { x: w, y: h },
+    { x: -w, y: h },
+    { x: -w, y: -h },
+    { x: w, y: -h },
+  ];
+}
+
 /**
  * Silhouettes, chosen so no two share a dominant visual feature: one round,
- * one flat-topped-and-axis-aligned, one point-up, one point-sideways, one
- * many-sided. Hue still does the glance-level work — shape is the redundant
- * channel that survives deuteranopia, where amber/red and blue/violet
- * partially collapse into each other.
+ * one axis-aligned square, one rotated square, one point-up, one wide bar.
+ *
+ * Hue does the glance-level work; shape is the redundant channel that survives
+ * colour-vision deficiency. Each risky hue pair is deliberately assigned a
+ * pair of maximally different outlines: amber/red merge under deuteranopia and
+ * are diamond vs triangle, blue/violet merge under protanopia and are circle
+ * vs square, and blue/teal merge under tritanopia and are circle vs bar — the
+ * reason Constraint is a bar rather than the hexagon it started as, which was
+ * the least separable non-circle in the set.
  */
 export const GLYPH_OUTLINES: Record<Exclude<GlyphId, 'circle' | 'ring'>, GlyphPoint[]> = {
   /** Point-up triangle — the universal hazard sign. Reserved for Risk. */
@@ -67,8 +84,8 @@ export const GLYPH_OUTLINES: Record<Exclude<GlyphId, 'circle' | 'ring'>, GlyphPo
   square: normalizeArea(regularPolygon(4, QUARTER / 2)),
   /** Rotated square — a caution lozenge, unresolved tension. Issue. */
   diamond: normalizeArea(regularPolygon(4, QUARTER)),
-  /** Flat-topped hexagon — a bolt head, a fixed boundary. Constraint. */
-  hexagon: normalizeArea(regularPolygon(6, QUARTER)),
+  /** Wide flat bar — a boundary you do not cross. Constraint. */
+  slab: normalizeArea(rectangle(2.1)),
 };
 
 /** Segment count for round glyphs. Enough to read as a circle at 40px. */

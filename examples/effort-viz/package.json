@@ -6,6 +6,7 @@
     "dev": "flatbread start --watch -- next dev --turbopack",
     "build": "flatbread start -- next build",
     "start": "next start",
+    "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test lib/physics/*.test.ts lib/*.test.ts"
   },
   "dependencies": {

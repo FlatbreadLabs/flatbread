@@ -41,9 +41,13 @@ export function effortOklch(id: string, mode: ColorMode = 'light'): Oklch {
   return { l: lightness, c: 0.12, h: hue };
 }
 
-/** Neutral structural tone for hub rings and selection halos. */
+/**
+ * Neutral structural tone for hub rings. Deliberately a touch quieter than a
+ * record in each mode: a hub is scaffolding for its cluster, and it already
+ * commands attention through size and silhouette.
+ */
 export function structuralOklch(mode: ColorMode): Oklch {
-  return mode === 'light' ? { l: 0.42, c: 0.008, h: 260 } : { l: 0.72, c: 0.008, h: 260 };
+  return mode === 'light' ? { l: 0.5, c: 0.008, h: 260 } : { l: 0.56, c: 0.008, h: 260 };
 }
 
 /**
@@ -57,7 +61,10 @@ export function structuralOklch(mode: ColorMode): Oklch {
  */
 export function retiredOklch(base: Oklch, mode: ColorMode): Oklch {
   return {
-    l: mode === 'light' ? Math.min(base.l + 0.1, 0.78) : Math.max(base.l - 0.12, 0.46),
+    // Light mode gets a smaller push: white leaves much less room below a
+    // record's lightness than black leaves above it, so the same offset drops
+    // a retired glyph under the 3:1 non-text contrast floor.
+    l: mode === 'light' ? Math.min(base.l + 0.06, 0.7) : Math.max(base.l - 0.14, 0.44),
     c: base.c * 0.34,
     h: base.h,
   };

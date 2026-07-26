@@ -24,6 +24,13 @@ export interface ClusterScratch {
   members: Float64Array;
   /** Distance from the centroid to the outermost member, plus its radius. */
   reach: Float64Array;
+  /**
+   * Node indices grouped by cluster (CSR layout): cluster `s` owns
+   * `memberIndices[memberStart[s] .. memberStart[s + 1])`. Lets separation
+   * touch only the two clusters in a pair instead of scanning every node.
+   */
+  memberIndices: Int32Array;
+  memberStart: Int32Array;
 }
 
 /** Scratch buffers reused across a single `step()` call. */
@@ -33,28 +40,15 @@ export interface ForceScratch {
   clusters: ClusterScratch;
 }
 
-function ensureClusterCapacity(clusters: ClusterScratch, n: number): ClusterScratch {
-  if (clusters.cx.length >= n && clusters.nodeCluster.length >= n) return clusters;
-  const cap = Math.max(n, 16);
-  return {
-    nodeCluster: new Int32Array(cap),
-    indexOf: clusters.indexOf,
-    count: 0,
-    cx: new Float64Array(cap),
-    cy: new Float64Array(cap),
-    members: new Float64Array(cap),
-    reach: new Float64Array(cap),
-  };
-}
-
 export function ensureScratch(scratch: ForceScratch | null, n: number): ForceScratch {
   if (scratch && scratch.fx.length >= n) {
     scratch.fx.fill(0, 0, n);
     scratch.fy.fill(0, 0, n);
-    scratch.clusters = ensureClusterCapacity(scratch.clusters, n);
     return scratch;
   }
-  // Over-allocate a bit to amortize growth as nodes stream in.
+  // Over-allocate a bit to amortize growth as nodes stream in. Cluster arrays
+  // share the node capacity — there can never be more clusters than nodes — so
+  // one allocation policy covers both.
   const cap = Math.max(n, scratch ? scratch.fx.length * 2 : 16);
   const clusters: ClusterScratch = {
     nodeCluster: new Int32Array(cap),
@@ -64,6 +58,8 @@ export function ensureScratch(scratch: ForceScratch | null, n: number): ForceScr
     cy: new Float64Array(cap),
     members: new Float64Array(cap),
     reach: new Float64Array(cap),
+    memberIndices: new Int32Array(cap),
+    memberStart: new Int32Array(cap + 1),
   };
   return { fx: new Float64Array(cap), fy: new Float64Array(cap), clusters };
 }
@@ -105,6 +101,21 @@ export function computeClusters(nodes: SimNode[], scratch: ForceScratch): void {
     const n = nodes[i];
     const span = Math.hypot(n.x - c.cx[s], n.y - c.cy[s]) + effectiveRadius(n);
     if (span > c.reach[s]) c.reach[s] = span;
+  }
+
+  // Prefix-sum the member counts, then bucket node indices by cluster.
+  c.memberStart[0] = 0;
+  for (let s = 0; s < c.count; s++) {
+    c.memberStart[s + 1] = c.memberStart[s] + c.members[s];
+  }
+  // Reuse `members` as a write cursor, then restore it from the prefix sums.
+  for (let s = 0; s < c.count; s++) c.members[s] = c.memberStart[s];
+  for (let i = 0; i < nodes.length; i++) {
+    const s = c.nodeCluster[i];
+    c.memberIndices[c.members[s]++] = i;
+  }
+  for (let s = 0; s < c.count; s++) {
+    c.members[s] = c.memberStart[s + 1] - c.memberStart[s];
   }
 }
 
@@ -227,7 +238,6 @@ export function applyClusterCohesion(
  * visually distinct is load-bearing rather than cosmetic.
  */
 export function applyClusterSeparation(
-  nodes: SimNode[],
   scratch: ForceScratch,
   strength: number,
   pad: number
@@ -240,43 +250,58 @@ export function applyClusterSeparation(
       const min = clusters.reach[a] + clusters.reach[b] + pad;
       let dx = clusters.cx[b] - clusters.cx[a];
       let dy = clusters.cy[b] - clusters.cy[a];
+      // Floor the distance rather than only guarding exact zero: two nearly
+      // coincident centroids would otherwise divide by ~0 and produce an
+      // impulse that only the integrator's step clamp keeps in bounds.
       let dist = Math.hypot(dx, dy);
-      if (dist === 0) {
-        dx = (a - b) * 0.001;
-        dy = 0.001;
+      if (dist < 0.5) {
+        dx = (a - b) - 0.5;
+        dy = 0.5;
         dist = Math.hypot(dx, dy);
       }
       if (dist >= min) continue;
+
       // Normalize by member count so a 30-record cluster and a 3-record one
       // separate by the same distance rather than the small one being flung.
       const push = (strength * (min - dist)) / dist;
       const nx = dx * push;
       const ny = dy * push;
-      for (let i = 0; i < nodes.length; i++) {
-        const s = clusters.nodeCluster[i];
-        if (s === a) {
-          fx[i] -= nx / clusters.members[a];
-          fy[i] -= ny / clusters.members[a];
-        } else if (s === b) {
-          fx[i] += nx / clusters.members[b];
-          fy[i] += ny / clusters.members[b];
-        }
+      const shareA = 1 / clusters.members[a];
+      const shareB = 1 / clusters.members[b];
+
+      for (let k = clusters.memberStart[a]; k < clusters.memberStart[a + 1]; k++) {
+        const i = clusters.memberIndices[k];
+        fx[i] -= nx * shareA;
+        fy[i] -= ny * shareA;
+      }
+      for (let k = clusters.memberStart[b]; k < clusters.memberStart[b + 1]; k++) {
+        const i = clusters.memberIndices[k];
+        fx[i] += nx * shareB;
+        fy[i] += ny * shareB;
       }
     }
   }
 }
 
-/** Weak gravity toward the origin so the whole graph doesn't drift away. */
+/**
+ * Weak gravity toward the origin so the whole graph doesn't drift away.
+ *
+ * `aspect` weakens the horizontal pull relative to the vertical one, letting
+ * the layout settle wider than it is tall. Screens are landscape, and a fit
+ * that is height-constrained wastes horizontal room and shrinks every glyph.
+ */
 export function applyCentering(
   nodes: SimNode[],
   scratch: ForceScratch,
-  strength: number
+  strength: number,
+  aspect = 1
 ): void {
   if (strength <= 0) return;
   const { fx, fy } = scratch;
+  const strengthX = strength * aspect;
   for (let i = 0; i < nodes.length; i++) {
     const n = nodes[i];
-    fx[i] -= n.x * strength;
+    fx[i] -= n.x * strengthX;
     fy[i] -= n.y * strength;
   }
 }

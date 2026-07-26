@@ -120,11 +120,21 @@ const TAP_SLOP_PX = 8;
 /** Minimum on-screen hit diameter, in CSS px, regardless of zoom. */
 const MIN_HIT_DIAMETER_PX = 44;
 
+/**
+ * Ceiling on how far a hit target may extend past its glyph, in world units.
+ * Half of the resting gap between records, so a generous target can never
+ * cover a neighbour and make selection depend on scene order.
+ */
+const MAX_HIT_PADDING_WORLD = 3;
+
 export default function GraphCanvas(props: GraphCanvasProps) {
   const { mode } = useTheme();
   const { nodes, selectedId, onSelect } = props;
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const takeoverRef = useRef<CameraTakeover | null>(null);
+  if (takeoverRef.current === null) takeoverRef.current = createCameraTakeover();
+  const takeover = takeoverRef.current;
 
   /**
    * Stable keyboard traversal order: Effort hub, then its records grouped by
@@ -223,7 +233,14 @@ export default function GraphCanvas(props: GraphCanvasProps) {
       aria-label="Effort Graph canvas"
       aria-describedby="graph-canvas-help"
       onKeyDown={handleKeyDown}
-      className="relative h-full w-full rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      onWheel={takeover.onWheel}
+      onPointerDown={takeover.onPointerDown}
+      onPointerMove={takeover.onPointerMove}
+      onPointerUp={takeover.onPointerUp}
+      onPointerCancel={takeover.onPointerUp}
+      /* Inset ring: an offset ring on a full-bleed element is clipped to a
+         stray line along one edge instead of reading as a focus indicator. */
+      className="relative h-full w-full outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
     >
       <p id="graph-canvas-help" className="sr-only">
         Use the arrow keys to move between records, Enter to open a record&apos;s
@@ -247,6 +264,8 @@ export default function GraphCanvas(props: GraphCanvasProps) {
           focusedId={focusedId}
           onFocus={setFocusedId}
           lifecycles={lifecycles}
+          drawerOpen={selectedId !== null}
+          takeover={takeover}
         />
       </Canvas>
       <div aria-live="polite" className="sr-only">
@@ -265,6 +284,8 @@ interface GraphSceneProps extends GraphCanvasProps {
   focusedId: string | null;
   onFocus: (id: string | null) => void;
   lifecycles: Map<string, EffectiveLifecycle>;
+  drawerOpen: boolean;
+  takeover: CameraTakeover;
 }
 
 function GraphScene({
@@ -276,6 +297,8 @@ function GraphScene({
   focusedId,
   onFocus,
   lifecycles,
+  drawerOpen,
+  takeover,
 }: GraphSceneProps) {
   const simRef = useRef<GraphSimulation | null>(null);
   if (simRef.current === null) {
@@ -290,13 +313,21 @@ function GraphScene({
 
   useEffect(() => {
     const { simNodes, simEdges } = toSimInputs(nodes, edges);
+    const settledBefore = sim.getState().nodes.some((n) => n.state === 'settled');
     sim.sync(simNodes, simEdges);
-    // Reduced motion: settle the layout and finish every growth animation
-    // before the next paint, so the graph appears in place instead of
-    // crawling outward from the origin.
-    if (reduceMotion) {
-      for (let i = 0; i < 240; i++) sim.step(1 / 60);
-    }
+    /*
+     * Reduced motion: settle the layout and finish every growth animation
+     * before the next paint, so the graph appears in place instead of crawling
+     * outward from the origin.
+     *
+     * Only on the first sync. Repulsion is O(n²) and this runs synchronously,
+     * so re-settling on every live generation would freeze the tab for seconds
+     * on a large graph — a worse experience than the animation it replaces.
+     * Later syncs need far fewer steps because they start from a settled
+     * layout and only have to grow the new records in.
+     */
+    const warmupSteps = reduceMotion ? (settledBefore ? 60 : 240) : 0;
+    for (let i = 0; i < warmupSteps; i++) sim.step(1 / 60);
     const state = sim.getState();
     nodeIdsRef.current = state.nodes.map((n) => n.id);
     edgeIdsRef.current = state.edges.map((e) => e.id);
@@ -358,8 +389,18 @@ function GraphScene({
   return (
     <>
       <PanZoomControls />
-      <FitCamera sim={sim} nodeCount={nodes.length} reduceMotion={reduceMotion} />
-      <PanToFocus sim={sim} focusedId={focusedId} reduceMotion={reduceMotion} />
+      <FitCamera
+        sim={sim}
+        nodeCount={nodes.length}
+        reduceMotion={reduceMotion}
+        takeover={takeover}
+      />
+      <PanToFocus
+        sim={sim}
+        focusedId={focusedId}
+        reduceMotion={reduceMotion}
+        drawerOpen={drawerOpen}
+      />
       <group>
         {state.edges.map((edge) => {
           const graphEdge = edgesById.get(edge.id);
@@ -393,6 +434,7 @@ function GraphScene({
               blocker={isOpenBlocker(meta, lifecycles.get(node.id))}
               selected={selectedId === node.id}
               focused={focusedId === node.id}
+              reduceMotion={reduceMotion}
               onSelect={onSelect}
               onFocus={onFocus}
               onHover={setHoveredId}
@@ -479,10 +521,12 @@ function FitCamera({
   sim,
   nodeCount,
   reduceMotion,
+  takeover,
 }: {
   sim: GraphSimulation;
   nodeCount: number;
   reduceMotion: boolean;
+  takeover: CameraTakeover;
 }) {
   const camera = useThree((s) => s.camera) as OrthographicCamera;
   const controls = useThree((s) => s.controls) as PanZoomControlsHandle | null;
@@ -490,7 +534,6 @@ function FitCamera({
   const fitted = useRef(false);
   const elapsedRef = useRef(0);
   const targetRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
-  const userMoved = useUserHasMovedCamera();
 
   const sizeKey = `${size.width}x${size.height}`;
 
@@ -522,7 +565,7 @@ function FitCamera({
     }
 
     // Hand the camera over permanently once the reader pans or zooms.
-    if (userMoved()) return;
+    if (takeover.get()) return;
     elapsedRef.current += delta;
 
     const { nodes } = sim.getState();
@@ -583,30 +626,38 @@ function FitCamera({
 }
 
 /**
- * Returns a getter that flips to true the first time the reader drives the
- * camera. Auto-fit must yield to a deliberate pan or zoom — nothing is more
- * annoying than a view that snaps back while you are reading it.
+ * Tracks whether the reader has taken the camera over, from raw DOM input on
+ * the canvas wrapper.
+ *
+ * Deliberately not derived from OrbitControls events: `start` fires on
+ * pointer-down before anything moves, so a tap to select a record would count
+ * as a pan, and `change` also fires from our own easing's `controls.update()`.
+ * A wheel gesture or a drag past the tap threshold is unambiguous.
  */
-function useUserHasMovedCamera(): () => boolean {
-  const controls = useThree((s) => s.controls) as
-    | (PanZoomControlsHandle & {
-        addEventListener: (t: string, fn: () => void) => void;
-        removeEventListener: (t: string, fn: () => void) => void;
-      })
-    | null;
-  const moved = useRef(false);
-
-  useEffect(() => {
-    if (!controls?.addEventListener) return;
-    const onStart = () => {
-      moved.current = true;
-    };
-    controls.addEventListener('start', onStart);
-    return () => controls.removeEventListener('start', onStart);
-  }, [controls]);
-
-  return useCallback(() => moved.current, []);
+function createCameraTakeover() {
+  const state = { moved: false, downAt: null as { x: number; y: number } | null };
+  return {
+    get: () => state.moved,
+    onWheel: () => {
+      state.moved = true;
+    },
+    onPointerDown: (event: React.PointerEvent) => {
+      state.downAt = { x: event.clientX, y: event.clientY };
+    },
+    onPointerMove: (event: React.PointerEvent) => {
+      const down = state.downAt;
+      if (!down) return;
+      if (Math.hypot(event.clientX - down.x, event.clientY - down.y) > TAP_SLOP_PX) {
+        state.moved = true;
+      }
+    },
+    onPointerUp: () => {
+      state.downAt = null;
+    },
+  };
 }
+
+type CameraTakeover = ReturnType<typeof createCameraTakeover>;
 
 /**
  * Keep the keyboard-focused record on screen. Without this, arrowing through
@@ -616,10 +667,12 @@ function PanToFocus({
   sim,
   focusedId,
   reduceMotion,
+  drawerOpen,
 }: {
   sim: GraphSimulation;
   focusedId: string | null;
   reduceMotion: boolean;
+  drawerOpen: boolean;
 }) {
   const camera = useThree((s) => s.camera) as OrthographicCamera;
   const controls = useThree((s) => s.controls) as PanZoomControlsHandle | null;
@@ -639,12 +692,18 @@ function PanToFocus({
       return;
     }
 
-    // Only move if the node sits outside a comfortable inner viewport band.
+    /*
+     * The drawer covers the right edge, so aim left of centre while it is
+     * open. Otherwise pressing Enter can park the record you just selected
+     * underneath the panel describing it.
+     */
+    const isWide = size.width >= 640;
+    const shiftPx = drawerOpen && isWide ? 200 : 0;
     const halfW = size.width / 2 / camera.zoom;
     const halfH = size.height / 2 / camera.zoom;
-    const dx = node.x - camera.position.x;
+    const dx = node.x + shiftPx / camera.zoom - camera.position.x;
     const dy = node.y - camera.position.y;
-    if (Math.abs(dx) < halfW * 0.6 && Math.abs(dy) < halfH * 0.6) {
+    if (Math.abs(dx) < halfW * 0.5 && Math.abs(dy) < halfH * 0.6) {
       pendingRef.current = null;
       return;
     }
@@ -696,6 +755,7 @@ interface NodeMeshProps {
   blocker: boolean;
   selected: boolean;
   focused: boolean;
+  reduceMotion: boolean;
   onSelect: (id: string | null) => void;
   onFocus: (id: string | null) => void;
   onHover: (id: string | null) => void;
@@ -719,6 +779,7 @@ function NodeMesh({
   blocker,
   selected,
   focused,
+  reduceMotion,
   onSelect,
   onFocus,
   onHover,
@@ -728,7 +789,7 @@ function NodeMesh({
   const coreRef = useRef<Mesh>(null);
   const haloRef = useRef<Mesh>(null);
   const hitRef = useRef<Mesh>(null);
-  const viewport = useThree((s) => s.viewport);
+  const camera = useThree((s) => s.camera) as OrthographicCamera;
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
 
   const glyph = PRIMITIVES[meta.kind].glyph;
@@ -778,11 +839,19 @@ function NodeMesh({
 
     const hit = hitRef.current;
     if (hit) {
-      // Guarantee a 44 CSS px pointer target. `viewport.factor` is CSS px per
-      // world unit for this orthographic camera, so dividing by it converts a
-      // pixel budget into world units at the current zoom.
-      const minWorld = MIN_HIT_DIAMETER_PX / 2 / Math.max(viewport.factor, 0.0001);
-      hit.scale.setScalar(Math.max(r * extent, minWorld));
+      /*
+       * Guarantee a 44 CSS px pointer target. R3F sizes an orthographic
+       * frustum to the canvas in pixels, so one world unit is exactly
+       * `camera.zoom` CSS px. (Do not reach for `viewport.factor` here — R3F
+       * hard-codes it to 1 for orthographic cameras, which would pin the hit
+       * radius to a constant 22 world units and make targets grow as you zoom
+       * in.)
+       */
+      const minWorld = MIN_HIT_DIAMETER_PX / 2 / Math.max(camera.zoom, 0.0001);
+      // Never let the pointer target swallow a neighbour: records rest about
+      // `2r + restLengthPad` apart, so cap the padding at half that spacing.
+      const capped = Math.min(minWorld, r * extent + MAX_HIT_PADDING_WORLD);
+      hit.scale.setScalar(Math.max(r * extent, capped));
     }
   });
 
@@ -818,9 +887,9 @@ function NodeMesh({
           opacity={mode === 'dark' ? 0.5 : 0.35}
         />
       </mesh>
-      {blocker && !retired && <BlockerRing />}
+      {blocker && !retired && <BlockerRing animate={!reduceMotion} />}
       <mesh ref={bodyRef} geometry={geometry}>
-        <meshBasicMaterial color={color} transparent opacity={retired ? 0.6 : 0.95} />
+        <meshBasicMaterial color={color} transparent opacity={retired ? 0.72 : 0.95} />
       </mesh>
       {/*
         A hub's core: fills the ring's hole so membership spokes converging on
@@ -858,16 +927,23 @@ function NodeMesh({
   );
 }
 
-/** Dashed outer ring marking an open blocker Issue — the thing that gates work. */
-function BlockerRing() {
+/**
+ * Warning outline marking an open blocker Issue — the record gating an Effort.
+ *
+ * The slow rotation is the only motion left once the layout settles, so it is
+ * gated on `prefers-reduced-motion`: otherwise the canvas would never come to
+ * rest for a reader who asked for exactly that.
+ */
+function BlockerRing({ animate }: { animate: boolean }) {
   const ref = useRef<Mesh>(null);
   useFrame(({ clock }) => {
-    if (ref.current) ref.current.rotation.z = clock.elapsedTime * 0.25;
+    if (!ref.current) return;
+    ref.current.rotation.z = animate ? clock.elapsedTime * 0.25 : 0;
   });
   return (
     <mesh ref={ref} position={[0, 0, -0.01]} scale={9}>
       <ringGeometry args={[0.82, 1, 3, 1, 0, Math.PI * 2]} />
-      <meshBasicMaterial color={0xf59e0b} transparent opacity={0.55} />
+      <meshBasicMaterial color={0xf59e0b} transparent opacity={0.6} />
     </mesh>
   );
 }

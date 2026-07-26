@@ -117,9 +117,24 @@ describe('summarizeGraph', () => {
     assert.equal(summary.records, 5);
     assert.equal(summary.openIssues, 1);
     assert.equal(summary.proposedDecisions, 1);
-    assert.equal(summary.openRisks, 1);
+    assert.equal(summary.liveRisks, 1);
     // wontfix Issue plus the superseded Decision.
     assert.equal(summary.retired, 2);
+  });
+
+  test('counts a realized Risk as live', () => {
+    // `realized` is settled on the aliveness axis — nothing will overturn it —
+    // but it is precisely the record a reader needs surfaced, so it must not
+    // vanish from every headline total.
+    const nodes = [
+      node({ id: 'rsk-1', kind: 'risk', lifecycle: 'realized' }),
+      node({ id: 'rsk-2', kind: 'risk', lifecycle: 'mitigated' }),
+    ];
+
+    const summary = summarizeGraph(nodes, buildAlivenessMap(nodes, []));
+
+    assert.equal(summary.liveRisks, 1);
+    assert.equal(summary.retired, 0);
   });
 
   test('does not count Efforts as records', () => {

@@ -3,6 +3,7 @@ import test, { describe } from 'node:test';
 
 import { GLYPH_OUTLINES, glyphExtent, glyphSvgPoints } from './glyphs';
 import { PRIMITIVES, PRIMITIVE_ORDER, primitiveOklch } from './primitives';
+import { retiredOklch } from './oklch';
 
 function polygonArea(points: ReadonlyArray<{ x: number; y: number }>): number {
   let sum = 0;
@@ -83,6 +84,36 @@ describe('primitive encoding', () => {
         )
       );
       assert.equal(lightness.size, 1, `${mode} mode should use one record lightness`);
+    }
+  });
+
+  test('record chroma stays level so none reads as less important', () => {
+    // Unequal chroma at equal lightness creates a salience ranking. The
+    // datamodel does not rank its primitives, so neither should the render.
+    const chroma = PRIMITIVE_ORDER.filter((kind) => kind !== 'effort').map(
+      (kind) => PRIMITIVES[kind].tone!.c
+    );
+    assert.ok(
+      Math.max(...chroma) - Math.min(...chroma) <= 0.03,
+      `chroma spread ${Math.max(...chroma) - Math.min(...chroma)} is too wide`
+    );
+  });
+
+  test('retired stays clear of the background in both modes', () => {
+    // Retired records must read as dead without vanishing. Light mode is the
+    // tight one: white leaves far less headroom above a record's lightness
+    // than black leaves below it.
+    for (const mode of ['light', 'dark'] as const) {
+      for (const kind of PRIMITIVE_ORDER) {
+        const base = primitiveOklch(kind, mode);
+        const retired = retiredOklch(base, mode);
+        const distance = Math.abs(retired.l - (mode === 'light' ? 1 : 0.13));
+        assert.ok(
+          distance > 0.22,
+          `${kind} retired lightness ${retired.l.toFixed(2)} too close to ${mode} background`
+        );
+        assert.ok(retired.c < base.c, `${kind} retired should lose chroma`);
+      }
     }
   });
 });

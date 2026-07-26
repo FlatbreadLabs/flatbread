@@ -46,10 +46,11 @@ Within a few seconds of opening the page you should be able to answer:
   Effort is a ring whose core carries that cluster's tint.
 - **What is still live, and what got overturned?** Rejected, superseded,
   invalidated, and won't-fix records fade to a desaturated ghost with a
-  struck-through label. Supersession is derived from the graph's edges, not from
-  frontmatter — a Decision that has been replaced still records `state:
-  accepted`, so reading the field alone would label retired reasoning as
-  committed.
+  struck-through label. Supersession is derived from the graph's edges rather
+  than from frontmatter, because forward edges are the authoritative
+  representation and `state` can lag behind them — a Decision replaced through
+  an inline `supersedes` still records `state: accepted`, so reading the field
+  alone would label retired reasoning as committed.
 - **What is blocking?** Open Issues with `kind: blocker` wear an amber warning
   outline.
 - **How much work is tracked?** The header counts primitives and lifecycle

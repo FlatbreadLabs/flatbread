@@ -2,15 +2,20 @@
  * Effective lifecycle — what a record's state actually *is*, as opposed to
  * what its frontmatter says.
  *
- * The writer treats supersession and invalidation as edges, not state
- * transitions: a Decision that has been replaced still carries
- * `state: accepted` and only an outgoing `superseded_by` edge marks it as
- * history. Reading `state` alone therefore labels retired reasoning as
- * committed — the exact opposite of the truth, and on the record the reader
- * most needs to get right.
+ * Forward edges are the authoritative representation of supersession and
+ * invalidation, and frontmatter `state` can lag behind them: a Decision
+ * replaced via an inline `supersedes` on create keeps `state: accepted` and is
+ * marked as history only by its `superseded_by` edge. Reading `state` alone
+ * therefore labels retired reasoning as committed — the exact opposite of the
+ * truth, on the record a reader most needs to get right.
  *
- * Everything that wants to show state (canvas glyphs, drawer badge, counts)
- * reads from here so they cannot disagree.
+ * That particular lag is a writer defect, tracked as
+ * `iss-writedecision-with-supersedes-leaves-the-superse--by624gyf21ex42sv`.
+ * Deriving from edges is the right call regardless of when it is fixed, since
+ * edges also cover legacy and hand-edited records.
+ *
+ * Everything that shows state (canvas glyphs, drawer badge, counts) reads from
+ * here so they cannot disagree.
  */
 
 import type { GraphEdge, GraphNode, GraphNodeKind } from './types';
@@ -150,7 +155,8 @@ export interface GraphSummary {
   efforts: number;
   openIssues: number;
   proposedDecisions: number;
-  openRisks: number;
+  /** Open plus realized: a Risk that already came true is not "settled" work. */
+  liveRisks: number;
   retired: number;
   records: number;
 }
@@ -163,7 +169,7 @@ export function summarizeGraph(
     efforts: 0,
     openIssues: 0,
     proposedDecisions: 0,
-    openRisks: 0,
+    liveRisks: 0,
     retired: 0,
     records: 0,
   };
@@ -175,12 +181,22 @@ export function summarizeGraph(
       continue;
     }
     summary.records += 1;
-    if (life?.aliveness === 'retired') summary.retired += 1;
+    if (life?.aliveness === 'retired') {
+      summary.retired += 1;
+      continue;
+    }
+    // A realized Risk is `settled` on the aliveness axis — nothing is going to
+    // overturn it — but it is the record a reader most needs surfaced, so it
+    // counts alongside open Risks rather than disappearing from every total.
+    if (node.kind === 'risk' && (life?.aliveness === 'open' || life?.state === 'realized')) {
+      summary.liveRisks += 1;
+      continue;
+    }
     if (life?.aliveness !== 'open') continue;
     if (node.kind === 'issue') summary.openIssues += 1;
     else if (node.kind === 'decision' && life.state === 'proposed') {
       summary.proposedDecisions += 1;
-    } else if (node.kind === 'risk') summary.openRisks += 1;
+    }
   }
 
   return summary;
