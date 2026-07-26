@@ -82,9 +82,14 @@ export function Legend({ efforts, presentGroups }: LegendProps) {
       >
         <section>
           <SectionHeading>Primitives</SectionHeading>
-          <ul className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+          {/*
+            The column gap must clearly exceed the glyph-to-label gap, or the
+            eye groups a glyph with the label to its left and reads the whole
+            key off by one.
+          */}
+          <ul className="grid grid-cols-2 gap-x-5 gap-y-1.5">
             {PRIMITIVE_ORDER.map((kind) => (
-              <li key={kind} className="flex items-center gap-1.5">
+              <li key={kind} className="flex items-center gap-2">
                 {/* Neutral core here — a hue would imply Efforts have one. */}
                 <PrimitiveGlyph
                   kind={kind}
