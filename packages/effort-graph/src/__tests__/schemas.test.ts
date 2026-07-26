@@ -152,7 +152,7 @@ test('rejects malformed ids', (t) => {
   );
 });
 
-test('WriteCitation allows URL body without blob; cites accept Citation ids', (t) => {
+test('WriteCitation allows URL body without blob; records cite Citation ids', (t) => {
   t.notThrows(() =>
     EffortGraphMutationSchema.parse({
       type: 'WriteCitation',
@@ -191,6 +191,26 @@ test('CreateEffort rejects cites', (t) => {
           issue.path.length === 0
       )
     );
+});
+
+test('WriteCitation and WriteBlob reject relation keys', (t) => {
+  for (const type of ['WriteCitation', 'WriteBlob'] as const) {
+    const result = EffortGraphMutationSchema.safeParse({
+      ...validMutations[type],
+      cites: [`cit-paper--${suffix}`],
+    });
+    t.false(result.success, type);
+    if (!result.success)
+      t.true(
+        result.error.issues.some(
+          (issue) =>
+            issue.code === 'unrecognized_keys' &&
+            issue.keys.includes('cites') &&
+            issue.path.length === 0
+        ),
+        type
+      );
+  }
 });
 
 test('frontmatter schemas passthrough unknown keys', (t) => {

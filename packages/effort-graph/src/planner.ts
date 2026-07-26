@@ -32,6 +32,26 @@ const EPISTEMIC_CREATE = new Set([
   'risk',
 ]);
 
+const CITATION_BLOB_FORBIDDEN_KEYS = [
+  'cites',
+  'derives_from',
+  'supersedes',
+  'invalidates',
+] as const;
+
+function assertNoCitationBlobEdges(
+  type: string,
+  input: Record<string, unknown>
+): void {
+  const present = CITATION_BLOB_FORBIDDEN_KEYS.filter((key) => key in input);
+  if (present.length)
+    throw new EffortGraphValidationError(
+      `${type} does not accept ${present.join(
+        ', '
+      )}; relation fields are only valid on Issue, Finding, Decision, Constraint, or Risk records.`
+    );
+}
+
 function assertCites(
   get: (
     id: string
@@ -140,7 +160,17 @@ export function planMutation(
   }
   if (input.type in kinds) {
     const kind = kinds[input.type];
-    const raw = input as any;
+    const raw = input as Record<string, unknown> & {
+      id?: string;
+      title: string;
+      body: string;
+      effort: string;
+      created_at?: string;
+      blob?: string;
+      cites?: string[];
+    };
+    if (kind === 'blob' || kind === 'citation')
+      assertNoCitationBlobEdges(input.type, raw);
     const id = raw.id ?? generateArtifactId(kind, raw.title, randomBytes);
     if (!validateArtifactId(id, kind) || snapshot.hasId(id))
       throw new EffortGraphValidationError('Invalid or duplicate id');

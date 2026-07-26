@@ -42,6 +42,39 @@ test('CreateEffort rejects cites through the writer', async (t) => {
   );
 });
 
+test('WriteCitation and WriteBlob reject cites through the writer', async (t) => {
+  const { writer } = await makeWriter();
+  const effort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E', body: '' })
+  );
+  await t.throwsAsync(
+    writer.mutate({
+      type: 'WriteCitation',
+      effort,
+      title: 'Paper',
+      body: 'https://example.com/paper',
+      cites: ['cit-other--0123456789abcdef'],
+    } as unknown as EffortGraphMutation),
+    {
+      instanceOf: EffortGraphValidationError,
+      message: /WriteCitation does not accept cites/,
+    }
+  );
+  await t.throwsAsync(
+    writer.mutate({
+      type: 'WriteBlob',
+      effort,
+      title: 'Payload',
+      body: '# longform research\n',
+      cites: ['cit-paper--0123456789abcdef'],
+    } as unknown as EffortGraphMutation),
+    {
+      instanceOf: EffortGraphValidationError,
+      message: /WriteBlob does not accept cites/,
+    }
+  );
+});
+
 test('WriteDecision with supersedes materializes superseded_by on the target file', async (t) => {
   const { root, writer } = await makeWriter();
   const effort = soleId(
