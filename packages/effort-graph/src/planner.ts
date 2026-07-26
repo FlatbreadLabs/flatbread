@@ -20,7 +20,32 @@ const kinds: Record<string, PrimitiveKind> = {
   WriteDecision: 'decision',
   WriteConstraint: 'constraint',
   WriteRisk: 'risk',
+  WriteCitation: 'citation',
+  WriteBlob: 'blob',
 };
+
+const EPISTEMIC_CREATE = new Set([
+  'issue',
+  'finding',
+  'decision',
+  'constraint',
+  'risk',
+]);
+
+function assertCites(
+  get: (
+    id: string
+  ) => NonNullable<ReturnType<EffortGraphSnapshot['getRecord']>>,
+  cites: string[] | undefined
+): void {
+  for (const citeId of cites ?? []) {
+    const target = get(citeId);
+    if (target.kind !== 'citation')
+      throw new EffortGraphValidationError(
+        `cites must target a Citation, got ${target.kind} (${citeId})`
+      );
+  }
+}
 
 export function planMutation(
   input: EffortGraphMutation,
@@ -73,6 +98,7 @@ export function planMutation(
       throw new EffortGraphValidationError(
         `Duplicate effort slug ${input.slug}`
       );
+    assertCites(get, input.cites);
     add(
       id,
       'effort',
@@ -88,6 +114,7 @@ export function planMutation(
         ...(input.created_by !== undefined
           ? { created_by: input.created_by }
           : {}),
+        ...(input.cites !== undefined ? { cites: input.cites } : {}),
       },
       input.body,
       'create'
@@ -113,6 +140,15 @@ export function planMutation(
     const effort = get(raw.effort);
     if (effort.kind !== 'effort')
       throw new EffortGraphValidationError('Invalid effort');
+    if (kind === 'citation' && raw.blob !== undefined) {
+      const blob = get(raw.blob);
+      if (blob.kind !== 'blob')
+        throw new EffortGraphValidationError(
+          `Citation.blob must target a Blob, got ${blob.kind}`
+        );
+    }
+    if (EPISTEMIC_CREATE.has(kind) || kind === 'effort')
+      assertCites(get, raw.cites);
     const fm: Record<string, unknown> = {
       ...raw,
       id,
@@ -123,6 +159,12 @@ export function planMutation(
     if (kind === 'issue') fm.status = 'open';
     if (kind === 'decision') fm.state = 'proposed';
     if (kind === 'risk') fm.state = 'open';
+    if (kind === 'blob' || kind === 'citation') {
+      delete fm.cites;
+      delete fm.derives_from;
+      delete fm.supersedes;
+      delete fm.invalidates;
+    }
     add(id, kind, fm, raw.body, 'create');
     for (const edge of ['supersedes', 'invalidates'] as const)
       for (const targetId of (fm[edge] as string[] | undefined) ?? []) {

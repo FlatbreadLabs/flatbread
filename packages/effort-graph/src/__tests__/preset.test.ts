@@ -1,14 +1,23 @@
 import test from 'ava';
 import { effortGraphContent } from '../preset.js';
 
-test('returns exactly six entries with exact paths and refs', (t) => {
+test('returns exactly eight entries with exact paths and refs', (t) => {
   const entries = effortGraphContent();
   t.deepEqual(entries, [
-    { collection: 'Effort', path: '.flatbread-efforts/efforts' },
+    {
+      collection: 'Effort',
+      path: '.flatbread-efforts/efforts',
+      refs: { cites: 'Citation' },
+    },
     {
       collection: 'Issue',
       path: '.flatbread-efforts/issues',
-      refs: { effort: 'Effort', supersedes: 'Issue', superseded_by: 'Issue' },
+      refs: {
+        effort: 'Effort',
+        supersedes: 'Issue',
+        superseded_by: 'Issue',
+        cites: 'Citation',
+      },
     },
     {
       collection: 'Finding',
@@ -17,6 +26,7 @@ test('returns exactly six entries with exact paths and refs', (t) => {
         effort: 'Effort',
         supersedes: 'Finding',
         superseded_by: 'Finding',
+        cites: 'Citation',
       },
     },
     {
@@ -27,6 +37,7 @@ test('returns exactly six entries with exact paths and refs', (t) => {
         supersedes: 'Decision',
         superseded_by: 'Decision',
         rejected_by: 'Decision',
+        cites: 'Citation',
       },
     },
     {
@@ -36,6 +47,7 @@ test('returns exactly six entries with exact paths and refs', (t) => {
         effort: 'Effort',
         supersedes: 'Constraint',
         superseded_by: 'Constraint',
+        cites: 'Citation',
       },
     },
     {
@@ -46,7 +58,18 @@ test('returns exactly six entries with exact paths and refs', (t) => {
         supersedes: 'Risk',
         superseded_by: 'Risk',
         mitigated_by: 'Decision',
+        cites: 'Citation',
       },
+    },
+    {
+      collection: 'Citation',
+      path: '.flatbread-efforts/citations',
+      refs: { effort: 'Effort', blob: 'Blob' },
+    },
+    {
+      collection: 'Blob',
+      path: '.flatbread-efforts/blobs',
+      refs: { effort: 'Effort' },
     },
   ]);
 });
@@ -62,6 +85,8 @@ test('a custom root is respected in every path', (t) => {
       'memory/graph/decisions',
       'memory/graph/constraints',
       'memory/graph/risks',
+      'memory/graph/citations',
+      'memory/graph/blobs',
     ]
   );
 });
@@ -73,6 +98,7 @@ test('polymorphic union fields are absent from every refs map', (t) => {
     'invalidated_by',
     'resolved_by',
     'evidence',
+    'cite_meta',
   ];
   for (const entry of effortGraphContent()) {
     for (const field of polymorphic) {
@@ -81,5 +107,15 @@ test('polymorphic union fields are absent from every refs map', (t) => {
         `${entry.collection} must not declare ${field} in refs`
       );
     }
+  }
+});
+
+test('cites is homogeneous Citation ref on every epistemic collection', (t) => {
+  for (const entry of effortGraphContent()) {
+    if (entry.collection === 'Blob' || entry.collection === 'Citation') {
+      t.falsy(entry.refs?.cites);
+      continue;
+    }
+    t.is(entry.refs?.cites, 'Citation', `${entry.collection}.cites → Citation`);
   }
 });

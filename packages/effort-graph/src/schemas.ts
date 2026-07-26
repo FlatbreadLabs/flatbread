@@ -3,6 +3,9 @@ const id = z
   .string()
   .regex(/^[a-z]{3}-[a-z0-9-]+--[0123456789abcdefghjkmnpqrstvwxyz]{16}$/);
 const effort = id;
+const cites = {
+  cites: id.array().optional(),
+};
 const common = {
   id: id.optional(),
   title: z.string().min(1),
@@ -20,6 +23,7 @@ const edges = {
 export const CreateEffortSchema = z.object({
   type: z.literal('CreateEffort'),
   ...common,
+  ...cites,
   slug: z.string().optional(),
 });
 export const SetEffortStatusSchema = z.object({
@@ -27,7 +31,7 @@ export const SetEffortStatusSchema = z.object({
   effortId: id,
   status: z.enum(['active', 'paused', 'completed', 'abandoned']),
 });
-const createBase = { ...common, ...edges, effort: id };
+const createBase = { ...common, ...edges, ...cites, effort: id };
 export const WriteIssueSchema = z.object({
   type: z.literal('WriteIssue'),
   ...createBase,
@@ -52,6 +56,20 @@ export const WriteRiskSchema = z.object({
   ...createBase,
   likelihood: z.enum(['low', 'medium', 'high']),
   severity: z.enum(['low', 'medium', 'high']),
+});
+export const WriteCitationSchema = z.object({
+  type: z.literal('WriteCitation'),
+  ...common,
+  effort: id,
+  /** Optional longform/payload target; body alone (e.g. a URL) is valid. */
+  blob: id.optional(),
+  role: z.string().min(1).optional(),
+});
+export const WriteBlobSchema = z.object({
+  type: z.literal('WriteBlob'),
+  ...common,
+  effort: id,
+  kind: z.string().min(1).optional(),
 });
 export const SupersedeSchema = z.object({
   type: z.literal('Supersede'),
@@ -93,6 +111,8 @@ export const EffortGraphMutationSchema = z.discriminatedUnion('type', [
   WriteDecisionSchema,
   WriteConstraintSchema,
   WriteRiskSchema,
+  WriteCitationSchema,
+  WriteBlobSchema,
   SupersedeSchema,
   InvalidateSchema,
   ResolveIssueSchema,
@@ -164,6 +184,25 @@ export const RiskFrontmatterSchema = z
     severity: z.enum(['low', 'medium', 'high']),
   })
   .passthrough();
+export const CitationFrontmatterSchema = z
+  .object({
+    id,
+    effort,
+    title: z.string().min(1),
+    created_at: z.string(),
+    blob: id.optional(),
+    role: z.string().optional(),
+  })
+  .passthrough();
+export const BlobFrontmatterSchema = z
+  .object({
+    id,
+    effort,
+    title: z.string().min(1),
+    created_at: z.string(),
+    kind: z.string().optional(),
+  })
+  .passthrough();
 export const FrontmatterSchemas = {
   effort: EffortFrontmatterSchema,
   issue: IssueFrontmatterSchema,
@@ -171,4 +210,6 @@ export const FrontmatterSchemas = {
   decision: DecisionFrontmatterSchema,
   constraint: ConstraintFrontmatterSchema,
   risk: RiskFrontmatterSchema,
+  citation: CitationFrontmatterSchema,
+  blob: BlobFrontmatterSchema,
 };

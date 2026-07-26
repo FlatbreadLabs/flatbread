@@ -6,13 +6,15 @@ finishes completely or is undone.
 
 Version 1 supports these actions: `CreateEffort`, `SetEffortStatus`,
 `WriteIssue`, `WriteFinding`, `WriteDecision`, `WriteConstraint`, `WriteRisk`,
-`Supersede`, `Invalidate`, `ResolveIssue`, `AcceptDecision`, `MitigateRisk`,
-and `SetRiskState`.
+`WriteCitation`, `WriteBlob`, `Supersede`, `Invalidate`, `ResolveIssue`,
+`AcceptDecision`, `MitigateRisk`, and `SetRiskState`.
 
 The journal is stored in `<root>/.journal` and is ignored by Git. Use
 `effortGraphContent()` to add Efforts, Issues, Findings, Decisions,
-Constraints, and Risks to a Flatbread configuration. The writer checks links
-between those record types.
+Constraints, Risks, Citations, and Blobs to a Flatbread configuration. The
+writer checks links between those record types. Epistemic records may
+optionally `cites` Citation ids (Flatbread `refs`). A Citation body alone is
+valid (e.g. a URL); an optional `blob` ref attaches a longform payload.
 
 Read [`skills/effort-graph/glossary.md`](./skills/effort-graph/glossary.md) for
 the portable Effort Graph domain model.

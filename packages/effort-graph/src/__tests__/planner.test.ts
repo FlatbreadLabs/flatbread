@@ -434,3 +434,141 @@ test('20 SetRiskState', (t) => {
   ]);
   t.deepEqual(w[0].beforeBytes, s.getRawBytes(ids.risk));
 });
+test('21 WriteBlob', (t) => {
+  const id = 'blb-payload--0123456789abcdef';
+  const w = planMutation(
+    {
+      type: 'WriteBlob',
+      id,
+      effort: E,
+      title: 'Payload',
+      body: '# longform research\n',
+      kind: 'markdown',
+    },
+    snap(),
+    '/root',
+    now
+  );
+  one(t, w, id, `blobs/${id}.md`, 'create', {
+    id,
+    effort: E,
+    title: 'Payload',
+    kind: 'markdown',
+    created_at: now.toISOString(),
+  });
+  t.is(
+    parseDocument(w[0].afterBytes, 'blob').body.trim(),
+    '# longform research'
+  );
+});
+test('22 WriteCitation with URL body and no blob', (t) => {
+  const id = 'cit-paper--0123456789abcdef';
+  const w = planMutation(
+    {
+      type: 'WriteCitation',
+      id,
+      effort: E,
+      title: 'Paper',
+      body: 'https://example.com/paper',
+      role: 'evidence',
+    },
+    snap(),
+    '/root',
+    now
+  );
+  one(t, w, id, `citations/${id}.md`, 'create', {
+    id,
+    effort: E,
+    title: 'Paper',
+    role: 'evidence',
+    created_at: now.toISOString(),
+  });
+  t.is(
+    parseDocument(w[0].afterBytes, 'citation').body.trim(),
+    'https://example.com/paper'
+  );
+});
+test('23 WriteCitation with optional blob', (t) => {
+  const blobId = 'blb-payload--0123456789abcdef';
+  const citId = 'cit-dump--0123456789abcdef';
+  const blob = record(blobId, 'blob', {
+    id: blobId,
+    effort: E,
+    title: 'Payload',
+    created_at: '2025-01-01T00:00:00.000Z',
+    kind: 'markdown',
+  });
+  const w = planMutation(
+    {
+      type: 'WriteCitation',
+      id: citId,
+      effort: E,
+      title: 'Dump cite',
+      body: 'Local research dump',
+      blob: blobId,
+      role: 'evidence',
+    },
+    snap([blob]),
+    '/root',
+    now
+  );
+  t.is(parseDocument(w[0].afterBytes, 'citation').frontmatter.blob, blobId);
+});
+test('24 WriteFinding cites Citation', (t) => {
+  const citId = 'cit-paper--0123456789abcdef';
+  const citation = record(
+    citId,
+    'citation',
+    {
+      id: citId,
+      effort: E,
+      title: 'Paper',
+      created_at: '2025-01-01T00:00:00.000Z',
+      role: 'evidence',
+    },
+    'https://example.com/paper'
+  );
+  const w = planMutation(
+    {
+      type: 'WriteFinding',
+      id: ids.finding,
+      effort: E,
+      title: 'F',
+      body: 'short',
+      kind: 'measurement',
+      cites: [citId],
+    },
+    snap([citation]),
+    '/root',
+    now
+  );
+  t.deepEqual(parseDocument(w[0].afterBytes, 'finding').frontmatter.cites, [
+    citId,
+  ]);
+});
+test('25 cites must target Citation', (t) => {
+  const finding = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'F',
+    created_at: '2025-01-01T00:00:00.000Z',
+    kind: 'x',
+  });
+  t.throws(
+    () =>
+      planMutation(
+        {
+          type: 'WriteDecision',
+          id: ids.decision,
+          effort: E,
+          title: 'D',
+          body: '',
+          cites: [ids.finding],
+        },
+        snap([finding]),
+        '/root',
+        now
+      ),
+    { message: /cites must target a Citation/ }
+  );
+});

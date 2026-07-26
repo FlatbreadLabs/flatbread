@@ -1,14 +1,28 @@
 import type { ContentEntry } from '@flatbread/core';
+
+const CITE_REFS = { cites: 'Citation' } as const;
+
 export function effortGraphContent(
   root = '.flatbread-efforts'
 ): ContentEntry[] {
   // Union refs intentionally stay out of Flatbread refs; they target multiple collections.
+  // `cites` is homogeneous → Citation so core validates + GraphQL-resolves the edge.
+  // Citation may optionally ref a Blob; a Citation body alone (e.g. a URL) is valid.
   return [
-    { collection: 'Effort', path: `${root}/efforts` },
+    {
+      collection: 'Effort',
+      path: `${root}/efforts`,
+      refs: { ...CITE_REFS },
+    },
     {
       collection: 'Issue',
       path: `${root}/issues`,
-      refs: { effort: 'Effort', supersedes: 'Issue', superseded_by: 'Issue' },
+      refs: {
+        effort: 'Effort',
+        supersedes: 'Issue',
+        superseded_by: 'Issue',
+        ...CITE_REFS,
+      },
     },
     {
       collection: 'Finding',
@@ -17,6 +31,7 @@ export function effortGraphContent(
         effort: 'Effort',
         supersedes: 'Finding',
         superseded_by: 'Finding',
+        ...CITE_REFS,
       },
     },
     {
@@ -27,6 +42,7 @@ export function effortGraphContent(
         supersedes: 'Decision',
         superseded_by: 'Decision',
         rejected_by: 'Decision',
+        ...CITE_REFS,
       },
     },
     {
@@ -36,6 +52,7 @@ export function effortGraphContent(
         effort: 'Effort',
         supersedes: 'Constraint',
         superseded_by: 'Constraint',
+        ...CITE_REFS,
       },
     },
     {
@@ -46,7 +63,18 @@ export function effortGraphContent(
         supersedes: 'Risk',
         superseded_by: 'Risk',
         mitigated_by: 'Decision',
+        ...CITE_REFS,
       },
+    },
+    {
+      collection: 'Citation',
+      path: `${root}/citations`,
+      refs: { effort: 'Effort', blob: 'Blob' },
+    },
+    {
+      collection: 'Blob',
+      path: `${root}/blobs`,
+      refs: { effort: 'Effort' },
     },
   ];
 }
@@ -75,6 +103,8 @@ export function findEffortGraphContentRoot(
     'Decision',
     'Constraint',
     'Risk',
+    'Citation',
+    'Blob',
   ];
   const effort = content.find(
     (entry) => entry.collection === 'Effort' && typeof entry.path === 'string'

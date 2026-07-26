@@ -8,6 +8,8 @@ export const KIND_PREFIX: Record<PrimitiveKind, string> = {
   decision: 'dec',
   constraint: 'con',
   risk: 'rsk',
+  blob: 'blb',
+  citation: 'cit',
 };
 export const KIND_DIRECTORY: Record<PrimitiveKind, string> = {
   effort: 'efforts',
@@ -16,6 +18,8 @@ export const KIND_DIRECTORY: Record<PrimitiveKind, string> = {
   decision: 'decisions',
   constraint: 'constraints',
   risk: 'risks',
+  blob: 'blobs',
+  citation: 'citations',
 };
 export const PREFIX_KIND = Object.fromEntries(
   Object.entries(KIND_PREFIX).map(([k, v]) => [v, k])

@@ -9,6 +9,8 @@ const order = [
   'kind',
   'status',
   'state',
+  'role',
+  'blob',
   'created_at',
   'produced_in',
   'created_by',
@@ -21,7 +23,9 @@ const order = [
   'rejected_by',
   'mitigated_by',
   'evidence',
+  'cites',
 ];
+
 export function canonicalizeFrontmatter(
   input: Record<string, unknown>
 ): Record<string, unknown> {
