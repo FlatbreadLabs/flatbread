@@ -90,6 +90,10 @@ export function planMutation(
     });
   };
   if (input.type === 'CreateEffort') {
+    if ('cites' in input)
+      throw new EffortGraphValidationError(
+        'CreateEffort does not accept cites; create the Effort before its Citations.'
+      );
     const id =
       input.id ?? generateArtifactId('effort', input.title, randomBytes);
     if (!validateArtifactId(id, 'effort') || snapshot.hasId(id))

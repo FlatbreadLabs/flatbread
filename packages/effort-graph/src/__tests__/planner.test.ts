@@ -79,6 +79,18 @@ test('8 CreateEffort', (t) => {
   });
   t.is(w[0].beforeBytes, undefined);
 });
+test('CreateEffort rejects cites before planning a write', (t) => {
+  const input = {
+    type: 'CreateEffort',
+    title: 'New',
+    body: '',
+    cites: ['cit-paper--0123456789abcdef'],
+  } as unknown as import('../schemas.js').EffortGraphMutation;
+  t.throws(() => planMutation(input, snap(), '/root', now), {
+    message:
+      'CreateEffort does not accept cites; create the Effort before its Citations.',
+  });
+});
 test('9 SetEffortStatus', (t) => {
   const s = snap();
   const w = planMutation(

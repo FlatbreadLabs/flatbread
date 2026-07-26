@@ -6,6 +6,7 @@ import matter from 'gray-matter';
 import { createEffortGraphWriter } from '../writer.js';
 import { EffortGraphValidationError } from '../errors.js';
 import type { EffortGraphWriter, MutationResult } from '../types.js';
+import type { EffortGraphMutation } from '../schemas.js';
 
 async function makeWriter(): Promise<{
   root: string;
@@ -23,6 +24,23 @@ async function readFrontmatter(root: string, relativePath: string) {
 function soleId(result: MutationResult): string {
   return result.artifacts[0].id;
 }
+
+test('CreateEffort rejects cites through the writer', async (t) => {
+  const { writer } = await makeWriter();
+  await t.throwsAsync(
+    writer.mutate({
+      type: 'CreateEffort',
+      title: 'E',
+      body: '',
+      cites: ['cit-paper--0123456789abcdef'],
+    } as unknown as EffortGraphMutation),
+    {
+      instanceOf: EffortGraphValidationError,
+      message:
+        'CreateEffort does not accept cites; create the Effort before its Citations.',
+    }
+  );
+});
 
 test('WriteDecision with supersedes materializes superseded_by on the target file', async (t) => {
   const { root, writer } = await makeWriter();
