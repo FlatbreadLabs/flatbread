@@ -608,7 +608,11 @@ test('26 cites must belong to same effort', (t) => {
         '/root',
         now
       ),
-    { message: /Different effort/ }
+    {
+      message: new RegExp(
+        `cites target ${citId} belongs to a different effort`
+      ),
+    }
   );
 });
 test('27 Citation.blob must belong to same effort', (t) => {
@@ -641,7 +645,11 @@ test('27 Citation.blob must belong to same effort', (t) => {
         '/root',
         now
       ),
-    { message: /Different effort/ }
+    {
+      message: new RegExp(
+        `Citation\\.blob ${blobId} belongs to a different effort`
+      ),
+    }
   );
 });
 test('28 Citation.blob must target Blob', (t) => {

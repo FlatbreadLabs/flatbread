@@ -177,12 +177,20 @@ test('WriteCitation allows URL body without blob; cites accept Citation ids', (t
 });
 
 test('CreateEffort rejects cites', (t) => {
-  t.throws(() =>
-    EffortGraphMutationSchema.parse({
-      ...validMutations.CreateEffort,
-      cites: [`cit-paper--${suffix}`],
-    })
-  );
+  const result = EffortGraphMutationSchema.safeParse({
+    ...validMutations.CreateEffort,
+    cites: [`cit-paper--${suffix}`],
+  });
+  t.false(result.success);
+  if (!result.success)
+    t.true(
+      result.error.issues.some(
+        (issue) =>
+          issue.code === 'unrecognized_keys' &&
+          issue.keys.includes('cites') &&
+          issue.path.length === 0
+      )
+    );
 });
 
 test('frontmatter schemas passthrough unknown keys', (t) => {

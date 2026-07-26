@@ -394,7 +394,45 @@ test('WriteFinding rejects cites from another effort', async (t) => {
       kind: 'measurement',
       cites: [foreignCitation],
     }),
-    { instanceOf: EffortGraphValidationError, message: /Different effort/ }
+    {
+      instanceOf: EffortGraphValidationError,
+      message: new RegExp(
+        `cites target ${foreignCitation} belongs to a different effort`
+      ),
+    }
+  );
+});
+
+test('WriteCitation rejects a Blob from another effort', async (t) => {
+  const { writer } = await makeWriter();
+  const effort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E1', body: '' })
+  );
+  const otherEffort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E2', body: '' })
+  );
+  const foreignBlob = soleId(
+    await writer.mutate({
+      type: 'WriteBlob',
+      effort: otherEffort,
+      title: 'Foreign payload',
+      body: '',
+    })
+  );
+  await t.throwsAsync(
+    writer.mutate({
+      type: 'WriteCitation',
+      effort,
+      title: 'Source',
+      body: 'https://example.com/source',
+      blob: foreignBlob,
+    }),
+    {
+      instanceOf: EffortGraphValidationError,
+      message: new RegExp(
+        `Citation\\.blob ${foreignBlob} belongs to a different effort`
+      ),
+    }
   );
 });
 

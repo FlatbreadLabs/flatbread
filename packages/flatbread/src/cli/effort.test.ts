@@ -473,6 +473,22 @@ export default {
       { cwd }
     );
     const effortId = effort.artifacts[0].id;
+    await t.throwsAsync(
+      () =>
+        handleEffortWrite(
+          JSON.stringify({
+            type: 'CreateEffort',
+            title: 'Invalid',
+            body: '',
+            cites: ['cit-paper--0123456789abcdef'],
+          }),
+          { cwd }
+        ),
+      {
+        instanceOf: EffortGraphValidationError,
+        message: /CreateEffort does not accept cites/,
+      }
+    );
     const otherEffort = await handleEffortWrite(
       JSON.stringify({ type: 'CreateEffort', title: 'Other', body: '' }),
       { cwd }
@@ -489,6 +505,34 @@ export default {
       { cwd }
     );
     const blobId = blob.artifacts[0].id;
+    const foreignBlob = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteBlob',
+        effort: otherEffort.artifacts[0].id,
+        title: 'Foreign payload',
+        body: '',
+      }),
+      { cwd }
+    );
+    await t.throwsAsync(
+      () =>
+        handleEffortWrite(
+          JSON.stringify({
+            type: 'WriteCitation',
+            effort: effortId,
+            title: 'Invalid source',
+            body: 'https://example.com/invalid',
+            blob: foreignBlob.artifacts[0].id,
+          }),
+          { cwd }
+        ),
+      {
+        instanceOf: EffortGraphValidationError,
+        message: new RegExp(
+          `Citation\\.blob ${foreignBlob.artifacts[0].id} belongs to a different effort`
+        ),
+      }
+    );
     const citation = await handleEffortWrite(
       JSON.stringify({
         type: 'WriteCitation',
@@ -535,7 +579,12 @@ export default {
           }),
           { cwd }
         ),
-      { instanceOf: EffortGraphValidationError, message: /Different effort/ }
+      {
+        instanceOf: EffortGraphValidationError,
+        message: new RegExp(
+          `cites target ${foreignCitation.artifacts[0].id} belongs to a different effort`
+        ),
+      }
     );
 
     const browse = await handleEffortRecords(effortId, { cwd });

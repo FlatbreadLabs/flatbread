@@ -46,7 +46,9 @@ function assertCites(
         `cites must target a Citation, got ${target.kind} (${citeId})`
       );
     if (target.frontmatter.effort !== effortId)
-      throw new EffortGraphValidationError('Different effort');
+      throw new EffortGraphValidationError(
+        `cites target ${citeId} belongs to a different effort`
+      );
   }
 }
 
@@ -148,7 +150,9 @@ export function planMutation(
           `Citation.blob must target a Blob, got ${blob.kind}`
         );
       if (blob.frontmatter.effort !== raw.effort)
-        throw new EffortGraphValidationError('Different effort');
+        throw new EffortGraphValidationError(
+          `Citation.blob ${raw.blob} belongs to a different effort`
+        );
     }
     if (EPISTEMIC_CREATE.has(kind)) assertCites(get, raw.effort, raw.cites);
     const fm: Record<string, unknown> = {

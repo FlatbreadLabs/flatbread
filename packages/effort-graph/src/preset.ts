@@ -12,7 +12,6 @@ export function effortGraphContent(
     {
       collection: 'Effort',
       path: `${root}/efforts`,
-      refs: { ...CITE_REFS },
     },
     {
       collection: 'Issue',

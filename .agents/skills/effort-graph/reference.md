@@ -47,7 +47,8 @@ Initial states: Issue `status: open`; Decision `state: proposed`; Risk
 `state: open`. Citation and Blob have no lifecycle state.
 
 A Citation body alone is valid (commonly a URL). `blob` is optional; use it
-only when you need to attach stored content such as a document or JSON.
+only when you need to attach stored content such as a document or JSON. When
+provided, `blob` must be the id of a Blob in the same Effort as the Citation.
 
 ### Add links between existing records
 

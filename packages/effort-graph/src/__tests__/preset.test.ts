@@ -7,7 +7,6 @@ test('returns exactly eight entries with exact paths and refs', (t) => {
     {
       collection: 'Effort',
       path: '.flatbread-efforts/efforts',
-      refs: { cites: 'Citation' },
     },
     {
       collection: 'Issue',
@@ -110,9 +109,13 @@ test('polymorphic union fields are absent from every refs map', (t) => {
   }
 });
 
-test('cites is homogeneous Citation ref on every epistemic collection', (t) => {
+test('cites is a Citation ref on records that can create cites', (t) => {
   for (const entry of effortGraphContent()) {
-    if (entry.collection === 'Blob' || entry.collection === 'Citation') {
+    if (
+      entry.collection === 'Effort' ||
+      entry.collection === 'Blob' ||
+      entry.collection === 'Citation'
+    ) {
       t.falsy(entry.refs?.cites);
       continue;
     }
