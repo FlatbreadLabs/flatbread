@@ -44,32 +44,30 @@ Use `flatbread effort write` for the current Effort, following
 - **Risk** — a prospective negative outcome with likelihood and severity.
 - **Decision** — a proposed or accepted commitment among alternatives.
 
-### Three ways to "cite"
+### Two kinds of links
 
-Do not conflate these:
+Use these links for different purposes:
 
-- **Vernacular "cite"** — ordinary language for pointing at evidence.
-- **`cites`** — typed Flatbread `refs` edge from an epistemic record to a
-  **Citation** (external URL, doc, or longform capture). Records never cite
-  Blobs directly.
-- **`derives_from`** — causal upstream **epistemic** context: the Findings,
-  Constraints, Risks, and Issues this record responds to or weighs.
+- **`cites`** — links a record to a **Citation** for an external URL,
+  document, or saved source. Records never cite Blobs directly.
+- **`derives_from`** — links a record to the Findings, Constraints, Risks,
+  and Issues that informed it.
 
-A Decision typically `derives_from` the epistemic records it synthesizes and
-`cites` Citations for outside sources.
+A Decision typically uses `derives_from` for project reasoning and `cites` for
+outside sources.
 
 ### External evidence (URL or longform)
 
-When a Finding, Decision, Constraint, or Risk rests on external evidence, journal
-it as a Citation — do not duplicate the source in the epistemic body:
+When a Finding, Decision, Constraint, or Risk rests on an external source,
+create a Citation instead of copying the source into the record body:
 
-1. **`WriteBlob`** — only when the source is longform or opaque content that
-   needs capture (markdown, JSON, image, etc.).
+1. **`WriteBlob`** — only when you need to save large or non-text content
+   (markdown, JSON, an image, and so on).
 2. **`WriteCitation`** — body is often the URL string; pass optional `blob` and
    `role` when needed.
-3. **Epistemic write** — pass `cites: ["<cit-id>"]` on the create. There is no
-   cite retro-link mutation, so create the Citation before the record that
-   should cite it.
+3. **Create the record** — pass `cites: ["<cit-id>"]` when creating the
+   Finding, Decision, Constraint, or Risk. You cannot add a citation later,
+   so create the Citation first.
 
 Record a Decision when it is hard to reverse, surprising without context, and
 the result of a real trade-off. Create it as proposed while the user is still

@@ -5,13 +5,14 @@ description: Journal reasoning (decisions, findings, issues, constraints, risks,
 
 # Effort Graph — agent journaling and recall
 
-The Effort Graph is persistent, queryable memory for long-horizon work, stored
-as markdown records in the repo. Eight collections/primitives: epistemic
-**Effort**, **Issue**, **Finding**, **Decision**, **Constraint**, and
-**Risk**, plus non-epistemic **Citation** and **Blob**. Every record belongs
-to exactly one Effort. You write through 15 typed mutations and read through
-5 bounded queries — never by hand-editing record frontmatter (bodies may be
-edited freely).
+The Effort Graph stores durable project memory as markdown records in the
+repository. It has eight record types: **Effort**, **Issue**, **Finding**,
+**Decision**, **Constraint**, and **Risk** capture the work and reasoning;
+**Citation** stores a source or reference; and **Blob** stores attached
+content such as a document, JSON, or image. Every record belongs to one
+Effort. Create and update records through 15 typed mutations, and read them
+through 5 bounded queries. Do not hand-edit record frontmatter, although you
+may edit record bodies freely.
 
 Read [glossary.md](./glossary.md) for the primitive and edge semantics before
 inventing a new record kind or relation.
@@ -73,10 +74,11 @@ Critical semantics:
   unless you deliberately want the competing proposals closed.
 - Edges are forward-only in payloads (`derives_from`, `supersedes`,
   `invalidates`); back-edges are materialized automatically.
-- Cites: `WriteCitation` (body may be a URL; optional `blob` + `role`), then
-  `cites: ["<cit-id>"]` on any epistemic create. Flatbread `refs` link
-  records → Citation → optional Blob. Bounded digests omit Blob bodies —
-  use `effort get`.
+- External sources: create a `WriteCitation` record (its body may be a URL,
+  with optional `blob` and `role` fields), then add
+  `cites: ["<cit-id>"]` when creating an Issue, Finding, Decision,
+  Constraint, or Risk. A Citation may point to a Blob for attached content.
+  Bounded digests omit Blob bodies; use `effort get <blob-id>` to read one.
 - When superseding, open the new record's body with a short rollup of what
   changed and why — reads render ancestors only as one-line checkpoints.
 - For a hard-to-reverse, surprising decision made after a real trade-off, use
@@ -152,12 +154,12 @@ server-side.
    for the full body. Reserve opening `.flatbread-efforts/**/*.md` for rare
    cases (e.g. digest byte-cap miss on an oversized record), not normal
    zoom-in.
-3. **During work:** if the source artifact needs capture, teach Blob first with
-   `WriteBlob`; then create the source with `WriteCitation`; then do the
-   epistemic write using `cites: ["<cit-id>"]`. There is no cite retro-link
-   mutation, so create the Citation before the Finding/Decision/Constraint/Risk
-   that should cite it. Open Issues for real gaps/blockers, and record
-   Decisions with `derives_from` citing the Findings, Constraints, and Issues
+3. **During work:** when outside material supports a record, save large
+   content with `WriteBlob` if needed, then create a `WriteCitation`, then
+   create the Issue, Finding, Decision, Constraint, or Risk with
+   `cites: ["<cit-id>"]`. You cannot add a citation later, so create the
+   Citation first. Open Issues for real gaps or blockers, and use
+   `derives_from` on Decisions to link the Findings, Constraints, and Issues
    they respond to.
 4. **On commitment:** `AcceptDecision` (mind `rejectSiblings`), `ResolveIssue`
    with `resolvedBy` citing the closing Decision/Findings.

@@ -14,9 +14,9 @@ and resolve dependent choices in order. Explore the codebase for facts, but
 leave choices to the user. Do not implement the plan until shared understanding
 is confirmed.
 
-When external evidence informs a choice, journal it through the Citation
-workflow (`WriteBlob` if longform → `WriteCitation` → epistemic write with
-`cites`) rather than pasting URLs or longform into epistemic bodies. Use
-`derives_from` for in-graph epistemic upstream; typed `cites` are for
-Citation records only — see effort-modeling for vernacular cite vs `cites` vs
-`derives_from`.
+When an external source informs a choice, create a `WriteCitation` record
+instead of pasting the source into another record. Save large content first
+with `WriteBlob` when needed, then create the Citation, then create the
+Finding or Decision with `cites`. Use `derives_from` to link Findings, Issues,
+Constraints, and Risks within the project; use `cites` only for Citation
+records. See effort-modeling for details.
