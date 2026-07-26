@@ -115,6 +115,14 @@ export interface SimulationOptions {
   spring?: number;
   /** Pull toward the mean position of same-effort neighbors. */
   clusterCohesion?: number;
+  /**
+   * Push whole effort clusters apart when their discs overlap. Position is the
+   * channel that carries cluster identity, so interleaved clusters are a
+   * legibility failure, not just a cosmetic one.
+   */
+  clusterSeparation?: number;
+  /** Extra world-space gap enforced between two cluster discs. */
+  clusterGap?: number;
   /** Global pull toward the world origin (keeps things on screen). */
   centering?: number;
   /** Fraction of velocity retained per second (0..1). */

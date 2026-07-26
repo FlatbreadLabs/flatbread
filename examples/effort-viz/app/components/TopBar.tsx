@@ -1,13 +1,13 @@
 'use client';
 
 import { useTheme } from '../hooks/useTheme';
+import type { GraphSummary } from '@/lib/lifecycle';
 import type { LiveStatus } from '@/lib/useEffortGraphLive';
 
 interface TopBarProps {
   status: LiveStatus;
   generation: number | null;
-  nodeCount: number;
-  edgeCount: number;
+  summary: GraphSummary;
 }
 
 const STATUS_LABEL: Record<LiveStatus, string> = {
@@ -16,22 +16,62 @@ const STATUS_LABEL: Record<LiveStatus, string> = {
   error: 'Disconnected',
 };
 
-export function TopBar({ status, generation, nodeCount, edgeCount }: TopBarProps) {
+export function TopBar({ status, generation, summary }: TopBarProps) {
   return (
-    <header className="pointer-events-auto flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/70 px-5 backdrop-blur-md">
-      <div className="flex items-center gap-3">
-        <span className="text-[13px] font-semibold tracking-tight text-foreground">
+    <header className="pointer-events-auto flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-background/70 px-4 safe-area-x sm:px-5">
+      <div className="flex min-w-0 items-baseline gap-3">
+        <h1 className="shrink-0 text-[14px] font-semibold tracking-tight text-foreground">
           Effort Graph
-        </span>
-        <span className="hidden text-[11px] text-muted sm:inline">
-          {nodeCount} nodes · {edgeCount} edges
-        </span>
+        </h1>
+        {/*
+          Counts are phrased in primitives, not nodes and edges: roughly half of
+          the "edges" are synthesised membership spokes, and "173 nodes" tells a
+          reader a dot appeared where "2 proposed Decisions" tells them someone
+          still owes a call.
+        */}
+        <p className="hidden min-w-0 truncate text-[12px] tabular-nums text-muted sm:block">
+          <Count value={summary.efforts} label="Effort" />
+          {' · '}
+          <Count value={summary.openIssues} label="open Issue" />
+          {' · '}
+          <Count value={summary.proposedDecisions} label="proposed Decision" />
+          {summary.openRisks > 0 && (
+            <>
+              {' · '}
+              <Count value={summary.openRisks} label="open Risk" />
+            </>
+          )}
+          {summary.retired > 0 && (
+            <>
+              {' · '}
+              <span className="text-muted/80">
+                <Count value={summary.retired} label="retired" plural="retired" />
+              </span>
+            </>
+          )}
+        </p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <StatusPill status={status} generation={generation} />
         <ThemeToggle />
       </div>
     </header>
+  );
+}
+
+function Count({
+  value,
+  label,
+  plural,
+}: {
+  value: number;
+  label: string;
+  plural?: string;
+}) {
+  return (
+    <>
+      {value} {value === 1 ? label : (plural ?? `${label}s`)}
+    </>
   );
 }
 
@@ -46,18 +86,20 @@ function StatusPill({
     status === 'live'
       ? 'bg-emerald-500'
       : status === 'connecting'
-        ? 'bg-amber-500 animate-pulse'
+        ? 'bg-amber-500 motion-safe:animate-pulse'
         : 'bg-red-500';
 
   return (
-    <div className="flex items-center gap-1.5 rounded-full border border-border bg-background/60 px-2.5 py-1 text-[11px] text-muted">
-      <span aria-hidden className={`size-1.5 rounded-full ${dotClass}`} />
-      <span className="font-medium text-foreground">
-        {STATUS_LABEL[status]}
+    <div
+      role="status"
+      /* Fixed width so switching between the three labels can't shift the toggle. */
+      className="flex w-[7.5rem] items-center justify-center gap-1.5 rounded-full border border-border bg-background/60 px-2.5 py-1 text-[12px] text-muted"
+    >
+      <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${dotClass}`} />
+      <span className="font-medium text-foreground">{STATUS_LABEL[status]}</span>
+      <span className="tabular-nums text-muted">
+        {generation !== null ? `· gen ${generation}` : ''}
       </span>
-      {generation !== null && (
-        <span className="tabular-nums text-muted">· gen {generation}</span>
-      )}
     </div>
   );
 }
@@ -71,7 +113,7 @@ function ThemeToggle() {
       onClick={toggle}
       aria-label={label}
       title={label}
-      className="inline-flex size-8 items-center justify-center rounded-full border border-border bg-background/60 text-foreground transition-colors hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      className="inline-flex size-11 items-center justify-center rounded-full text-foreground transition-colors duration-150 ease-out hover:bg-muted/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
     >
       {mode === 'dark' ? <SunIcon /> : <MoonIcon />}
     </button>
@@ -82,8 +124,8 @@ function SunIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
-      width="14"
-      height="14"
+      width="16"
+      height="16"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.75"
@@ -108,8 +150,8 @@ function MoonIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
-      width="14"
-      height="14"
+      width="16"
+      height="16"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.75"

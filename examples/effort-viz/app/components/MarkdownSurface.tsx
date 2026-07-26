@@ -11,16 +11,20 @@ export interface MarkdownSurfaceProps {
   /** Reserved for a future editing surface; ignored while readonly. */
   editable?: boolean;
   onChange?: (next: string) => void;
-  /** Optional slug→id resolver so wiki-style links can drive graph selection. */
-  onNavigate?: (target: string) => void;
+  /**
+   * Resolve a link target to a record id, or null when it points somewhere
+   * else. Links only become in-graph navigation when this resolves — an
+   * unresolvable target has to stay a real anchor rather than degrade into a
+   * button that silently does nothing.
+   */
+  resolveRecord?: (target: string) => string | null;
+  onNavigate?: (id: string) => void;
   className?: string;
 }
 
-function isInternalHref(href: string): boolean {
-  if (href.startsWith('#')) return true;
-  if (href.startsWith('/')) return true;
-  if (!href.includes('://') && !href.startsWith('mailto:')) return true;
-  return false;
+/** True for anything with its own URL scheme: http, mailto, tel, and friends. */
+function hasScheme(href: string): boolean {
+  return /^[a-z][a-z0-9+.-]*:/i.test(href);
 }
 
 function normalizeNavigateTarget(href: string): string {
@@ -29,17 +33,15 @@ function normalizeNavigateTarget(href: string): string {
   return segment.replace(/\.md$/i, '');
 }
 
+const LINK_CLASS =
+  'text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm';
+
 export function MarkdownSurface({
   value,
-  editable = false,
-  onChange,
+  resolveRecord,
   onNavigate,
   className = '',
 }: MarkdownSurfaceProps) {
-  if (editable && onChange) {
-    // Future editor plugs in here with the same prop contract.
-  }
-
   return (
     <div
       className={`markdown-surface text-[13px] leading-[1.65] text-foreground/90 ${className}`}
@@ -98,27 +100,34 @@ export function MarkdownSurface({
           hr: () => <hr className="my-4 border-border/70" />,
           a: ({ href, children }) => {
             const target = href ?? '';
-            const internal = isInternalHref(target);
-            if (internal && onNavigate) {
+            const recordId =
+              target && !target.startsWith('#') && !hasScheme(target) && resolveRecord
+                ? resolveRecord(normalizeNavigateTarget(target))
+                : null;
+
+            if (recordId && onNavigate) {
               return (
                 <button
                   type="button"
-                  onClick={() => onNavigate(normalizeNavigateTarget(target))}
-                  className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent"
+                  onClick={() => onNavigate(recordId)}
+                  className={LINK_CLASS}
                 >
                   {children}
                 </button>
               );
             }
+
+            const external = hasScheme(target) && !target.startsWith('mailto:');
             return (
               <a
                 href={target}
-                className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent"
-                {...(!internal
+                className={LINK_CLASS}
+                {...(external
                   ? { target: '_blank', rel: 'noopener noreferrer' }
                   : {})}
               >
                 {children}
+                {external && <span className="sr-only"> (opens in a new tab)</span>}
               </a>
             );
           },

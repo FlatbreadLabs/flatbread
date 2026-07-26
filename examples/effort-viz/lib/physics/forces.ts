@@ -10,21 +10,102 @@
 import { effectiveRadius } from './growth';
 import type { SimEdge, SimNode } from './types';
 
+/**
+ * Per-cluster aggregates, recomputed each step. Held on the scratch object so
+ * a 60fps loop doesn't allocate fresh maps and arrays every frame.
+ */
+export interface ClusterScratch {
+  /** Cluster index per node, parallel to `nodes`. */
+  nodeCluster: Int32Array;
+  indexOf: Map<string, number>;
+  count: number;
+  cx: Float64Array;
+  cy: Float64Array;
+  members: Float64Array;
+  /** Distance from the centroid to the outermost member, plus its radius. */
+  reach: Float64Array;
+}
+
 /** Scratch buffers reused across a single `step()` call. */
 export interface ForceScratch {
   fx: Float64Array;
   fy: Float64Array;
+  clusters: ClusterScratch;
+}
+
+function ensureClusterCapacity(clusters: ClusterScratch, n: number): ClusterScratch {
+  if (clusters.cx.length >= n && clusters.nodeCluster.length >= n) return clusters;
+  const cap = Math.max(n, 16);
+  return {
+    nodeCluster: new Int32Array(cap),
+    indexOf: clusters.indexOf,
+    count: 0,
+    cx: new Float64Array(cap),
+    cy: new Float64Array(cap),
+    members: new Float64Array(cap),
+    reach: new Float64Array(cap),
+  };
 }
 
 export function ensureScratch(scratch: ForceScratch | null, n: number): ForceScratch {
   if (scratch && scratch.fx.length >= n) {
     scratch.fx.fill(0, 0, n);
     scratch.fy.fill(0, 0, n);
+    scratch.clusters = ensureClusterCapacity(scratch.clusters, n);
     return scratch;
   }
   // Over-allocate a bit to amortize growth as nodes stream in.
   const cap = Math.max(n, scratch ? scratch.fx.length * 2 : 16);
-  return { fx: new Float64Array(cap), fy: new Float64Array(cap) };
+  const clusters: ClusterScratch = {
+    nodeCluster: new Int32Array(cap),
+    indexOf: scratch?.clusters.indexOf ?? new Map<string, number>(),
+    count: 0,
+    cx: new Float64Array(cap),
+    cy: new Float64Array(cap),
+    members: new Float64Array(cap),
+    reach: new Float64Array(cap),
+  };
+  return { fx: new Float64Array(cap), fy: new Float64Array(cap), clusters };
+}
+
+/**
+ * Bucket nodes by `effortId` and compute each cluster's centroid and reach.
+ * Shared by cohesion and separation so the pass runs once per step.
+ */
+export function computeClusters(nodes: SimNode[], scratch: ForceScratch): void {
+  const c = scratch.clusters;
+  c.indexOf.clear();
+  c.count = 0;
+
+  for (let i = 0; i < nodes.length; i++) {
+    const id = nodes[i].effortId;
+    let slot = c.indexOf.get(id);
+    if (slot === undefined) {
+      slot = c.count++;
+      c.indexOf.set(id, slot);
+      c.cx[slot] = 0;
+      c.cy[slot] = 0;
+      c.members[slot] = 0;
+      c.reach[slot] = 0;
+    }
+    c.nodeCluster[i] = slot;
+    c.cx[slot] += nodes[i].x;
+    c.cy[slot] += nodes[i].y;
+    c.members[slot] += 1;
+  }
+
+  for (let s = 0; s < c.count; s++) {
+    const members = c.members[s] || 1;
+    c.cx[s] /= members;
+    c.cy[s] /= members;
+  }
+
+  for (let i = 0; i < nodes.length; i++) {
+    const s = c.nodeCluster[i];
+    const n = nodes[i];
+    const span = Math.hypot(n.x - c.cx[s], n.y - c.cy[s]) + effectiveRadius(n);
+    if (span > c.reach[s]) c.reach[s] = span;
+  }
 }
 
 /**
@@ -126,23 +207,62 @@ export function applyClusterCohesion(
   strength: number
 ): void {
   if (strength <= 0 || nodes.length === 0) return;
-  const sumsX = new Map<string, number>();
-  const sumsY = new Map<string, number>();
-  const counts = new Map<string, number>();
-  for (const n of nodes) {
-    sumsX.set(n.effortId, (sumsX.get(n.effortId) ?? 0) + n.x);
-    sumsY.set(n.effortId, (sumsY.get(n.effortId) ?? 0) + n.y);
-    counts.set(n.effortId, (counts.get(n.effortId) ?? 0) + 1);
-  }
-  const { fx, fy } = scratch;
+  const { fx, fy, clusters } = scratch;
   for (let i = 0; i < nodes.length; i++) {
+    const s = clusters.nodeCluster[i];
+    if (clusters.members[s] < 2) continue;
     const n = nodes[i];
-    const c = counts.get(n.effortId) ?? 1;
-    if (c < 2) continue;
-    const cx = (sumsX.get(n.effortId) ?? 0) / c;
-    const cy = (sumsY.get(n.effortId) ?? 0) / c;
-    fx[i] += (cx - n.x) * strength;
-    fy[i] += (cy - n.y) * strength;
+    fx[i] += (clusters.cx[s] - n.x) * strength;
+    fy[i] += (clusters.cy[s] - n.y) * strength;
+  }
+}
+
+/**
+ * Push whole Effort clusters apart when their discs overlap.
+ *
+ * Generic node-node repulsion is not enough on its own: it separates
+ * individual records but lets two clusters interleave, at which point spatial
+ * position stops reading as Effort membership and the hub labels collide.
+ * Since position is the channel carrying cluster identity, keeping clusters
+ * visually distinct is load-bearing rather than cosmetic.
+ */
+export function applyClusterSeparation(
+  nodes: SimNode[],
+  scratch: ForceScratch,
+  strength: number,
+  pad: number
+): void {
+  const { fx, fy, clusters } = scratch;
+  if (strength <= 0 || clusters.count < 2) return;
+
+  for (let a = 0; a < clusters.count; a++) {
+    for (let b = a + 1; b < clusters.count; b++) {
+      const min = clusters.reach[a] + clusters.reach[b] + pad;
+      let dx = clusters.cx[b] - clusters.cx[a];
+      let dy = clusters.cy[b] - clusters.cy[a];
+      let dist = Math.hypot(dx, dy);
+      if (dist === 0) {
+        dx = (a - b) * 0.001;
+        dy = 0.001;
+        dist = Math.hypot(dx, dy);
+      }
+      if (dist >= min) continue;
+      // Normalize by member count so a 30-record cluster and a 3-record one
+      // separate by the same distance rather than the small one being flung.
+      const push = (strength * (min - dist)) / dist;
+      const nx = dx * push;
+      const ny = dy * push;
+      for (let i = 0; i < nodes.length; i++) {
+        const s = clusters.nodeCluster[i];
+        if (s === a) {
+          fx[i] -= nx / clusters.members[a];
+          fy[i] -= ny / clusters.members[a];
+        } else if (s === b) {
+          fx[i] += nx / clusters.members[b];
+          fy[i] += ny / clusters.members[b];
+        }
+      }
+    }
   }
 }
 

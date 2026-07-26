@@ -2,33 +2,16 @@
 
 import type { GraphEdgeKind, GraphNodeKind } from '@/lib/types';
 import type { ColorMode } from '@/lib/oklch';
-
-/** Stable per-kind palette (kind dominates over effort cluster). */
-const KIND_PALETTE: Record<
-  GraphNodeKind,
-  { light: string; dark: string; label: string }
-> = {
-  effort: { light: 'oklch(42% 0.02 260)', dark: 'oklch(78% 0.02 260)', label: 'Effort' },
-  issue: { light: 'oklch(62% 0.14 75)', dark: 'oklch(78% 0.12 75)', label: 'Issue' },
-  finding: { light: 'oklch(58% 0.12 250)', dark: 'oklch(76% 0.1 250)', label: 'Finding' },
-  decision: { light: 'oklch(56% 0.14 300)', dark: 'oklch(74% 0.12 300)', label: 'Decision' },
-  constraint: { light: 'oklch(55% 0.1 195)', dark: 'oklch(73% 0.09 195)', label: 'Constraint' },
-  risk: { light: 'oklch(58% 0.16 25)', dark: 'oklch(76% 0.13 25)', label: 'Risk' },
-};
-
-export function kindSwatchCss(kind: GraphNodeKind, mode: ColorMode): string {
-  return KIND_PALETTE[kind][mode];
-}
-
-export const NODE_KINDS: Array<{ kind: GraphNodeKind; label: string }> = (
-  Object.entries(KIND_PALETTE) as Array<[GraphNodeKind, (typeof KIND_PALETTE)[GraphNodeKind]]>
-).map(([kind, entry]) => ({ kind, label: entry.label }));
+import { oklchCss, structuralOklch, toColor } from '@/lib/oklch';
+import { PRIMITIVES, primitiveOklch } from '@/lib/primitives';
+import { CIRCLE_SEGMENTS, RING_INNER_RATIO, glyphSvgPoints } from '@/lib/glyphs';
 
 export type RelationGroupId =
   | 'lineage'
   | 'supersession'
   | 'invalidation'
   | 'resolution'
+  | 'mitigation'
   | 'rejection'
   | 'evidence'
   | 'membership';
@@ -36,25 +19,31 @@ export type RelationGroupId =
 export interface RelationMeta {
   kind: GraphEdgeKind;
   label: string;
-  shortLabel: string;
   description: string;
   group: RelationGroupId;
-  /** Human-readable direction hint for the drawer. */
-  directionHint: string;
+  /** Rendered in the drawer so direction reads as a sentence, not a bare arrow. */
+  directionHint: { outgoing: string; incoming: string };
   dash: 'solid' | 'dashed' | 'dotted';
   weight: 'thin' | 'medium' | 'bold';
   emphasis: 'subtle' | 'base' | 'medium' | 'strong';
   arrow: boolean;
 }
 
+/**
+ * Relation styling. Edges stay largely achromatic on purpose: hue is spent on
+ * primitives now, and layering seven more edge hues on top would put a dozen
+ * competing colours on one canvas. Texture (dash, weight) separates the
+ * groups instead, with two exceptions that carry real semantic weight —
+ * membership takes its Effort's tint, and invalidation gets a warning hue
+ * because "this was wrong" is the strongest claim the datamodel can make.
+ */
 export const RELATION_META: Record<GraphEdgeKind, RelationMeta> = {
   derives_from: {
     kind: 'derives_from',
     label: 'Derives from',
-    shortLabel: 'derives',
-    description: 'Built on prior context (issue, finding, or decision).',
+    description: 'Causal upstream evidence or context this record was built on.',
     group: 'lineage',
-    directionHint: 'This record builds on →',
+    directionHint: { outgoing: 'Builds on', incoming: 'Informs' },
     dash: 'solid',
     weight: 'thin',
     emphasis: 'base',
@@ -63,10 +52,9 @@ export const RELATION_META: Record<GraphEdgeKind, RelationMeta> = {
   supersedes: {
     kind: 'supersedes',
     label: 'Supersedes',
-    shortLabel: 'supersedes',
-    description: 'Replaces an older decision (old → new).',
+    description: 'Replaces an earlier record of the same primitive.',
     group: 'supersession',
-    directionHint: 'This replaces →',
+    directionHint: { outgoing: 'Replaces', incoming: 'Replaced by' },
     dash: 'solid',
     weight: 'medium',
     emphasis: 'strong',
@@ -75,10 +63,9 @@ export const RELATION_META: Record<GraphEdgeKind, RelationMeta> = {
   superseded_by: {
     kind: 'superseded_by',
     label: 'Superseded by',
-    shortLabel: 'superseded',
-    description: 'Replaced by a newer decision (old ← new).',
+    description: 'Replaced by a later record; this one is no longer current.',
     group: 'supersession',
-    directionHint: '← Replaced by',
+    directionHint: { outgoing: 'Replaced by', incoming: 'Replaces' },
     dash: 'solid',
     weight: 'medium',
     emphasis: 'strong',
@@ -87,10 +74,9 @@ export const RELATION_META: Record<GraphEdgeKind, RelationMeta> = {
   invalidates: {
     kind: 'invalidates',
     label: 'Invalidates',
-    shortLabel: 'invalidates',
-    description: 'Marks prior evidence or assumptions as no longer valid.',
+    description: 'Says an earlier record was wrong — not merely replaced.',
     group: 'invalidation',
-    directionHint: 'This invalidates →',
+    directionHint: { outgoing: 'Shows this was wrong', incoming: 'Shown wrong by' },
     dash: 'dashed',
     weight: 'medium',
     emphasis: 'strong',
@@ -99,10 +85,9 @@ export const RELATION_META: Record<GraphEdgeKind, RelationMeta> = {
   resolved_by: {
     kind: 'resolved_by',
     label: 'Resolved by',
-    shortLabel: 'resolved',
-    description: 'Issue closed by a decision or mitigation.',
+    description: 'Closes an Issue through a Decision or Finding.',
     group: 'resolution',
-    directionHint: '← Resolved by',
+    directionHint: { outgoing: 'Resolved by', incoming: 'Resolves' },
     dash: 'solid',
     weight: 'medium',
     emphasis: 'strong',
@@ -111,34 +96,31 @@ export const RELATION_META: Record<GraphEdgeKind, RelationMeta> = {
   mitigated_by: {
     kind: 'mitigated_by',
     label: 'Mitigated by',
-    shortLabel: 'mitigated',
-    description: 'Risk reduced by a decision or control.',
-    group: 'resolution',
-    directionHint: '← Mitigated by',
+    description: 'Reduces a Risk through an accepted Decision.',
+    group: 'mitigation',
+    directionHint: { outgoing: 'Mitigated by', incoming: 'Mitigates' },
     dash: 'solid',
     weight: 'medium',
-    emphasis: 'strong',
+    emphasis: 'medium',
     arrow: true,
   },
   rejected_by: {
     kind: 'rejected_by',
     label: 'Rejected by',
-    shortLabel: 'rejected',
-    description: 'Proposal declined by a decision.',
+    description: 'Closed when a sibling Decision in this Effort was accepted.',
     group: 'rejection',
-    directionHint: '← Rejected by',
-    dash: 'dashed',
-    weight: 'thin',
+    directionHint: { outgoing: 'Rejected by', incoming: 'Rejects' },
+    dash: 'dotted',
+    weight: 'medium',
     emphasis: 'medium',
     arrow: true,
   },
   evidence: {
     kind: 'evidence',
     label: 'Evidence',
-    shortLabel: 'evidence',
-    description: 'Finding or artifact supporting another record.',
+    description: 'A Finding cited as support for this record.',
     group: 'evidence',
-    directionHint: 'Supports →',
+    directionHint: { outgoing: 'Supports', incoming: 'Supported by' },
     dash: 'dotted',
     weight: 'thin',
     emphasis: 'subtle',
@@ -146,11 +128,10 @@ export const RELATION_META: Record<GraphEdgeKind, RelationMeta> = {
   },
   membership: {
     kind: 'membership',
-    label: 'Membership',
-    shortLabel: 'member',
-    description: 'Child record belongs to an effort cluster.',
+    label: 'Belongs to Effort',
+    description: 'Every record belongs to exactly one Effort.',
     group: 'membership',
-    directionHint: 'Part of effort →',
+    directionHint: { outgoing: 'Contains', incoming: 'Belongs to' },
     dash: 'solid',
     weight: 'thin',
     emphasis: 'subtle',
@@ -163,89 +144,162 @@ export const RELATION_GROUP_ORDER: RelationGroupId[] = [
   'supersession',
   'invalidation',
   'resolution',
+  'mitigation',
   'rejection',
   'evidence',
   'membership',
 ];
 
+/** Group headings use the edge names the CLI and frontmatter use. */
 export const RELATION_GROUP_LABEL: Record<RelationGroupId, string> = {
-  lineage: 'Lineage',
-  supersession: 'Supersession',
-  invalidation: 'Invalidation',
-  resolution: 'Resolution & mitigation',
-  rejection: 'Rejection',
+  lineage: 'Derives from',
+  supersession: 'Supersedes',
+  invalidation: 'Invalidates',
+  resolution: 'Resolved by',
+  mitigation: 'Mitigated by',
+  rejection: 'Rejected by',
   evidence: 'Evidence',
-  membership: 'Effort membership',
+  membership: 'Belongs to Effort',
 };
 
-/** One row per relation group for the canvas legend (covers all kinds in the group). */
-export const RELATION_LEGEND_ROWS: Array<{
-  group: RelationGroupId;
-  sampleKind: GraphEdgeKind;
-}> = [
-  { group: 'lineage', sampleKind: 'derives_from' },
-  { group: 'supersession', sampleKind: 'supersedes' },
-  { group: 'invalidation', sampleKind: 'invalidates' },
-  { group: 'resolution', sampleKind: 'resolved_by' },
-  { group: 'rejection', sampleKind: 'rejected_by' },
-  { group: 'evidence', sampleKind: 'evidence' },
-  { group: 'membership', sampleKind: 'membership' },
-];
+/** One representative kind per group, for legend rows. */
+export const RELATION_GROUP_SAMPLE: Record<RelationGroupId, GraphEdgeKind> = {
+  lineage: 'derives_from',
+  supersession: 'supersedes',
+  invalidation: 'invalidates',
+  resolution: 'resolved_by',
+  mitigation: 'mitigated_by',
+  rejection: 'rejected_by',
+  evidence: 'evidence',
+  membership: 'membership',
+};
 
-const LIFECYCLE_BADGE: Record<
-  string,
-  { label: string; className: string }
-> = {
-  proposed: {
-    label: 'Proposed',
+/**
+ * Stroke colour for a relation group. Membership resolves per Effort at the
+ * call site, so the legend passes `null` and renders a neutral sample with a
+ * caption instead of picking an arbitrary cluster's tint.
+ */
+export function relationStrokeOklch(
+  group: RelationGroupId,
+  mode: ColorMode
+): { l: number; c: number; h: number } {
+  if (group === 'resolution' || group === 'mitigation') {
+    return mode === 'light' ? { l: 0.5, c: 0.13, h: 158 } : { l: 0.7, c: 0.11, h: 158 };
+  }
+  if (group === 'invalidation') {
+    return mode === 'light' ? { l: 0.52, c: 0.16, h: 22 } : { l: 0.7, c: 0.14, h: 22 };
+  }
+  return mode === 'light' ? { l: 0.42, c: 0.015, h: 260 } : { l: 0.76, c: 0.015, h: 260 };
+}
+
+/**
+ * Lifecycle badge styling, keyed by `primitive:state` so the same word can
+ * mean different things per primitive. A Decision's `accepted` is a
+ * commitment; a Risk's `accepted` is "we chose to live with this hazard" —
+ * they must not share the same reassuring green.
+ */
+const LIFECYCLE_BADGE: Record<string, { label: string; className: string }> = {
+  // Effort
+  'effort:active': {
+    label: 'Active',
+    className: 'border-sky-500/40 bg-sky-500/12 text-sky-800 dark:text-sky-200',
+  },
+  'effort:paused': {
+    label: 'Paused',
+    className: 'border-border bg-muted/12 text-foreground/75',
+  },
+  'effort:completed': {
+    label: 'Completed',
     className:
-      'border-amber-500/35 bg-amber-500/12 text-amber-800 dark:text-amber-200',
+      'border-emerald-500/40 bg-emerald-500/12 text-emerald-800 dark:text-emerald-200',
   },
-  accepted: {
-    label: 'Accepted',
-    className:
-      'border-emerald-500/35 bg-emerald-500/12 text-emerald-800 dark:text-emerald-200',
+  'effort:abandoned': {
+    label: 'Abandoned',
+    className: 'border-border bg-muted/12 text-muted line-through decoration-muted/60',
   },
-  rejected: {
-    label: 'Rejected',
-    className:
-      'border-rose-500/35 bg-rose-500/12 text-rose-800 dark:text-rose-200',
-  },
-  superseded: {
-    label: 'Superseded',
-    className:
-      'border-muted/40 bg-muted/15 text-muted line-through decoration-muted/60',
-  },
-  deprecated: {
-    label: 'Deprecated',
-    className: 'border-muted/35 bg-muted/10 text-muted',
-  },
-  open: {
+  // Issue
+  'issue:open': {
     label: 'Open',
-    className:
-      'border-sky-500/35 bg-sky-500/12 text-sky-800 dark:text-sky-200',
+    className: 'border-amber-500/40 bg-amber-500/12 text-amber-800 dark:text-amber-200',
   },
-  resolved: {
+  'issue:resolved': {
     label: 'Resolved',
     className:
-      'border-emerald-500/35 bg-emerald-500/12 text-emerald-800 dark:text-emerald-200',
+      'border-emerald-500/40 bg-emerald-500/12 text-emerald-800 dark:text-emerald-200',
   },
-  deferred: {
+  'issue:deferred': {
     label: 'Deferred',
-    className: 'border-muted/35 bg-muted/10 text-muted',
+    className: 'border-border bg-muted/12 text-foreground/75',
+  },
+  'issue:wontfix': {
+    label: "Won't fix",
+    className: 'border-border bg-muted/12 text-muted line-through decoration-muted/60',
+  },
+  // Decision
+  'decision:proposed': {
+    label: 'Proposed',
+    className: 'border-amber-500/40 bg-amber-500/12 text-amber-800 dark:text-amber-200',
+  },
+  'decision:accepted': {
+    label: 'Accepted',
+    className:
+      'border-emerald-500/40 bg-emerald-500/12 text-emerald-800 dark:text-emerald-200',
+  },
+  'decision:rejected': {
+    label: 'Rejected',
+    className: 'border-rose-500/40 bg-rose-500/12 text-rose-800 dark:text-rose-200',
+  },
+  'decision:superseded': {
+    label: 'Superseded',
+    className: 'border-border bg-muted/12 text-muted line-through decoration-muted/60',
+  },
+  'decision:deprecated': {
+    label: 'Deprecated',
+    className: 'border-border bg-muted/12 text-muted line-through decoration-muted/60',
+  },
+  // Risk
+  'risk:open': {
+    label: 'Open',
+    className: 'border-amber-500/40 bg-amber-500/12 text-amber-800 dark:text-amber-200',
+  },
+  'risk:mitigated': {
+    label: 'Mitigated',
+    className:
+      'border-emerald-500/40 bg-emerald-500/12 text-emerald-800 dark:text-emerald-200',
+  },
+  'risk:realized': {
+    label: 'Realized',
+    className: 'border-rose-500/40 bg-rose-500/12 text-rose-800 dark:text-rose-200',
+  },
+  'risk:accepted': {
+    label: 'Accepted risk',
+    className: 'border-amber-500/40 bg-amber-500/12 text-amber-800 dark:text-amber-200',
   },
 };
 
-export function lifecycleBadge(lifecycle: string | undefined): {
-  label: string;
-  className: string;
-} | null {
-  if (!lifecycle) return null;
-  const key = lifecycle.toLowerCase();
+/** Applies to any primitive — these come from edges, not frontmatter. */
+const EDGE_DERIVED_BADGE: Record<string, { label: string; className: string }> = {
+  superseded: {
+    label: 'Superseded',
+    className: 'border-border bg-muted/12 text-muted line-through decoration-muted/60',
+  },
+  invalidated: {
+    label: 'Invalidated',
+    className: 'border-rose-500/40 bg-rose-500/12 text-rose-800 dark:text-rose-200',
+  },
+};
+
+export function lifecycleBadge(
+  kind: GraphNodeKind,
+  state: string | undefined
+): { label: string; className: string } | null {
+  if (!state) return null;
+  const key = state.toLowerCase();
   return (
-    LIFECYCLE_BADGE[key] ?? {
-      label: lifecycle,
-      className: 'border-border bg-muted/10 text-foreground/80',
+    LIFECYCLE_BADGE[`${kind}:${key}`] ??
+    EDGE_DERIVED_BADGE[key] ?? {
+      label: state,
+      className: 'border-border bg-muted/12 text-foreground/75',
     }
   );
 }
@@ -259,21 +313,27 @@ function strokeDash(dash: RelationMeta['dash']): string | undefined {
 function strokeWidth(weight: RelationMeta['weight']): number {
   if (weight === 'bold') return 2.5;
   if (weight === 'medium') return 2;
-  return 1.5;
+  return 1.25;
 }
 
 function lineOpacity(emphasis: RelationMeta['emphasis']): number {
-  if (emphasis === 'subtle') return 0.45;
-  if (emphasis === 'medium') return 0.65;
-  if (emphasis === 'strong') return 0.9;
-  return 0.75;
+  if (emphasis === 'subtle') return 0.5;
+  if (emphasis === 'medium') return 0.7;
+  if (emphasis === 'strong') return 0.92;
+  return 0.78;
 }
 
+/**
+ * Legend sample for one relation. `color` must be the same value the canvas
+ * strokes with, otherwise the legend teaches an encoding that doesn't exist.
+ */
 export function RelationLineSample({
   meta,
+  color,
   className = '',
 }: {
   meta: RelationMeta;
+  color?: string;
   className?: string;
 }) {
   const opacity = lineOpacity(meta.emphasis);
@@ -285,6 +345,7 @@ export function RelationLineSample({
       aria-hidden
       viewBox="0 0 40 8"
       className={`h-2 w-10 shrink-0 text-foreground/70 ${className}`}
+      style={color ? { color } : undefined}
     >
       <line
         x1="1"
@@ -298,30 +359,69 @@ export function RelationLineSample({
         opacity={opacity}
       />
       {meta.arrow && (
-        <path
-          d="M30 4 L36 1.5 L36 6.5 Z"
-          fill="currentColor"
-          opacity={opacity}
-        />
+        <path d="M30 4 L36 1.5 L36 6.5 Z" fill="currentColor" opacity={opacity} />
       )}
     </svg>
   );
 }
 
-export function KindSwatch({
+/**
+ * The legend's primitive marker. Draws the *same* outline the canvas builds
+ * its `ShapeGeometry` from, in the same hue, so the key cannot drift from the
+ * render.
+ */
+export function PrimitiveGlyph({
   kind,
   mode,
-  sizeClass = 'size-2.5',
+  size = 14,
+  retired = false,
+  tint,
+  core,
 }: {
   kind: GraphNodeKind;
   mode: ColorMode;
-  sizeClass?: string;
+  size?: number;
+  retired?: boolean;
+  /** Override the fill, e.g. to show a record in its retired tone. */
+  tint?: string;
+  /** Cluster tint for the centre of an Effort hub. */
+  core?: string;
 }) {
+  const { glyph } = PRIMITIVES[kind];
+  const fill = tint ?? oklchCss(primitiveOklch(kind, mode));
+  const points = glyphSvgPoints(glyph, size);
+  const half = size / 2;
+
   return (
-    <span
+    <svg
       aria-hidden
-      className={`${sizeClass} shrink-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/10`}
-      style={{ background: kindSwatchCss(kind, mode) }}
-    />
+      viewBox={`0 0 ${size} ${size}`}
+      width={size}
+      height={size}
+      className="shrink-0"
+      style={{ opacity: retired ? 0.6 : 1 }}
+    >
+      {glyph === 'ring' ? (
+        <>
+          <circle
+            cx={half}
+            cy={half}
+            r={half * ((1 + RING_INNER_RATIO) / 2) - 0.25}
+            fill="none"
+            stroke={tint ?? oklchCss(structuralOklch(mode))}
+            strokeWidth={half * (1 - RING_INNER_RATIO)}
+          />
+          {core && (
+            <circle cx={half} cy={half} r={half * RING_INNER_RATIO * 0.82} fill={core} />
+          )}
+        </>
+      ) : points ? (
+        <polygon points={points} fill={fill} />
+      ) : (
+        <circle cx={half} cy={half} r={half - 0.5} fill={fill} />
+      )}
+    </svg>
   );
 }
+
+export { CIRCLE_SEGMENTS, toColor };

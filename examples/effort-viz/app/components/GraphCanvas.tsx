@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { Group, Mesh, OrthographicCamera } from 'three';
 
-/** Minimal controls surface used by FitCamera (drei OrbitControls instance). */
+/** Minimal controls surface used by the camera helpers (drei OrbitControls). */
 interface PanZoomControlsHandle {
   target: THREE.Vector3;
   update: () => void;
@@ -24,10 +24,30 @@ import {
   type SimNode,
   type VeinPoint,
 } from '@/lib/physics';
-import { nodeColor, oklchToThreeColor, type Oklch } from '@/lib/oklch';
+import {
+  effortOklch,
+  oklchToThreeColor,
+  retiredOklch,
+  structuralOklch,
+  type Oklch,
+} from '@/lib/oklch';
+import { PRIMITIVES, primitiveOklch } from '@/lib/primitives';
+import {
+  CIRCLE_SEGMENTS,
+  GLYPH_OUTLINES,
+  RING_INNER_RATIO,
+  glyphExtent,
+  type GlyphId,
+} from '@/lib/glyphs';
+import {
+  buildAlivenessMap,
+  isOpenBlocker,
+  type Aliveness,
+  type EffectiveLifecycle,
+} from '@/lib/lifecycle';
 import type { GraphEdge, GraphEdgeKind, GraphNode } from '@/lib/types';
 import { useTheme, type ColorMode } from '../hooks/useTheme';
-import { RELATION_META, type RelationMeta } from './RelationLegend';
+import { RELATION_META, relationStrokeOklch, type RelationMeta } from './RelationLegend';
 
 export interface GraphCanvasProps {
   nodes: GraphNode[];
@@ -67,29 +87,196 @@ function idsChanged(current: Array<{ id: string }>, previous: string[]): boolean
   return false;
 }
 
+/**
+ * Cached glyph geometry, built once per kind. Node meshes scale a unit glyph
+ * rather than rebuilding geometry, so adding a record costs one mesh.
+ */
+const GLYPH_GEOMETRY = new Map<GlyphId, THREE.BufferGeometry>();
+
+function glyphGeometry(glyph: GlyphId): THREE.BufferGeometry {
+  const cached = GLYPH_GEOMETRY.get(glyph);
+  if (cached) return cached;
+
+  let geometry: THREE.BufferGeometry;
+  if (glyph === 'circle') {
+    geometry = new THREE.CircleGeometry(1, CIRCLE_SEGMENTS);
+  } else if (glyph === 'ring') {
+    geometry = new THREE.RingGeometry(RING_INNER_RATIO, 1, CIRCLE_SEGMENTS);
+  } else {
+    const shape = new THREE.Shape();
+    const outline = GLYPH_OUTLINES[glyph];
+    shape.moveTo(outline[0].x, outline[0].y);
+    for (let i = 1; i < outline.length; i++) shape.lineTo(outline[i].x, outline[i].y);
+    shape.closePath();
+    geometry = new THREE.ShapeGeometry(shape);
+  }
+  GLYPH_GEOMETRY.set(glyph, geometry);
+  return geometry;
+}
+
+/** Pointer travel (CSS px) beyond which a gesture is a pan, not a tap. */
+const TAP_SLOP_PX = 8;
+
+/** Minimum on-screen hit diameter, in CSS px, regardless of zoom. */
+const MIN_HIT_DIAMETER_PX = 44;
+
 export default function GraphCanvas(props: GraphCanvasProps) {
   const { mode } = useTheme();
+  const { nodes, selectedId, onSelect } = props;
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Stable keyboard traversal order: Effort hub, then its records grouped by
+   * primitive. Deliberately independent of simulation array order, which
+   * churns as nodes spawn and retract.
+   */
+  const walkOrder = useMemo(() => {
+    const kindRank: Record<GraphNode['kind'], number> = {
+      effort: 0,
+      issue: 1,
+      finding: 2,
+      decision: 3,
+      constraint: 4,
+      risk: 5,
+    };
+    return [...nodes].sort((a, b) => {
+      const ea = a.effortId ?? a.id;
+      const eb = b.effortId ?? b.id;
+      if (ea !== eb) return ea.localeCompare(eb);
+      if (a.kind !== b.kind) return kindRank[a.kind] - kindRank[b.kind];
+      return a.title.localeCompare(b.title);
+    });
+  }, [nodes]);
+
+  const lifecycles = useMemo(
+    () => buildAlivenessMap(props.nodes, props.edges),
+    [props.nodes, props.edges]
+  );
+
+  // Drop focus when the focused record leaves the graph on a live update.
+  useEffect(() => {
+    if (focusedId && !nodes.some((n) => n.id === focusedId)) setFocusedId(null);
+  }, [nodes, focusedId]);
+
+  const step = useCallback(
+    (delta: number) => {
+      if (walkOrder.length === 0) return;
+      const current = focusedId ?? selectedId;
+      const index = current ? walkOrder.findIndex((n) => n.id === current) : -1;
+      const next = walkOrder[(index + delta + walkOrder.length) % walkOrder.length];
+      setFocusedId(next.id);
+    },
+    [walkOrder, focusedId, selectedId]
+  );
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      switch (event.key) {
+        case 'ArrowRight':
+        case 'ArrowDown':
+          event.preventDefault();
+          step(1);
+          break;
+        case 'ArrowLeft':
+        case 'ArrowUp':
+          event.preventDefault();
+          step(-1);
+          break;
+        case 'Home':
+          event.preventDefault();
+          if (walkOrder.length > 0) setFocusedId(walkOrder[0].id);
+          break;
+        case 'End':
+          event.preventDefault();
+          if (walkOrder.length > 0) setFocusedId(walkOrder[walkOrder.length - 1].id);
+          break;
+        case 'Enter':
+        case ' ':
+          if (focusedId) {
+            event.preventDefault();
+            onSelect(focusedId);
+          }
+          break;
+        case 'Escape':
+          if (selectedId || focusedId) {
+            event.preventDefault();
+            onSelect(null);
+            setFocusedId(null);
+          }
+          break;
+        default:
+          break;
+      }
+    },
+    [step, walkOrder, focusedId, selectedId, onSelect]
+  );
+
+  const focusedNode = focusedId ? nodes.find((n) => n.id === focusedId) : undefined;
+  const focusedLife = focusedId ? lifecycles.get(focusedId) : undefined;
+
   return (
-    <Canvas
-      className="h-full w-full touch-none"
-      orthographic
-      camera={{ position: [0, 0, 100], zoom: 4, near: 0.1, far: 1000 }}
-      dpr={[1, 2]}
-      gl={{ antialias: true, alpha: true }}
-      style={{ background: 'transparent', width: '100%', height: '100%' }}
-      onPointerMissed={() => props.onSelect(null)}
+    <div
+      ref={wrapperRef}
+      role="application"
+      tabIndex={0}
+      aria-label="Effort Graph canvas"
+      aria-describedby="graph-canvas-help"
+      onKeyDown={handleKeyDown}
+      className="relative h-full w-full rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      <ambientLight intensity={1} />
-      <GraphScene {...props} mode={mode} />
-    </Canvas>
+      <p id="graph-canvas-help" className="sr-only">
+        Use the arrow keys to move between records, Enter to open a record&apos;s
+        details, and Escape to close. Drag to pan and scroll to zoom.
+      </p>
+      <Canvas
+        className="h-full w-full touch-none"
+        orthographic
+        camera={{ position: [0, 0, 100], zoom: 4, near: 0.1, far: 1000 }}
+        dpr={[1, 2]}
+        gl={{ antialias: true, alpha: true }}
+        style={{ background: 'transparent', width: '100%', height: '100%' }}
+        onPointerMissed={() => {
+          props.onSelect(null);
+          setFocusedId(null);
+        }}
+      >
+        <GraphScene
+          {...props}
+          mode={mode}
+          focusedId={focusedId}
+          onFocus={setFocusedId}
+          lifecycles={lifecycles}
+        />
+      </Canvas>
+      <div aria-live="polite" className="sr-only">
+        {focusedNode
+          ? `${PRIMITIVES[focusedNode.kind].label}: ${focusedNode.title}${
+              focusedLife?.state ? `, ${focusedLife.state}` : ''
+            }`
+          : ''}
+      </div>
+    </div>
   );
 }
 
 interface GraphSceneProps extends GraphCanvasProps {
   mode: ColorMode;
+  focusedId: string | null;
+  onFocus: (id: string | null) => void;
+  lifecycles: Map<string, EffectiveLifecycle>;
 }
 
-function GraphScene({ nodes, edges, selectedId, onSelect, mode }: GraphSceneProps) {
+function GraphScene({
+  nodes,
+  edges,
+  selectedId,
+  onSelect,
+  mode,
+  focusedId,
+  onFocus,
+  lifecycles,
+}: GraphSceneProps) {
   const simRef = useRef<GraphSimulation | null>(null);
   if (simRef.current === null) {
     simRef.current = createGraphSimulation();
@@ -99,15 +286,22 @@ function GraphScene({ nodes, edges, selectedId, onSelect, mode }: GraphSceneProp
   const nodeIdsRef = useRef<string[]>([]);
   const edgeIdsRef = useRef<string[]>([]);
   const [, setRenderTick] = useState(0);
+  const reduceMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     const { simNodes, simEdges } = toSimInputs(nodes, edges);
     sim.sync(simNodes, simEdges);
+    // Reduced motion: settle the layout and finish every growth animation
+    // before the next paint, so the graph appears in place instead of
+    // crawling outward from the origin.
+    if (reduceMotion) {
+      for (let i = 0; i < 240; i++) sim.step(1 / 60);
+    }
     const state = sim.getState();
     nodeIdsRef.current = state.nodes.map((n) => n.id);
     edgeIdsRef.current = state.edges.map((e) => e.id);
     setRenderTick((t) => t + 1);
-  }, [nodes, edges, sim]);
+  }, [nodes, edges, sim, reduceMotion]);
 
   useFrame((_, delta) => {
     sim.step(delta);
@@ -124,11 +318,27 @@ function GraphScene({ nodes, edges, selectedId, onSelect, mode }: GraphSceneProp
 
   const state = sim.getState();
 
+  /**
+   * Metadata for every node we have *ever* seen, not just the current query
+   * result. A removed record is gone from `nodes` the instant it is deleted,
+   * but the simulation keeps it alive while it retracts — without this cache
+   * the retract animation has no colour or kind to render and the node pops
+   * out of existence while its edges withdraw gracefully.
+   */
+  const metaCacheRef = useRef(new Map<string, GraphNode>());
   const nodeMetaById = useMemo(() => {
-    const map = new Map<string, GraphNode>();
-    for (const n of nodes) map.set(n.id, n);
-    return map;
+    const cache = metaCacheRef.current;
+    for (const n of nodes) cache.set(n.id, n);
+    return cache;
   }, [nodes]);
+
+  useEffect(() => {
+    const cache = metaCacheRef.current;
+    const live = new Set(state.nodes.map((n) => n.id));
+    for (const id of cache.keys()) {
+      if (!live.has(id)) cache.delete(id);
+    }
+  }, [state.nodes, nodes]);
 
   const edgesById = useMemo(() => {
     const map = new Map<string, GraphEdge>();
@@ -138,10 +348,18 @@ function GraphScene({ nodes, edges, selectedId, onSelect, mode }: GraphSceneProp
 
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
+  // A removed node never fires pointerout, so clear hover when it disappears.
+  useEffect(() => {
+    if (hoveredId && !nodes.some((n) => n.id === hoveredId)) setHoveredId(null);
+  }, [nodes, hoveredId]);
+
+  const activeId = focusedId ?? selectedId;
+
   return (
     <>
       <PanZoomControls />
-      <FitCamera sim={sim} nodeCount={nodes.length} />
+      <FitCamera sim={sim} nodeCount={nodes.length} reduceMotion={reduceMotion} />
+      <PanToFocus sim={sim} focusedId={focusedId} reduceMotion={reduceMotion} />
       <group>
         {state.edges.map((edge) => {
           const graphEdge = edgesById.get(edge.id);
@@ -154,7 +372,8 @@ function GraphScene({ nodes, edges, selectedId, onSelect, mode }: GraphSceneProp
               edgeKind={edgeKind}
               mode={mode}
               nodesById={nodeMetaById}
-              selectedId={selectedId}
+              lifecycles={lifecycles}
+              activeId={activeId}
               hoveredId={hoveredId}
             />
           );
@@ -170,8 +389,12 @@ function GraphScene({ nodes, edges, selectedId, onSelect, mode }: GraphSceneProp
               node={node}
               meta={meta}
               mode={mode}
+              aliveness={lifecycles.get(node.id)?.aliveness ?? 'settled'}
+              blocker={isOpenBlocker(meta, lifecycles.get(node.id))}
               selected={selectedId === node.id}
+              focused={focusedId === node.id}
               onSelect={onSelect}
+              onFocus={onFocus}
               onHover={setHoveredId}
             />
           );
@@ -181,17 +404,28 @@ function GraphScene({ nodes, edges, selectedId, onSelect, mode }: GraphSceneProp
         {state.nodes.map((node) => {
           const meta = nodeMetaById.get(node.id);
           if (!meta) return null;
-          const isSelected = selectedId === node.id;
+          const isActive = activeId === node.id;
           const isHovered = hoveredId === node.id;
-          const shouldLabel =
-            meta.kind === 'effort' || isSelected || isHovered;
-          if (!shouldLabel) return null;
+          if (meta.kind === 'effort') {
+            return (
+              <ClusterLabel
+                key={`label-${node.id}`}
+                sim={sim}
+                node={node}
+                meta={meta}
+                active={isActive}
+                retired={lifecycles.get(node.id)?.aliveness === 'retired'}
+              />
+            );
+          }
+          if (!isActive && !isHovered) return null;
           return (
             <NodeLabel
               key={`label-${node.id}`}
               node={node}
               meta={meta}
-              selected={isSelected}
+              active={isActive}
+              retired={lifecycles.get(node.id)?.aliveness === 'retired'}
             />
           );
         })}
@@ -201,7 +435,25 @@ function GraphScene({ nodes, edges, selectedId, onSelect, mode }: GraphSceneProp
   );
 }
 
-/** Screen-space padding so fitted nodes stay clear of floating chrome. */
+/** Live `prefers-reduced-motion`, so a mid-session change takes effect. */
+function usePrefersReducedMotion(): boolean {
+  const [reduce, setReduce] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduce(query.matches);
+    const onChange = (event: MediaQueryListEvent) => setReduce(event.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+  return reduce;
+}
+
+/**
+ * Screen-space padding so fitted nodes stay clear of floating chrome. Only the
+ * legend is reserved, because it is always present; the detail drawer is
+ * transient, and permanently reserving its ~356px would surrender a quarter of
+ * the canvas to a panel that is usually closed.
+ */
 function fitChromeInsets(viewportWidth: number): {
   top: number;
   right: number;
@@ -210,119 +462,202 @@ function fitChromeInsets(viewportWidth: number): {
 } {
   const isWide = viewportWidth >= 640;
   return {
-    top: 32,
-    bottom: isWide ? 104 : 128,
-    left: isWide ? 220 : 16,
-    right: isWide ? 348 : 16,
+    top: 24,
+    bottom: isWide ? 40 : 116,
+    left: isWide ? 284 : 16,
+    right: isWide ? 40 : 16,
   };
 }
 
 /**
  * Frame the orthographic camera on the live simulation bounds once the
- * layout has mostly settled (or after a short timeout). Re-fits when the
- * node count changes substantially (live add/remove bursts) or the canvas
- * viewport resizes.
+ * layout has mostly settled (or after a short timeout), then ease into place
+ * rather than snapping — a hard cut after a two-second delay reads as a bug.
+ * Re-fits when the node count changes or the canvas viewport resizes.
  */
 function FitCamera({
   sim,
   nodeCount,
+  reduceMotion,
 }: {
   sim: GraphSimulation;
   nodeCount: number;
+  reduceMotion: boolean;
 }) {
   const camera = useThree((s) => s.camera) as OrthographicCamera;
   const controls = useThree((s) => s.controls) as PanZoomControlsHandle | null;
   const size = useThree((s) => s.size);
-  const fittedForCount = useRef<number | null>(null);
-  const fittedForSize = useRef<string | null>(null);
+  const fitted = useRef(false);
   const elapsedRef = useRef(0);
-  const reduceMotionRef = useRef(false);
-
-  useEffect(() => {
-    reduceMotionRef.current = window.matchMedia(
-      '(prefers-reduced-motion: reduce)'
-    ).matches;
-  }, []);
+  const targetRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
+  const userMoved = useUserHasMovedCamera();
 
   const sizeKey = `${size.width}x${size.height}`;
 
   useEffect(() => {
-    fittedForCount.current = null;
-    fittedForSize.current = null;
+    fitted.current = false;
     elapsedRef.current = 0;
   }, [nodeCount, sizeKey]);
 
   useFrame((_, delta) => {
-    if (
-      fittedForCount.current === nodeCount &&
-      fittedForSize.current === sizeKey
-    ) {
+    // Ease toward a pending fit target — exponential approach, which is an
+    // ease-out. A hard cut after the settle delay reads as a glitch.
+    const target = targetRef.current;
+    if (target) {
+      const t = reduceMotion ? 1 : 1 - Math.exp(-delta * 9);
+      camera.position.x += (target.x - camera.position.x) * t;
+      camera.position.y += (target.y - camera.position.y) * t;
+      camera.zoom += (target.zoom - camera.zoom) * t;
+      camera.updateProjectionMatrix();
+      if (controls) {
+        controls.target.set(camera.position.x, camera.position.y, 0);
+        controls.update();
+      }
+      const close =
+        Math.abs(target.x - camera.position.x) < 0.05 &&
+        Math.abs(target.y - camera.position.y) < 0.05 &&
+        Math.abs(target.zoom - camera.zoom) < 0.005;
+      if (close) targetRef.current = null;
       return;
     }
+
+    // Hand the camera over permanently once the reader pans or zooms.
+    if (userMoved()) return;
     elapsedRef.current += delta;
 
     const { nodes } = sim.getState();
-    const alive = nodes.filter(
-      (n) => n.growth > 0.35 && n.state !== 'retracting'
-    );
-    if (alive.length === 0) return;
-
+    let alive = 0;
     let kinetic = 0;
-    for (const n of alive) kinetic += n.vx * n.vx + n.vy * n.vy;
-    const settled =
-      reduceMotionRef.current ||
-      kinetic < 2.5 ||
-      elapsedRef.current > 2.4;
-    if (!settled) return;
-
     let minX = Infinity;
     let maxX = -Infinity;
     let minY = Infinity;
     let maxY = -Infinity;
-    for (const n of alive) {
+    for (const n of nodes) {
+      if (n.growth <= 0.35 || n.state === 'retracting') continue;
+      alive += 1;
+      kinetic += n.vx * n.vx + n.vy * n.vy;
       const r = Math.max(effectiveRadius(n), 1);
       if (n.x - r < minX) minX = n.x - r;
       if (n.x + r > maxX) maxX = n.x + r;
       if (n.y - r < minY) minY = n.y - r;
       if (n.y + r > maxY) maxY = n.y + r;
     }
+    if (alive === 0) return;
+
+    const settled = reduceMotion || kinetic < 2.5 || elapsedRef.current > 2.4;
+    if (!settled) return;
 
     const width = Math.max(maxX - minX, 20);
     const height = Math.max(maxY - minY, 20);
     const cx = (minX + maxX) / 2;
     const cy = (minY + maxY) / 2;
-    const pad = 1.35;
+    const pad = 1.12;
 
     const insets = fitChromeInsets(size.width);
-    const availW = Math.max(
-      size.width - insets.left - insets.right,
-      64
-    );
-    const availH = Math.max(
-      size.height - insets.top - insets.bottom,
-      64
-    );
-    const zoom = Math.min(
-      availW / (width * pad),
-      availH / (height * pad),
-      12
-    );
+    const availW = Math.max(size.width - insets.left - insets.right, 64);
+    const availH = Math.max(size.height - insets.top - insets.bottom, 64);
+    const zoom = Math.min(availW / (width * pad), availH / (height * pad), 12);
     const clampedZoom = Math.max(zoom, 0.75);
 
-    const offsetX = (insets.left - insets.right) / 2 / clampedZoom;
-    const offsetY = (insets.bottom - insets.top) / 2 / clampedZoom;
-    const fitCx = cx - offsetX;
-    const fitCy = cy - offsetY;
+    const nextX = cx - (insets.left - insets.right) / 2 / clampedZoom;
+    const nextY = cy - (insets.bottom - insets.top) / 2 / clampedZoom;
 
-    camera.position.set(fitCx, fitCy, 100);
-    camera.zoom = clampedZoom;
+    /*
+     * Keep re-fitting while the layout is still spreading. Cluster separation
+     * pushes the graph outward for a while after the first fit, so a one-shot
+     * fit leaves records stranded off-screen.
+     */
+    if (fitted.current) {
+      const drifted =
+        Math.abs(nextX - camera.position.x) > 4 / clampedZoom ||
+        Math.abs(nextY - camera.position.y) > 4 / clampedZoom ||
+        Math.abs(clampedZoom - camera.zoom) / camera.zoom > 0.04;
+      if (!drifted) return;
+    }
+
+    targetRef.current = { x: nextX, y: nextY, zoom: clampedZoom };
+    fitted.current = true;
+  });
+
+  return null;
+}
+
+/**
+ * Returns a getter that flips to true the first time the reader drives the
+ * camera. Auto-fit must yield to a deliberate pan or zoom — nothing is more
+ * annoying than a view that snaps back while you are reading it.
+ */
+function useUserHasMovedCamera(): () => boolean {
+  const controls = useThree((s) => s.controls) as
+    | (PanZoomControlsHandle & {
+        addEventListener: (t: string, fn: () => void) => void;
+        removeEventListener: (t: string, fn: () => void) => void;
+      })
+    | null;
+  const moved = useRef(false);
+
+  useEffect(() => {
+    if (!controls?.addEventListener) return;
+    const onStart = () => {
+      moved.current = true;
+    };
+    controls.addEventListener('start', onStart);
+    return () => controls.removeEventListener('start', onStart);
+  }, [controls]);
+
+  return useCallback(() => moved.current, []);
+}
+
+/**
+ * Keep the keyboard-focused record on screen. Without this, arrowing through
+ * the graph silently moves focus to nodes outside the viewport.
+ */
+function PanToFocus({
+  sim,
+  focusedId,
+  reduceMotion,
+}: {
+  sim: GraphSimulation;
+  focusedId: string | null;
+  reduceMotion: boolean;
+}) {
+  const camera = useThree((s) => s.camera) as OrthographicCamera;
+  const controls = useThree((s) => s.controls) as PanZoomControlsHandle | null;
+  const size = useThree((s) => s.size);
+  const pendingRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    pendingRef.current = focusedId;
+  }, [focusedId]);
+
+  useFrame((_, delta) => {
+    const id = pendingRef.current;
+    if (!id) return;
+    const node = sim.getState().nodes.find((n) => n.id === id);
+    if (!node) {
+      pendingRef.current = null;
+      return;
+    }
+
+    // Only move if the node sits outside a comfortable inner viewport band.
+    const halfW = size.width / 2 / camera.zoom;
+    const halfH = size.height / 2 / camera.zoom;
+    const dx = node.x - camera.position.x;
+    const dy = node.y - camera.position.y;
+    if (Math.abs(dx) < halfW * 0.6 && Math.abs(dy) < halfH * 0.6) {
+      pendingRef.current = null;
+      return;
+    }
+
+    const t = reduceMotion ? 1 : 1 - Math.exp(-delta * 8);
+    camera.position.x += dx * t;
+    camera.position.y += dy * t;
     camera.updateProjectionMatrix();
     if (controls) {
-      controls.target.set(fitCx, fitCy, 0);
+      controls.target.set(camera.position.x, camera.position.y, 0);
       controls.update();
     }
-    fittedForCount.current = nodeCount;
-    fittedForSize.current = sizeKey;
+    if (Math.abs(dx) < 0.4 && Math.abs(dy) < 0.4) pendingRef.current = null;
   });
 
   return null;
@@ -357,82 +692,183 @@ interface NodeMeshProps {
   node: SimNode;
   meta: GraphNode;
   mode: ColorMode;
+  aliveness: Aliveness;
+  blocker: boolean;
   selected: boolean;
+  focused: boolean;
   onSelect: (id: string | null) => void;
+  onFocus: (id: string | null) => void;
   onHover: (id: string | null) => void;
 }
 
-const CIRCLE_SEGMENTS = 40;
+/**
+ * Base colour for a node. Records take their primitive's hue; Effort hubs take
+ * a neutral structural tone, because a hub is scaffolding rather than another
+ * coloured record. Cluster identity rides on the hub's tinted core instead.
+ */
+function nodeBaseOklch(meta: GraphNode, mode: ColorMode): Oklch {
+  if (meta.kind === 'effort') return structuralOklch(mode);
+  return primitiveOklch(meta.kind, mode);
+}
 
 function NodeMesh({
   node,
   meta,
   mode,
+  aliveness,
+  blocker,
   selected,
+  focused,
   onSelect,
+  onFocus,
   onHover,
 }: NodeMeshProps) {
   const groupRef = useRef<Group>(null);
   const bodyRef = useRef<Mesh>(null);
-  const ringRef = useRef<Mesh>(null);
+  const coreRef = useRef<Mesh>(null);
+  const haloRef = useRef<Mesh>(null);
+  const hitRef = useRef<Mesh>(null);
+  const viewport = useThree((s) => s.viewport);
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
 
+  const glyph = PRIMITIVES[meta.kind].glyph;
+  const geometry = useMemo(() => glyphGeometry(glyph), [glyph]);
+  const extent = useMemo(() => glyphExtent(glyph), [glyph]);
+  const isHub = meta.kind === 'effort';
+
+  const retired = aliveness === 'retired';
   const color = useMemo(() => {
-    const effortId = meta.effortId ?? meta.id;
-    return oklchToThreeColor(nodeColor(effortId, meta.kind, mode).oklch);
-  }, [meta.effortId, meta.id, meta.kind, mode]);
+    const base = nodeBaseOklch(meta, mode);
+    return oklchToThreeColor(retired ? retiredOklch(base, mode) : base);
+  }, [meta, mode, retired]);
+
+  /** Cluster tint, shown only in a hub's core so it matches the legend chip. */
+  const coreColor = useMemo(
+    () => (isHub ? oklchToThreeColor(effortOklch(meta.id, mode)) : 0),
+    [isHub, meta.id, mode]
+  );
+
+  const haloColor = useMemo(
+    () =>
+      oklchToThreeColor(
+        mode === 'light' ? { l: 0.2, c: 0.01, h: 260 } : { l: 0.96, c: 0.01, h: 260 }
+      ),
+    [mode]
+  );
 
   useFrame(() => {
     const g = groupRef.current;
     if (!g) return;
     g.position.x = node.x;
     g.position.y = node.y;
-    const r = effectiveRadius(node);
-    const s = Math.max(r, 0.001);
-    if (bodyRef.current) {
-      bodyRef.current.scale.set(s, s, 1);
+    const r = Math.max(effectiveRadius(node), 0.001);
+    bodyRef.current?.scale.set(r, r, 1);
+    coreRef.current?.scale.set(r, r, 1);
+
+    const halo = haloRef.current;
+    if (halo) {
+      const show = selected || focused;
+      halo.visible = show;
+      if (show) {
+        // Pad outward in world units so the halo clears pointy silhouettes
+        // at every zoom level instead of hugging a circumscribed circle.
+        halo.scale.setScalar(r + Math.max(1.6, r * 0.22) / extent);
+      }
     }
-    if (ringRef.current) {
-      const ringScale = s + Math.max(1.4, s * 0.18);
-      ringRef.current.scale.set(ringScale, ringScale, 1);
-      ringRef.current.visible = selected;
+
+    const hit = hitRef.current;
+    if (hit) {
+      // Guarantee a 44 CSS px pointer target. `viewport.factor` is CSS px per
+      // world unit for this orthographic camera, so dividing by it converts a
+      // pixel budget into world units at the current zoom.
+      const minWorld = MIN_HIT_DIAMETER_PX / 2 / Math.max(viewport.factor, 0.0001);
+      hit.scale.setScalar(Math.max(r * extent, minWorld));
     }
   });
 
-  const handlePointerDown = useCallback(
-    (e: { stopPropagation: () => void }) => {
-      e.stopPropagation();
+  const handlePointerDown = useCallback((event: { clientX: number; clientY: number }) => {
+    pointerStart.current = { x: event.clientX, y: event.clientY };
+  }, []);
+
+  /**
+   * Commit selection on pointer-up, and only when the pointer barely moved.
+   * Left-drag pans the camera, so selecting on pointer-down opened the drawer
+   * every time a pan happened to start over a record.
+   */
+  const handlePointerUp = useCallback(
+    (event: { clientX: number; clientY: number; stopPropagation: () => void }) => {
+      const start = pointerStart.current;
+      pointerStart.current = null;
+      if (!start) return;
+      const travelled = Math.hypot(event.clientX - start.x, event.clientY - start.y);
+      if (travelled > TAP_SLOP_PX) return;
+      event.stopPropagation();
       onSelect(node.id);
+      onFocus(node.id);
     },
-    [node.id, onSelect]
+    [node.id, onSelect, onFocus]
   );
 
   return (
     <group ref={groupRef}>
-      <mesh ref={ringRef} position={[0, 0, -0.01]} visible={selected}>
-        <ringGeometry args={[0.86, 1, CIRCLE_SEGMENTS]} />
+      <mesh ref={haloRef} geometry={geometry} position={[0, 0, -0.02]} visible={false}>
         <meshBasicMaterial
-          color={color}
+          color={haloColor}
           transparent
-          opacity={mode === 'dark' ? 0.85 : 0.9}
+          opacity={mode === 'dark' ? 0.5 : 0.35}
         />
       </mesh>
+      {blocker && !retired && <BlockerRing />}
+      <mesh ref={bodyRef} geometry={geometry}>
+        <meshBasicMaterial color={color} transparent opacity={retired ? 0.6 : 0.95} />
+      </mesh>
+      {/*
+        A hub's core: fills the ring's hole so membership spokes converging on
+        the centre don't show through as clutter, and carries the cluster tint
+        that the Efforts legend keys against.
+      */}
+      {isHub && (
+        <mesh ref={coreRef} position={[0, 0, 0.01]}>
+          <circleGeometry args={[RING_INNER_RATIO * 0.82, CIRCLE_SEGMENTS]} />
+          <meshBasicMaterial color={coreColor} transparent opacity={0.95} />
+        </mesh>
+      )}
+      {/* Invisible, still raycast: an oversized circular pointer target. */}
       <mesh
-        ref={bodyRef}
+        ref={hitRef}
+        position={[0, 0, 0.03]}
         onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
         onPointerOver={(e) => {
+          if (e.pointerType === 'touch') return;
           e.stopPropagation();
           document.body.style.cursor = 'pointer';
           onHover(node.id);
         }}
-        onPointerOut={() => {
+        onPointerOut={(e) => {
+          if (e.pointerType === 'touch') return;
           document.body.style.cursor = '';
           onHover(null);
         }}
       >
-        <circleGeometry args={[1, CIRCLE_SEGMENTS]} />
-        <meshBasicMaterial color={color} transparent opacity={0.95} />
+        <circleGeometry args={[1, 16]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
     </group>
+  );
+}
+
+/** Dashed outer ring marking an open blocker Issue — the thing that gates work. */
+function BlockerRing() {
+  const ref = useRef<Mesh>(null);
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.rotation.z = clock.elapsedTime * 0.25;
+  });
+  return (
+    <mesh ref={ref} position={[0, 0, -0.01]} scale={9}>
+      <ringGeometry args={[0.82, 1, 3, 1, 0, Math.PI * 2]} />
+      <meshBasicMaterial color={0xf59e0b} transparent opacity={0.55} />
+    </mesh>
   );
 }
 
@@ -441,7 +877,8 @@ interface EdgeLineProps {
   edgeKind: GraphEdgeKind;
   mode: ColorMode;
   nodesById: Map<string, GraphNode>;
-  selectedId: string | null;
+  lifecycles: Map<string, EffectiveLifecycle>;
+  activeId: string | null;
   hoveredId: string | null;
 }
 
@@ -454,10 +891,10 @@ function edgeKindFromId(id: string): GraphEdgeKind | null {
 }
 
 function relationEmphasisOpacity(emphasis: RelationMeta['emphasis']): number {
-  if (emphasis === 'subtle') return 0.45;
-  if (emphasis === 'medium') return 0.65;
-  if (emphasis === 'strong') return 0.9;
-  return 0.75;
+  if (emphasis === 'subtle') return 0.4;
+  if (emphasis === 'medium') return 0.62;
+  if (emphasis === 'strong') return 0.88;
+  return 0.72;
 }
 
 function dashWorldUnits(
@@ -469,9 +906,14 @@ function dashWorldUnits(
   if (dash === 'dashed') {
     return { dashSize: 1.0 * scale, gapSize: 0.65 * scale };
   }
-  return { dashSize: 0.35 * scale, gapSize: 0.55 * scale };
+  return { dashSize: 0.3 * scale, gapSize: 0.5 * scale };
 }
 
+/**
+ * Membership spokes take their Effort's tint — this is the channel that keeps
+ * cluster identity legible now that primitives own hue. Every other group
+ * reads from the shared relation palette so the legend matches exactly.
+ */
 function edgeStrokeOklch(
   kind: GraphEdgeKind,
   sourceMeta: GraphNode | undefined,
@@ -480,45 +922,42 @@ function edgeStrokeOklch(
   const meta = RELATION_META[kind];
   if (meta.group === 'membership') {
     const effortId = sourceMeta?.effortId ?? sourceMeta?.id ?? 'unknown';
-    const nodeKind = sourceMeta?.kind ?? 'effort';
-    return nodeColor(effortId, nodeKind, mode).oklch;
+    return effortOklch(effortId, mode);
   }
-  if (meta.group === 'resolution') {
-    return mode === 'light'
-      ? { l: 0.52, c: 0.13, h: 160 }
-      : { l: 0.7, c: 0.11, h: 160 };
-  }
-  if (meta.group === 'rejection') {
-    return mode === 'light'
-      ? { l: 0.55, c: 0.02, h: 260 }
-      : { l: 0.62, c: 0.02, h: 260 };
-  }
-  return mode === 'light'
-    ? { l: 0.42, c: 0.02, h: 260 }
-    : { l: 0.78, c: 0.02, h: 260 };
+  return relationStrokeOklch(meta.group, mode);
 }
 
 /**
  * Renders a single vein/edge as a styled line (+ optional arrowhead). Buffer
  * positions are refreshed in `useFrame` from `veinTipPolyline`, so the tip
- * grows in and retracts out with `edge.growth`. Style matches RelationLegend.
+ * grows in and retracts out with `edge.growth`. Style matches the legend.
  */
 function EdgeLine({
   edge,
   edgeKind,
   mode,
   nodesById,
-  selectedId,
+  lifecycles,
+  activeId,
   hoveredId,
 }: EdgeLineProps) {
   const meta = RELATION_META[edgeKind];
   const positionsRef = useRef<Float32Array>(new Float32Array(16 * 3));
   const scratchRef = useRef<VeinPoint[]>([]);
+  const distanceCountRef = useRef(-1);
 
   const color = useMemo(() => {
     const sourceMeta = nodesById.get(edge.from);
     return oklchToThreeColor(edgeStrokeOklch(edgeKind, sourceMeta, mode));
   }, [edge.from, edgeKind, nodesById, mode]);
+
+  /** Retired endpoints fade their relations too, so dead branches recede. */
+  const retiredEndpoint = useMemo(
+    () =>
+      lifecycles.get(edge.from)?.aliveness === 'retired' ||
+      lifecycles.get(edge.to)?.aliveness === 'retired',
+    [lifecycles, edge.from, edge.to]
+  );
 
   const { line, arrow } = useMemo(() => {
     const geometry = new THREE.BufferGeometry();
@@ -609,34 +1048,35 @@ function EdgeLine({
       positions = new Float32Array(Math.max(needed, positions.length * 2, 16));
       positionsRef.current = positions;
       geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      distanceCountRef.current = -1;
     }
     for (let i = 0; i < visible.length; i++) {
       positions[i * 3] = visible[i].x;
       positions[i * 3 + 1] = visible[i].y;
       positions[i * 3 + 2] = 0;
     }
-    const attr = geom.getAttribute('position') as
-      | THREE.BufferAttribute
-      | undefined;
+    const attr = geom.getAttribute('position') as THREE.BufferAttribute | undefined;
     if (attr) attr.needsUpdate = true;
     geom.setDrawRange(0, visible.length);
-    if (meta.dash !== 'solid') {
+    // `computeLineDistances` allocates a fresh attribute on every call, so
+    // only recompute when the vertex count actually changes. Dash phase drift
+    // as endpoints move is imperceptible; a per-frame allocation for every
+    // dashed edge is not.
+    if (meta.dash !== 'solid' && distanceCountRef.current !== visible.length) {
       line.computeLineDistances();
+      distanceCountRef.current = visible.length;
     }
 
-    const isTouched =
-      selectedId !== null &&
-      (selectedId === edge.from || selectedId === edge.to);
-    const isHovered =
-      hoveredId !== null &&
-      (hoveredId === edge.from || hoveredId === edge.to);
-    const highlighted = isTouched || isHovered;
+    const highlighted =
+      (activeId !== null && (activeId === edge.from || activeId === edge.to)) ||
+      (hoveredId !== null && (hoveredId === edge.from || hoveredId === edge.to));
 
     const baseOpacity = relationEmphasisOpacity(meta.emphasis);
     const modeScale = mode === 'dark' ? 1.05 : 0.95;
+    const retiredScale = retiredEndpoint && !highlighted ? 0.5 : 1;
     const target = highlighted
       ? Math.min(baseOpacity * modeScale + 0.35, 0.98)
-      : baseOpacity * modeScale;
+      : baseOpacity * modeScale * retiredScale;
     const growthOpacity = target * Math.max(0.001, edge.growth);
     material.opacity = growthOpacity;
     arrowMaterial.opacity = growthOpacity;
@@ -644,9 +1084,7 @@ function EdgeLine({
     if (meta.arrow && visible.length >= 2) {
       const tip = visible[visible.length - 1];
       const prev = visible[visible.length - 2];
-      const dx = tip.x - prev.x;
-      const dy = tip.y - prev.y;
-      const angle = Math.atan2(dy, dx);
+      const angle = Math.atan2(tip.y - prev.y, tip.x - prev.x);
       const scale = highlighted ? 1.2 : 1;
       arrow.position.set(tip.x, tip.y, 0.02);
       arrow.rotation.z = angle;
@@ -668,10 +1106,11 @@ function EdgeLine({
 interface NodeLabelProps {
   node: SimNode;
   meta: GraphNode;
-  selected: boolean;
+  active: boolean;
+  retired: boolean;
 }
 
-function NodeLabel({ node, meta, selected }: NodeLabelProps) {
+function NodeLabel({ node, meta, active, retired }: NodeLabelProps) {
   const groupRef = useRef<Group>(null);
 
   useFrame(() => {
@@ -685,25 +1124,88 @@ function NodeLabel({ node, meta, selected }: NodeLabelProps) {
 
   return (
     <group ref={groupRef}>
-      <Html
-        transform={false}
-        center
-        style={{ pointerEvents: 'none', userSelect: 'none' }}
-      >
-        <div
-          className={
-            selected
-              ? 'effort-label effort-label-selected'
-              : meta.kind === 'effort'
-                ? 'effort-label effort-label-primary'
-                : 'effort-label'
-          }
-          style={{ transform: 'translateY(-100%)' }}
-        >
-          {meta.title}
-        </div>
-      </Html>
+      <LabelSurface
+        text={meta.title}
+        classes={labelClasses(meta.kind === 'effort', active, retired)}
+      />
     </group>
+  );
+}
+
+/**
+ * Effort title, anchored above the whole cluster rather than above the hub.
+ *
+ * The hub sits at its cluster's centroid, so a label placed on it lands in the
+ * middle of the records it is naming. Riding the cluster's top edge instead
+ * turns it into a heading for the group and clears the records entirely.
+ */
+function ClusterLabel({
+  sim,
+  node,
+  meta,
+  active,
+  retired,
+}: {
+  sim: GraphSimulation;
+  node: SimNode;
+  meta: GraphNode;
+  active: boolean;
+  retired: boolean;
+}) {
+  const groupRef = useRef<Group>(null);
+
+  useFrame(() => {
+    const g = groupRef.current;
+    if (!g) return;
+    const r = effectiveRadius(node);
+    if (r <= 0.5) {
+      g.visible = false;
+      return;
+    }
+    g.visible = true;
+
+    let top = node.y + r;
+    let sumX = 0;
+    let members = 0;
+    for (const other of sim.getState().nodes) {
+      if (other.effortId !== node.effortId) continue;
+      const otherR = effectiveRadius(other);
+      if (otherR <= 0.1) continue;
+      if (other.y + otherR > top) top = other.y + otherR;
+      sumX += other.x;
+      members += 1;
+    }
+    g.position.x = members > 0 ? sumX / members : node.x;
+    g.position.y = top + 2.5;
+  });
+
+  return (
+    <group ref={groupRef}>
+      <LabelSurface text={meta.title} classes={labelClasses(true, active, retired)} />
+    </group>
+  );
+}
+
+function labelClasses(hub: boolean, active: boolean, retired: boolean): string {
+  const classes = ['effort-label'];
+  if (hub) classes.push('effort-label-hub');
+  if (active) classes.push('effort-label-active');
+  if (retired) classes.push('effort-label-retired');
+  return classes.join(' ');
+}
+
+function LabelSurface({ text, classes }: { text: string; classes: string }) {
+  return (
+    <Html
+      transform={false}
+      center
+      zIndexRange={[40, 0]}
+      style={{ pointerEvents: 'none', userSelect: 'none' }}
+    >
+      <div className={classes} style={{ transform: 'translateY(-100%)' }}>
+        {text}
+      </div>
+    </Html>
   );
 }
 
