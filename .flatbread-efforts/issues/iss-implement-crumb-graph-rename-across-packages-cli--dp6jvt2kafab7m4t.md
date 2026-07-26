@@ -3,12 +3,14 @@ id: iss-implement-crumb-graph-rename-across-packages-cli--dp6jvt2kafab7m4t
 effort: eff-flatbread-product-branding--zt7b35sa05kyvhdz
 title: 'Implement Crumb Graph rename across packages, CLI, paths, and skills'
 kind: gap
-status: open
+status: wontfix
 created_at: '2026-07-19T03:45:50.712Z'
 derives_from:
   - dec-brand-the-agent-memory-surface-as-crumb-graph--fvskcvagx3a7sybe
 superseded_by:
   - iss-implement-crumb-trail-rename-across-packages-cli--316rdzpt80sdxkw1
+resolved_by:
+  - dec-keep-effort-graph-as-the-product-name--r5wr2vdjwjs9bs13
 ---
 
 Branding Decision accepts Crumb Graph as the product name with Effort Graph as descriptor. Implementation is pending and out of scope for the branding commit.
