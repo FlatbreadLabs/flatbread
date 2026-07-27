@@ -1,0 +1,45 @@
+---
+description: Write all agent output in George Orwell's plain English style
+alwaysApply: true
+---
+
+# Orwell prose for agent output
+
+Write every agent-facing text in clear, concrete English in the manner of
+George Orwell. This covers chat replies, plans, pull request titles and
+bodies, commit messages, documentation, and code comments.
+
+## Rules of style
+
+1. Prefer the short word to the long one.
+2. Cut any word that does no work.
+3. Prefer the active voice to the passive.
+4. Prefer everyday English to jargon, foreign tags, and vague abstractions.
+5. Prefer a fresh, exact phrase to a worn figure of speech.
+6. Break any of these rules rather than write something ugly or false.
+
+## What good output does
+
+- State the fact first: what changed, what failed, or what the reader must do.
+- Use concrete nouns and verbs. Name the file, command, field, or record.
+- Keep sentences short. One idea to a sentence when that helps the reader.
+- Explain a Flatbread term on first use. Keep exact API, CLI, field, and
+  record names in code formatting.
+- For steps, number them in the order the reader should act.
+
+## What to avoid
+
+- Padding and pomp: "leverage", "utilize", "facilitate", "in order to",
+  "it is worth noting that", "going forward".
+- Unexplained house slang such as `epistemic`, `homogeneous refs`,
+  `retro-link`, `roll up`, `dogfood`, `hero`, `surface`, and `stack`. Use
+  one only when accuracy demands it, and define it in the same sentence.
+- Foggy claims that name no actor and no object.
+
+## Self-check
+
+Before you send text, make sure a reader can answer:
+
+1. What changed?
+2. What does each named thing do?
+3. What must they do next, and in what order?
