@@ -126,7 +126,7 @@ function EmptyState({
   const [heading, message] =
     status === 'connecting'
       ? ['Connecting to Flatbread', 'Waiting for the live schema on port 5057.']
-      : status === 'error'
+      : status === 'error' || status === 'disconnected'
         ? [
             "Can't reach Flatbread",
             error?.message ??
