@@ -29,7 +29,7 @@ export type Aliveness =
   | 'open'
   /** Committed, closed, or stateless. The resting appearance. */
   | 'settled'
-  /** Overturned: rejected, superseded, invalidated, or wontfix. */
+  /** Overturned: rejected, superseded, invalidated, wontfix, deprecated, or abandoned. */
   | 'retired';
 
 export interface EffectiveLifecycle {
@@ -51,7 +51,7 @@ const RETIRED_STATES = new Set([
 ]);
 
 /** States that mean "somebody still owes this a call". */
-const OPEN_STATES = new Set(['open', 'proposed', 'deferred', 'active']);
+const OPEN_STATES = new Set(['open', 'proposed', 'active']);
 
 /**
  * Index the edges that override frontmatter state.

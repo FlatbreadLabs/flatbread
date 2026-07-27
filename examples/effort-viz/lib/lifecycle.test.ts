@@ -59,6 +59,8 @@ describe('effectiveLifecycle', () => {
       [node({ id: 'a', kind: 'issue', lifecycle: 'open' }), 'open'],
       [node({ id: 'b', kind: 'issue', lifecycle: 'wontfix' }), 'retired'],
       [node({ id: 'c', kind: 'issue', lifecycle: 'resolved' }), 'settled'],
+      // ResolveIssue treats deferred as a resolution (peer of resolved/wontfix).
+      [node({ id: 'c2', kind: 'issue', lifecycle: 'deferred' }), 'settled'],
       [node({ id: 'd', kind: 'decision', lifecycle: 'proposed' }), 'open'],
       [node({ id: 'e', kind: 'decision', lifecycle: 'rejected' }), 'retired'],
       [node({ id: 'f', kind: 'risk', lifecycle: 'mitigated' }), 'settled'],
@@ -92,10 +94,18 @@ describe('isOpenBlocker', () => {
       kindLabel: 'blocker',
       lifecycle: 'resolved',
     });
+    // Deferred is a settled resolution — not an open blocker.
+    const deferred = node({
+      id: 'iss-4',
+      kind: 'issue',
+      kindLabel: 'blocker',
+      lifecycle: 'deferred',
+    });
 
     assert.equal(isOpenBlocker(blocker, effectiveLifecycle(blocker, index)), true);
     assert.equal(isOpenBlocker(gap, effectiveLifecycle(gap, index)), false);
     assert.equal(isOpenBlocker(closed, effectiveLifecycle(closed, index)), false);
+    assert.equal(isOpenBlocker(deferred, effectiveLifecycle(deferred, index)), false);
   });
 });
 
@@ -105,6 +115,7 @@ describe('summarizeGraph', () => {
       node({ id: 'eff-1', kind: 'effort', effortId: null, lifecycle: 'active' }),
       node({ id: 'iss-1', kind: 'issue', lifecycle: 'open' }),
       node({ id: 'iss-2', kind: 'issue', lifecycle: 'wontfix' }),
+      node({ id: 'iss-3', kind: 'issue', lifecycle: 'deferred' }),
       node({ id: 'dec-1', kind: 'decision', lifecycle: 'proposed' }),
       node({ id: 'dec-2', kind: 'decision', lifecycle: 'accepted' }),
       node({ id: 'rsk-1', kind: 'risk', lifecycle: 'open' }),
@@ -114,11 +125,12 @@ describe('summarizeGraph', () => {
     const summary = summarizeGraph(nodes, buildAlivenessMap(nodes, edges));
 
     assert.equal(summary.efforts, 1);
-    assert.equal(summary.records, 5);
+    assert.equal(summary.records, 6);
+    // Deferred Issue is settled, not open.
     assert.equal(summary.openIssues, 1);
     assert.equal(summary.proposedDecisions, 1);
     assert.equal(summary.liveRisks, 1);
-    // wontfix Issue plus the superseded Decision.
+    // wontfix Issue plus the superseded Decision; deferred is settled, not retired.
     assert.equal(summary.retired, 2);
   });
 
