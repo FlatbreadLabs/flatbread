@@ -120,13 +120,6 @@ const TAP_SLOP_PX = 8;
 /** Minimum on-screen hit diameter, in CSS px, regardless of zoom. */
 const MIN_HIT_DIAMETER_PX = 44;
 
-/**
- * Ceiling on how far a hit target may extend past its glyph, in world units.
- * Half of the resting gap between records, so a generous target can never
- * cover a neighbour and make selection depend on scene order.
- */
-const MAX_HIT_PADDING_WORLD = 3;
-
 export default function GraphCanvas(props: GraphCanvasProps) {
   const { mode } = useTheme();
   const { nodes, selectedId, onSelect } = props;
@@ -543,6 +536,13 @@ function FitCamera({
   }, [nodeCount, sizeKey]);
 
   useFrame((_, delta) => {
+    // Reader pan/zoom wins immediately, including mid-ease: drop any pending
+    // fit target and stop writing the camera for the rest of the session.
+    if (takeover.get()) {
+      targetRef.current = null;
+      return;
+    }
+
     // Ease toward a pending fit target — exponential approach, which is an
     // ease-out. A hard cut after the settle delay reads as a glitch.
     const target = targetRef.current;
@@ -564,8 +564,6 @@ function FitCamera({
       return;
     }
 
-    // Hand the camera over permanently once the reader pans or zooms.
-    if (takeover.get()) return;
     elapsedRef.current += delta;
 
     const { nodes } = sim.getState();
@@ -840,18 +838,18 @@ function NodeMesh({
     const hit = hitRef.current;
     if (hit) {
       /*
-       * Guarantee a 44 CSS px pointer target. R3F sizes an orthographic
-       * frustum to the canvas in pixels, so one world unit is exactly
-       * `camera.zoom` CSS px. (Do not reach for `viewport.factor` here — R3F
-       * hard-codes it to 1 for orthographic cameras, which would pin the hit
-       * radius to a constant 22 world units and make targets grow as you zoom
-       * in.)
+       * Guarantee a 44 CSS px pointer diameter at every zoom. R3F sizes an
+       * orthographic frustum to the canvas in pixels, so one world unit is
+       * exactly `camera.zoom` CSS px — world radius is therefore
+       * `(MIN_HIT_DIAMETER_PX / 2) / zoom`. Do not reach for `viewport.factor`
+       * here: R3F hard-codes it to 1 for orthographic cameras, which would
+       * pin the hit radius to a constant 22 world units and make targets
+       * grow as you zoom in. Do not world-cap the padding either: at
+       * minZoom (~0.5) that floor needs ~44 world units of radius, and any
+       * smaller cap shrinks the on-screen target below 44 CSS px.
        */
       const minWorld = MIN_HIT_DIAMETER_PX / 2 / Math.max(camera.zoom, 0.0001);
-      // Never let the pointer target swallow a neighbour: records rest about
-      // `2r + restLengthPad` apart, so cap the padding at half that spacing.
-      const capped = Math.min(minWorld, r * extent + MAX_HIT_PADDING_WORLD);
-      hit.scale.setScalar(Math.max(r * extent, capped));
+      hit.scale.setScalar(Math.max(r * extent, minWorld));
     }
   });
 
