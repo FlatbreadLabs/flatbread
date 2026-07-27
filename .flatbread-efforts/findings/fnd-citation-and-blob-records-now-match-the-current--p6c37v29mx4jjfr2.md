@@ -10,4 +10,4 @@ invalidates:
   - fnd-skill-and-hard-constraint-still-teach-13-mutatio--gvg2btns0q7rp0eq
 ---
 
-The skills and related Decision, Issue, and Constraint now describe eight record types, fifteen mutations, and the Citation-to-optional-Blob path. Direct Blob citations are not supported. Cross-Effort `cites` and `Citation.blob` links are rejected. `CreateEffort` rejects `cites` when callers use the CLI or mutation schema; planner and writer enforcement remains a follow-up so programmatic callers cannot silently drop the field. This Finding replaces the prior audits and retrospective where their earlier claims no longer match the current contract.
+The skills and related Decision, Issue, and Constraint now describe eight record types, fifteen mutations, and the Citation-to-optional-Blob path. Direct Blob citations are not supported. Cross-Effort `cites` and `Citation.blob` links are rejected. `CreateEffort` rejects `cites` through the CLI, mutation schema, planner, and writer, so callers cannot silently attach citations while creating an Effort. This Finding replaces the prior audits and retrospective where their earlier claims no longer match the current contract.

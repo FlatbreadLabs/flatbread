@@ -58,7 +58,7 @@ outside sources.
 
 ### External evidence (URL or longform)
 
-When a Finding, Decision, Constraint, or Risk rests on an external source,
+When a Finding, Issue, Decision, Constraint, or Risk rests on an external source,
 create a Citation instead of copying the source into the record body:
 
 1. **`WriteBlob`** — only when you need to save large or non-text content
@@ -66,8 +66,8 @@ create a Citation instead of copying the source into the record body:
 2. **`WriteCitation`** — body is often the URL string; pass optional `blob` and
    `role` when needed.
 3. **Create the record** — pass `cites: ["<cit-id>"]` when creating the
-   Finding, Decision, Constraint, or Risk. You cannot add a citation later,
-   so create the Citation first.
+   Finding, Issue, Decision, Constraint, or Risk. You cannot add a citation
+   later, so create the Citation first.
 
 Record a Decision when it is hard to reverse, surprising without context, and
 the result of a real trade-off. Create it as proposed while the user is still

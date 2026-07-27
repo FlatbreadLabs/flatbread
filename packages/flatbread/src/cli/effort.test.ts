@@ -477,6 +477,20 @@ export default {
       () =>
         handleEffortWrite(
           JSON.stringify({
+            type: 'WriteCitation',
+            effort: effortId,
+            title: 'Invalid source',
+            body: 'https://example.com/invalid',
+            cites: ['cit-paper--0123456789abcdef'],
+          }),
+          { cwd }
+        ),
+      { message: /Unrecognized key\(s\) in object: 'cites'/ }
+    );
+    await t.throwsAsync(
+      () =>
+        handleEffortWrite(
+          JSON.stringify({
             type: 'CreateEffort',
             title: 'Invalid',
             body: '',
@@ -583,6 +597,18 @@ export default {
         instanceOf: EffortGraphValidationError,
         message: new RegExp(
           `cites target ${foreignCitation.artifacts[0].id} belongs to a different effort`
+        ),
+      }
+    );
+    await t.throwsAsync(
+      () =>
+        handleEffortRelations(effortId, foreignCitation.artifacts[0].id, {
+          cwd,
+          relations: ['cites'],
+        }),
+      {
+        message: new RegExp(
+          `Record ${foreignCitation.artifacts[0].id} does not exist in effort ${effortId}`
         ),
       }
     );

@@ -58,20 +58,24 @@ export const WriteRiskSchema = z.object({
   likelihood: z.enum(['low', 'medium', 'high']),
   severity: z.enum(['low', 'medium', 'high']),
 });
-export const WriteCitationSchema = z.object({
-  type: z.literal('WriteCitation'),
-  ...common,
-  effort: id,
-  /** Optional longform/payload target; body alone (e.g. a URL) is valid. */
-  blob: id.optional(),
-  role: z.string().min(1).optional(),
-});
-export const WriteBlobSchema = z.object({
-  type: z.literal('WriteBlob'),
-  ...common,
-  effort: id,
-  kind: z.string().min(1).optional(),
-});
+export const WriteCitationSchema = z
+  .object({
+    type: z.literal('WriteCitation'),
+    ...common,
+    effort: id,
+    /** Optional longform/payload target; body alone (e.g. a URL) is valid. */
+    blob: id.optional(),
+    role: z.string().min(1).optional(),
+  })
+  .strict();
+export const WriteBlobSchema = z
+  .object({
+    type: z.literal('WriteBlob'),
+    ...common,
+    effort: id,
+    kind: z.string().min(1).optional(),
+  })
+  .strict();
 export const SupersedeSchema = z.object({
   type: z.literal('Supersede'),
   supersederId: id,

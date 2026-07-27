@@ -668,6 +668,8 @@ export async function relations(
       const targetCollection = collectionForId(targetId);
       if (!targetCollection) continue;
       const target = await projection.one(targetCollection, targetId);
+      // Only return targets that belong to this Effort. The writer should
+      // prevent foreign links, but this keeps hand-authored files contained.
       if (target?.frontmatter.effort === effortId)
         selected.set(target.id, target);
     }

@@ -526,6 +526,44 @@ test('23 WriteCitation with optional blob', (t) => {
   );
   t.is(parseDocument(w[0].afterBytes, 'citation').frontmatter.blob, blobId);
 });
+test('WriteCitation rejects cites before planning a write', (t) => {
+  t.throws(
+    () =>
+      planMutation(
+        {
+          type: 'WriteCitation',
+          id: 'cit-paper--0123456789abcdef',
+          effort: E,
+          title: 'Paper',
+          body: 'https://example.com/paper',
+          cites: ['cit-other--0123456789abcdef'],
+        } as unknown as import('../schemas.js').EffortGraphMutation,
+        snap(),
+        '/root',
+        now
+      ),
+    { message: /WriteCitation does not accept cites/ }
+  );
+});
+test('WriteBlob rejects cites before planning a write', (t) => {
+  t.throws(
+    () =>
+      planMutation(
+        {
+          type: 'WriteBlob',
+          id: 'blb-payload--0123456789abcdef',
+          effort: E,
+          title: 'Payload',
+          body: '# longform research\n',
+          cites: ['cit-paper--0123456789abcdef'],
+        } as unknown as import('../schemas.js').EffortGraphMutation,
+        snap(),
+        '/root',
+        now
+      ),
+    { message: /WriteBlob does not accept cites/ }
+  );
+});
 test('24 WriteFinding cites Citation', (t) => {
   const citId = 'cit-paper--0123456789abcdef';
   const citation = record(
