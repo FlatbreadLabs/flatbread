@@ -33,9 +33,9 @@ export interface RelationMeta {
  * Relation styling. Edges stay largely achromatic on purpose: hue is spent on
  * primitives now, and layering seven more edge hues on top would put a dozen
  * competing colours on one canvas. Texture (dash, weight) separates the
- * groups instead, with two exceptions that carry real semantic weight —
- * membership takes its Effort's tint, and invalidation gets a warning hue
- * because "this was wrong" is the strongest claim the datamodel can make.
+ * groups instead. Membership takes its Effort's tint; resolution and
+ * mitigation share one accent; everything else — including invalidation —
+ * stays on a neutral stroke.
  */
 export const RELATION_META: Record<GraphEdgeKind, RelationMeta> = {
   derives_from: {
@@ -120,7 +120,8 @@ export const RELATION_META: Record<GraphEdgeKind, RelationMeta> = {
     label: 'Evidence',
     description: 'A Finding cited as support for this record.',
     group: 'evidence',
-    directionHint: { outgoing: 'Supports', incoming: 'Supported by' },
+    // Edge direction is citing record → Finding (normalize source=record, target=finding).
+    directionHint: { outgoing: 'Supported by', incoming: 'Supports' },
     dash: 'dotted',
     weight: 'thin',
     emphasis: 'subtle',
