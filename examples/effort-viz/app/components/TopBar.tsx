@@ -2,19 +2,16 @@
 
 import { useTheme } from '../hooks/useTheme';
 import type { GraphSummary } from '@/lib/lifecycle';
-import type { LiveStatus } from '@/lib/useEffortGraphLive';
+import {
+  liveStatusLabel,
+  type LiveStatus,
+} from '@/lib/useEffortGraphLive';
 
 interface TopBarProps {
   status: LiveStatus;
   generation: number | null;
   summary: GraphSummary;
 }
-
-const STATUS_LABEL: Record<LiveStatus, string> = {
-  connecting: 'Connecting',
-  live: 'Live',
-  error: 'Disconnected',
-};
 
 export function TopBar({ status, generation, summary }: TopBarProps) {
   return (
@@ -92,11 +89,13 @@ function StatusPill({
   return (
     <div
       role="status"
-      /* Fixed width so switching between the three labels can't shift the toggle. */
+      /* Fixed width so switching between labels can't shift the toggle. */
       className="flex w-[7.5rem] items-center justify-center gap-1.5 rounded-full border border-border bg-background/60 px-2.5 py-1 text-[12px] text-muted"
     >
       <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${dotClass}`} />
-      <span className="font-medium text-foreground">{STATUS_LABEL[status]}</span>
+      <span className="font-medium text-foreground">
+        {liveStatusLabel(status)}
+      </span>
       <span className="tabular-nums text-muted">
         {generation !== null ? `· gen ${generation}` : ''}
       </span>
