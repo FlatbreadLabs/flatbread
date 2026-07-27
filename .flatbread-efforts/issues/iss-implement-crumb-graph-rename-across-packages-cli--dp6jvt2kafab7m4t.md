@@ -18,3 +18,5 @@ Branding Decision accepts Crumb Graph as the product name with Effort Graph as d
 Likely touchpoints (non-exhaustive): `@flatbread/effort-graph`, `effortGraphContent`, `flatbread effort` CLI, `.flatbread-efforts/`, `.flatbread/effort-graph/`, agent skill name/paths, docs/README copy, error codes (`EFFORT_GRAPH_*`), and dogfood references.
 
 Do not start the mechanical rename until an implementation plan chooses which identifiers move vs stay for compatibility.
+
+Resolution: cancelled as `wontfix`; product name is Effort Graph; resolved by `dec-keep-effort-graph-as-the-product-name--r5wr2vdjwjs9bs13`; do not reopen rename work.

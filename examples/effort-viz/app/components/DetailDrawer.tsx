@@ -201,7 +201,9 @@ export function DetailDrawer({
             <p className="rounded-md border border-border bg-muted/10 px-2.5 py-2 text-[12px] leading-snug text-muted">
               {life.state === 'invalidated'
                 ? 'Marked wrong by a later Finding. Its own frontmatter still records the state it was in when written.'
-                : 'Replaced by a later record. Its own frontmatter still records the state it was in when written.'}{' '}
+                : life.state === 'rejected'
+                  ? 'Rejected by a later Decision. Its own frontmatter still records the state it was in when written.'
+                  : 'Replaced by a later record. Its own frontmatter still records the state it was in when written.'}{' '}
               Read from the graph edges, which are authoritative.
             </p>
           )}

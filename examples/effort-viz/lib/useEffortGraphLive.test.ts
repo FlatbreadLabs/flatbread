@@ -3,6 +3,8 @@ import { describe, it } from 'node:test';
 
 import {
   liveStatusLabel,
+  liveStatusAfterSuccessfulFetch,
+  liveStatusAfterTransportLoss,
   resolveSchemaForQuery,
   rollbackRequestedGeneration,
   shouldCommitGeneration,
@@ -61,6 +63,7 @@ describe('liveStatusLabel', () => {
   const cases: Array<[LiveStatus, string]> = [
     ['connecting', 'Connecting'],
     ['live', 'Live'],
+    ['partial', 'Partial'],
     ['disconnected', 'Disconnected'],
     ['error', 'Error'],
   ];
@@ -69,4 +72,24 @@ describe('liveStatusLabel', () => {
       assert.equal(liveStatusLabel(status), label);
     });
   }
+});
+
+describe('liveStatusAfterSuccessfulFetch', () => {
+  it('reports live when relationship fields could be selected', () => {
+    assert.equal(liveStatusAfterSuccessfulFetch(true), 'live');
+  });
+
+  it('reports partial when the query fell back to records only', () => {
+    assert.equal(liveStatusAfterSuccessfulFetch(false), 'partial');
+  });
+});
+
+describe('liveStatusAfterTransportLoss', () => {
+  it('reports disconnected after a committed generation', () => {
+    assert.equal(liveStatusAfterTransportLoss(true), 'disconnected');
+  });
+
+  it('reports error before the first committed generation', () => {
+    assert.equal(liveStatusAfterTransportLoss(false), 'error');
+  });
 });

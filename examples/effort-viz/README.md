@@ -79,8 +79,10 @@ contains.
 
 - **Live graph** — `useEffortGraphLive` opens an `EventSource` on `/events`.
   On `ready` and each `generation` event it refetches the Effort Graph query and
-  updates the canvas. The status pill shows connecting / live / disconnected and
-  the current generation.
+  updates the canvas. The status pill shows connecting / live / partial /
+  disconnected / error and the current generation. **Partial** means records
+  loaded but relationship fields could not be confirmed yet — retirement links
+  may be missing until the next successful schema probe.
 - **Watch mode** — `flatbread start --watch` reloads content and config changes
   under `.flatbread-efforts`. Edit an Effort, Issue, or Finding file and the
   graph animates in/out without restarting Next.

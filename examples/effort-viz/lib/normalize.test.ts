@@ -100,4 +100,20 @@ describe('normalizeEffortGraph', () => {
     assert.equal(pair.length, 1);
     assert.equal(pair[0].kind, 'superseded_by');
   });
+
+  it('keeps superseded_by when the superseder is absent from the query', () => {
+    const data: EffortGraphQueryResult = {
+      ...emptyGraph(),
+      allDecisions: [
+        { id: 'dec-old', title: 'Old', superseded_by: [{ id: 'dec-missing' }] },
+      ],
+    };
+
+    const graph = normalizeEffortGraph(data);
+    const pair = graph.edges.filter((e) => e.kind === 'superseded_by');
+
+    assert.equal(pair.length, 1);
+    assert.equal(pair[0].source, 'dec-old');
+    assert.equal(pair[0].target, 'dec-missing');
+  });
 });

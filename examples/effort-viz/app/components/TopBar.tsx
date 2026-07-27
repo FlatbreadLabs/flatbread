@@ -84,11 +84,18 @@ function StatusPill({
       ? 'bg-emerald-500'
       : status === 'connecting'
         ? 'bg-amber-500 motion-safe:animate-pulse'
-        : 'bg-red-500';
+        : status === 'partial'
+          ? 'bg-amber-500'
+          : 'bg-red-500';
 
   return (
     <div
       role="status"
+      title={
+        status === 'partial'
+          ? 'Records loaded, but relationship fields could not be confirmed — retirement links may be missing.'
+          : undefined
+      }
       /* Fixed width so switching between labels can't shift the toggle. */
       className="flex w-[7.5rem] items-center justify-center gap-1.5 rounded-full border border-border bg-background/60 px-2.5 py-1 text-[12px] text-muted"
     >

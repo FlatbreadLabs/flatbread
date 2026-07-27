@@ -17,11 +17,21 @@ const MAX_RETRY_MS = 30_000;
 
 /**
  * Live connection / query state for the Effort Graph viz.
- * `disconnected` is SSE/transport loss after we have (or had) a session;
- * `error` is a GraphQL probe/query failure while the event stream may still
- * be open.
+ *
+ * - `live` — fetch succeeded with a known schema, so relationship fields
+ *   (including retirement links) were selected when the server exposes them.
+ * - `partial` — fetch succeeded, but we had no schema yet, so only record
+ *   scalars loaded. Retirement links may be missing; do not treat the graph
+ *   as complete.
+ * - `disconnected` — SSE/transport loss after we have committed a generation.
+ * - `error` — GraphQL query failure, or SSE loss before the first commit.
  */
-export type LiveStatus = 'connecting' | 'live' | 'disconnected' | 'error';
+export type LiveStatus =
+  | 'connecting'
+  | 'live'
+  | 'partial'
+  | 'disconnected'
+  | 'error';
 
 export interface UseEffortGraphLiveOptions {
   endpoint?: string;
@@ -38,9 +48,15 @@ export interface UseEffortGraphLiveResult {
   refetch: () => Promise<void>;
 }
 
-export interface NormalizedGraph {
+export interface FetchedGraph {
   nodes: GraphNode[];
   edges: GraphEdge[];
+  /**
+   * True when the query was built from a schema probe (fresh or sticky).
+   * False on the scalars-only first-load fallback — relationship edges were
+   * not selected, so retirement can look wrong.
+   */
+  relationsKnown: boolean;
 }
 
 /** Prefer a fresh probe; otherwise reuse the last successful one (sticky). */
@@ -86,11 +102,30 @@ export function liveStatusLabel(status: LiveStatus): string {
       return 'Connecting';
     case 'live':
       return 'Live';
+    case 'partial':
+      return 'Partial';
     case 'disconnected':
       return 'Disconnected';
     case 'error':
       return 'Error';
   }
+}
+
+/**
+ * After a successful graph fetch: Live only when relationship fields could
+ * be selected. Without a schema, the safe scalars-only path still paints
+ * records but must not claim a complete graph.
+ */
+export function liveStatusAfterSuccessfulFetch(
+  relationsKnown: boolean
+): Extract<LiveStatus, 'live' | 'partial'> {
+  return relationsKnown ? 'live' : 'partial';
+}
+
+export function liveStatusAfterTransportLoss(
+  hasCommittedGeneration: boolean
+): Extract<LiveStatus, 'disconnected' | 'error'> {
+  return hasCommittedGeneration ? 'disconnected' : 'error';
 }
 
 function graphqlOrigin(endpoint: string): string {
@@ -133,7 +168,7 @@ export function useEffortGraphLive(
    * Probe + fetch + normalize. Does not touch React graph state so callers
    * can enforce generation ordering before paint.
    */
-  const fetchGraph = useCallback(async (): Promise<NormalizedGraph> => {
+  const fetchGraph = useCallback(async (): Promise<FetchedGraph> => {
     /*
      * Re-probe each generation. Flatbread derives its schema from the records
      * on disk, so a relation field appears the moment the first record uses it
@@ -159,13 +194,22 @@ export function useEffortGraphLive(
       undefined,
       endpoint
     );
-    return normalizeEffortGraph(data);
+    const graph = normalizeEffortGraph(data);
+    return {
+      nodes: graph.nodes,
+      edges: graph.edges,
+      // Sticky last-good still counts: we selected relations from a known
+      // schema. Only the null first-load fallback is partial.
+      relationsKnown: schema !== null,
+    };
   }, [endpoint]);
 
   const refetch = useCallback(async () => {
     const graph = await fetchGraph();
     setNodes(graph.nodes);
     setEdges(graph.edges);
+    setStatus(liveStatusAfterSuccessfulFetch(graph.relationsKnown));
+    setError(null);
   }, [fetchGraph]);
 
   useEffect(() => {
@@ -225,7 +269,7 @@ export function useEffortGraphLive(
         setNodes(graph.nodes);
         setEdges(graph.edges);
         setGeneration(nextGeneration);
-        setStatus('live');
+        setStatus(liveStatusAfterSuccessfulFetch(graph.relationsKnown));
         setError(null);
       } catch (cause) {
         if (cancelled) return;
@@ -275,7 +319,7 @@ export function useEffortGraphLive(
         // first commit, keep `error` so empty-state copy still treats it as
         // unreachable Flatbread.
         setStatus(
-          committedGenerationRef.current !== null ? 'disconnected' : 'error'
+          liveStatusAfterTransportLoss(committedGenerationRef.current !== null)
         );
         setError(new Error('Lost connection to Flatbread live events'));
         scheduleReconnect();

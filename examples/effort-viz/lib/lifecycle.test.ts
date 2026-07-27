@@ -43,6 +43,28 @@ describe('effectiveLifecycle', () => {
     assert.equal(effectiveLifecycle(decision, index).aliveness, 'retired');
   });
 
+  test('derives rejection from a rejected_by edge even when accepted', () => {
+    const decision = node({ id: 'dec-1', kind: 'decision', state: 'accepted' });
+    const index = buildLifecycleIndex([edge('rejected_by', 'dec-1', 'dec-2')]);
+
+    assert.deepEqual(effectiveLifecycle(decision, index), {
+      state: 'rejected',
+      aliveness: 'retired',
+      overturnedByEdge: true,
+    });
+  });
+
+  test('keeps frontmatter rejection priority over a rejected_by edge', () => {
+    const decision = node({ id: 'dec-1', kind: 'decision', state: 'rejected' });
+    const index = buildLifecycleIndex([edge('rejected_by', 'dec-1', 'dec-2')]);
+
+    assert.deepEqual(effectiveLifecycle(decision, index), {
+      state: 'rejected',
+      aliveness: 'retired',
+      overturnedByEdge: false,
+    });
+  });
+
   test('invalidation outranks supersession', () => {
     const finding = node({ id: 'fnd-1', kind: 'finding' });
     const index = buildLifecycleIndex([
