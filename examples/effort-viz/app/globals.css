@@ -87,29 +87,28 @@ body {
   padding-right: var(--safe-area-right);
 }
 
-/* Subtle atmospheric field behind the graph — not a flat wash. */
-body::before {
+/*
+ * Subtle atmospheric field behind the graph — not a flat wash. This lives on
+ * the graph region rather than `body`, because the app root paints an opaque
+ * background that would occlude anything behind it.
+ */
+.atmosphere::before {
   content: '';
-  position: fixed;
+  position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 0;
   background:
     radial-gradient(
-      120% 80% at 12% -10%,
-      color-mix(in srgb, var(--accent) 10%, transparent),
-      transparent 55%
+      110% 75% at 10% -12%,
+      color-mix(in srgb, var(--accent) 4%, transparent),
+      transparent 52%
     ),
     radial-gradient(
-      90% 70% at 88% 110%,
-      color-mix(in srgb, var(--foreground) 4%, transparent),
-      transparent 50%
+      85% 65% at 92% 112%,
+      color-mix(in srgb, var(--foreground) 3%, transparent),
+      transparent 48%
     );
-}
-
-body > * {
-  position: relative;
-  z-index: 1;
 }
 
 ::selection {
@@ -123,38 +122,47 @@ canvas {
   touch-action: none;
 }
 
-/* Floating DOM labels anchored to graph nodes. Kept crisp + understated. */
+/*
+ * Floating DOM labels anchored to graph nodes.
+ *
+ * Weight is constant at every state: these are repositioned every frame, and a
+ * weight change on hover or selection reflows the text, shifting the label out
+ * from under the pointer. State reads through border and background instead.
+ * No backdrop blur either — one blurred DOM node per label over a canvas that
+ * repaints every frame is the most expensive way to buy legibility.
+ */
 .effort-label {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
-  font-size: 10.5px;
-  line-height: 1.15;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.2;
   letter-spacing: -0.005em;
-  padding: 3px 7px;
+  padding: 3px 8px;
   border-radius: 999px;
   color: var(--foreground);
-  background: color-mix(in srgb, var(--background) 82%, transparent);
+  background: color-mix(in srgb, var(--background) 94%, transparent);
   border: 1px solid var(--border);
   white-space: nowrap;
-  max-width: min(200px, 42vw);
+  max-width: min(216px, 42vw);
   overflow: hidden;
   text-overflow: ellipsis;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   transform-origin: center bottom;
 }
 
-.effort-label-primary {
-  font-weight: 600;
+/* Effort hubs anchor their cluster, so their labels carry more weight. */
+.effort-label-hub {
+  font-size: 12px;
+  color: var(--foreground);
+  border-color: color-mix(in srgb, var(--foreground) 18%, transparent);
 }
 
-.effort-label-selected {
-  font-weight: 600;
-  border-color: color-mix(in srgb, var(--foreground) 40%, transparent);
-  box-shadow: 0 1px 0 rgb(0 0 0 / 4%);
+.effort-label-active {
+  border-color: color-mix(in srgb, var(--foreground) 45%, transparent);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .effort-label {
-    transition: none;
-  }
+.effort-label-retired {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--muted) 60%, transparent);
 }

@@ -15,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Effort Graph',
-  description: 'Interactive visualization of Flatbread effort graph data',
+  description:
+    "Live view of Flatbread's Effort Graph — Efforts, Issues, Findings, Decisions, Constraints, and Risks with typed relations.",
 };
 
 export const viewport: Viewport = {

@@ -115,8 +115,22 @@ export interface SimulationOptions {
   spring?: number;
   /** Pull toward the mean position of same-effort neighbors. */
   clusterCohesion?: number;
+  /**
+   * Push whole effort clusters apart when their discs overlap. Position is the
+   * channel that carries cluster identity, so interleaved clusters are a
+   * legibility failure, not just a cosmetic one.
+   */
+  clusterSeparation?: number;
+  /** Extra world-space gap enforced between two cluster discs. */
+  clusterGap?: number;
   /** Global pull toward the world origin (keeps things on screen). */
   centering?: number;
+  /**
+   * Horizontal centering strength as a fraction of the vertical one. Below 1
+   * the graph settles wider than tall, which matches landscape viewports and
+   * keeps the camera fit from being height-constrained.
+   */
+  centeringAspect?: number;
   /** Fraction of velocity retained per second (0..1). */
   damping?: number;
   /** Extra padding added on top of `r1+r2` for repulsion / edge rest length. */

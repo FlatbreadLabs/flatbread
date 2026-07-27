@@ -52,4 +52,68 @@ describe('normalizeEffortGraph', () => {
     assert.equal(byId.get('dec-1')?.body, undefined);
     assert.equal(byId.get('dec-2')?.body, undefined);
   });
+
+  it('keeps one directed edge for a supersession pair', () => {
+    // The writer materializes both sides. Rendering both drew two opposing
+    // arrows between the same records and listed the relation twice.
+    const data: EffortGraphQueryResult = {
+      ...emptyGraph(),
+      allDecisions: [
+        {
+          id: 'dec-old',
+          title: 'Old',
+          superseded_by: [{ id: 'dec-new' }],
+        },
+        {
+          id: 'dec-new',
+          title: 'New',
+          supersedes: [{ id: 'dec-old' }],
+        },
+      ],
+    };
+
+    const graph = normalizeEffortGraph(data);
+    const pair = graph.edges.filter(
+      (e) => e.kind === 'supersedes' || e.kind === 'superseded_by'
+    );
+
+    assert.equal(pair.length, 1);
+    assert.equal(pair[0].kind, 'supersedes');
+    assert.equal(pair[0].source, 'dec-new');
+    assert.equal(pair[0].target, 'dec-old');
+  });
+
+  it('keeps a lone superseded_by when the forward edge is absent', () => {
+    const data: EffortGraphQueryResult = {
+      ...emptyGraph(),
+      allDecisions: [
+        { id: 'dec-old', title: 'Old', superseded_by: [{ id: 'dec-new' }] },
+        { id: 'dec-new', title: 'New' },
+      ],
+    };
+
+    const graph = normalizeEffortGraph(data);
+    const pair = graph.edges.filter(
+      (e) => e.kind === 'supersedes' || e.kind === 'superseded_by'
+    );
+
+    assert.equal(pair.length, 1);
+    assert.equal(pair[0].kind, 'superseded_by');
+  });
+
+  it('keeps superseded_by when the superseder is absent from the query', () => {
+    const data: EffortGraphQueryResult = {
+      ...emptyGraph(),
+      allDecisions: [
+        { id: 'dec-old', title: 'Old', superseded_by: [{ id: 'dec-missing' }] },
+      ],
+    };
+
+    const graph = normalizeEffortGraph(data);
+    const pair = graph.edges.filter((e) => e.kind === 'superseded_by');
+
+    assert.equal(pair.length, 1);
+    assert.equal(pair[0].source, 'dec-old');
+    assert.equal(pair[0].target, 'dec-missing');
+  });
 });

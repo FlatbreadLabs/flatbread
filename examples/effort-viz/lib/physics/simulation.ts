@@ -19,8 +19,10 @@
 import {
   applyCentering,
   applyClusterCohesion,
+  applyClusterSeparation,
   applyEdgeSprings,
   applyRepulsion,
+  computeClusters,
   ensureScratch,
   integrate,
   type ForceScratch,
@@ -41,11 +43,17 @@ const DEFAULTS: Required<SimulationOptions> = {
   repulsion: 40,
   spring: 4,
   clusterCohesion: 0.6,
-  centering: 0.05,
+  clusterSeparation: 2.2,
+  // Enough gap to keep clusters and their titles distinct, no more: the
+  // bounding box drives the camera fit, so every unit of empty space between
+  // clusters is paid for in glyph size.
+  clusterGap: 26,
+  centering: 0.04,
+  centeringAspect: 0.35,
   damping: 2.2,
   restLengthPad: 6,
   maxStep: 40,
-  effortHubRadius: 14,
+  effortHubRadius: 10.5,
   recordRadius: 6,
   growthRate: 1.2,
   retractRate: 1.8,
@@ -278,10 +286,12 @@ export function createGraphSimulation(options: SimulationOptions = {}): GraphSim
 
     if (nodes.length > 0) {
       scratch = ensureScratch(scratch, nodes.length);
+      computeClusters(nodes, scratch);
       applyRepulsion(nodes, scratch, opts.repulsion, opts.restLengthPad);
       applyEdgeSprings(edges, nodes, indexById, scratch, opts.spring, opts.restLengthPad);
       applyClusterCohesion(nodes, scratch, opts.clusterCohesion);
-      applyCentering(nodes, scratch, opts.centering);
+      applyClusterSeparation(scratch, opts.clusterSeparation, opts.clusterGap);
+      applyCentering(nodes, scratch, opts.centering, opts.centeringAspect);
       integrate(nodes, scratch, clampedDt, opts.damping, opts.maxStep);
     }
 

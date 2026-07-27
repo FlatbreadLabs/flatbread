@@ -55,6 +55,7 @@ function fakeReloader(): {
       return { status: 'committed' as const, generation };
     },
     waitForGeneration: async () => snapshot,
+    subscribe: () => () => {},
   } as LiveSchemaReloader;
   return {
     reloader,

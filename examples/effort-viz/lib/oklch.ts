@@ -1,5 +1,3 @@
-import type { GraphNodeKind } from './types';
-
 export interface Oklch {
   l: number;
   c: number;
@@ -15,15 +13,6 @@ export interface OklchColor {
   three: number;
 }
 
-const KIND_LIGHTNESS_OFFSET: Record<GraphNodeKind, number> = {
-  effort: 0.06,
-  issue: 0,
-  finding: -0.02,
-  decision: 0.03,
-  constraint: -0.04,
-  risk: -0.01,
-};
-
 function hashId(input: string): number {
   let hash = 2166136261;
   for (let index = 0; index < input.length; index += 1) {
@@ -37,32 +26,47 @@ function unit(input: string): number {
   return (hashId(input) % 10_000) / 10_000;
 }
 
+/**
+ * Cluster tint for one Effort, hashed from its id onto a coarse hue ring so
+ * two Efforts are unlikely to land on visually identical tints.
+ *
+ * This appears in exactly two places — the core of an Effort hub and its
+ * legend chip — never on a record glyph. Records own hue for their primitive,
+ * and a tint competing with them is what made every node in a cluster look
+ * the same in the first place.
+ */
 export function effortOklch(id: string, mode: ColorMode = 'light'): Oklch {
-  const hue = unit(`${id}:h`) * 360;
-  const chroma = 0.18 + unit(`${id}:c`) * 0.04;
-  const lightness =
-    mode === 'light'
-      ? 0.62 + unit(`${id}:l`) * 0.1
-      : 0.58 + unit(`${id}:l`) * 0.08;
-
-  return { l: lightness, c: chroma, h: hue };
+  const hue = Math.round(unit(`${id}:h`) * 12) * 30;
+  const lightness = mode === 'light' ? 0.52 : 0.7;
+  return { l: lightness, c: 0.12, h: hue };
 }
 
-export function nodeOklch(
-  effortId: string,
-  kind: GraphNodeKind,
-  mode: ColorMode = 'light'
-): Oklch {
-  const base = effortOklch(effortId, mode);
-  const offset = KIND_LIGHTNESS_OFFSET[kind] ?? 0;
-  const adjusted =
-    mode === 'light'
-      ? base.l + offset
-      : base.l - offset * 0.45;
+/**
+ * Neutral structural tone for hub rings. Deliberately a touch quieter than a
+ * record in each mode: a hub is scaffolding for its cluster, and it already
+ * commands attention through size and silhouette.
+ */
+export function structuralOklch(mode: ColorMode): Oklch {
+  return mode === 'light' ? { l: 0.5, c: 0.008, h: 260 } : { l: 0.56, c: 0.008, h: 260 };
+}
 
+/**
+ * Desaturate and lift a colour toward its background to mark a record as
+ * retired — rejected, superseded, invalidated, or wontfix.
+ *
+ * Chroma is cut rather than erased: a retired Decision stays recognisably
+ * violet, so the primitive is still readable while the record clearly reads
+ * as no longer live. Draining it fully to grey would collide with the
+ * near-neutral Effort hub tint.
+ */
+export function retiredOklch(base: Oklch, mode: ColorMode): Oklch {
   return {
-    ...base,
-    l: clamp(adjusted, 0.35, 0.85),
+    // Light mode gets a smaller push: white leaves much less room below a
+    // record's lightness than black leaves above it, so the same offset drops
+    // a retired glyph under the 3:1 non-text contrast floor.
+    l: mode === 'light' ? Math.min(base.l + 0.06, 0.7) : Math.max(base.l - 0.14, 0.44),
+    c: base.c * 0.34,
+    h: base.h,
   };
 }
 
@@ -125,20 +129,10 @@ export function effortColor(
   id: string,
   mode: ColorMode = 'light'
 ): OklchColor {
-  const oklch = effortOklch(id, mode);
-  return toColor(oklch);
+  return toColor(effortOklch(id, mode));
 }
 
-export function nodeColor(
-  effortId: string,
-  kind: GraphNodeKind,
-  mode: ColorMode = 'light'
-): OklchColor {
-  const oklch = nodeOklch(effortId, kind, mode);
-  return toColor(oklch);
-}
-
-function toColor(oklch: Oklch): OklchColor {
+export function toColor(oklch: Oklch): OklchColor {
   return {
     oklch,
     css: oklchCss(oklch),

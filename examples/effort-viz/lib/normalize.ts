@@ -151,6 +151,33 @@ function addRecordNode(
   }
 }
 
+/**
+ * Drop reverse projections that duplicate an authoritative forward edge.
+ *
+ * The writer materializes both sides of a supersession: the newer record gets
+ * `supersedes` and the older one gets `superseded_by`. Rendering both draws two
+ * opposing arrows between the same pair and lists the relation twice in the
+ * drawer, which reads as a mutual link when the datamodel has exactly one
+ * authoritative direction.
+ */
+function dropRedundantReverseEdges(edges: Map<string, GraphEdge>): void {
+  for (const edge of [...edges.values()]) {
+    if (edge.kind !== 'superseded_by') continue;
+    if (edges.has(edgeId('supersedes', edge.target, edge.source))) {
+      edges.delete(edge.id);
+    }
+  }
+}
+
+/*
+ * Edges pointing at records the query didn't return are deliberately kept.
+ * They render nothing (the renderer bails on a path shorter than two points),
+ * but a `superseded_by` whose superseder is missing is still the only signal
+ * that the record was replaced — dropping it for tidiness would make a retired
+ * record read as live, which is the failure this whole encoding exists to
+ * prevent.
+ */
+
 export function normalizeEffortGraph(data: EffortGraphQueryResult): EffortGraph {
   const nodes = new Map<string, GraphNode>();
   const edges = new Map<string, GraphEdge>();
@@ -175,6 +202,8 @@ export function normalizeEffortGraph(data: EffortGraphQueryResult): EffortGraph 
       addRecordNode(nodes, edges, kind, asRelationRecord(record));
     }
   }
+
+  dropRedundantReverseEdges(edges);
 
   return {
     nodes: [...nodes.values()],

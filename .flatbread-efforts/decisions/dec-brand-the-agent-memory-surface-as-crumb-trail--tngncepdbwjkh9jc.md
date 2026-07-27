@@ -9,6 +9,8 @@ derives_from:
   - fnd-workshop-shortlist-favors-crumb-graph-over-yeast--tv3ydt3wfb3n4y0g
 supersedes:
   - dec-brand-the-agent-memory-surface-as-crumb-graph--fvskcvagx3a7sybe
+superseded_by:
+  - dec-keep-effort-graph-as-the-product-name--r5wr2vdjwjs9bs13
 ---
 
 Supersedes Crumb Graph as the product name. Same system and deferred implementation; product brand is now Crumb Trail, with Crumb Graph retained as the datamodel explainer.

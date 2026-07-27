@@ -26,6 +26,7 @@ function fakeReloader(): LiveSchemaReloader {
       generation: ++generation,
     }),
     waitForGeneration: async () => ({} as SchemaSnapshot),
+    subscribe: () => () => {},
   };
 }
 
