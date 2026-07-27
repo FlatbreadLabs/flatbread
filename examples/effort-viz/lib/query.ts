@@ -34,7 +34,15 @@ const RELATION_FIELDS: Record<CollectionName, string[]> = {
     'evidence',
   ],
   allConstraints: ['derives_from', 'supersedes', 'superseded_by'],
-  allRisks: ['derives_from', 'mitigated_by', 'evidence'],
+  // Risk has no superseded frontmatter state; supersedes / superseded_by edges
+  // are the only retirement signal, same as Finding and Constraint.
+  allRisks: [
+    'derives_from',
+    'mitigated_by',
+    'supersedes',
+    'superseded_by',
+    'evidence',
+  ],
 };
 
 /** Scalar fields we always want, and always exist. */
@@ -101,11 +109,21 @@ export function buildEffortGraphQuery(schema: SchemaProbeResult | null): string 
     const available = new Set(
       (schema?.[name]?.fields ?? []).map((field) => field.name)
     );
-    const relations = RELATION_FIELDS[name]
-      .filter((field) => schema === null || available.has(field))
-      .map((field) =>
-        REF_SUBSELECTION.has(field) ? `      ${field} { id }` : `      ${field}`
-      );
+    // Without a schema probe, select only scalars (+ effort / _content).
+    // Relation fields appear in Flatbread's schema only after some record uses
+    // them; selecting the full RELATION_FIELDS catalog is a hard GraphQL error
+    // against a live server. Callers should pass SCHEMA_PROBE_QUERY results
+    // (or a sticky last-good probe) once introspection succeeds.
+    const relations =
+      schema === null
+        ? []
+        : RELATION_FIELDS[name]
+            .filter((field) => available.has(field))
+            .map((field) =>
+              REF_SUBSELECTION.has(field)
+                ? `      ${field} { id }`
+                : `      ${field}`
+            );
 
     return [
       `    ${name} {`,
