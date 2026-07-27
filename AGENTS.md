@@ -2,29 +2,33 @@
 
 ## Plain-language output
 
-Apply this style to every written output: chat responses, plans, PR titles and
-descriptions, commit messages, documentation, and code comments. Write for
-readers who understand software but are new to Flatbread and the change at
-hand.
+Write every agent-facing text in clear, concrete English in the manner of
+George Orwell. This covers chat replies, plans, pull request titles and
+bodies, commit messages, documentation, and code comments. Write for readers
+who understand software but are new to Flatbread and the change at hand.
 
-- Lead with what changed, why it matters, or what the reader should do.
-- Prefer short, concrete sentences with a clear subject and action.
-- Explain a Flatbread-specific term the first time it appears. Keep exact API,
-  CLI, field, and record names in code formatting.
+The always-on Cursor rule `.cursor/rules/orwell-prose.mdc` holds the full
+style contract. In short:
+
+- Prefer short words, short sentences, and the active voice.
+- Cut any word that does no work. Prefer everyday English to jargon.
+- Lead with what changed, why it matters, or what the reader must do.
+- Explain a Flatbread term the first time it appears. Keep exact API, CLI,
+  field, and record names in code formatting.
 - Describe behavior directly: say what creates, links, stores, reads, or
   validates what.
-- Present multi-step workflows as ordered steps.
+- Present multi-step work as ordered steps.
 
 Avoid unexplained internal shorthand and abstract labels such as `epistemic`,
 `homogeneous refs`, `retro-link`, `roll up`, `dogfood`, `hero`, `surface`, and
-`stack`. Use one only when technical accuracy requires it, and define it in
-the same sentence.
+`stack`. Use one only when accuracy demands it, and define it in the same
+sentence.
 
-Before delivering written output, confirm that a reader can answer:
+Before you send text, make sure a reader can answer:
 
 1. What changed?
 2. What does each named thing do?
-3. What action should they take, and in what order?
+3. What must they do next, and in what order?
 
 ## Cursor Cloud specific instructions
 
