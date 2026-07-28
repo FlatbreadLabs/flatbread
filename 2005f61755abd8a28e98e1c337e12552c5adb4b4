@@ -1,1 +1,7 @@
-CI: sync .agents skill projection with package source; tolerate @parcel/watcher EINVAL on Node 22 unsubscribe teardown
+Revision history for #232:
+
+rev 3 (content) 2026-07-28 10:08 UTC — CI: sync .agents skill projection with package source; tolerate @parcel/watcher EINVAL on Node 22 unsubscribe teardown
+rev 2 (content) 2026-07-28 10:01 UTC — Drop monorepo build/play:efforts instructions from the packaged public skill; keep contributor tip only in .agents.
+rev 1 (initial) 2026-07-28 10:01 UTC
+
+<!-- mergify-revision-data: {"schema_version":1,"pull_number":232,"entries":[{"number":1,"change_type":"initial","old_sha":null,"new_sha":"7b6d7db39458d73e3e3493a4c22ec61a4b76a6b1","timestamp_iso":"2026-07-28T10:01:49Z","reason":"","replay_sha":null,"compare_url":null},{"number":2,"change_type":"content","old_sha":"7b6d7db39458d73e3e3493a4c22ec61a4b76a6b1","new_sha":"58a9a82f780095dd0544b4661d7a2b0d9e94d306","timestamp_iso":"2026-07-28T10:01:49Z","reason":"Drop monorepo build/play:efforts instructions from the packaged public skill; keep contributor tip only in .agents.","replay_sha":"e9409f382b87efbbe5296f92406821eb52cd6e47","compare_url":"https://github.com/flatbreadlabs/flatbread/compare/7b6d7db39458d73e3e3493a4c22ec61a4b76a6b1...e9409f382b87efbbe5296f92406821eb52cd6e47"},{"number":3,"change_type":"content","old_sha":"58a9a82f780095dd0544b4661d7a2b0d9e94d306","new_sha":"2005f61755abd8a28e98e1c337e12552c5adb4b4","timestamp_iso":"2026-07-28T10:08:29Z","reason":"CI: sync .agents skill projection with package source; tolerate @parcel/watcher EINVAL on Node 22 unsubscribe teardown","replay_sha":null,"compare_url":"https://github.com/flatbreadlabs/flatbread/compare/58a9a82f780095dd0544b4661d7a2b0d9e94d306...2005f61755abd8a28e98e1c337e12552c5adb4b4"}]} -->
