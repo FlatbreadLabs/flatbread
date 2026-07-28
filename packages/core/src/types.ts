@@ -175,6 +175,12 @@ export interface LiveSchemaReloader {
   notifyChanged(change: ChangedPaths): Promise<ReindexResult>;
   replaceConfig(config: LoadedFlatbreadConfig): Promise<ReindexResult>;
   waitForGeneration(minimumGeneration: number): Promise<SchemaSnapshot>;
+  /**
+   * Subscribe to committed generation advances. The listener is called after
+   * each successful commit (not for the initial generation-0 snapshot).
+   * Returns an unsubscribe function.
+   */
+  subscribe(listener: (snapshot: SchemaSnapshot) => void): () => void;
 }
 
 export type SourcePlugin<

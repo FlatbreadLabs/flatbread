@@ -108,6 +108,63 @@ export async function startGraphqlServer(
       if (old) old.stopWhenDrained();
     },
   });
+  app.get('/events', (req, res) => {
+    res.status(200).set({
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      // Disable proxy buffering (e.g. nginx) so events flush immediately.
+      'X-Accel-Buffering': 'no',
+    });
+    res.flushHeaders?.();
+
+    let disconnected = false;
+    let lastSeen = reloader.generation;
+    res.write(
+      `event: ready\ndata: ${JSON.stringify({ generation: lastSeen })}\n\n`
+    );
+
+    const keepalive = setInterval(() => {
+      if (disconnected) return;
+      try {
+        res.write(`: keepalive\n\n`);
+      } catch {
+        // Peer went away between checks; the close handler will finalize.
+      }
+    }, 20_000);
+    if (typeof keepalive.unref === 'function') keepalive.unref();
+
+    let unsubscribe = () => {};
+    const cleanup = () => {
+      if (disconnected) return;
+      disconnected = true;
+      clearInterval(keepalive);
+      unsubscribe();
+      try {
+        res.end();
+      } catch {
+        // Ignore: connection already torn down.
+      }
+    };
+
+    unsubscribe = reloader.subscribe((snapshot) => {
+      if (disconnected || snapshot.generation <= lastSeen) return;
+      lastSeen = snapshot.generation;
+      try {
+        res.write(
+          `event: generation\ndata: ${JSON.stringify({
+            generation: lastSeen,
+          })}\n\n`
+        );
+      } catch {
+        cleanup();
+      }
+    });
+
+    req.on('close', cleanup);
+    res.on('close', cleanup);
+    res.on('error', cleanup);
+  });
   app.use((req, res, next) => currentMiddleware(req, res, next));
   const effortGraph = await composition?.attach(reloader);
   if (effortGraph) {
