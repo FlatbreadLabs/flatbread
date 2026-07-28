@@ -89,16 +89,14 @@ client polling loops. Semantic changes go through `flatbread effort write`.
 
 With a complete `effortGraphContent()` preset in config, Flatbread serves the
 content-relation explorer automatically (`@flatbread/explorer` ships with
-`flatbread`). In this monorepo, build explorer assets first
-(`pnpm --filter @flatbread/explorer build` or `pnpm play:efforts`):
+`flatbread`):
 
 ```bash
 flatbread start --watch --open
 ```
 
-Mounting and `--open` share the same assets gate: the explorer mounts at `/`
-only when the preset matches **and** packaged SPA assets are present;
-otherwise Flatbread skips the SPA mount and `--open` falls back to
+Mounting and `--open` share the same assets gate: if the packaged SPA assets
+are missing, Flatbread skips the explorer mount and `--open` falls back to
 `/graphql`.
 
 - Explorer UI (when mounted): `http://localhost:5057/`

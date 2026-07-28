@@ -284,7 +284,14 @@ export async function startGraphqlServer(
       if (closed) return;
       closed = true;
       await coordinator?.dispose();
-      await subscription?.unsubscribe();
+      // @parcel/watcher can throw EINVAL ("Unable to remove watcher") on Node
+      // 22 when the native handle is already gone during teardown.
+      try {
+        await subscription?.unsubscribe();
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (!message.includes('Unable to remove watcher')) throw error;
+      }
       await current?.stop();
       await new Promise<void>((closeResolve) => {
         if (httpServer.listening) httpServer.close(() => closeResolve());
