@@ -20,7 +20,57 @@ const kinds: Record<string, PrimitiveKind> = {
   WriteDecision: 'decision',
   WriteConstraint: 'constraint',
   WriteRisk: 'risk',
+  WriteCitation: 'citation',
+  WriteBlob: 'blob',
 };
+
+const EPISTEMIC_CREATE = new Set([
+  'issue',
+  'finding',
+  'decision',
+  'constraint',
+  'risk',
+]);
+
+const CITATION_BLOB_FORBIDDEN_KEYS = [
+  'cites',
+  'derives_from',
+  'supersedes',
+  'invalidates',
+] as const;
+
+function assertNoCitationBlobEdges(
+  type: string,
+  input: Record<string, unknown>
+): void {
+  const present = CITATION_BLOB_FORBIDDEN_KEYS.filter((key) => key in input);
+  if (present.length)
+    throw new EffortGraphValidationError(
+      `${type} does not accept ${present.join(
+        ', '
+      )}; relation fields are only valid on Issue, Finding, Decision, Constraint, or Risk records.`
+    );
+}
+
+function assertCites(
+  get: (
+    id: string
+  ) => NonNullable<ReturnType<EffortGraphSnapshot['getRecord']>>,
+  effortId: string,
+  cites: string[] | undefined
+): void {
+  for (const citeId of cites ?? []) {
+    const target = get(citeId);
+    if (target.kind !== 'citation')
+      throw new EffortGraphValidationError(
+        `cites must target a Citation, got ${target.kind} (${citeId})`
+      );
+    if (target.frontmatter.effort !== effortId)
+      throw new EffortGraphValidationError(
+        `cites target ${citeId} belongs to a different effort`
+      );
+  }
+}
 
 export function planMutation(
   input: EffortGraphMutation,
@@ -60,6 +110,10 @@ export function planMutation(
     });
   };
   if (input.type === 'CreateEffort') {
+    if ('cites' in input)
+      throw new EffortGraphValidationError(
+        'CreateEffort does not accept cites; create the Effort before its Citations.'
+      );
     const id =
       input.id ?? generateArtifactId('effort', input.title, randomBytes);
     if (!validateArtifactId(id, 'effort') || snapshot.hasId(id))
@@ -106,13 +160,35 @@ export function planMutation(
   }
   if (input.type in kinds) {
     const kind = kinds[input.type];
-    const raw = input as any;
+    const raw = input as Record<string, unknown> & {
+      id?: string;
+      title: string;
+      body: string;
+      effort: string;
+      created_at?: string;
+      blob?: string;
+      cites?: string[];
+    };
+    if (kind === 'blob' || kind === 'citation')
+      assertNoCitationBlobEdges(input.type, raw);
     const id = raw.id ?? generateArtifactId(kind, raw.title, randomBytes);
     if (!validateArtifactId(id, kind) || snapshot.hasId(id))
       throw new EffortGraphValidationError('Invalid or duplicate id');
     const effort = get(raw.effort);
     if (effort.kind !== 'effort')
       throw new EffortGraphValidationError('Invalid effort');
+    if (kind === 'citation' && raw.blob !== undefined) {
+      const blob = get(raw.blob);
+      if (blob.kind !== 'blob')
+        throw new EffortGraphValidationError(
+          `Citation.blob must target a Blob, got ${blob.kind}`
+        );
+      if (blob.frontmatter.effort !== raw.effort)
+        throw new EffortGraphValidationError(
+          `Citation.blob ${raw.blob} belongs to a different effort`
+        );
+    }
+    if (EPISTEMIC_CREATE.has(kind)) assertCites(get, raw.effort, raw.cites);
     const fm: Record<string, unknown> = {
       ...raw,
       id,
@@ -123,6 +199,12 @@ export function planMutation(
     if (kind === 'issue') fm.status = 'open';
     if (kind === 'decision') fm.state = 'proposed';
     if (kind === 'risk') fm.state = 'open';
+    if (kind === 'blob' || kind === 'citation') {
+      delete fm.cites;
+      delete fm.derives_from;
+      delete fm.supersedes;
+      delete fm.invalidates;
+    }
     add(id, kind, fm, raw.body, 'create');
     for (const edge of ['supersedes', 'invalidates'] as const)
       for (const targetId of (fm[edge] as string[] | undefined) ?? []) {

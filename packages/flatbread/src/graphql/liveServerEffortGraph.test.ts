@@ -7,6 +7,7 @@ import markdownTransformer from '@flatbread/transformer-markdown';
 import { initializeConfig } from '@flatbread/core';
 import { effortGraphContent } from '@flatbread/effort-graph';
 import type { ConfigResult, LoadedFlatbreadConfig } from '@flatbread/core';
+import type { EffortGraphMutation } from '@flatbread/effort-graph';
 import { startGraphqlServer } from './liveServer.js';
 
 async function makeDir() {
@@ -19,6 +20,8 @@ async function makeDir() {
     'decisions',
     'constraints',
     'risks',
+    'citations',
+    'blobs',
   ])
     await mkdir(join(root, path), { recursive: true });
   await mkdir(join(root, 'plain'), { recursive: true });
@@ -86,6 +89,124 @@ test.serial(
     });
     t.teardown(() => server.close());
     t.is(server.effortGraph, undefined);
+  }
+);
+
+test.serial(
+  'Citation and Blob mutations are queryable through the live GraphQL bridge',
+  async (t) => {
+    const fixture = await makeDir();
+    t.teardown(() => rm(fixture.dir, { recursive: true, force: true }));
+    const server = await startGraphqlServer({
+      config: config(fixture.relativeRoot, true),
+      port: 0,
+    });
+    t.teardown(() => server.close());
+    await t.throwsAsync(
+      server.effortGraph!.writer.mutate({
+        type: 'CreateEffort',
+        title: 'Invalid',
+        body: '',
+        cites: ['cit-paper--0123456789abcdef'],
+      } as unknown as EffortGraphMutation),
+      { message: /CreateEffort does not accept cites/ }
+    );
+    const effort = await server.effortGraph!.writer.mutate({
+      type: 'CreateEffort',
+      title: 'GraphQL cite chain',
+      body: '',
+    });
+    const effortId = effort.artifacts[0].id;
+    const otherEffort = await server.effortGraph!.writer.mutate({
+      type: 'CreateEffort',
+      title: 'Other chain',
+      body: '',
+    });
+    const otherEffortId = otherEffort.artifacts[0].id;
+    const blob = await server.effortGraph!.writer.mutate({
+      type: 'WriteBlob',
+      effort: effortId,
+      title: 'Payload',
+      body: '# longform research\n',
+      kind: 'markdown',
+    });
+    const blobId = blob.artifacts[0].id;
+    const citation = await server.effortGraph!.writer.mutate({
+      type: 'WriteCitation',
+      effort: effortId,
+      title: 'Paper',
+      body: 'https://example.com/paper',
+      role: 'evidence',
+      blob: blobId,
+    });
+    await server.effortGraph!.waitForCommittedGeneration(citation.generation);
+    const response = await query(
+      server.port,
+      `{ allCitations { title blob { id title } } allBlobs { id title } }`
+    );
+    t.deepEqual(response.errors, undefined);
+    t.deepEqual(response.data?.allCitations, [
+      { title: 'Paper', blob: { id: blobId, title: 'Payload' } },
+    ]);
+    t.deepEqual(response.data?.allBlobs, [{ id: blobId, title: 'Payload' }]);
+    const foreignBlob = await server.effortGraph!.writer.mutate({
+      type: 'WriteBlob',
+      effort: otherEffortId,
+      title: 'Foreign payload',
+      body: '',
+    });
+    await t.throwsAsync(
+      server.effortGraph!.writer.mutate({
+        type: 'WriteCitation',
+        effort: effortId,
+        title: 'Bad source',
+        body: 'https://example.com/bad-source',
+        blob: foreignBlob.artifacts[0].id,
+      }),
+      {
+        message: new RegExp(
+          `Citation\\.blob ${foreignBlob.artifacts[0].id} belongs to a different effort`
+        ),
+      }
+    );
+    const foreignCitation = await server.effortGraph!.writer.mutate({
+      type: 'WriteCitation',
+      effort: otherEffortId,
+      title: 'Foreign paper',
+      body: 'https://example.com/foreign-paper',
+    });
+    await t.throwsAsync(
+      server.effortGraph!.writer.mutate({
+        type: 'WriteFinding',
+        effort: effortId,
+        title: 'Bad cite',
+        body: '',
+        kind: 'measurement',
+        cites: [foreignCitation.artifacts[0].id],
+      }),
+      {
+        message: new RegExp(
+          `cites target ${foreignCitation.artifacts[0].id} belongs to a different effort`
+        ),
+      }
+    );
+    const finding = await server.effortGraph!.writer.mutate({
+      type: 'WriteFinding',
+      effort: effortId,
+      title: 'Measured',
+      body: 'short',
+      kind: 'measurement',
+      cites: [citation.artifacts[0].id],
+    });
+    await server.effortGraph!.waitForCommittedGeneration(finding.generation);
+    const findingResponse = await query(
+      server.port,
+      `{ allFindings { title cites { id } } }`
+    );
+    t.deepEqual(findingResponse.errors, undefined);
+    t.deepEqual(findingResponse.data?.allFindings, [
+      { title: 'Measured', cites: [{ id: citation.artifacts[0].id }] },
+    ]);
   }
 );
 

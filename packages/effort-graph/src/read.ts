@@ -11,6 +11,7 @@ export const READ_RELATIONS = [
   'mitigated_by',
   'resolved_by',
   'evidence',
+  'cites',
 ] as const;
 
 export interface ReadOptions {

@@ -14,9 +14,11 @@ const kinds: [PrimitiveKind, string][] = [
   ['decision', 'dec'],
   ['constraint', 'con'],
   ['risk', 'rsk'],
+  ['blob', 'blb'],
+  ['citation', 'cit'],
 ];
 
-test('generates valid ids for all six prefixes', (t) => {
+test('generates valid ids for all eight prefixes', (t) => {
   for (const [kind, prefix] of kinds) {
     const id = generateArtifactId(kind, 'Some Great Title');
     t.true(id.startsWith(`${prefix}-some-great-title--`));

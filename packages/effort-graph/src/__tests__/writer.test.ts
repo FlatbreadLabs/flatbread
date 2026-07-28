@@ -6,6 +6,7 @@ import matter from 'gray-matter';
 import { createEffortGraphWriter } from '../writer.js';
 import { EffortGraphValidationError } from '../errors.js';
 import type { EffortGraphWriter, MutationResult } from '../types.js';
+import type { EffortGraphMutation } from '../schemas.js';
 
 async function makeWriter(): Promise<{
   root: string;
@@ -23,6 +24,56 @@ async function readFrontmatter(root: string, relativePath: string) {
 function soleId(result: MutationResult): string {
   return result.artifacts[0].id;
 }
+
+test('CreateEffort rejects cites through the writer', async (t) => {
+  const { writer } = await makeWriter();
+  await t.throwsAsync(
+    writer.mutate({
+      type: 'CreateEffort',
+      title: 'E',
+      body: '',
+      cites: ['cit-paper--0123456789abcdef'],
+    } as unknown as EffortGraphMutation),
+    {
+      instanceOf: EffortGraphValidationError,
+      message:
+        'CreateEffort does not accept cites; create the Effort before its Citations.',
+    }
+  );
+});
+
+test('WriteCitation and WriteBlob reject cites through the writer', async (t) => {
+  const { writer } = await makeWriter();
+  const effort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E', body: '' })
+  );
+  await t.throwsAsync(
+    writer.mutate({
+      type: 'WriteCitation',
+      effort,
+      title: 'Paper',
+      body: 'https://example.com/paper',
+      cites: ['cit-other--0123456789abcdef'],
+    } as unknown as EffortGraphMutation),
+    {
+      instanceOf: EffortGraphValidationError,
+      message: /WriteCitation does not accept cites/,
+    }
+  );
+  await t.throwsAsync(
+    writer.mutate({
+      type: 'WriteBlob',
+      effort,
+      title: 'Payload',
+      body: '# longform research\n',
+      cites: ['cit-paper--0123456789abcdef'],
+    } as unknown as EffortGraphMutation),
+    {
+      instanceOf: EffortGraphValidationError,
+      message: /WriteBlob does not accept cites/,
+    }
+  );
+});
 
 test('WriteDecision with supersedes materializes superseded_by on the target file', async (t) => {
   const { root, writer } = await makeWriter();
@@ -324,6 +375,116 @@ test('SetRiskState realized requires at least one Finding in evidence', async (t
   });
   t.is(result.artifacts[0].frontmatter.state, 'realized');
   t.deepEqual(result.artifacts[0].frontmatter.evidence, [finding]);
+});
+
+test('WriteBlob, WriteCitation(blob), and WriteFinding(cites) persist same-effort links', async (t) => {
+  const { root, writer } = await makeWriter();
+  const effort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E', body: '' })
+  );
+  const blobId = soleId(
+    await writer.mutate({
+      type: 'WriteBlob',
+      effort,
+      title: 'Payload',
+      body: '# longform research\n',
+      kind: 'markdown',
+    })
+  );
+  const blobDoc = await readFrontmatter(root, `blobs/${blobId}.md`);
+  t.is(blobDoc.data.effort, effort);
+  t.is(blobDoc.content.trim(), '# longform research');
+  const citationId = soleId(
+    await writer.mutate({
+      type: 'WriteCitation',
+      effort,
+      title: 'Paper',
+      body: 'https://example.com/paper',
+      role: 'evidence',
+      blob: blobId,
+    })
+  );
+  const citationDoc = await readFrontmatter(root, `citations/${citationId}.md`);
+  t.is(citationDoc.data.blob, blobId);
+  const findingId = soleId(
+    await writer.mutate({
+      type: 'WriteFinding',
+      effort,
+      title: 'F',
+      body: 'short',
+      kind: 'measurement',
+      cites: [citationId],
+    })
+  );
+  const findingDoc = await readFrontmatter(root, `findings/${findingId}.md`);
+  t.deepEqual(findingDoc.data.cites, [citationId]);
+});
+
+test('WriteFinding rejects cites from another effort', async (t) => {
+  const { writer } = await makeWriter();
+  const effort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E1', body: '' })
+  );
+  const otherEffort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E2', body: '' })
+  );
+  const foreignCitation = soleId(
+    await writer.mutate({
+      type: 'WriteCitation',
+      effort: otherEffort,
+      title: 'Foreign',
+      body: 'https://example.com/foreign',
+    })
+  );
+  await t.throwsAsync(
+    writer.mutate({
+      type: 'WriteFinding',
+      effort,
+      title: 'F',
+      body: '',
+      kind: 'measurement',
+      cites: [foreignCitation],
+    }),
+    {
+      instanceOf: EffortGraphValidationError,
+      message: new RegExp(
+        `cites target ${foreignCitation} belongs to a different effort`
+      ),
+    }
+  );
+});
+
+test('WriteCitation rejects a Blob from another effort', async (t) => {
+  const { writer } = await makeWriter();
+  const effort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E1', body: '' })
+  );
+  const otherEffort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E2', body: '' })
+  );
+  const foreignBlob = soleId(
+    await writer.mutate({
+      type: 'WriteBlob',
+      effort: otherEffort,
+      title: 'Foreign payload',
+      body: '',
+    })
+  );
+  await t.throwsAsync(
+    writer.mutate({
+      type: 'WriteCitation',
+      effort,
+      title: 'Source',
+      body: 'https://example.com/source',
+      blob: foreignBlob,
+    }),
+    {
+      instanceOf: EffortGraphValidationError,
+      message: new RegExp(
+        `Citation\\.blob ${foreignBlob} belongs to a different effort`
+      ),
+    }
+  );
 });
 
 test('generation tokens increment across successive mutations', async (t) => {

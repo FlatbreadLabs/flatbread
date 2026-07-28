@@ -25,5 +25,11 @@ What becomes easier, harder, required, or intentionally deferred?
 What evidence would justify revisiting this?
 ```
 
-The body belongs to the Decision record. Cite related Findings, Constraints,
-Risks, and Issues through `derives_from` when creating it.
+The body belongs to the Decision record. When creating it, use
+`derives_from` to link the Findings, Constraints, Risks, and Issues the
+Decision responds to or weighs.
+
+For external evidence (URLs, documents, or saved content), do not paste the
+source into the body. If needed, save the content with `WriteBlob`, then
+create a `WriteCitation`, then pass `cites: ["<cit-id>"]` when creating the
+Decision.

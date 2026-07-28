@@ -33,7 +33,9 @@ type Collection =
   | 'Finding'
   | 'Decision'
   | 'Constraint'
-  | 'Risk';
+  | 'Risk'
+  | 'Citation'
+  | 'Blob';
 
 const COLLECTIONS: readonly Collection[] = [
   'Effort',
@@ -42,6 +44,8 @@ const COLLECTIONS: readonly Collection[] = [
   'Decision',
   'Constraint',
   'Risk',
+  'Citation',
+  'Blob',
 ];
 const KIND_TO_COLLECTION: Record<PrimitiveKind, Collection> = {
   effort: 'Effort',
@@ -50,6 +54,8 @@ const KIND_TO_COLLECTION: Record<PrimitiveKind, Collection> = {
   decision: 'Decision',
   constraint: 'Constraint',
   risk: 'Risk',
+  citation: 'Citation',
+  blob: 'Blob',
 };
 const FRONTMATTER_FIELDS = [
   'effort',
@@ -57,6 +63,8 @@ const FRONTMATTER_FIELDS = [
   'kind',
   'status',
   'state',
+  'role',
+  'blob',
   'created_at',
   'slug',
   'produced_in',
@@ -70,6 +78,7 @@ const FRONTMATTER_FIELDS = [
   'rejected_by',
   'mitigated_by',
   'evidence',
+  'cites',
 ] as const;
 const RELATION_FIELDS = new Set([
   'derives_from',
@@ -81,6 +90,7 @@ const RELATION_FIELDS = new Set([
   'mitigated_by',
   'resolved_by',
   'evidence',
+  'cites',
 ]);
 
 function plural(collection: Collection): string {
@@ -90,6 +100,8 @@ function plural(collection: Collection): string {
     ? 'Findings'
     : collection === 'Risk'
     ? 'Risks'
+    : collection === 'Citation'
+    ? 'Citations'
     : `${collection}s`;
 }
 
@@ -111,6 +123,10 @@ function collectionForId(id: string): Collection | undefined {
     ? 'Constraint'
     : prefix === 'rsk'
     ? 'Risk'
+    : prefix === 'cit'
+    ? 'Citation'
+    : prefix === 'blb'
+    ? 'Blob'
     : undefined;
 }
 
@@ -141,7 +157,7 @@ function toRecord(node: RawNode, collection: Collection): ReadRecord {
     if (node[field] === undefined) continue;
     const key = rawKey(field);
     const ids = relationIds(node[field]);
-    if (field === 'effort') frontmatter[key] = ids[0];
+    if (field === 'effort' || field === 'blob') frontmatter[key] = ids[0];
     else if (RELATION_FIELDS.has(field)) relations[key as ReadRelation] = ids;
     else frontmatter[key] = node[field];
   }
@@ -344,14 +360,17 @@ class EngineProjection {
       'invalidated_by',
       'resolved_by',
       'evidence',
+      'role',
       ...((available.has('_content') ? ['_content { raw }'] : []) as string[]),
     ].filter((field) => available.has(field.split(' ', 1)[0]));
     for (const relation of [
       'effort',
+      'blob',
       'supersedes',
       'superseded_by',
       'rejected_by',
       'mitigated_by',
+      'cites',
     ])
       if (available.has(relation) && !fields.includes(relation))
         fields.push(`${relation} { id }`);
@@ -529,11 +548,13 @@ export async function effortRecords(
         'decision',
         'constraint',
         'risk',
+        'citation',
       ] as PrimitiveKind[]);
   const where = options.where ?? {};
-  // The generated relation field materializes as an object, so its `eq`
-  // comparator does not match the stored identifier. Scalar predicates still
-  // execute in Flatbread; effort ownership is normalized and intersected here.
+  // Default kinds include citation but omit blob (opt in via --kinds). The
+  // generated relation field materializes as an object, so its `eq` comparator
+  // does not match the stored identifier. Scalar predicates still execute in
+  // Flatbread; effort ownership is normalized and intersected here.
   const filter: Record<string, unknown> = {};
   if (where.state?.length) filter.state = { in: where.state };
   if (where.status?.length) filter.status = { in: where.status };
@@ -635,7 +656,11 @@ export async function relations(
   const source = collection
     ? await projection.one(collection, fromId)
     : undefined;
-  if (!source || source.frontmatter.effort !== effortId)
+  const sourceInEffort =
+    source?.kind === 'effort' && fromId === effortId
+      ? true
+      : source?.frontmatter.effort === effortId;
+  if (!source || !sourceInEffort)
     throw new Error(`Record ${fromId} does not exist in effort ${effortId}`);
   const selected = new Map<string, ReadRecord>();
   for (const relation of relationNames) {
@@ -643,6 +668,8 @@ export async function relations(
       const targetCollection = collectionForId(targetId);
       if (!targetCollection) continue;
       const target = await projection.one(targetCollection, targetId);
+      // Only return targets that belong to this Effort. The writer should
+      // prevent foreign links, but this keeps hand-authored files contained.
       if (target?.frontmatter.effort === effortId)
         selected.set(target.id, target);
     }
