@@ -1,0 +1,1 @@
+CI: sync .agents skill projection with package source; tolerate @parcel/watcher EINVAL on Node 22 unsubscribe teardown
