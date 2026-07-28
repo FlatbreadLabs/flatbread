@@ -1,5 +1,6 @@
 import {
   EXPLORER_BOOTSTRAP_PATH,
+  explorerAssetsPresent,
   getExplorerStaticDir,
   matchExplorerPreset,
   type ExplorerPresetMatch,
@@ -10,6 +11,7 @@ import express, {
   type Request,
   type Response,
   type NextFunction,
+  type RequestHandler,
 } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -23,64 +25,112 @@ export interface ExplorerMountResult {
   openPath: '/';
 }
 
+export interface ExplorerMountHandle {
+  /** Whether SPA middleware currently serves `/` (preset match ∧ assets). */
+  isActive(): boolean;
+  /**
+   * Re-evaluate preset + assets against new content.
+   * Does not touch the Express stack; only the gate + cached injected HTML.
+   * Warns (once per transition into missing-assets) when preset matches but
+   * assets are absent.
+   */
+  update(content: readonly ContentEntry[]): void;
+}
+
+interface ExplorerBootstrap {
+  preset: ExplorerPresetMatch['preset'];
+  graphqlPath: string;
+  eventsPath: string;
+}
+
 /**
- * When a registered explorer preset matches, serve the SPA at `/`.
- * Callers should mount Apollo afterward; this middleware `next()`s for
- * `/graphql` and `/events` so those API routes still work. Returns null when
- * no preset matches.
+ * Registers bootstrap, static, `/`/`index.html`, and SPA fallback once.
+ * Inactive gate → all of those `next()` so Apollo/SSE own the paths.
+ * Toggle activity with {@link ExplorerMountHandle.update} on config reload.
  */
-export function mountExplorerIfMatched(
+export function mountExplorer(
   app: Express,
   content: readonly ContentEntry[]
-): ExplorerMountResult | null {
-  const match = matchExplorerPreset(content);
-  if (!match) return null;
-
-  const staticDir = getExplorerStaticDir();
-  const indexHtmlPath = path.join(staticDir, 'index.html');
-  if (!fs.existsSync(indexHtmlPath)) {
-    console.warn(
-      `Flatbread explorer assets missing at ${staticDir}. Run \`pnpm --filter @flatbread/explorer build\`.`
-    );
-    return null;
-  }
-
-  const bootstrap = {
-    preset: match.preset,
+): ExplorerMountHandle {
+  let active = false;
+  let indexHtml = '';
+  let bootstrap: ExplorerBootstrap = {
+    preset: 'effort-graph',
     graphqlPath: GRAPHQL_PATH,
     eventsPath: EVENTS_PATH,
   };
+  let staticMiddleware: RequestHandler | null = null;
+  /** True while the last evaluation was preset-match + missing assets. */
+  let inMissingAssets = false;
 
-  app.get(EXPLORER_BOOTSTRAP_PATH, (_req, res) => {
+  const evaluate = (nextContent: readonly ContentEntry[]) => {
+    const match = matchExplorerPreset(nextContent);
+    if (!match) {
+      active = false;
+      inMissingAssets = false;
+      staticMiddleware = null;
+      return;
+    }
+
+    const staticDir = getExplorerStaticDir();
+    if (!explorerAssetsPresent()) {
+      if (!inMissingAssets) {
+        console.warn(
+          `Flatbread explorer assets missing at ${staticDir}. Run \`pnpm --filter @flatbread/explorer build\`.`
+        );
+        inMissingAssets = true;
+      }
+      active = false;
+      staticMiddleware = null;
+      return;
+    }
+
+    inMissingAssets = false;
+    bootstrap = {
+      preset: match.preset,
+      graphqlPath: GRAPHQL_PATH,
+      eventsPath: EVENTS_PATH,
+    };
+
+    const indexHtmlPath = path.join(staticDir, 'index.html');
+    let html = fs.readFileSync(indexHtmlPath, 'utf8');
+    const bootScript = `<script>window.__FLATBREAD_EXPLORER__=${JSON.stringify(
+      bootstrap
+    )};</script>`;
+    if (html.includes('</head>')) {
+      html = html.replace('</head>', `${bootScript}</head>`);
+    } else {
+      html = `${bootScript}${html}`;
+    }
+    indexHtml = html;
+    staticMiddleware = express.static(staticDir, {
+      index: false,
+      fallthrough: true,
+    });
+    active = true;
+  };
+
+  evaluate(content);
+
+  app.get(EXPLORER_BOOTSTRAP_PATH, (_req, res, next) => {
+    if (!active) return next();
     res.json(bootstrap);
   });
 
-  // Inject bootstrap into index.html so the SPA knows same-origin endpoints
-  // without an extra round-trip before first paint.
-  let indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
-  const bootScript = `<script>window.__FLATBREAD_EXPLORER__=${JSON.stringify(
-    bootstrap
-  )};</script>`;
-  if (indexHtml.includes('</head>')) {
-    indexHtml = indexHtml.replace('</head>', `${bootScript}</head>`);
-  } else {
-    indexHtml = `${bootScript}${indexHtml}`;
-  }
+  app.use((req, res, next) => {
+    if (!active || !staticMiddleware) return next();
+    return staticMiddleware(req, res, next);
+  });
 
-  app.use(
-    express.static(staticDir, {
-      index: false,
-      fallthrough: true,
-    })
-  );
-
-  app.get(['/', '/index.html'], (_req, res) => {
+  app.get(['/', '/index.html'], (_req, res, next) => {
+    if (!active) return next();
     res.type('html').send(indexHtml);
   });
 
   // SPA fallback for client routes — never steal API paths. `/events` and
   // `/graphql` are registered after this mount and must receive `next()`.
   app.use((req: Request, res: Response, next: NextFunction) => {
+    if (!active) return next();
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     const pathname = req.path;
     if (
@@ -95,13 +145,25 @@ export function mountExplorerIfMatched(
     res.type('html').send(indexHtml);
   });
 
-  return { match, openPath: '/' };
+  return {
+    isActive: () => active,
+    update: evaluate,
+  };
 }
 
-/** Open path for `--open`: explorer root when mounted, else Apollo sandbox. */
-export function resolveOpenPath(
-  content: readonly ContentEntry[] | undefined
-): string {
-  if (content && matchExplorerPreset(content)) return '/';
-  return GRAPHQL_PATH;
+/**
+ * When a registered explorer preset matches and static assets are present,
+ * serve the SPA at `/`. Prefer {@link mountExplorer} when the mount must
+ * react to config reload (mutable gate). Returns null when inactive after the
+ * initial evaluation (no preset, or assets missing — warns; does not throw).
+ */
+export function mountExplorerIfMatched(
+  app: Express,
+  content: readonly ContentEntry[]
+): ExplorerMountResult | null {
+  const handle = mountExplorer(app, content);
+  if (!handle.isActive()) return null;
+  const match = matchExplorerPreset(content);
+  if (!match) return null;
+  return { match, openPath: '/' };
 }

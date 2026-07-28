@@ -10,7 +10,7 @@ import { registerEffortCommands } from './effort';
 import {
   EXPLORER_ENDPOINT,
   GRAPHQL_ENDPOINT,
-  resolveCliOpenPath,
+  resolveOpenPath,
 } from './openPath';
 import { loadFlatbreadConfig } from '../utils/getSchema';
 
@@ -75,7 +75,7 @@ prog
     let explorer = false;
     try {
       const loaded = await loadFlatbreadConfig(process.cwd());
-      openPath = resolveCliOpenPath(loaded.config?.content);
+      openPath = resolveOpenPath(loaded.config?.content);
       explorer = openPath === EXPLORER_ENDPOINT;
     } catch {
       // Config may be missing during init; fall back to GraphQL sandbox.

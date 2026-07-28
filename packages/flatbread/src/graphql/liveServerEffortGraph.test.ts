@@ -1,11 +1,16 @@
 import test from 'ava';
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
+import os from 'node:os';
 import { join, relative } from 'node:path';
 import filesystem from '@flatbread/source-filesystem';
 import markdownTransformer from '@flatbread/transformer-markdown';
 import { initializeConfig } from '@flatbread/core';
 import { effortGraphContent } from '@flatbread/effort-graph';
+import {
+  explorerAssetsPresent,
+  setExplorerStaticDirOverride,
+} from '@flatbread/explorer';
 import type { ConfigResult, LoadedFlatbreadConfig } from '@flatbread/core';
 import type { EffortGraphMutation } from '@flatbread/effort-graph';
 import { startGraphqlServer } from './liveServer.js';
@@ -55,9 +60,121 @@ async function query(port: number, source: string) {
   };
 }
 
+/** Same SSE reader pattern as liveServerEvents.test.ts. */
+interface SseEvent {
+  event: string;
+  data: string;
+}
+function createSseReader(
+  body: ReadableStream<Uint8Array>,
+  timeoutMs = 5_000
+): {
+  next(predicate: (event: SseEvent) => boolean): Promise<SseEvent>;
+  close(): Promise<void>;
+} {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  const events: SseEvent[] = [];
+  const waiters: Array<{
+    predicate: (event: SseEvent) => boolean;
+    resolve: (event: SseEvent) => void;
+    reject: (reason: Error) => void;
+    timer: NodeJS.Timeout;
+  }> = [];
+  let buffer = '';
+  let finished = false;
+
+  const dispatch = (event: SseEvent) => {
+    for (let i = 0; i < waiters.length; i++) {
+      if (waiters[i].predicate(event)) {
+        const waiter = waiters.splice(i, 1)[0];
+        clearTimeout(waiter.timer);
+        waiter.resolve(event);
+        return;
+      }
+    }
+    events.push(event);
+  };
+
+  const flushBuffer = () => {
+    let index: number;
+    while ((index = buffer.indexOf('\n\n')) !== -1) {
+      const block = buffer.slice(0, index);
+      buffer = buffer.slice(index + 2);
+      if (!block.length || block.startsWith(':')) continue;
+      const parsed: SseEvent = { event: 'message', data: '' };
+      const dataLines: string[] = [];
+      for (const line of block.split('\n')) {
+        if (line.startsWith('event:')) parsed.event = line.slice(6).trim();
+        else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+      }
+      parsed.data = dataLines.join('\n');
+      dispatch(parsed);
+    }
+  };
+
+  const pump = async () => {
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) return;
+        buffer += decoder.decode(value, { stream: true });
+        flushBuffer();
+      }
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      for (const waiter of waiters.splice(0)) {
+        clearTimeout(waiter.timer);
+        waiter.reject(err);
+      }
+    } finally {
+      finished = true;
+      for (const waiter of waiters.splice(0)) {
+        clearTimeout(waiter.timer);
+        waiter.reject(new Error('SSE stream closed before match'));
+      }
+    }
+  };
+  void pump();
+
+  return {
+    next(predicate) {
+      const buffered = events.findIndex(predicate);
+      if (buffered !== -1)
+        return Promise.resolve(events.splice(buffered, 1)[0]);
+      if (finished)
+        return Promise.reject(new Error('SSE stream already closed'));
+      return new Promise<SseEvent>((resolve, reject) => {
+        const timer = setTimeout(() => {
+          const index = waiters.findIndex((w) => w.timer === timer);
+          if (index !== -1) waiters.splice(index, 1);
+          reject(new Error('Timed out waiting for SSE event'));
+        }, timeoutMs);
+        if (typeof timer.unref === 'function') timer.unref();
+        waiters.push({ predicate, resolve, reject, timer });
+      });
+    },
+    async close() {
+      try {
+        await reader.cancel();
+      } catch {
+        // Ignore: server may have already ended the response.
+      }
+    },
+  };
+}
+
 test.serial(
   'active preset exposes the bridge and a mutation is strictly readable end-to-end',
   async (t) => {
+    setExplorerStaticDirOverride(undefined);
+    if (!explorerAssetsPresent()) {
+      t.fail(
+        'Explorer assets missing. Build @flatbread/explorer first (`pnpm --filter @flatbread/explorer build`).'
+      );
+      return;
+    }
+
     const fixture = await makeDir();
     t.teardown(() => rm(fixture.dir, { recursive: true, force: true }));
     const server = await startGraphqlServer({
@@ -79,6 +196,83 @@ test.serial(
     const response = await query(server.port, '{ allEfforts { title } }');
     t.deepEqual(response.errors, undefined);
     t.deepEqual(response.data?.allEfforts, [{ title: 'Committed effort' }]);
+  }
+);
+
+test.serial(
+  'explorer mount leaves /events SSE working when assets exist',
+  async (t) => {
+    setExplorerStaticDirOverride(undefined);
+    if (!explorerAssetsPresent()) {
+      t.fail(
+        'Explorer assets missing. Build @flatbread/explorer first (`pnpm --filter @flatbread/explorer build`).'
+      );
+      return;
+    }
+
+    const fixture = await makeDir();
+    t.teardown(() => rm(fixture.dir, { recursive: true, force: true }));
+    const server = await startGraphqlServer({
+      config: config(fixture.relativeRoot, true),
+      port: 0,
+    });
+    t.teardown(() => server.close());
+
+    t.true(server.explorer);
+
+    const response = await fetch(`http://localhost:${server.port}/events`, {
+      headers: { accept: 'text/event-stream' },
+    });
+    t.is(response.status, 200);
+    t.regex(response.headers.get('content-type') ?? '', /text\/event-stream/i);
+
+    const stream = createSseReader(response.body!);
+    const ready = await stream.next((event) => event.event === 'ready');
+    t.deepEqual(JSON.parse(ready.data), {
+      generation: server.reloader.generation,
+    });
+    await stream.close();
+  }
+);
+
+test.serial(
+  'missing explorer assets soft-fails with explorer false but GraphQL still works',
+  async (t) => {
+    const emptyDir = await mkdtemp(
+      join(os.tmpdir(), 'flatbread-explorer-live-')
+    );
+    setExplorerStaticDirOverride(emptyDir);
+    t.teardown(async () => {
+      setExplorerStaticDirOverride(undefined);
+      await rm(emptyDir, { recursive: true, force: true });
+    });
+
+    const fixture = await makeDir();
+    t.teardown(() => rm(fixture.dir, { recursive: true, force: true }));
+    const server = await startGraphqlServer({
+      config: config(fixture.relativeRoot, true),
+      port: 0,
+    });
+    t.teardown(() => server.close());
+
+    t.false(server.explorer);
+    t.truthy(server.effortGraph);
+
+    const home = await fetch(`http://localhost:${server.port}/`);
+    t.not(home.headers.get('content-type') ?? '', 'text/html');
+    t.false((await home.text()).includes('__FLATBREAD_EXPLORER__'));
+
+    const created = await server.effortGraph!.writer.mutate({
+      type: 'CreateEffort',
+      title: 'GraphQL without explorer assets',
+      body: '',
+    });
+    await server.effortGraph!.waitForCommittedGeneration(created.generation);
+    const response = await query(server.port, '{ allEfforts { title } }');
+    t.deepEqual(response.errors, undefined);
+    t.deepEqual(response.data?.allEfforts, [
+      { title: 'GraphQL without explorer assets' },
+    ]);
   }
 );
 

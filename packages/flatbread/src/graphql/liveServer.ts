@@ -19,7 +19,7 @@ import express, { type RequestHandler } from 'express';
 import http from 'http';
 import { loadFlatbreadConfig } from '../utils/getSchema';
 import { createEffortGraphComposition } from './effortGraphComposition';
-import { mountExplorerIfMatched } from './explorerMount';
+import { mountExplorer } from './explorerMount';
 
 export interface GraphqlServerOptions {
   port?: number;
@@ -31,7 +31,11 @@ export interface RunningGraphqlServer {
   readonly port: number;
   readonly reloader: LiveSchemaReloader;
   readonly effortGraph?: EffortGraphLiveBridge;
-  /** True when the content-relation explorer SPA is mounted at `/`. */
+  /**
+   * Whether the explorer SPA currently answers `/`.
+   * May change under `--watch` when config reload adds or removes a matching
+   * explorer preset (same mutable-gate pattern as Apollo's generation swap).
+   */
   readonly explorer: boolean;
   close(): Promise<void>;
 }
@@ -111,9 +115,19 @@ export async function startGraphqlServer(
       if (old) old.stopWhenDrained();
     },
   });
-  // Explorer SPA first so `/` is the visualizer when a preset matches. It must
-  // `next()` for `/events` and `/graphql` (see explorerMount).
-  const explorerMount = mountExplorerIfMatched(app, config.content);
+  // Explorer SPA first so `/` is the visualizer when a preset matches. Middleware
+  // is registered once; the gate toggles when replaceConfig commits (watch
+  // applyConfig and any direct reload). Inactive → `next()` for `/events` /
+  // `/graphql`.
+  const explorerHandle = mountExplorer(app, config.content);
+  const replaceConfig = reloader.replaceConfig.bind(reloader);
+  reloader.replaceConfig = async (nextConfig) => {
+    const result = await replaceConfig(nextConfig);
+    if (result.status === 'committed') {
+      explorerHandle.update(nextConfig.content);
+    }
+    return result;
+  };
 
   app.get('/events', (req, res) => {
     res.status(200).set({
@@ -263,7 +277,9 @@ export async function startGraphqlServer(
     port,
     reloader,
     effortGraph,
-    explorer: explorerMount !== null,
+    get explorer() {
+      return explorerHandle.isActive();
+    },
     async close() {
       if (closed) return;
       closed = true;

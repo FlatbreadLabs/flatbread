@@ -29,6 +29,7 @@
     "lint:fix:prettier": "pretty-quick --staged",
     "typecheck": "pnpm --filter @flatbread/proof --filter @flatbread/explorer typecheck",
     "play": "cd examples/nextjs && pnpm dev",
+    "preplay:efforts": "pnpm --filter @flatbread/explorer build",
     "play:efforts": "pnpm exec flatbread start --watch --open",
     "play:build": "pnpm build && cd examples/nextjs && pnpm build",
     "prepublish:ci": "pnpm install --frozen-lockfile && pnpm build:types",

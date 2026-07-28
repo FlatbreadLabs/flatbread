@@ -88,14 +88,18 @@ client polling loops. Semantic changes go through `flatbread effort write`.
 ## 4. Open the explorer (optional)
 
 With a complete `effortGraphContent()` preset in config, Flatbread serves the
-content-relation explorer automatically:
+content-relation explorer automatically (`@flatbread/explorer` ships with
+`flatbread`):
 
 ```bash
 flatbread start --watch --open
 ```
 
-- Explorer UI: `http://localhost:5057/`
+Mounting and `--open` share the same assets gate: if the packaged SPA assets
+are missing, Flatbread skips the explorer mount and `--open` falls back to
+`/graphql`.
+
+- Explorer UI (when mounted): `http://localhost:5057/`
 - Apollo GraphQL sandbox: `http://localhost:5057/graphql`
 
-No separate app install is required; `@flatbread/explorer` ships with
-`flatbread`.
+No separate app install is required.
