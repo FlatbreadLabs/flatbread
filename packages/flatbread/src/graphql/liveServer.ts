@@ -19,6 +19,7 @@ import express, { type RequestHandler } from 'express';
 import http from 'http';
 import { loadFlatbreadConfig } from '../utils/getSchema';
 import { createEffortGraphComposition } from './effortGraphComposition';
+import { mountExplorerIfMatched } from './explorerMount';
 
 export interface GraphqlServerOptions {
   port?: number;
@@ -30,6 +31,8 @@ export interface RunningGraphqlServer {
   readonly port: number;
   readonly reloader: LiveSchemaReloader;
   readonly effortGraph?: EffortGraphLiveBridge;
+  /** True when the content-relation explorer SPA is mounted at `/`. */
+  readonly explorer: boolean;
   close(): Promise<void>;
 }
 
@@ -108,6 +111,10 @@ export async function startGraphqlServer(
       if (old) old.stopWhenDrained();
     },
   });
+  // Explorer SPA first so `/` is the visualizer when a preset matches. It must
+  // `next()` for `/events` and `/graphql` (see explorerMount).
+  const explorerMount = mountExplorerIfMatched(app, config.content);
+
   app.get('/events', (req, res) => {
     res.status(200).set({
       'Content-Type': 'text/event-stream',
@@ -256,6 +263,7 @@ export async function startGraphqlServer(
     port,
     reloader,
     effortGraph,
+    explorer: explorerMount !== null,
     async close() {
       if (closed) return;
       closed = true;

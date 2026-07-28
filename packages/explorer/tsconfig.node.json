@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "ignoreDeprecations": "6.0",
+    "types": ["node"]
+  },
+  "include": ["src/node/**/*.ts", "tsup.config.ts"]
+}

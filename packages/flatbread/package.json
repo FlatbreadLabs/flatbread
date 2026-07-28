@@ -38,6 +38,7 @@
     "@flatbread/config": "workspace:*",
     "@flatbread/core": "workspace:*",
     "@flatbread/effort-graph": "workspace:*",
+    "@flatbread/explorer": "workspace:*",
     "@flatbread/source-filesystem": "workspace:*",
     "@flatbread/transformer-markdown": "workspace:*",
     "@flatbread/transformer-yaml": "workspace:*",

@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "ignoreDeprecations": "6.0",
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/web/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"],
+  "exclude": ["dist", "node_modules", "**/*.test.ts"]
+}

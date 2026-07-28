@@ -35,7 +35,7 @@ Optional **`pnpm play`** from the repo root is a shortcut for **`cd examples/nex
 - Build all packages: `pnpm build`
 - **Workspace libraries (watch-only):** `pnpm dev` — runs package `dev` scripts (e.g. `tsup --watch`) for `packages/*`; it does **not** start the Next.js example.
 - **Next.js example:** prefer the flow under [Recommended onboarding](#recommended-onboarding-try-flatbread-in-the-nextjs-example); or `pnpm play` as a convenience alias.
-- **Effort Graph viz (`examples/effort-viz`):** after `pnpm build`, run `pnpm play:efforts` (or `pnpm --filter effort-viz dev`) to dogfood `.flatbread-efforts` with live SSE updates — see that example's README.
+- **Effort Graph explorer:** after `pnpm build`, run `pnpm play:efforts` (`flatbread start --watch --open`). When `flatbread.config.js` uses `effortGraphContent()`, Flatbread serves `@flatbread/explorer` at `http://localhost:5057/` (Apollo sandbox at `/graphql`).
 - Check local CI parity before opening a PR: `pnpm verify`
 
 ## Working on a package

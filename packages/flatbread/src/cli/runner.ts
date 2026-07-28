@@ -50,6 +50,18 @@ export default function orchestrateProcesses({
   gql.on('message', (msg) => {
     if (msg !== 'flatbread-gql-ready') return;
 
+    const hasCorunner =
+      typeof corunner === 'string' && corunner.trim().length > 0;
+
+    // Server-only mode: `flatbread start` with no framework corunner.
+    // Keep the parent alive so the GraphQL (and explorer) process stays up.
+    if (!hasCorunner) {
+      gql.on('close', (code) => {
+        process.exit(code ?? 1);
+      });
+      return;
+    }
+
     // Start the target process (e.g. the dev server or the build script)
     const targetProcess = spawn(pkgManager ?? 'npm run', [corunner], {
       shell: true,

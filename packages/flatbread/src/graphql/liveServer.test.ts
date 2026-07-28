@@ -67,7 +67,7 @@ function makeConfig(fixture: Fixture): ConfigResult<LoadedFlatbreadConfig> {
 }
 
 async function queryTitles(port: number): Promise<string[]> {
-  const response = await fetch(`http://localhost:${port}`, {
+  const response = await fetch(`http://localhost:${port}/graphql`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

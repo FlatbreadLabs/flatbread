@@ -7,18 +7,23 @@ import orchestrateProcesses from './runner';
 import initConfig from './initConfig';
 import { createCodegenCommand } from '@flatbread/codegen';
 import { registerEffortCommands } from './effort';
-
-const GRAPHQL_ENDPOINT = '/graphql';
+import {
+  EXPLORER_ENDPOINT,
+  GRAPHQL_ENDPOINT,
+  resolveCliOpenPath,
+} from './openPath';
+import { loadFlatbreadConfig } from '../utils/getSchema';
 
 /**
- * Launch the GraphQL explorer in a browser.
+ * Open a browser tab at the given path on the Flatbread server.
  *
  * Yoinked from [SvelteKit's CLI](https://github.com/sveltejs/kit/blob/2c133ff5b8798c885161ed57bfb45c88fc77f516/packages/kit/src/cli.js).
- *
- * @param {number} port the port the server is running on
- * @param {boolean} https whether the server is running on https
  */
-async function launch(port: number, https: boolean): Promise<void> {
+async function launch(
+  port: number,
+  https: boolean,
+  openPath: string
+): Promise<void> {
   const { exec } = await import('child_process');
   let cmd = 'open';
   if (process.platform == 'win32') {
@@ -30,9 +35,8 @@ async function launch(port: number, https: boolean): Promise<void> {
       cmd = 'xdg-open';
     }
   }
-  exec(
-    `${cmd} ${https ? 'https' : 'http'}://localhost:${port}${GRAPHQL_ENDPOINT}`
-  );
+  const path = openPath.startsWith('/') ? openPath : `/${openPath}`;
+  exec(`${cmd} ${https ? 'https' : 'http'}://localhost:${port}${path}`);
 }
 
 const prog = sade('flatbread').version(version);
@@ -43,15 +47,22 @@ prog
   .option('-p, --port', 'Port to run the GraphQL server', 5057)
   .option('-H, --https', 'Use self-signed HTTPS certificate', false)
   .option('-w, --watch', 'Hot-swap content and reload config', false)
-  .option('-o, --open', 'Open the explorer in a browser tab', false)
+  .option(
+    '-o, --open',
+    'Open the explorer (or GraphQL sandbox) in a browser tab',
+    false
+  )
   .option(
     '-X, --exec',
     'The runner to execute the corunning script with. Defaults to your package manager (i.e. npm, pnpm, yarn)'
   )
   .action(async (corunner, { _, port, https, watch, open, exec }) => {
-    // Combine the corunning script & the options passed to it
-    const secondaryScript = `${corunner} ${_.join(' ')}`;
-    // Yeet it into the all seeing eye of the universe
+    const args = Array.isArray(_) ? _ : [];
+    const secondaryScript =
+      typeof corunner === 'string' && corunner.length > 0
+        ? `${corunner} ${args.join(' ')}`.trim()
+        : '';
+
     orchestrateProcesses({
       corunner: secondaryScript,
       flatbreadPort: port,
@@ -59,8 +70,18 @@ prog
       watch,
       packageManager: exec,
     });
-    // Say hi for good measure
-    welcome({ port, https, open });
+
+    let openPath = GRAPHQL_ENDPOINT;
+    let explorer = false;
+    try {
+      const loaded = await loadFlatbreadConfig(process.cwd());
+      openPath = resolveCliOpenPath(loaded.config?.content);
+      explorer = openPath === EXPLORER_ENDPOINT;
+    } catch {
+      // Config may be missing during init; fall back to GraphQL sandbox.
+    }
+
+    welcome({ port, https, open, openPath, explorer });
   });
 
 prog
@@ -102,19 +123,21 @@ prog.parse(process.argv, { unknown: (arg) => `Unknown option: ${arg}` });
  * The welcome message for the user when starting the server.
  *
  * Yoinked from [SvelteKit's CLI](https://github.com/sveltejs/kit/blob/2c133ff5b8798c885161ed57bfb45c88fc77f516/packages/kit/src/cli.js) with some modifications.
- *
- * @param serverConfig server config object
  */
 function welcome({
   port,
   https,
   open,
+  openPath,
+  explorer,
 }: {
   open: boolean;
   https: boolean;
   port: number;
+  openPath: string;
+  explorer: boolean;
 }): void {
-  if (open) launch(port, https);
+  if (open) void launch(port, https, openPath);
 
   console.log(
     colors.bold(
@@ -128,15 +151,27 @@ function welcome({
       if (details.family !== 'IPv4') return;
 
       if (details.internal) {
-        // Always show HTTP endpoint
+        if (explorer) {
+          console.log(
+            `  ${colors.gray('explorer:')} http://${colors.bold(
+              `localhost:${port}${EXPLORER_ENDPOINT}`
+            )}`
+          );
+        }
         console.log(
           `  ${colors.gray('graphql:')} http://${colors.bold(
             `localhost:${port}${GRAPHQL_ENDPOINT}`
           )}`
         );
 
-        // Show HTTPS endpoint if enabled (uses port + 1)
         if (https) {
+          if (explorer) {
+            console.log(
+              `  ${colors.gray('explorer:')} https://${colors.bold(
+                `localhost:${port + 1}${EXPLORER_ENDPOINT}`
+              )}`
+            );
+          }
           console.log(
             `  ${colors.gray('graphql:')} https://${colors.bold(
               `localhost:${port + 1}${GRAPHQL_ENDPOINT}`

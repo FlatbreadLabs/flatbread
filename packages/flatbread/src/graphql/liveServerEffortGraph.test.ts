@@ -44,7 +44,7 @@ function config(
 }
 
 async function query(port: number, source: string) {
-  const response = await fetch(`http://localhost:${port}`, {
+  const response = await fetch(`http://localhost:${port}/graphql`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ query: source }),
@@ -66,6 +66,10 @@ test.serial(
     });
     t.teardown(() => server.close());
     t.truthy(server.effortGraph);
+    t.true(server.explorer);
+    const home = await fetch(`http://localhost:${server.port}/`);
+    t.is(home.status, 200);
+    t.true((await home.text()).includes('__FLATBREAD_EXPLORER__'));
     const result = await server.effortGraph!.writer.mutate({
       type: 'CreateEffort',
       title: 'Committed effort',
@@ -89,6 +93,11 @@ test.serial(
     });
     t.teardown(() => server.close());
     t.is(server.effortGraph, undefined);
+    t.false(server.explorer);
+    const home = await fetch(`http://localhost:${server.port}/`);
+    // Without an explorer preset, Apollo still owns `/` (catch-all mount).
+    t.not(home.headers.get('content-type') ?? '', 'text/html');
+    t.false((await home.text()).includes('__FLATBREAD_EXPLORER__'));
   }
 );
 
