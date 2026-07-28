@@ -1,0 +1,1 @@
+Fix CI: defer the native watcher import outside watch mode and make the journal visibility assertion resilient to asynchronous directory creation.

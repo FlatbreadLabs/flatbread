@@ -1,0 +1,1 @@
+fix CI: bound Next.js example GraphQL fetches to avoid Windows static generation timeout

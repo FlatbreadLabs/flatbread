@@ -1,0 +1,1 @@
+Fix CI: retry transient ENOENT watcher startup failures exposed by AVA concurrency.

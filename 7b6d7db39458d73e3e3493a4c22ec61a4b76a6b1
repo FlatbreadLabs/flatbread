@@ -1,0 +1,1 @@
+Address remaining PR #230 review: isolate AVA static-dir fixtures (no shared index.html rename races), vite base `/` for nested SPA assets, explorer gate toggle on --watch config reload, and skill docs for the built-assets/--open fallback.
