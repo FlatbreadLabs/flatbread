@@ -9,6 +9,8 @@
 /** Narrow child-process surface used by the ready handler. */
 export interface ChildLike {
   on(event: 'close', listener: (code: number | null) => void): unknown;
+  on(event: 'exit', listener: (code: number | null) => void): unknown;
+  on(event: 'error', listener: (err: Error) => void): unknown;
   kill(): unknown;
 }
 
@@ -18,6 +20,8 @@ export interface ReadyHandlerDeps {
   spawnCorunner(packageManagerCommand: string): ChildLike;
   onExit(code: number): void;
   onReady?: () => void;
+  /** Override for tests; defaults to `console.error`. */
+  logError?: (message: string) => void;
 }
 
 export interface ReadyHandleResult {
@@ -30,13 +34,34 @@ export interface ReadyHandleResult {
 /**
  * Build the IPC message handler that runs when the GraphQL child is ready.
  *
- * A second `flatbread-gql-ready` is ignored so the corunner is never spawned twice.
+ * Also attaches `exit` / `error` listeners so a child that dies before ready
+ * exits the parent instead of hanging. A second `flatbread-gql-ready` is
+ * ignored so the corunner is never spawned twice.
  */
 export function createGqlReadyHandler(
   gqlChild: ChildLike,
   deps: ReadyHandlerDeps
 ): (msg: unknown) => ReadyHandleResult {
   let handled = false;
+  const logError = deps.logError ?? ((message) => console.error(message));
+
+  const exitBeforeReady = (code: number | null): void => {
+    if (handled) return;
+    handled = true;
+    logError(
+      `Flatbread GraphQL server exited before ready (code ${
+        code === null ? 'null' : code
+      }).`
+    );
+    deps.onExit(code ?? 1);
+  };
+
+  gqlChild.on('exit', (code) => {
+    exitBeforeReady(code);
+  });
+  gqlChild.on('error', () => {
+    exitBeforeReady(1);
+  });
 
   return (msg: unknown): ReadyHandleResult => {
     if (msg !== 'flatbread-gql-ready') {

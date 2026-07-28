@@ -233,7 +233,7 @@ Wire your framework so the CLI wraps dev/build (**`flatbread start`** passes thr
 }
 ```
 
-In the Next.js example, **`pnpm dev`** starts Next with local HTTPS and starts
+In the Next.js example, **`pnpm dev`** starts Next and starts
 Flatbread in watch mode. The GraphQL endpoint is
 **`http://localhost:5057/graphql`** and the Next app is on **`3000`**.
 **`pnpm start`** runs production Next without Flatbread.

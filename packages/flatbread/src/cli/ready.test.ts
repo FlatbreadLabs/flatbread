@@ -7,12 +7,23 @@ import {
 
 function createFakeChild(): ChildLike & {
   emitClose(code: number | null): void;
+  emitExit(code: number | null): void;
+  emitError(err?: Error): void;
 } {
   const closeListeners: Array<(code: number | null) => void> = [];
+  const exitListeners: Array<(code: number | null) => void> = [];
+  const errorListeners: Array<(err: Error) => void> = [];
   return {
-    on(event: 'close', listener: (code: number | null) => void) {
+    on(
+      event: 'close' | 'exit' | 'error',
+      listener: ((code: number | null) => void) | ((err: Error) => void)
+    ) {
       if (event === 'close') {
-        closeListeners.push(listener);
+        closeListeners.push(listener as (code: number | null) => void);
+      } else if (event === 'exit') {
+        exitListeners.push(listener as (code: number | null) => void);
+      } else if (event === 'error') {
+        errorListeners.push(listener as (err: Error) => void);
       }
       return this;
     },
@@ -24,6 +35,16 @@ function createFakeChild(): ChildLike & {
         listener(code);
       }
     },
+    emitExit(code: number | null) {
+      for (const listener of exitListeners) {
+        listener(code);
+      }
+    },
+    emitError(err: Error = new Error('spawn failed')) {
+      for (const listener of errorListeners) {
+        listener(err);
+      }
+    },
   };
 }
 
@@ -32,15 +53,18 @@ function createDeps(
     spawned?: string[];
     exits?: number[];
     readyCount?: { value: number };
+    errors?: string[];
   } = {}
 ): ReadyHandlerDeps & {
   spawned: string[];
   exits: number[];
   readyCount: { value: number };
+  errors: string[];
 } {
   const spawned = overrides.spawned ?? [];
   const exits = overrides.exits ?? [];
   const readyCount = overrides.readyCount ?? { value: 0 };
+  const errors = overrides.errors ?? [];
 
   return {
     corunner: overrides.corunner ?? '',
@@ -61,9 +85,15 @@ function createDeps(
       (() => {
         readyCount.value += 1;
       }),
+    logError:
+      overrides.logError ??
+      ((message: string) => {
+        errors.push(message);
+      }),
     spawned,
     exits,
     readyCount,
+    errors,
   };
 }
 
@@ -208,4 +238,50 @@ test('ignores unrelated IPC messages', (t) => {
   t.false(result.serverOnly);
   t.is(deps.readyCount.value, 0);
   t.deepEqual(deps.spawned, []);
+});
+
+test('child exit before ready exits parent with child code', (t) => {
+  const gql = createFakeChild();
+  const deps = createDeps({ corunner: 'next dev', packageManager: 'pnpm' });
+  createGqlReadyHandler(gql, deps);
+
+  gql.emitExit(7);
+
+  t.deepEqual(deps.exits, [7]);
+  t.is(deps.readyCount.value, 0);
+  t.deepEqual(deps.spawned, []);
+  t.true(
+    deps.errors.some((message) =>
+      message.includes('exited before ready (code 7)')
+    )
+  );
+});
+
+test('child exit with null code before ready exits parent with 1', (t) => {
+  const gql = createFakeChild();
+  const deps = createDeps({ corunner: '' });
+  createGqlReadyHandler(gql, deps);
+
+  gql.emitExit(null);
+
+  t.deepEqual(deps.exits, [1]);
+  t.is(deps.readyCount.value, 0);
+  t.true(
+    deps.errors.some((message) =>
+      message.includes('exited before ready (code null)')
+    )
+  );
+});
+
+test('child exit after ready does not exit twice', (t) => {
+  const gql = createFakeChild();
+  const deps = createDeps({ corunner: '' });
+  const handle = createGqlReadyHandler(gql, deps);
+
+  handle('flatbread-gql-ready');
+  gql.emitExit(3);
+  gql.emitClose(0);
+
+  t.deepEqual(deps.exits, [0]);
+  t.deepEqual(deps.errors, []);
 });

@@ -35,8 +35,9 @@ tests. For this guide, focus on posts, authors, and tags.
 4. **Start Flatbread and Next** (**there is no `flatbread dev`** — use
    **`flatbread start`**):
 
-   - **With local HTTPS:** `pnpm dev`. This runs watch mode and starts Next.
-   - **Headless or no HTTPS:** `pnpm exec flatbread start --watch -- next dev --turbopack`.
+   - `pnpm dev` — runs watch mode and starts Next
+     (`pnpm exec flatbread start --watch -- next dev --turbopack`).
+     GraphQL on **5057**, Next on **3000**.
 
    With `--watch`, Flatbread reloads valid content and config changes and
    refreshes generated types. You do not need a second codegen watcher.
@@ -47,7 +48,7 @@ tests. For this guide, focus on posts, authors, and tags.
 
 | Script                                    | Purpose                                                                                             |
 | ----------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                                | **`flatbread start --watch`** + Next dev (HTTPS). GraphQL on **5057**, Next on **3000**.            |
+| `pnpm dev`                                | **`flatbread start --watch`** + Next dev. GraphQL on **5057**, Next on **3000**.                    |
 | `pnpm build`                              | **`flatbread start`** wrapping **`next build`** so schema/codegen paths resolve during build.       |
 | `pnpm start`                              | **`next start` only** — production Next; does **not** run Flatbread unless you arrange it.          |
 | `pnpm run codegen`                        | Optional separate type watcher. Use it only when `flatbread start --watch` is not running.           |

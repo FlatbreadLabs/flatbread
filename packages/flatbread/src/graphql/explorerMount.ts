@@ -85,7 +85,6 @@ export function mountExplorer(
       return;
     }
 
-    inMissingAssets = false;
     bootstrap = {
       preset: match.preset,
       graphqlPath: GRAPHQL_PATH,
@@ -93,21 +92,34 @@ export function mountExplorer(
     };
 
     const indexHtmlPath = path.join(staticDir, 'index.html');
-    let html = fs.readFileSync(indexHtmlPath, 'utf8');
-    const bootScript = `<script>window.__FLATBREAD_EXPLORER__=${JSON.stringify(
-      bootstrap
-    )};</script>`;
-    if (html.includes('</head>')) {
-      html = html.replace('</head>', `${bootScript}</head>`);
-    } else {
-      html = `${bootScript}${html}`;
+    try {
+      let html = fs.readFileSync(indexHtmlPath, 'utf8');
+      const bootScript = `<script>window.__FLATBREAD_EXPLORER__=${JSON.stringify(
+        bootstrap
+      )};</script>`;
+      if (html.includes('</head>')) {
+        html = html.replace('</head>', `${bootScript}</head>`);
+      } else {
+        html = `${bootScript}${html}`;
+      }
+      indexHtml = html;
+      staticMiddleware = express.static(staticDir, {
+        index: false,
+        fallthrough: true,
+      });
+      active = true;
+      inMissingAssets = false;
+    } catch {
+      // Race: assets looked present, then the read failed (gone / not a file).
+      if (!inMissingAssets) {
+        console.warn(
+          `Flatbread explorer assets missing at ${staticDir}. Run \`pnpm --filter @flatbread/explorer build\`.`
+        );
+        inMissingAssets = true;
+      }
+      active = false;
+      staticMiddleware = null;
     }
-    indexHtml = html;
-    staticMiddleware = express.static(staticDir, {
-      index: false,
-      fallthrough: true,
-    });
-    active = true;
   };
 
   evaluate(content);

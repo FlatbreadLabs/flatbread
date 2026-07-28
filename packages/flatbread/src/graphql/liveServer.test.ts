@@ -377,6 +377,14 @@ test.serial(
     const fixture = await makeFixture();
     t.teardown(fixture.cleanup);
     const stub = captureWatcherSubscribe();
+    const errors: unknown[][] = [];
+    const originalError = console.error;
+    console.error = (...args: unknown[]) => {
+      errors.push(args);
+    };
+    t.teardown(() => {
+      console.error = originalError;
+    });
 
     const server = await startGraphqlServer({
       config: makeConfig(fixture),
@@ -389,6 +397,14 @@ test.serial(
     try {
       t.notThrows(() =>
         stub.getCallback()(new Error('inotify_add_watch race'), [])
+      );
+      t.true(
+        errors.some(
+          (args) =>
+            typeof args[0] === 'string' &&
+            args[0].includes('Flatbread watcher error:')
+        ),
+        `expected watcher error log, got: ${JSON.stringify(errors)}`
       );
       t.deepEqual(await queryTitles(server.port), [
         'Original Title',

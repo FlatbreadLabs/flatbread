@@ -1,6 +1,13 @@
 import test, { type ExecutionContext } from 'ava';
 import express from 'express';
-import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  readdir,
+  rm,
+  unlink,
+  writeFile,
+} from 'node:fs/promises';
 import os from 'node:os';
 import { join } from 'node:path';
 import { effortGraphContent } from '@flatbread/effort-graph';
@@ -296,6 +303,58 @@ test.serial(
     const homeRestored = await fetch(`${server.base}/`);
     t.is(homeRestored.status, 200);
     t.true((await homeRestored.text()).includes('__FLATBREAD_EXPLORER__'));
+  }
+);
+
+test.serial(
+  'update deactivates when index.html becomes unreadable after a present check',
+  async (t) => {
+    const staticDir = await mkdtemp(
+      join(os.tmpdir(), 'flatbread-explorer-eisdir-')
+    );
+    const indexHtmlPath = join(staticDir, 'index.html');
+    await writeFile(
+      indexHtmlPath,
+      '<!doctype html><html><head></head><body></body></html>\n',
+      'utf8'
+    );
+    setExplorerStaticDirOverride(staticDir);
+    t.teardown(async () => {
+      setExplorerStaticDirOverride(undefined);
+      await rm(staticDir, { recursive: true, force: true });
+    });
+
+    const warnings: string[] = [];
+    const originalWarn = console.warn;
+    console.warn = (...args: unknown[]) => {
+      warnings.push(args.map(String).join(' '));
+    };
+    t.teardown(() => {
+      console.warn = originalWarn;
+    });
+
+    const app = express();
+    const handle = mountExplorer(app, effortGraphContent());
+    t.true(handle.isActive());
+
+    const server = await listen(app);
+    t.teardown(server.close);
+
+    // existsSync stays true for a directory; readFileSync throws EISDIR.
+    await unlink(indexHtmlPath);
+    await mkdir(indexHtmlPath);
+
+    handle.update(effortGraphContent());
+    t.false(handle.isActive());
+    t.is(
+      warnings.filter((message) =>
+        message.includes('Flatbread explorer assets missing')
+      ).length,
+      1
+    );
+
+    const home = await fetch(`${server.base}/`);
+    t.false((await home.text()).includes('__FLATBREAD_EXPLORER__'));
   }
 );
 

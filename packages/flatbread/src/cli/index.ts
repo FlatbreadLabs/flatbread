@@ -1,6 +1,7 @@
 import sade from 'sade';
 import colors from 'kleur';
 import gradient from 'gradient-string';
+import type { ContentEntry } from '@flatbread/core';
 import { version } from '../../package.json';
 import { networkInterfaces, release } from 'node:os';
 import orchestrateProcesses from './runner';
@@ -65,11 +66,15 @@ prog
 
     // Fork before reading the config so config load stays off the critical
     // path to `flatbread-gql-ready` (and to the corunner). `--open` waits on
-    // this promise instead, so it always opens the resolved path.
-    let settleOpenPath!: (path: string) => void;
-    const resolvedOpenPath = new Promise<string>((resolve) => {
-      settleOpenPath = resolve;
-    });
+    // this promise, then resolves the browser path as late as possible.
+    let settleOpenContent!: (
+      content: readonly ContentEntry[] | undefined
+    ) => void;
+    const loadedOpenContent = new Promise<readonly ContentEntry[] | undefined>(
+      (resolve) => {
+        settleOpenContent = resolve;
+      }
+    );
 
     orchestrateProcesses({
       corunner: secondaryScript,
@@ -78,21 +83,25 @@ prog
       packageManager: exec,
       onReady: open
         ? () => {
-            void resolvedOpenPath.then((path) => launch(port, path));
+            void loadedOpenContent.then((content) => {
+              void launch(port, resolveOpenPath(content));
+            });
           }
         : undefined,
     });
 
     let openPath = GRAPHQL_ENDPOINT;
     let explorer = false;
+    let contentForOpen: readonly ContentEntry[] | undefined;
     try {
       const loaded = await loadFlatbreadConfig(process.cwd());
-      openPath = resolveOpenPath(loaded.config?.content);
+      contentForOpen = loaded.config?.content;
+      openPath = resolveOpenPath(contentForOpen);
       explorer = openPath === EXPLORER_ENDPOINT;
     } catch {
       // Config may be missing during init; fall back to GraphQL sandbox.
     }
-    settleOpenPath(openPath);
+    settleOpenContent(contentForOpen);
 
     welcome({ port, explorer });
   });

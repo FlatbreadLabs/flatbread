@@ -24,8 +24,7 @@ Use this path first. The Next.js app reads shared content from
 2. `cd examples/nextjs`
 3. One-shot codegen: `pnpm exec flatbread codegen --verbose` (output: `generated/graphql.ts`; globs and dirs come from `flatbread.config.js`).
 4. Run the app **and** Flatbread together with **`flatbread start`** (there is **no** `flatbread dev` subcommand):
-   - **`pnpm dev`** — starts Next with local HTTPS and watches Flatbread content, config, and GraphQL documents. GraphQL runs on **5057** and Next on **3000**.
-   - Headless / no HTTPS: `pnpm exec flatbread start --watch -- next dev --turbopack`.
+   - **`pnpm dev`** — starts Next and watches Flatbread content, config, and GraphQL documents (`pnpm exec flatbread start --watch -- next dev --turbopack`). GraphQL runs on **5057** and Next on **3000**.
 
 Optional **`pnpm play`** from the repo root is a shortcut for **`cd examples/nextjs && pnpm dev`** — same as step 4 above, not a separate product command.
 
