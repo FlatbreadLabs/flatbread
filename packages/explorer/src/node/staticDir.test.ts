@@ -51,6 +51,51 @@ describe('getExplorerStaticDir', () => {
 });
 
 describe('explorerAssetsPresent', () => {
+  it('returns true when index.html is a regular file', async () => {
+    const staticDir = await mkdtemp(
+      path.join(os.tmpdir(), 'flatbread-explorer-present-')
+    );
+    try {
+      await fs.promises.writeFile(
+        path.join(staticDir, 'index.html'),
+        '<!doctype html><html></html>\n',
+        'utf8'
+      );
+      setExplorerStaticDirOverride(staticDir);
+      assert.equal(explorerAssetsPresent(), true);
+    } finally {
+      setExplorerStaticDirOverride(undefined);
+      await rm(staticDir, { recursive: true, force: true });
+    }
+  });
+
+  it('returns false when index.html is missing', async () => {
+    const emptyDir = await mkdtemp(
+      path.join(os.tmpdir(), 'flatbread-explorer-absent-')
+    );
+    try {
+      setExplorerStaticDirOverride(emptyDir);
+      assert.equal(explorerAssetsPresent(), false);
+    } finally {
+      setExplorerStaticDirOverride(undefined);
+      await rm(emptyDir, { recursive: true, force: true });
+    }
+  });
+
+  it('returns false when index.html is a directory', async () => {
+    const staticDir = await mkdtemp(
+      path.join(os.tmpdir(), 'flatbread-explorer-eisdir-')
+    );
+    try {
+      await fs.promises.mkdir(path.join(staticDir, 'index.html'));
+      setExplorerStaticDirOverride(staticDir);
+      assert.equal(explorerAssetsPresent(), false);
+    } finally {
+      setExplorerStaticDirOverride(undefined);
+      await rm(staticDir, { recursive: true, force: true });
+    }
+  });
+
   it('reflects whether index.html exists under the static dir', async () => {
     const indexPath = path.join(getExplorerStaticDir(), 'index.html');
     if (!fs.existsSync(indexPath)) {

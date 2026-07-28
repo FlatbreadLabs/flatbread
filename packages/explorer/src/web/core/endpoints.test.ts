@@ -61,20 +61,38 @@ describe('resolveGraphqlEndpoint', () => {
     assert.equal(endpoint, 'http://localhost:5057/graphql');
   });
 
-  it('resolves relative ?endpoint= against the default Node origin', () => {
+  it('resolves relative ?endpoint= against the injected origin', () => {
     const endpoint = resolveGraphqlEndpoint(
       '?endpoint=/alt/graphql',
       DEFAULT_BOOTSTRAP,
       'http://localhost:9999'
     );
-    assert.equal(endpoint, 'http://localhost:5057/alt/graphql');
+    assert.equal(endpoint, 'http://localhost:9999/alt/graphql');
+  });
+
+  it('resolves bare / ?endpoint= against the injected origin', () => {
+    const endpoint = resolveGraphqlEndpoint(
+      '?endpoint=/',
+      DEFAULT_BOOTSTRAP,
+      'http://localhost:9999'
+    );
+    assert.equal(endpoint, 'http://localhost:9999/');
   });
 
   it('resolves host-without-scheme ?endpoint= by prepending http', () => {
     const endpoint = resolveGraphqlEndpoint(
       '?endpoint=api.example.com',
       DEFAULT_BOOTSTRAP,
-      'http://localhost:5057'
+      'http://localhost:9999'
+    );
+    assert.equal(endpoint, 'http://api.example.com/graphql');
+  });
+
+  it('resolves protocol-relative ?endpoint= without using the injected host', () => {
+    const endpoint = resolveGraphqlEndpoint(
+      '?endpoint=//api.example.com/graphql',
+      DEFAULT_BOOTSTRAP,
+      'http://localhost:9999'
     );
     assert.equal(endpoint, 'http://api.example.com/graphql');
   });
@@ -120,9 +138,30 @@ describe('normalizeGraphqlUrl', () => {
     );
   });
 
+  it('resolves a relative path against an injected origin', () => {
+    assert.equal(
+      normalizeGraphqlUrl('/alt/graphql', 'http://localhost:9999'),
+      'http://localhost:9999/alt/graphql'
+    );
+  });
+
+  it('resolves bare / against an injected origin', () => {
+    assert.equal(
+      normalizeGraphqlUrl('/', 'http://localhost:9999'),
+      'http://localhost:9999/'
+    );
+  });
+
   it('prepends http when given a host without a scheme', () => {
     assert.equal(
-      normalizeGraphqlUrl('api.example.com'),
+      normalizeGraphqlUrl('api.example.com', 'http://localhost:9999'),
+      'http://api.example.com/graphql'
+    );
+  });
+
+  it('resolves a protocol-relative URL without using the injected host', () => {
+    assert.equal(
+      normalizeGraphqlUrl('//api.example.com/graphql', 'http://localhost:9999'),
       'http://api.example.com/graphql'
     );
   });

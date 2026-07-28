@@ -31,10 +31,16 @@ export function getExplorerStaticDir(): string {
 }
 
 /**
- * True when prebuilt SPA `index.html` exists under `getExplorerStaticDir()`.
+ * True when prebuilt SPA `index.html` is a regular file under
+ * `getExplorerStaticDir()`. A directory with that name does not count.
  * Flatbread uses this with `matchExplorerPreset` before mounting or advertising
  * explorer.
  */
 export function explorerAssetsPresent(): boolean {
-  return fs.existsSync(path.join(getExplorerStaticDir(), 'index.html'));
+  const indexPath = path.join(getExplorerStaticDir(), 'index.html');
+  try {
+    return fs.statSync(indexPath).isFile();
+  } catch {
+    return false;
+  }
 }

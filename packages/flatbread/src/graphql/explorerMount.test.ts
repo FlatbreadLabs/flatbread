@@ -307,7 +307,7 @@ test.serial(
 );
 
 test.serial(
-  'update deactivates when index.html becomes unreadable after a present check',
+  'update deactivates when a directory replaces index.html',
   async (t) => {
     const staticDir = await mkdtemp(
       join(os.tmpdir(), 'flatbread-explorer-eisdir-')
@@ -340,7 +340,6 @@ test.serial(
     const server = await listen(app);
     t.teardown(server.close);
 
-    // existsSync stays true for a directory; readFileSync throws EISDIR.
     await unlink(indexHtmlPath);
     await mkdir(indexHtmlPath);
 

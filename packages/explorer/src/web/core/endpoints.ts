@@ -32,7 +32,7 @@ export function resolveGraphqlEndpoint(
   const params = new URLSearchParams(search);
   const fromQuery = params.get('endpoint');
   if (fromQuery) {
-    return normalizeGraphqlUrl(fromQuery);
+    return normalizeGraphqlUrl(fromQuery, locationOrigin);
   }
 
   if (bootstrap?.graphqlPath) {
@@ -67,7 +67,12 @@ export function resolveEventsUrl(graphqlEndpoint: string): string {
   return new URL(eventsPath, origin).href;
 }
 
-export function normalizeGraphqlUrl(value: string): string {
+export function normalizeGraphqlUrl(
+  value: string,
+  locationOrigin: string = typeof window !== 'undefined'
+    ? window.location.origin
+    : `http://localhost:${DEFAULT_PORT}`
+): string {
   const trimmed = value.trim();
   if (!trimmed) {
     return `http://localhost:${DEFAULT_PORT}${DEFAULT_GRAPHQL_PATH}`;
@@ -81,12 +86,9 @@ export function normalizeGraphqlUrl(value: string): string {
   } catch {
     // Relative path like `/graphql`
     if (trimmed.startsWith('/')) {
-      const origin =
-        typeof window !== 'undefined'
-          ? window.location.origin
-          : `http://localhost:${DEFAULT_PORT}`;
-      return new URL(trimmed, origin).href;
+      return new URL(trimmed, locationOrigin).href;
     }
+    // Bare host is absolute; do not forward the caller's origin.
     return normalizeGraphqlUrl(`http://${trimmed}`);
   }
 }

@@ -285,3 +285,33 @@ test('child exit after ready does not exit twice', (t) => {
   t.deepEqual(deps.exits, [0]);
   t.deepEqual(deps.errors, []);
 });
+
+test('child error before ready exits parent with 1', (t) => {
+  const gql = createFakeChild();
+  const deps = createDeps({ corunner: 'next dev', packageManager: 'pnpm' });
+  createGqlReadyHandler(gql, deps);
+
+  gql.emitError(new Error('spawn failed'));
+
+  t.deepEqual(deps.exits, [1]);
+  t.is(deps.readyCount.value, 0);
+  t.deepEqual(deps.spawned, []);
+  t.true(
+    deps.errors.some((message) =>
+      message.includes('exited before ready (code 1)')
+    )
+  );
+});
+
+test('child error after ready does not exit a second time', (t) => {
+  const gql = createFakeChild();
+  const deps = createDeps({ corunner: '' });
+  const handle = createGqlReadyHandler(gql, deps);
+
+  handle('flatbread-gql-ready');
+  gql.emitError(new Error('late error'));
+  gql.emitClose(0);
+
+  t.deepEqual(deps.exits, [0]);
+  t.deepEqual(deps.errors, []);
+});

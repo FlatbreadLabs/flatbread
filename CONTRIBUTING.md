@@ -37,7 +37,7 @@ Optional **`pnpm play`** from the repo root is a shortcut for **`cd examples/nex
 - **Effort Graph explorer:**
   1. Run `pnpm play:efforts` (builds `@flatbread/explorer` via `preplay:efforts`, then `flatbread start --watch --open`).
   2. When `flatbread.config.js` uses `effortGraphContent()`, Flatbread serves `@flatbread/explorer` at `http://localhost:5057/`. The Apollo sandbox is at `/graphql`.
-  3. For hot module replacement (HMR) on the single-page app (SPA) shell, run `flatbread start --watch` and `pnpm --filter @flatbread/explorer dev` in parallel. Vite on **5173** proxies API routes to **5057**.
+  3. For hot module replacement (HMR) on the single-page app (SPA) shell, run `pnpm exec flatbread start --watch` and `pnpm --filter @flatbread/explorer dev` in parallel. Vite on **5173** proxies API routes to **5057**.
 - Check local CI parity before opening a PR: `pnpm verify`
 
 ## Working on a package
