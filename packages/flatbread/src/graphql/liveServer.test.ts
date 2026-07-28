@@ -7,12 +7,16 @@ import { initializeConfig } from '@flatbread/core';
 import type { ConfigResult, LoadedFlatbreadConfig } from '@flatbread/core';
 import { startGraphqlServer } from './liveServer';
 import type { WatchSubscribe, WatchSubscribeEvent } from './liveServer';
+import { directoryIgnore } from './watchIgnore.js';
 
-/** Concurrent AVA fixtures under cwd; keep them out of this suite's watcher. */
+/** Concurrent AVA fixtures under cwd; skip the dirs themselves and their trees. */
 const TEST_WATCH_IGNORE = [
-  '**/.tmp-effort-*/**',
-  '**/.tmp-explorer-*/**',
-] as const;
+  ...directoryIgnore('**/.tmp-effort-*'),
+  ...directoryIgnore('**/.tmp-explorer-*'),
+];
+
+/** Zero backoff so subscribe-retry tests stay fast. */
+const FAST_SUBSCRIBE_RETRIES = [0, 0, 0, 0] as const;
 
 interface Fixture {
   /** Absolute temp dir inside the repo (source-filesystem resolves content paths against cwd). */
@@ -508,5 +512,76 @@ test.serial(
     } finally {
       await server.close();
     }
+  }
+);
+
+test.serial(
+  'subscribe retries past transient inotify_add_watch failures',
+  async (t) => {
+    const fixture = await makeFixture();
+    t.teardown(fixture.cleanup);
+
+    let attempts = 0;
+    let callback: WatchCallback | undefined;
+    const subscribe: WatchSubscribe = async (_dir, cb) => {
+      attempts++;
+      if (attempts < 3) {
+        throw new Error(
+          "inotify_add_watch on '/tmp/.tmp-effort-live-race' failed: No such file or directory"
+        );
+      }
+      callback = cb;
+      return { unsubscribe: async () => undefined };
+    };
+
+    const server = await startGraphqlServer({
+      config: makeConfig(fixture),
+      port: 0,
+      watch: true,
+      watchIgnore: TEST_WATCH_IGNORE,
+      watcherSubscribe: subscribe,
+      watcherSubscribeRetryDelays: FAST_SUBSCRIBE_RETRIES,
+    });
+
+    try {
+      t.is(attempts, 3);
+      t.truthy(callback);
+      t.deepEqual(await queryTitles(server.port), [
+        'Original Title',
+        'Second Post',
+      ]);
+    } finally {
+      await server.close();
+    }
+  }
+);
+
+test.serial(
+  'subscribe rejects when inotify_add_watch fails on every attempt',
+  async (t) => {
+    const fixture = await makeFixture();
+    t.teardown(fixture.cleanup);
+
+    let attempts = 0;
+    const subscribe: WatchSubscribe = async () => {
+      attempts++;
+      throw new Error(
+        "inotify_add_watch on '/tmp/.tmp-effort-live-gone' failed: No such file or directory"
+      );
+    };
+
+    await t.throwsAsync(
+      () =>
+        startGraphqlServer({
+          config: makeConfig(fixture),
+          port: 0,
+          watch: true,
+          watchIgnore: TEST_WATCH_IGNORE,
+          watcherSubscribe: subscribe,
+          watcherSubscribeRetryDelays: FAST_SUBSCRIBE_RETRIES,
+        }),
+      { message: /inotify_add_watch/ }
+    );
+    t.is(attempts, FAST_SUBSCRIBE_RETRIES.length + 1);
   }
 );

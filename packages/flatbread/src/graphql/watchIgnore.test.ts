@@ -1,17 +1,32 @@
 import test from 'ava';
 import picomatch from 'picomatch';
-import { DEFAULT_WATCH_IGNORE, buildWatchIgnore } from './watchIgnore.js';
+import {
+  DEFAULT_WATCH_IGNORE,
+  buildWatchIgnore,
+  directoryIgnore,
+} from './watchIgnore.js';
 
 /** True when any glob matches the path (dotfiles included). */
 function matchesAny(patterns: readonly string[], path: string): boolean {
   return patterns.some((pattern) => picomatch(pattern, { dot: true })(path));
 }
 
-test('DEFAULT_WATCH_IGNORE is exactly the four production globs', (t) => {
-  t.deepEqual(DEFAULT_WATCH_IGNORE, [
+test('directoryIgnore pairs the bare directory with its contents glob', (t) => {
+  t.deepEqual(directoryIgnore('**/node_modules'), [
+    '**/node_modules',
     '**/node_modules/**',
+  ]);
+});
+
+test('DEFAULT_WATCH_IGNORE is exactly the production directory pairs', (t) => {
+  t.deepEqual(DEFAULT_WATCH_IGNORE, [
+    '**/node_modules',
+    '**/node_modules/**',
+    '**/.git',
     '**/.git/**',
+    '**/dist',
     '**/dist/**',
+    '**/.journal',
     '**/.journal/**',
   ]);
 });
@@ -25,6 +40,12 @@ test('DEFAULT_WATCH_IGNORE leaves live-server test fixtures visible', (t) => {
 test('DEFAULT_WATCH_IGNORE does not hide effort or explorer test fixtures', (t) => {
   t.false(matchesAny(DEFAULT_WATCH_IGNORE, '.tmp-effort-live-x/graph/a.md'));
   t.false(matchesAny(DEFAULT_WATCH_IGNORE, '.tmp-explorer-watch-x/graph/a.md'));
+  t.false(
+    DEFAULT_WATCH_IGNORE.some(
+      (pattern) =>
+        pattern.includes('.tmp-effort-') || pattern.includes('.tmp-explorer-')
+    )
+  );
 });
 
 test('buildWatchIgnore extras drop concurrent effort and explorer fixtures', (t) => {
@@ -32,17 +53,23 @@ test('buildWatchIgnore extras drop concurrent effort and explorer fixtures', (t)
     '**/.tmp-effort-*/**',
     '**/.tmp-explorer-*/**',
   ]);
+  t.true(matchesAny(ignore, '.tmp-effort-live-x'));
   t.true(matchesAny(ignore, '.tmp-effort-live-x/posts/a.md'));
+  t.true(matchesAny(ignore, '.tmp-explorer-watch-x'));
   t.true(matchesAny(ignore, '.tmp-explorer-watch-x/content/b.md'));
   t.false(matchesAny(ignore, '.tmp-live-server-test-abc/posts/a.md'));
 });
 
 test('DEFAULT_WATCH_IGNORE matches journal, node_modules, .git, and dist', (t) => {
+  t.true(matchesAny(DEFAULT_WATCH_IGNORE, 'content/.journal'));
   t.true(matchesAny(DEFAULT_WATCH_IGNORE, 'content/.journal/entry.json'));
+  t.true(matchesAny(DEFAULT_WATCH_IGNORE, 'node_modules'));
   t.true(
     matchesAny(DEFAULT_WATCH_IGNORE, 'packages/foo/node_modules/x/index.js')
   );
+  t.true(matchesAny(DEFAULT_WATCH_IGNORE, '.git'));
   t.true(matchesAny(DEFAULT_WATCH_IGNORE, '.git/objects/ab/cd'));
+  t.true(matchesAny(DEFAULT_WATCH_IGNORE, 'packages/flatbread/dist'));
   t.true(matchesAny(DEFAULT_WATCH_IGNORE, 'packages/flatbread/dist/index.js'));
 });
 
@@ -54,13 +81,20 @@ test('buildWatchIgnore de-duplicates extras and keeps defaults first', (t) => {
     '**/custom/**',
   ]);
   t.deepEqual(ignore, [
+    '**/node_modules',
     '**/node_modules/**',
+    '**/.git',
     '**/.git/**',
+    '**/dist',
     '**/dist/**',
+    '**/.journal',
     '**/.journal/**',
+    '**/.tmp-effort-*',
     '**/.tmp-effort-*/**',
+    '**/custom',
     '**/custom/**',
   ]);
   t.is(ignore.filter((pattern) => pattern === '**/dist/**').length, 1);
   t.is(ignore.filter((pattern) => pattern === '**/.tmp-effort-*/**').length, 1);
+  t.is(ignore.filter((pattern) => pattern === '**/.tmp-effort-*').length, 1);
 });

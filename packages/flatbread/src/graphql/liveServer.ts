@@ -51,6 +51,12 @@ export interface GraphqlServerOptions {
   watchIgnore?: readonly string[];
   /** Test seam: overrides the `@parcel/watcher` subscribe implementation. */
   watcherSubscribe?: WatchSubscribe;
+  /**
+   * Backoff delays (ms) between subscribe retries after a transient
+   * ENOENT / inotify race. Defaults to 100, 200, 400, 800 (five attempts).
+   * Tests pass zeros to keep the suite fast.
+   */
+  watcherSubscribeRetryDelays?: readonly number[];
 }
 export interface RunningGraphqlServer {
   readonly port: number;
@@ -272,7 +278,11 @@ export async function startGraphqlServer(
       console.error(`Flatbread ${label} failed:`, result.error);
     });
     const ignore = buildWatchIgnore(options.watchIgnore);
-    for (let attempt = 0; attempt < 3; attempt++) {
+    const retryDelays = options.watcherSubscribeRetryDelays ?? [
+      100, 200, 400, 800,
+    ];
+    const maxAttempts = retryDelays.length + 1;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         subscription = await subscribe(
           cwd,
@@ -297,14 +307,16 @@ export async function startGraphqlServer(
         );
         break;
       } catch (error: unknown) {
-        const isEnoent =
+        const isTransientWatchError =
           error instanceof Error &&
           ((error as NodeJS.ErrnoException).code === 'ENOENT' ||
             error.message.includes('No such file or directory') ||
             error.message.includes('inotify_add_watch'));
-        if (!isEnoent || attempt === 2) throw error;
+        if (!isTransientWatchError || attempt === maxAttempts - 1) {
+          throw error;
+        }
         await new Promise<void>((resolve) =>
-          setTimeout(resolve, 100 * (attempt + 1))
+          setTimeout(resolve, retryDelays[attempt]!)
         );
       }
     }
