@@ -6,6 +6,13 @@ import markdownTransformer from '@flatbread/transformer-markdown';
 import { initializeConfig } from '@flatbread/core';
 import type { ConfigResult, LoadedFlatbreadConfig } from '@flatbread/core';
 import { startGraphqlServer } from './liveServer';
+import type { WatchSubscribe, WatchSubscribeEvent } from './liveServer';
+
+/** Concurrent AVA fixtures under cwd; keep them out of this suite's watcher. */
+const TEST_WATCH_IGNORE = [
+  '**/.tmp-effort-*/**',
+  '**/.tmp-explorer-*/**',
+] as const;
 
 interface Fixture {
   /** Absolute temp dir inside the repo (source-filesystem resolves content paths against cwd). */
@@ -143,6 +150,7 @@ test.serial(
       config: makeConfig(fixture),
       port: 0,
       watch: true,
+      watchIgnore: TEST_WATCH_IGNORE,
     });
 
     try {
@@ -337,5 +345,152 @@ test.serial(
       'After Swap Title',
       'Second Post',
     ]);
+  }
+);
+
+type WatchCallback = (
+  error: Error | null,
+  events: WatchSubscribeEvent[]
+) => unknown;
+
+function captureWatcherSubscribe(): {
+  subscribe: WatchSubscribe;
+  getCallback: () => WatchCallback;
+} {
+  let callback: WatchCallback | undefined;
+  const subscribe: WatchSubscribe = async (_dir, cb) => {
+    callback = cb;
+    return { unsubscribe: async () => undefined };
+  };
+  return {
+    subscribe,
+    getCallback: () => {
+      if (!callback) throw new Error('watcher subscribe was never called');
+      return callback;
+    },
+  };
+}
+
+test.serial(
+  'watcher callback error keeps the server alive and answering queries',
+  async (t) => {
+    const fixture = await makeFixture();
+    t.teardown(fixture.cleanup);
+    const stub = captureWatcherSubscribe();
+
+    const server = await startGraphqlServer({
+      config: makeConfig(fixture),
+      port: 0,
+      watch: true,
+      watchIgnore: TEST_WATCH_IGNORE,
+      watcherSubscribe: stub.subscribe,
+    });
+
+    try {
+      t.notThrows(() =>
+        stub.getCallback()(new Error('inotify_add_watch race'), [])
+      );
+      t.deepEqual(await queryTitles(server.port), [
+        'Original Title',
+        'Second Post',
+      ]);
+      t.is(server.reloader.generation, 0);
+    } finally {
+      await server.close();
+    }
+  }
+);
+
+test.serial(
+  'watcher push failure is logged and the server keeps serving',
+  async (t) => {
+    const fixture = await makeFixture();
+    t.teardown(fixture.cleanup);
+    const stub = captureWatcherSubscribe();
+    const errors: unknown[][] = [];
+    const originalError = console.error;
+    console.error = (...args: unknown[]) => {
+      errors.push(args);
+    };
+    t.teardown(() => {
+      console.error = originalError;
+    });
+
+    const server = await startGraphqlServer({
+      config: makeConfig(fixture),
+      port: 0,
+      watch: true,
+      watchIgnore: TEST_WATCH_IGNORE,
+      watcherSubscribe: stub.subscribe,
+    });
+
+    try {
+      const badEvents = {
+        map(): never {
+          throw new Error('synthetic push boom');
+        },
+      } as unknown as WatchSubscribeEvent[];
+
+      t.notThrows(() => stub.getCallback()(null, badEvents));
+      t.true(
+        errors.some(
+          (args) =>
+            typeof args[0] === 'string' &&
+            args[0].includes('Flatbread watcher push failed:')
+        ),
+        `expected push failure log, got: ${JSON.stringify(errors)}`
+      );
+      t.deepEqual(await queryTitles(server.port), [
+        'Original Title',
+        'Second Post',
+      ]);
+    } finally {
+      await server.close();
+    }
+  }
+);
+
+test.serial(
+  'stubbed watcher update reaches the reindex path on the same port',
+  async (t) => {
+    const fixture = await makeFixture();
+    t.teardown(fixture.cleanup);
+    const stub = captureWatcherSubscribe();
+
+    const server = await startGraphqlServer({
+      config: makeConfig(fixture),
+      port: 0,
+      watch: true,
+      watchIgnore: TEST_WATCH_IGNORE,
+      watcherSubscribe: stub.subscribe,
+    });
+
+    try {
+      t.deepEqual(await queryTitles(server.port), [
+        'Original Title',
+        'Second Post',
+      ]);
+
+      await writeFile(fixture.postOne, POST_ONE('Stubbed Watch Title'));
+      stub.getCallback()(null, [{ path: fixture.postOne, type: 'update' }]);
+
+      await Promise.race([
+        server.reloader.waitForGeneration(1),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error('stubbed watcher did not commit within 5s')),
+            5_000
+          )
+        ),
+      ]);
+
+      t.deepEqual(await queryTitles(server.port), [
+        'Stubbed Watch Title',
+        'Second Post',
+      ]);
+      t.true(server.reloader.generation >= 1);
+    } finally {
+      await server.close();
+    }
   }
 );

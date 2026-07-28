@@ -65,7 +65,7 @@ The repo uses Mergify stacks for PR management. The `mergify-cli` is installed v
 - **Vitest packages run in watch mode by default.** Always use `vitest run` (not bare `vitest`) to get a single run and exit.
 - **`flatbread` CLI is not on PATH globally.** From `examples/nextjs`, prefer `pnpm exec flatbread …` (local binary), or `npx flatbread` from a shell. The `pnpm play` script from the root handles this automatically.
 - **Build before test.** All packages must be built (`pnpm build`) before running tests or starting dev servers. `pnpm test` handles this automatically.
-- **The Next.js example `dev` script uses `--https`.** This requires an SSL certificate. In headless/CI environments, run without `--https`: `pnpm exec flatbread start -- next dev --turbopack`.
+- **`-H, --https` does not make Flatbread serve HTTPS.** The server listens over plain HTTP whatever you pass. From `examples/nextjs`, run `pnpm exec flatbread start -- next dev --turbopack`.
 - **Full local CI parity check:** `pnpm verify` runs lint, typecheck, build, and all tests.
 
 ### Weave merge driver

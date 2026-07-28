@@ -95,11 +95,11 @@ content-relation explorer automatically (`@flatbread/explorer` ships with
 flatbread start --watch --open
 ```
 
-Mounting and `--open` share the same assets gate: if the packaged SPA assets
-are missing, Flatbread skips the explorer mount and `--open` falls back to
-`/graphql`.
+Flatbread checks for the prebuilt single-page app (SPA) assets under
+`dist/static/`. When those assets are missing, Flatbread does not serve the
+explorer and `flatbread start --open` opens `/graphql` instead.
 
-- Explorer UI (when mounted): `http://localhost:5057/`
+- Explorer UI (when served): `http://localhost:5057/`
 - Apollo GraphQL sandbox: `http://localhost:5057/graphql`
 
 No separate app install is required.

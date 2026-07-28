@@ -7,13 +7,15 @@ import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import colors from 'kleur';
 import { getRunCommand } from '@flatbread/utils';
+import { createGqlReadyHandler } from './ready';
 
 export interface OrchestraOptions {
   corunner: string;
   flatbreadPort: number;
-  https?: boolean;
   watch?: boolean;
   packageManager: string | null;
+  /** Called once when the GraphQL child reports ready (before the corunner starts). */
+  onReady?: () => void;
 }
 
 /**
@@ -26,9 +28,9 @@ export interface OrchestraOptions {
 export default function orchestrateProcesses({
   corunner,
   flatbreadPort,
-  https = false,
   watch = false,
   packageManager = null,
+  onReady,
 }: OrchestraOptions) {
   const pkgManager = packageManager || getRunCommand(process.cwd());
 
@@ -41,49 +43,30 @@ export default function orchestrateProcesses({
       ...process.env,
       NODE_OPTIONS: '--experimental-vm-modules',
       FLATBREAD_PORT: String(flatbreadPort),
-      FLATBREAD_HTTPS: String(https),
       FLATBREAD_WATCH: watch ? '1' : '0',
     },
   });
   let runningScripts = [gql];
 
+  const handleReady = createGqlReadyHandler(gql, {
+    corunner,
+    packageManager: pkgManager,
+    onReady,
+    onExit: (code) => {
+      process.exit(code);
+    },
+    spawnCorunner: (packageManagerCommand) => {
+      const targetProcess = spawn(packageManagerCommand, [corunner], {
+        shell: true,
+        stdio: 'inherit',
+      });
+      runningScripts.push(targetProcess);
+      return targetProcess;
+    },
+  });
+
   gql.on('message', (msg) => {
-    if (msg !== 'flatbread-gql-ready') return;
-
-    const hasCorunner =
-      typeof corunner === 'string' && corunner.trim().length > 0;
-
-    // Server-only mode: `flatbread start` with no framework corunner.
-    // Keep the parent alive so the GraphQL (and explorer) process stays up.
-    if (!hasCorunner) {
-      gql.on('close', (code) => {
-        process.exit(code ?? 1);
-      });
-      return;
-    }
-
-    // Start the target process (e.g. the dev server or the build script)
-    const targetProcess = spawn(pkgManager ?? 'npm run', [corunner], {
-      shell: true,
-      stdio: 'inherit',
-    });
-
-    runningScripts.push(targetProcess);
-
-    // Exit the parent process when the target process exits
-    for (let script of runningScripts) {
-      script.on('close', (code) => {
-        //
-        // If the target process exited with a non-zero `code`, exit the parent process with the same `code`
-        //
-        // If the target process closes with a null `code`, exit the parent process with an exit code of 1
-        // (this usually indicates an error originating outside of the target process, where it is killed before it can exit)
-        //
-        // See https://nodejs.org/api/child_process.html#event-exit
-        //
-        process.exit(code ?? 1);
-      });
-    }
+    handleReady(msg);
   });
 
   // End any remaining child processes when the parent process exits

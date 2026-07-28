@@ -1,10 +1,10 @@
 # `@flatbread/explorer`
 
-Content-relation explorer for Flatbread. v1 ships a generic SPA shell plus an
-**Effort Graph** preset. When your config uses `effortGraphContent()`,
-`flatbread start` serves this UI at `/`.
+Content-relation explorer for Flatbread. v1 ships a generic single-page app
+(SPA) shell plus an **Effort Graph** preset. When your config uses
+`effortGraphContent()`, `flatbread start` serves this UI at `/`.
 
-## Local DX
+## Try it locally
 
 ```bash
 # flatbread.config.js includes effortGraphContent()
@@ -13,9 +13,11 @@ flatbread start --watch --open
 # → http://localhost:5057/graphql   Apollo sandbox
 ```
 
-No separate Next app is required. Requires a built `dist/static` (see
-[Develop in the monorepo](#develop-in-the-monorepo)); `pnpm play:efforts` runs
-that build automatically.
+No separate Next.js app is required. Flatbread checks for the prebuilt assets
+under `dist/static/` (see [Develop in the monorepo](#develop-in-the-monorepo)).
+When those assets are missing, Flatbread does not serve the explorer and
+`flatbread start --open` opens `/graphql` instead. `pnpm play:efforts` runs
+the explorer build automatically.
 
 ## Static deploy
 
@@ -28,7 +30,7 @@ https://your-host.example/?endpoint=https://api.example.com/graphql
 
 Same-origin deploys (assets served by Flatbread) need no query param.
 
-## Package surface (v1)
+## What the package exports
 
 | Export                         | Role                                       |
 | ------------------------------ | ------------------------------------------ |
@@ -46,9 +48,9 @@ pnpm --filter @flatbread/explorer test
 pnpm play:efforts   # builds explorer, then flatbread start --watch --open
 ```
 
-For UI-only iteration with HMR, run Flatbread and Vite in separate terminals
-(Vite proxies `/graphql` and `/events` to Flatbread on port **5057**, or
-`FLATBREAD_PORT` when set):
+For UI-only iteration with hot module replacement (HMR), run Flatbread and Vite
+in separate terminals (Vite proxies `/graphql` and `/events` to Flatbread on
+port **5057**, or `FLATBREAD_PORT` when set):
 
 ```bash
 pnpm exec flatbread start --watch          # terminal 1 — GraphQL on :5057

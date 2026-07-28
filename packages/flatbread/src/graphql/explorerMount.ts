@@ -128,7 +128,8 @@ export function mountExplorer(
   });
 
   // SPA fallback for client routes — never steal API paths. `/events` and
-  // `/graphql` are registered after this mount and must receive `next()`.
+  // `/graphql` (exact and under those prefixes) register after this mount
+  // and must receive `next()`.
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (!active) return next();
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
@@ -137,6 +138,7 @@ export function mountExplorer(
       pathname === GRAPHQL_PATH ||
       pathname === EVENTS_PATH ||
       pathname.startsWith(`${GRAPHQL_PATH}/`) ||
+      pathname.startsWith(`${EVENTS_PATH}/`) ||
       pathname.startsWith('/__flatbread/')
     ) {
       return next();

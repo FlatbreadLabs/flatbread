@@ -20,12 +20,37 @@ import http from 'http';
 import { loadFlatbreadConfig } from '../utils/getSchema';
 import { createEffortGraphComposition } from './effortGraphComposition';
 import { mountExplorer } from './explorerMount';
+import { buildWatchIgnore } from './watchIgnore';
+
+/** Event shape consumed from `@parcel/watcher` (and test stubs). */
+export interface WatchSubscribeEvent {
+  path: string;
+  type: 'create' | 'update' | 'delete';
+}
+
+/**
+ * Narrow subscribe signature used by watch mode.
+ * Matches `@parcel/watcher`'s subscribe for the options we pass.
+ */
+export type WatchSubscribe = (
+  dir: string,
+  callback: (error: Error | null, events: WatchSubscribeEvent[]) => unknown,
+  opts?: { ignore?: string[] }
+) => Promise<{ unsubscribe(): Promise<void> }>;
 
 export interface GraphqlServerOptions {
   port?: number;
   config: ConfigResult<LoadedFlatbreadConfig>;
   watch?: boolean;
   cwd?: string;
+  /**
+   * Extra glob patterns to drop from the `--watch` subscription, on top of
+   * {@link DEFAULT_WATCH_IGNORE}. Tests use this to keep concurrent fixture
+   * directories out of the watched tree; production passes nothing.
+   */
+  watchIgnore?: readonly string[];
+  /** Test seam: overrides the `@parcel/watcher` subscribe implementation. */
+  watcherSubscribe?: WatchSubscribe;
 }
 export interface RunningGraphqlServer {
   readonly port: number;
@@ -206,7 +231,8 @@ export async function startGraphqlServer(
   let subscription: { unsubscribe(): Promise<void> } | undefined;
   let coordinator: WatchCoordinator | undefined;
   if (options.watch) {
-    const { subscribe } = await import('@parcel/watcher');
+    const subscribe: WatchSubscribe =
+      options.watcherSubscribe ?? (await import('@parcel/watcher')).subscribe;
     coordinator = createWatchCoordinator({
       config,
       cwd,
@@ -245,14 +271,14 @@ export async function startGraphqlServer(
           : 'codegen refresh';
       console.error(`Flatbread ${label} failed:`, result.error);
     });
+    const ignore = buildWatchIgnore(options.watchIgnore);
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         subscription = await subscribe(
           cwd,
           (error, events) => {
             if (error) {
-              // Concurrent AVA fixtures under cwd can race inotify; never let
-              // watcher noise reject the owning test/server promise.
+              // Watcher noise must not reject the owning server promise.
               console.error('Flatbread watcher error:', error);
               return;
             }
@@ -267,19 +293,7 @@ export async function startGraphqlServer(
               console.error('Flatbread watcher push failed:', pushError);
             }
           },
-          {
-            ignore: [
-              '**/node_modules/**',
-              '**/.git/**',
-              '**/dist/**',
-              // Ephemeral test fixtures and effort-graph journals under cwd.
-              // Keep `.tmp-live-server-test-*` visible so watch-mode AVA can
-              // exercise real filesystem edits.
-              '**/.tmp-effort-*/**',
-              '**/.tmp-explorer-*/**',
-              '**/.journal/**',
-            ],
-          }
+          { ignore }
         );
         break;
       } catch (error: unknown) {
