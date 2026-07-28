@@ -251,21 +251,43 @@ export async function startGraphqlServer(
           cwd,
           (error, events) => {
             if (error) {
+              // Concurrent AVA fixtures under cwd can race inotify; never let
+              // watcher noise reject the owning test/server promise.
               console.error('Flatbread watcher error:', error);
               return;
             }
-            coordinator!.push(
-              events.map((event) => ({ path: event.path, type: event.type }))
-            );
+            try {
+              coordinator!.push(
+                events.map((event) => ({
+                  path: event.path,
+                  type: event.type,
+                }))
+              );
+            } catch (pushError) {
+              console.error('Flatbread watcher push failed:', pushError);
+            }
           },
-          { ignore: ['**/node_modules/**', '**/.git/**', '**/dist/**'] }
+          {
+            ignore: [
+              '**/node_modules/**',
+              '**/.git/**',
+              '**/dist/**',
+              // Ephemeral test fixtures and effort-graph journals under cwd.
+              // Keep `.tmp-live-server-test-*` visible so watch-mode AVA can
+              // exercise real filesystem edits.
+              '**/.tmp-effort-*/**',
+              '**/.tmp-explorer-*/**',
+              '**/.journal/**',
+            ],
+          }
         );
         break;
       } catch (error: unknown) {
         const isEnoent =
           error instanceof Error &&
           ((error as NodeJS.ErrnoException).code === 'ENOENT' ||
-            error.message.includes('No such file or directory'));
+            error.message.includes('No such file or directory') ||
+            error.message.includes('inotify_add_watch'));
         if (!isEnoent || attempt === 2) throw error;
         await new Promise<void>((resolve) =>
           setTimeout(resolve, 100 * (attempt + 1))
