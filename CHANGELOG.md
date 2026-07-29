@@ -31,6 +31,12 @@ Three reach npm for the first time in this release:
   18, and Node 20 before 20.19, are no longer supported.
 - `@flatbread/config` declares `@flatbread/core` as a runtime dependency. It
   was a devDependency, which worked inside this monorepo and nowhere else.
+- `@flatbread/core` no longer emits type declarations a packed install cannot
+  resolve. Its `.d.ts` files reached into the private paths
+  `graphql/jsutils/Maybe` and `graphql/jsutils/ObjMap`; they now use public
+  GraphQL types, and `FlatbreadProvider.query()` declares its return as
+  GraphQL's public `ExecutionResult`. `vfile@5.3.4` moves from devDependencies
+  to dependencies, because the public types name `VFile`.
 - `@flatbread/codegen` widens its peer range on `@flatbread/config` and
   `@flatbread/core` from `workspace:*` to `workspace:^`, so it publishes a
   caret range instead of an exact pin.

@@ -1,9 +1,9 @@
-import {
+import type {
   GraphQLFieldConfigArgumentMap,
+  GraphQLFieldConfig,
   GraphQLInputType,
   GraphQLSchema,
 } from 'graphql';
-import { Maybe } from 'graphql/jsutils/Maybe';
 import type { VFile } from 'vfile';
 
 // Import CodegenOptions type from the codegen package
@@ -195,7 +195,7 @@ export interface Override {
   field: string;
   type: GraphQLInputType | string;
   args?: GraphQLFieldConfigArgumentMap;
-  description?: Maybe<string>;
+  description?: GraphQLFieldConfig<unknown, unknown>['description'];
   resolve: (
     data: unknown,
     extended: {
