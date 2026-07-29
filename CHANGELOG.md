@@ -34,6 +34,12 @@ Three reach npm for the first time in this release:
 - `@flatbread/codegen` widens its peer range on `@flatbread/config` and
   `@flatbread/core` from `workspace:*` to `workspace:^`, so it publishes a
   caret range instead of an exact pin.
+- `flatbread` drops five runtime dependencies that no code imported:
+  `apollo-server-core`, `apollo-server-express`, `express-graphql`,
+  `remark-github`, and `serialize-javascript`. `picomatch` moves to
+  devDependencies; only a test uses it. Versions move too: `@apollo/server` to
+  5.5.1, the pinned `graphql` to 16.14.2, and `@flatbread/core`'s `lodash-es`
+  to 4.18.1.
 - `@flatbread/resolver-svimg` points its `repository`, `homepage`, and `bugs`
   links at `FlatbreadLabs/flatbread`. They still named the old
   `tonyketcham/flatbread` fork.
