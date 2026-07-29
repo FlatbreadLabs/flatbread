@@ -40,6 +40,14 @@ Three reach npm for the first time in this release:
   devDependencies; only a test uses it. Versions move too: `@apollo/server` to
   5.5.1, the pinned `graphql` to 16.14.2, and `@flatbread/core`'s `lodash-es`
   to 4.18.1.
+- `@flatbread/codegen` moves its four GraphQL Code Generator packages (`cli`,
+  `typescript`, `typescript-operations`, and `typed-document-node`) onto
+  supported major lines, and `@flatbread/config` moves its pinned `esbuild`
+  from 0.15.1 to 0.25.0. Nothing you get out changes: the same schema still
+  generates byte-identical files.
+- `@flatbread/proof` stops shipping `src` and `scripts`, tests and all, in its
+  npm tarball. The bins and `dist` still ship, which is all the package needs
+  to run.
 - `@flatbread/resolver-svimg` points its `repository`, `homepage`, and `bugs`
   links at `FlatbreadLabs/flatbread`. They still named the old
   `tonyketcham/flatbread` fork.
