@@ -2,10 +2,12 @@
 id: dec-keep-effort-graph-secondary-with-a-primary-wedge--estattvqnhffm2dc
 effort: eff-effort-graph-memory-and-agent-wedge--szeqvmgqjqnhd002
 title: Keep Effort Graph secondary with a primary-wedge gate
-state: accepted
+state: superseded
 created_at: '2026-07-18T19:43:02.802Z'
 derives_from:
   - fnd-filtered-retrieval-is-94-percent-smaller--qpvz4vch5hygye20
+superseded_by:
+  - dec-lead-flatbread-1-0-with-effort-graph-agent-memor--nhxsqm8sd43s2avx
 ---
 
 Keep the graph as a strong candidate secondary vertical rather than displacing

@@ -1,7 +1,7 @@
 {
   "name": "@flatbread/core",
-  "version": "1.0.0-alpha.16",
-  "description": "Flatbread's essential logic",
+  "version": "1.0.0",
+  "description": "Flatbread's engine: runs source and transformer plugins, validates records and refs, and builds the GraphQL schema plus JSON and CSV snapshots.",
   "type": "module",
   "scripts": {
     "build": "tsup",
@@ -28,18 +28,21 @@
     "dist",
     "*.d.ts"
   ],
+  "engines": {
+    "node": ">=20.19"
+  },
   "dependencies": {
-    "graphql": "16.5.0",
+    "graphql": "16.14.2",
     "graphql-compose": "9.0.8",
-    "lodash-es": "4.17.21",
+    "lodash-es": "4.18.1",
     "matcher": "5.0.0",
-    "plur": "5.1.0"
+    "plur": "5.1.0",
+    "vfile": "5.3.4"
   },
   "devDependencies": {
     "@types/lodash-es": "4.17.6",
     "@types/node": "16.11.47",
     "tsup": "6.2.1",
-    "typescript": "4.7.4",
-    "vfile": "5.3.4"
+    "typescript": "4.7.4"
   }
 }

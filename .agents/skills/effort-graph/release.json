@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "flatbreadVersion": "1.0.0-alpha.22",
-  "effortGraphVersion": "0.1.0-alpha.0",
-  "gitTag": "v1.0.0-alpha.22"
+  "flatbreadVersion": "1.0.0",
+  "effortGraphVersion": "1.0.0",
+  "gitTag": "v1.0.0"
 }

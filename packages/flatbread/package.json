@@ -1,7 +1,7 @@
 {
   "name": "flatbread",
-  "version": "1.0.0-alpha.22",
-  "description": "Consume relational, flat-file data using GraphQL 🥯 inside damn near any framework.",
+  "version": "1.0.0",
+  "description": "Git-native memory for coding agents and relational content for TypeScript apps. Files in your repo become a typed graph you read over GraphQL, generated TypeScript, or the CLI.",
   "type": "module",
   "scripts": {
     "build": "tsup",
@@ -30,8 +30,11 @@
     "dist",
     "*.d.ts"
   ],
+  "engines": {
+    "node": ">=20.19"
+  },
   "dependencies": {
-    "@apollo/server": "5.0.0",
+    "@apollo/server": "5.5.1",
     "@apollo/utils.keyvaluecache": "^4.0.0",
     "@as-integrations/express5": "1.1.2",
     "@flatbread/codegen": "workspace:*",
@@ -44,18 +47,12 @@
     "@flatbread/transformer-yaml": "workspace:*",
     "@flatbread/utils": "workspace:*",
     "@parcel/watcher": "^2.5.1",
-    "apollo-server-core": "^3.13.0",
-    "apollo-server-express": "^3.13.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
-    "express-graphql": "^0.12.0",
     "gradient-string": "^2.0.2",
-    "graphql": "16.5.0",
+    "graphql": "16.14.2",
     "kleur": "^4.1.5",
-    "picomatch": "4.0.5",
-    "remark-github": "^11.2.4",
-    "sade": "^1.8.1",
-    "serialize-javascript": "^6.0.2"
+    "sade": "^1.8.1"
   },
   "devDependencies": {
     "@types/cors": "2.8.12",
@@ -64,7 +61,7 @@
     "@types/node": "16.11.47",
     "@types/picomatch": "4.0.3",
     "@types/sade": "1.7.4",
-    "@types/serialize-javascript": "5.0.2",
+    "picomatch": "4.0.5",
     "tsup": "6.2.1",
     "typescript": "4.7.4",
     "vfile": "5.3.4"

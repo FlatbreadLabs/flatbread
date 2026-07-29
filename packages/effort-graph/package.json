@@ -1,7 +1,7 @@
 {
   "name": "@flatbread/effort-graph",
-  "version": "0.1.0-alpha.0",
-  "description": "Standalone semantic writer for the Flatbread Effort Graph — journaled multi-file mutations over epistemic markdown artifacts.",
+  "version": "1.0.0",
+  "description": "Git-native memory records for coding agents. Writes typed Effort, Issue, Finding, Decision, Constraint, Risk, Citation, and Blob records to Markdown as journaled changes, and reads them back in bounded pages.",
   "type": "module",
   "scripts": {
     "build": "tsup",
@@ -34,12 +34,15 @@
     "skills",
     "*.d.ts"
   ],
+  "engines": {
+    "node": ">=20.19"
+  },
   "dependencies": {
+    "@flatbread/core": "workspace:*",
     "gray-matter": "^4.0.3",
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@flatbread/core": "workspace:*",
     "@flatbread/transformer-markdown": "workspace:*",
     "@types/node": "25.6.2",
     "tsup": "8.5.1",
