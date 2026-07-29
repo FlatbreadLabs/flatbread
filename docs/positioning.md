@@ -6,15 +6,38 @@ To compare Flatbread with databases, CMSs, and other file-based tools, see
 [Comparing Flatbread with other tools](./pmf-decision-rubric.md). For keeping
 and moving your data, see [data ownership](./data-ownership.md).
 
-Turn files in Git into typed, related content for your TypeScript app. A
-Flatbread project has collections, records, and `refs` that link records.
-Generated types and [GraphQL](https://graphql.org/) operations are common ways
-for an app to read that data; they do not define what Flatbread is.
+Flatbread turns files in Git into a typed relational graph. A project has
+collections, records, and `refs` that link records. Generated types and
+[GraphQL](https://graphql.org/) operations are common ways for an app to read
+that graph; they do not define what Flatbread is.
 
 **Flatbread** reads content from your repository and file system. Plugins
 control how it reads files and turns them into data.
 
-**Who it is for:** Teams building TypeScript sites, internal tools, and starter
+## The lead use case: memory for coding agents
+
+The [Effort Graph](../packages/effort-graph/README.md) is a Flatbread content
+model for what a coding agent works out along the way. An agent records an
+Effort and then writes Issues, Findings, Decisions, Constraints, Risks,
+Citations, and Blobs against it. Each record is a markdown file under
+`.flatbread-efforts/`, so it is committed, diffed, reviewed, and reverted like
+source. Writes go through `flatbread effort write`; reads come back as bounded
+digests from `flatbread effort list`, `records`, `relations`,
+`blocking-decisions`, and `get`.
+
+That solves a plain problem: an agent that closes its session forgets why it
+chose what it chose. Putting the reasoning in the repository keeps it next to
+the code it explains, and keeps it readable by a person.
+
+## The general case: relational content
+
+Everything above is one content model on a general engine. The same
+collections, `refs`, filters, and generated types back sites, docs, and
+internal tools. Posts point at authors; authors point at each other. Model your
+own collections and you get the same typed graph.
+
+**Who it is for:** People building coding agents that need memory a human can
+review in Git, and teams building TypeScript sites, internal tools, and starter
 projects that want versioned, reviewable content and links between entries
 without setting up a CMS database.
 
@@ -23,13 +46,15 @@ without setting up a CMS database.
 - It is not a hosted CMS, dashboard, or writing UI.
 - It is not a general-purpose GraphQL platform or database. Transactions,
   detailed access control, and many concurrent writers are outside its scope.
-- [`flatbread start --watch`](./local-dev-loop.md) reloads valid content and
-  config changes. Changes to Flatbread packages still need their own rebuild or
+- It does not reload its own packages.
+  [`flatbread start --watch`](./local-dev-loop.md) picks up valid content and
+  config changes, but a change to a Flatbread package needs a rebuild and a
   restart.
 
-**GraphQL:** In the default setup, GraphQL reads data that Flatbread has already
-loaded (`schema → operations → codegen`). Start with files and configuration,
-then choose how your app reads the data. The
+**GraphQL:** GraphQL is one read interface over the graph. In the default setup
+it reads data that Flatbread has already loaded, following
+`schema → operations → codegen`. Start with files and configuration, then
+choose how your app reads the data. The
 [Quickstart](../packages/flatbread/README.md#quickstart-posts-authors-and-tags)
 shows posts, authors, and tags from files through generated types.
 

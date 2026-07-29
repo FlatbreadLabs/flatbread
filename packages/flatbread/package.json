@@ -1,7 +1,7 @@
 {
   "name": "flatbread",
-  "version": "1.0.0-alpha.22",
-  "description": "Consume relational, flat-file data using GraphQL 🥯 inside damn near any framework.",
+  "version": "1.0.0",
+  "description": "Git-native memory for coding agents and relational content for TypeScript apps. Files in your repo become a typed graph you read over GraphQL, generated TypeScript, or the CLI.",
   "type": "module",
   "scripts": {
     "build": "tsup",
@@ -30,6 +30,9 @@
     "dist",
     "*.d.ts"
   ],
+  "engines": {
+    "node": ">=20.19"
+  },
   "dependencies": {
     "@apollo/server": "5.0.0",
     "@apollo/utils.keyvaluecache": "^4.0.0",

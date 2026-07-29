@@ -93,6 +93,20 @@ There are two steps:
 1. Bump versions where there are changes
 2. Publish the changed packages
 
+### One-time note for 1.0
+
+The 1.0 release put every published package on `1.0.0` at once, rather than
+letting each package carry its own alpha number. `pnpm bump` still works the
+same way: it preselects the packages that changed plus their workspace
+dependents. Only bump every package together again when a release calls for it.
+
+`packages/effort-graph/skills/effort-graph/release.json` records the version an
+end user installs. Edit that file, not the copy in `.agents/`. Then run
+`pnpm skills:sync` to refresh the `.agents/` copy and `pnpm skills:pack-check`,
+which fails unless `flatbreadVersion` and `effortGraphVersion` match the current
+`package.json` versions and `gitTag` equals `v<flatbreadVersion>`. `pnpm verify`
+runs both checks.
+
 ### 1) Bump versions only where there are changes
 
 Use the interactive bump script:
@@ -189,7 +203,8 @@ Details:
   deleted after publication.
 
 End users install the skill from that release tag and install the matching
-`flatbread` version:
+`flatbread` version. Replace `X` with the released version — `1.0.0` for the
+first stable release, so the tag is `v1.0.0`:
 
 ```bash
 npx skills add https://github.com/FlatbreadLabs/flatbread/tree/vX/packages/effort-graph/skills/effort-graph --skill effort-graph

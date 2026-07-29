@@ -1,7 +1,7 @@
 {
   "name": "@flatbread/transformer-markdown",
-  "version": "1.0.0-alpha.8",
-  "description": "Convert .md files to in-memory JSON model",
+  "version": "1.0.0",
+  "description": "Flatbread transformer plugin that parses Markdown frontmatter and body into content records.",
   "type": "module",
   "repository": {
     "type": "git",
@@ -29,7 +29,7 @@
     "dev": "tsup --watch src"
   },
   "engines": {
-    "node": "^14.13.1 || >=16.0.0"
+    "node": ">=20.19"
   },
   "dependencies": {
     "@sindresorhus/slugify": "^2.2.1",

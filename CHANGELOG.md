@@ -1,0 +1,63 @@
+# Changelog
+
+Notes for the Flatbread release train. Some packages also keep their own
+changelog; this file covers the repository as a whole.
+
+## 1.0.0
+
+First stable release. The alpha train ended at `flatbread@1.0.0-alpha.22`.
+
+Twelve packages make up the 1.0 release set. They all ship at `1.0.0` and move
+in lockstep from here. One version number across the set, so you no longer have
+to work out which alpha of one package matches which alpha of another.
+
+Nine were already on npm as alphas and go to `1.0.0` from there:
+
+`flatbread`, `@flatbread/core`, `@flatbread/config`, `@flatbread/codegen`,
+`@flatbread/resolver-svimg`, `@flatbread/source-filesystem`,
+`@flatbread/transformer-markdown`, `@flatbread/transformer-yaml`, and
+`@flatbread/utils`.
+
+Three reach npm for the first time in this release:
+
+- `@flatbread/effort-graph` writes and reads agent memory records.
+- `@flatbread/explorer` serves the single-page app for browsing a content graph.
+- `@flatbread/proof` runs a task DAG of Cursor subagents.
+
+### Packaging
+
+- Every package declares `engines.node: ">=20.19"`. The old floors were
+  `^14.13.1 || >=16.0.0`, `>=18`, and in several packages nothing at all. Node
+  18, and Node 20 before 20.19, are no longer supported.
+- `@flatbread/config` declares `@flatbread/core` as a runtime dependency. It
+  was a devDependency, which worked inside this monorepo and nowhere else.
+- `@flatbread/codegen` widens its peer range on `@flatbread/config` and
+  `@flatbread/core` from `workspace:*` to `workspace:^`, so it publishes a
+  caret range instead of an exact pin.
+- `@flatbread/resolver-svimg` points its `repository`, `homepage`, and `bugs`
+  links at `FlatbreadLabs/flatbread`. They still named the old
+  `tonyketcham/flatbread` fork.
+- Every package carries a description that says what that package does.
+
+### Docs
+
+- The READMEs and `docs/positioning.md` now lead with the Effort Graph: an
+  agent's Efforts, Issues, Findings, Decisions, Constraints, Risks, Citations,
+  and Blobs written as Markdown records in your repository. The reasoning gets
+  committed and reviewed like the code.
+- Relational content for sites, docs, and internal tools stays a first-class
+  second path on the same engine, and GraphQL is described as one read
+  interface over the graph rather than as the product.
+- Removed the banner that called the whole project experimental. The narrower
+  qualifiers still hold: the generated TypeScript read API is a prototype, and
+  its selection-string escape hatch is experimental.
+- The `@flatbread/effort-graph` README no longer claims Git ignores the journal
+  for you. It names the default `.flatbread-efforts` root, lists the two
+  `.gitignore` lines you must add, and points at
+  `flatbread effort bootstrap --verify`, which exits nonzero when setup is
+  incomplete.
+
+There is no migration guide. Of the changes above, the Node floor is the one
+that can break an install. For anything else that moved since
+`1.0.0-alpha.22`, read the Git history; the alpha train did not keep
+per-release notes.

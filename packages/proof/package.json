@@ -1,7 +1,7 @@
 {
   "name": "@flatbread/proof",
-  "version": "0.1.0-alpha.0",
-  "description": "Decompose a task into a DAG of subagents and prove they did the work — live canvas, oracles, pause gates, and convergence loops.",
+  "version": "1.0.0",
+  "description": "Bounded DAG task runner for Cursor agents. Runs subagent tasks in topological order with a live canvas, oracle and pause gates, and bounded re-execution loops.",
   "type": "module",
   "scripts": {
     "build": "tsup",
@@ -41,7 +41,7 @@
     "*.d.ts"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=20.19"
   },
   "dependencies": {
     "@cursor/sdk": "^1.0.9"
