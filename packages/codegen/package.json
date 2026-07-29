@@ -1,7 +1,7 @@
 {
   "name": "@flatbread/codegen",
-  "version": "1.0.0-alpha.2",
-  "description": "Automatic TypeScript type generation for Flatbread GraphQL schemas",
+  "version": "1.0.0",
+  "description": "Generates TypeScript types, typed document nodes, and a prototype read API from a Flatbread content model.",
   "type": "module",
   "scripts": {
     "build": "tsup",
@@ -29,6 +29,9 @@
     "dist",
     "*.d.ts"
   ],
+  "engines": {
+    "node": ">=20.19"
+  },
   "dependencies": {
     "@flatbread/utils": "workspace:*",
     "@graphql-codegen/cli": "^5.0.7",
@@ -50,8 +53,8 @@
     "vitest": "^4.1.5"
   },
   "peerDependencies": {
-    "@flatbread/config": "workspace:*",
-    "@flatbread/core": "workspace:*",
+    "@flatbread/config": "workspace:^",
+    "@flatbread/core": "workspace:^",
     "@graphql-typed-document-node/core": "^3.1.0"
   }
 }

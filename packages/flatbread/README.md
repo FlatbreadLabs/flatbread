@@ -16,30 +16,49 @@
   </a>
 </p>
 
-Turn files in Git into typed, related content for your TypeScript app.
-**[GraphQL](https://graphql.org/)** and codegen are common ways to read that
-content, but they are not the only options. See
-[Flatbread positioning](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/positioning.md).
+Flatbread turns files in Git into a typed relational graph. Files are the
+records. `refs` in `flatbread.config.js` link them. You read the graph through
+**[GraphQL](https://graphql.org/)**, generated TypeScript, or the `flatbread`
+CLI.
 
-**Flatbread** reads content from your repository and file system. Plugins control
-how it reads files and turns them into data.
+People use it two ways.
 
-**Who it is for:** Teams building TypeScript sites, internal tools, and starter
-projects that want versioned, reviewable content and links between entries
-without setting up a CMS database.
+**Durable memory for coding agents.** The
+[Effort Graph](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/effort-graph)
+stores an agent's reasoning as markdown records in the repository: Efforts,
+Issues, Findings, Decisions, Constraints, Risks, Citations, and Blobs. An agent
+writes them with `flatbread effort write` and reads them back through bounded
+queries such as `flatbread effort list` and
+`flatbread effort blocking-decisions`. Records live under
+`.flatbread-efforts/`, so you commit, review, diff, and revert them like any
+other file, and the memory outlives the session that produced it. The bundled
+[Effort Graph skill](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/effort-graph/skills/effort-graph/SKILL.md)
+teaches an agent the commands.
+
+**Relational content for sites, docs, and internal tools.** Markdown and YAML
+files become typed collections that link to each other. A post names its
+authors by id, and Flatbread resolves them. You get versioned, reviewable
+content and joins over files without a CMS database. Start with the
+[Quickstart](#quickstart-posts-authors-and-tags).
+
+Both paths run on the same engine. Plugins control how Flatbread reads files
+and turns them into data.
+
+**Who it is for:** People building coding agents that need memory they can
+review in Git, and teams building TypeScript sites, internal tools, and starter
+projects that want versioned content with links between entries.
 
 **What Flatbread does not do:**
 
 - It is not a hosted CMS, dashboard, or writing UI.
 - It is not a general-purpose GraphQL platform or database. Transactions,
   detailed access control, and many concurrent writers are outside its scope.
-- Run `flatbread start --watch` to update valid content and config changes
-  while you work. Changes to Flatbread packages still need their own rebuild or
-  restart. See the
+- It does not reload its own packages. `flatbread start --watch` picks up valid
+  content and config changes while you work, but a change to a Flatbread
+  package needs a rebuild and a restart. See the
   [local development loop](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/local-dev-loop.md).
 
-**GraphQL:** GraphQL is a common way to read Flatbread data. It does not define
-the product. For more detail, see
+**GraphQL:** GraphQL is one read interface over the graph. For more detail, see
 [Flatbread positioning](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/positioning.md).
 
 **Glossary:** Definitions for collections, relations, IDs, validation, and the
@@ -58,11 +77,10 @@ introspection, and generated TypeScript remain available when you move away
 from Flatbread. See
 [data ownership](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/data-ownership.md).
 
-For contributing to this monorepo, use Node 20.19+ with pnpm 10.33.x. Runtime support for published packages is tracked by each package's own metadata.
+Every published package requires Node 20.19 or newer. To work on this monorepo,
+use Node 20.19+ with pnpm 10.33.x.
 
 ## Quickstart (posts, authors, and tags)
-
-🚧 This project is experimental; the API may change before `v1.0`.
 
 Start with the **Next.js example** in `examples/nextjs`. It reads shared
 Markdown from `examples/content` through its `content/` symlink. The commands
@@ -111,7 +129,7 @@ The Next example points `flatbread.config.js` at `content/markdown/...` **relati
 
 ### Traceability: same relation model (files, config, query interface)
 
-The table below ties the **Git-native** model to the default **GraphQL** read layer without implying GraphQL is the product’s whole identity—GraphQL is one [**query interface**](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#query-interface); files and config remain the source of truth.
+The table below follows one relation from files to config to the generated GraphQL schema. Files and config are the source of truth; GraphQL is one [query interface](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#query-interface) over them.
 
 | Layer                                     | You see…                                                                                                                         | Glossary                                                                                                                                                                                                                                                                                                         |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -173,20 +191,20 @@ query GetPostsAuthorsAndTags {
 }
 ```
 
-After codegen, your app imports types from **`./generated/graphql`**. The **result shape** of that operation is typed (for example **`GetPostsAuthorsAndTagsQuery`**)—relations resolve to **`Author`** objects while **`tags`** stay a **string array** on **`Post`**, matching the file metadata—the same row as the [illustrative JSON](#traceability-same-relation-model-files-config-query-interface) under **Traceability**.
+After codegen, your app imports types from **`./generated/graphql`**. The result shape of that operation is typed, for example **`GetPostsAuthorsAndTagsQuery`**. Relations resolve to **`Author`** objects; **`tags`** stays a string array on **`Post`**, matching the file metadata. That is the same shape as the [illustrative JSON](#traceability-same-relation-model-files-config-query-interface) under **Traceability**.
 
-The generated file also exposes a prototype **TypeScript read API** derived from the configured content model. In the Next.js example, [`examples/nextjs/lib/read.ts`](https://github.com/FlatbreadLabs/flatbread/blob/main/examples/nextjs/lib/read.ts) wires **`createFlatbreadReadApi()`** to the existing GraphQL fetcher and reads **posts**, **authors**, and **tags** with a generated default selection—no hand-written GraphQL document at the call site.
+The generated file also exposes a prototype **TypeScript read API** derived from the configured content model. In the Next.js example, [`examples/nextjs/lib/read.ts`](https://github.com/FlatbreadLabs/flatbread/blob/main/examples/nextjs/lib/read.ts) wires **`createFlatbreadReadApi()`** to the existing GraphQL fetcher. It reads **posts**, **authors**, and **tags** with a generated default selection, so there is no hand-written GraphQL document at the call site.
 
 #### Choosing a read interface
 
-Flatbread starts with related content files for TypeScript apps. Files define
-records, frontmatter fields, IDs, and `refs`; `flatbread.config.js` tells
-Flatbread how to group them into typed collections. **GraphQL** and the
-generated TypeScript API are two ways for your app to read the same data.
+Files come first. They define records, frontmatter fields, IDs, and `refs`;
+`flatbread.config.js` tells Flatbread how to group them into typed collections.
+**GraphQL** and the generated TypeScript API are two ways for your app to read
+the same data.
 
-Use **GraphQL operations** when your app needs explicit query documents, custom selections, Apollo or other GraphQL clients, persisted operations, or direct access to the GraphQL endpoint. Add `.graphql` documents, include fields like **`tags`** and **`authors`**, and rerun codegen so operation types such as **`GetPostsAuthorsAndTagsQuery`** match the posts/authors/tags graph.
+Use **GraphQL operations** when your app needs explicit query documents, custom selections, Apollo or another GraphQL client, persisted operations, or direct access to the GraphQL endpoint. Add `.graphql` documents, include fields like **`tags`** and **`authors`**, and rerun codegen so operation types such as **`GetPostsAuthorsAndTagsQuery`** match the posts/authors/tags graph.
 
-Use the prototype **generated TypeScript read API** when your app wants collection-shaped helpers for common reads from the configured Flatbread model, especially simple app reads such as posts, authors, tags, and resolved relations without writing GraphQL at each call site. The generated helpers currently execute through the GraphQL layer and still offer an experimental selection-string escape hatch, so both paths expose the same typed content graph backed by the same flat files while GraphQL remains the stable low-level interface.
+Use the prototype **generated TypeScript read API** when you want collection-shaped helpers instead of a GraphQL document at each call site. It suits plain reads: posts, authors, tags, and resolved relations. The helpers still run through the GraphQL layer, and their selection-string escape hatch is experimental. Both paths read the same typed graph from the same files; GraphQL is the stable lower-level interface.
 
 Default filesystem + markdown wiring uses the bundled [`source-filesystem`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/source-filesystem) and [`transformer-markdown`](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/transformer-markdown) plugins (`flatbread` re-exports them).
 
@@ -219,7 +237,7 @@ export default defineConfig({
 
 ### 5 · Reading the graph: GraphQL (after the model exists)
 
-Flatbread builds a content **graph from files**. In the default toolchain, **GraphQL is one read interface**: schema + resolver shape over that graph—not “Flatbread is a GraphQL CMS.”
+Flatbread builds a content graph from files. GraphQL is one read interface over that graph: a generated schema and the resolvers behind it.
 
 Wire your framework so the CLI wraps dev/build (**`flatbread start`** passes through your command after **`--`**). There is **no** `flatbread dev` subcommand.
 
@@ -256,7 +274,7 @@ for the cases that still need a rebuild or restart.
 Outside this monorepo:
 
 ```bash
-pnpm add flatbread@latest
+pnpm add flatbread
 ```
 
 Scaffold **`flatbread.config.js`**:
@@ -270,13 +288,19 @@ Point **`content`** entries at **your** `posts/` and **`authors/`** folders, reu
 More detail on the bundled example is in the
 [Next.js example README](https://github.com/FlatbreadLabs/flatbread/blob/main/examples/nextjs/README.md).
 
+For agent memory instead of site content, add `effortGraphContent()` to your
+config, then run `flatbread effort bootstrap` to check the setup and
+`flatbread effort bootstrap --verify` to fail when something is missing. The
+[Effort Graph README](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/effort-graph/README.md)
+has the install commands.
+
 ## Query arguments (GraphQL read interface)
 
 When **GraphQL** is your read interface, list fields use the following arguments in order of application.
 
 ### `filter`
 
-Each collection in the GraphQL schema can be passed a `filter` argument to constrain your results, sifting for only what you want. Any leaf field should be able to be used in a filter.
+Every collection in the GraphQL schema takes a `filter` argument that narrows the results. Any leaf field can be used in a filter.
 
 The syntax for `filter` is based on a subset of [MongoDB's query syntax](https://docs.mongodb.com/manual/reference/operator/query/).
 
@@ -354,7 +378,7 @@ Caveats:
 
 - Currently cannot infer date strings and then compare `Date` types in filters
   - should work if you dynamically pass in a `Date` object from your client, though not extensively tested
-  - if you wanna take a shot at that, start a PR for [adding arg typeOf checks and subsequent unique comparator functions 🥪](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/core/src/utils/sift.ts)
+  - to fix this, add argument `typeof` checks and the matching comparator functions in [`packages/core/src/utils/sift.ts`](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/core/src/utils/sift.ts), then open a pull request
 
 #### Combining multiple filters
 
@@ -382,7 +406,7 @@ result = [{ title: 'My pretzel collection' }];
 
 ### `sortBy`
 
-Sorts by the given field. Accepts a root-level field name. Defaults to not sortin' at all.
+Sorts by the given field. Accepts a root-level field name. Defaults to no sorting.
 
 ### `order`
 

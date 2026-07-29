@@ -1,18 +1,18 @@
 {
   "name": "@flatbread/resolver-svimg",
-  "version": "1.0.0-alpha.0",
-  "description": "use svimg as a flatbread field resolver",
+  "version": "1.0.0",
+  "description": "Flatbread field resolver that turns an image path into svimg attributes: responsive srcsets, WebP and AVIF variants, and a blurred placeholder.",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tonyketcham/flatbread.git",
+    "url": "git+https://github.com/FlatbreadLabs/flatbread.git",
     "directory": "packages/resolver-svimg"
   },
-  "homepage": "https://github.com/tonyketcham/flatbread/tree/main/packages/resolver-svimg#readme",
+  "homepage": "https://github.com/FlatbreadLabs/flatbread/tree/main/packages/resolver-svimg#readme",
   "author": "Adam Sparks <adamsparks92@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tonyketcham/flatbread/issues"
+    "url": "https://github.com/FlatbreadLabs/flatbread/issues"
   },
   "exports": {
     ".": "./dist/index.js"
@@ -29,7 +29,7 @@
     "dev": "tsup --watch src"
   },
   "engines": {
-    "node": "^14.13.1 || >=16.0.0"
+    "node": ">=20.19"
   },
   "peerDependencies": {
     "svimg": "^2.0.0 || ^3.0.0"
