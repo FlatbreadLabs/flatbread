@@ -1,4 +1,5 @@
 import test from 'ava';
+import { readFileSync } from 'node:fs';
 import type {
   Content,
   ContentEntry,
@@ -37,6 +38,9 @@ type ContentNodeIdUsesIdentifierField = Assert<
 type OverrideResolveReturnsUnknown = Assert<
   Equal<ReturnType<Override['resolve']>, unknown>
 >;
+type OverrideDescriptionMatchesGraphQL = Assert<
+  Equal<Override['description'], string | null | undefined>
+>;
 
 test('core public content types expose narrowed relation surfaces', (t) => {
   const entry: ContentEntry = {
@@ -63,9 +67,31 @@ test('core public content types expose narrowed relation surfaces', (t) => {
   t.is(unsafeString, 'value');
 });
 
+test('core declarations use only the public GraphQL type surface', (t) => {
+  const declarations = readFileSync(
+    new URL('../dist/index.d.ts', import.meta.url),
+    'utf8'
+  );
+
+  t.false(declarations.includes('graphql/jsutils/'));
+});
+
+test('core publishes dependencies used by its declarations', (t) => {
+  const manifest = JSON.parse(
+    readFileSync(new URL('../package.json', import.meta.url), 'utf8')
+  ) as {
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+  };
+
+  t.is(manifest.dependencies?.vfile, '5.3.4');
+  t.false('vfile' in (manifest.devDependencies ?? {}));
+});
+
 void (0 as unknown as ContentEntryRefsAreTyped);
 void (0 as unknown as ContentNodeKeepsUnknownFields);
 void (0 as unknown as SourceFetchUsesContent);
 void (0 as unknown as SourceFetchByTypeReturnsVFiles);
 void (0 as unknown as ContentNodeIdUsesIdentifierField);
 void (0 as unknown as OverrideResolveReturnsUnknown);
+void (0 as unknown as OverrideDescriptionMatchesGraphQL);
