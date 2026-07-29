@@ -14,25 +14,28 @@ import {
   resolveOpenPath,
 } from './openPath.js';
 
-test('resolveCliOpenPath is an alias of resolveOpenPath', (t) => {
+test.serial('resolveCliOpenPath is an alias of resolveOpenPath', (t) => {
   t.is(resolveCliOpenPath, resolveOpenPath);
 });
 
-test('opens explorer root when preset matches and assets are present', (t) => {
-  setExplorerStaticDirOverride(undefined);
-  if (!explorerAssetsPresent()) {
-    t.fail(
-      'Explorer assets missing. Build @flatbread/explorer first (`pnpm --filter @flatbread/explorer build`).'
-    );
-    return;
+test.serial(
+  'opens explorer root when preset matches and assets are present',
+  (t) => {
+    setExplorerStaticDirOverride(undefined);
+    if (!explorerAssetsPresent()) {
+      t.fail(
+        'Explorer assets missing. Build @flatbread/explorer first (`pnpm --filter @flatbread/explorer build`).'
+      );
+      return;
+    }
+    t.is(resolveOpenPath(effortGraphContent()), EXPLORER_ENDPOINT);
+    t.is(resolveOpenPath(effortGraphContent()), '/');
+    t.is(resolveCliOpenPath(effortGraphContent()), EXPLORER_ENDPOINT);
+    t.is(resolveCliOpenPath(effortGraphContent()), '/');
   }
-  t.is(resolveOpenPath(effortGraphContent()), EXPLORER_ENDPOINT);
-  t.is(resolveOpenPath(effortGraphContent()), '/');
-  t.is(resolveCliOpenPath(effortGraphContent()), EXPLORER_ENDPOINT);
-  t.is(resolveCliOpenPath(effortGraphContent()), '/');
-});
+);
 
-test('opens GraphQL sandbox when no explorer preset matches', (t) => {
+test.serial('opens GraphQL sandbox when no explorer preset matches', (t) => {
   t.is(
     resolveOpenPath([{ collection: 'Post', path: 'posts' }]),
     GRAPHQL_ENDPOINT

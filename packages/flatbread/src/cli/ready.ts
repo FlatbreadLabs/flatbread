@@ -86,7 +86,16 @@ export function createGqlReadyHandler(
     }
 
     const packageManagerCommand = deps.packageManager ?? 'npm run';
-    const targetProcess = deps.spawnCorunner(packageManagerCommand);
+    let targetProcess: ChildLike;
+    try {
+      targetProcess = deps.spawnCorunner(packageManagerCommand);
+    } catch {
+      logError(
+        `Failed to start corunner with "${packageManagerCommand} ${deps.corunner.trim()}".`
+      );
+      deps.onExit(1);
+      return { serverOnly: false, accepted: true };
+    }
 
     for (const script of [gqlChild, targetProcess]) {
       script.on('close', (code) => {

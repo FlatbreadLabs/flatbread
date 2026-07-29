@@ -70,13 +70,13 @@ describe('resolveGraphqlEndpoint', () => {
     assert.equal(endpoint, 'http://localhost:9999/alt/graphql');
   });
 
-  it('resolves bare / ?endpoint= against the injected origin', () => {
+  it('resolves bare / ?endpoint= to /graphql against the injected origin', () => {
     const endpoint = resolveGraphqlEndpoint(
       '?endpoint=/',
       DEFAULT_BOOTSTRAP,
       'http://localhost:9999'
     );
-    assert.equal(endpoint, 'http://localhost:9999/');
+    assert.equal(endpoint, 'http://localhost:9999/graphql');
   });
 
   it('resolves host-without-scheme ?endpoint= by prepending http', () => {
@@ -145,10 +145,12 @@ describe('normalizeGraphqlUrl', () => {
     );
   });
 
-  it('resolves bare / against an injected origin', () => {
+  it('normalizes relative / to /graphql like an absolute origin URL', () => {
+    assert.equal(normalizeGraphqlUrl('/'), 'http://localhost:5057/graphql');
+    assert.equal(normalizeGraphqlUrl('http://host/'), 'http://host/graphql');
     assert.equal(
-      normalizeGraphqlUrl('/', 'http://localhost:9999'),
-      'http://localhost:9999/'
+      normalizeGraphqlUrl('/alt/graphql'),
+      'http://localhost:5057/alt/graphql'
     );
   });
 

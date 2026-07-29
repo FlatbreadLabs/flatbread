@@ -162,6 +162,33 @@ test('corunner: defaults package manager command to npm run', (t) => {
   t.deepEqual(deps.spawned, ['npm run']);
 });
 
+test('corunner: spawn throw logs and exits with 1', (t) => {
+  const gql = createFakeChild();
+  const deps = createDeps({
+    corunner: 'next dev',
+    packageManager: 'pnpm',
+    spawnCorunner: () => {
+      throw new Error('ENOENT');
+    },
+  });
+  const handle = createGqlReadyHandler(gql, deps);
+
+  const result = handle('flatbread-gql-ready');
+
+  t.true(result.accepted);
+  t.false(result.serverOnly);
+  t.is(deps.readyCount.value, 1);
+  t.deepEqual(deps.exits, [1]);
+  t.true(
+    deps.errors.some(
+      (message) =>
+        message.includes('Failed to start corunner') &&
+        message.includes('pnpm') &&
+        message.includes('next dev')
+    )
+  );
+});
+
 test('corunner: GraphQL child close exits parent with that code', (t) => {
   const gql = createFakeChild();
   const corunnerChild = createFakeChild();

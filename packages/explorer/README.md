@@ -8,7 +8,7 @@ Content-relation explorer for Flatbread. v1 ships a generic single-page app
 
 ```bash
 # flatbread.config.js includes effortGraphContent()
-flatbread start --watch --open
+npx flatbread start --watch --open
 # → http://localhost:5057/          explorer
 # → http://localhost:5057/graphql   Apollo sandbox
 ```
@@ -16,7 +16,7 @@ flatbread start --watch --open
 No separate Next.js app is required. Flatbread checks for the prebuilt assets
 under `dist/static/` (see [Develop in the monorepo](#develop-in-the-monorepo)).
 When those assets are missing, Flatbread does not serve the explorer and
-`flatbread start --open` opens `/graphql` instead. `pnpm play:efforts` runs
+`npx flatbread start --open` opens `/graphql` instead. `pnpm play:efforts` runs
 the explorer build automatically.
 
 ## Static deploy

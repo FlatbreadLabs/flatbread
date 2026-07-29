@@ -86,7 +86,8 @@ export function normalizeGraphqlUrl(
   } catch {
     // Relative path like `/graphql`
     if (trimmed.startsWith('/')) {
-      return new URL(trimmed, locationOrigin).href;
+      const path = trimmed === '/' ? DEFAULT_GRAPHQL_PATH : trimmed;
+      return new URL(path, locationOrigin).href;
     }
     // Bare host is absolute; do not forward the caller's origin.
     return normalizeGraphqlUrl(`http://${trimmed}`);
