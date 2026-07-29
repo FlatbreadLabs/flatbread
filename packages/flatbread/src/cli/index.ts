@@ -1,24 +1,26 @@
 import sade from 'sade';
 import colors from 'kleur';
 import gradient from 'gradient-string';
+import type { ContentEntry } from '@flatbread/core';
 import { version } from '../../package.json';
 import { networkInterfaces, release } from 'node:os';
 import orchestrateProcesses from './runner';
 import initConfig from './initConfig';
 import { createCodegenCommand } from '@flatbread/codegen';
 import { registerEffortCommands } from './effort';
-
-const GRAPHQL_ENDPOINT = '/graphql';
+import {
+  EXPLORER_ENDPOINT,
+  GRAPHQL_ENDPOINT,
+  resolveOpenPath,
+} from './openPath';
+import { loadFlatbreadConfig } from '../utils/getSchema';
 
 /**
- * Launch the GraphQL explorer in a browser.
+ * Open a browser tab at the given path on the Flatbread server.
  *
  * Yoinked from [SvelteKit's CLI](https://github.com/sveltejs/kit/blob/2c133ff5b8798c885161ed57bfb45c88fc77f516/packages/kit/src/cli.js).
- *
- * @param {number} port the port the server is running on
- * @param {boolean} https whether the server is running on https
  */
-async function launch(port: number, https: boolean): Promise<void> {
+async function launch(port: number, openPath: string): Promise<void> {
   const { exec } = await import('child_process');
   let cmd = 'open';
   if (process.platform == 'win32') {
@@ -30,9 +32,8 @@ async function launch(port: number, https: boolean): Promise<void> {
       cmd = 'xdg-open';
     }
   }
-  exec(
-    `${cmd} ${https ? 'https' : 'http'}://localhost:${port}${GRAPHQL_ENDPOINT}`
-  );
+  const path = openPath.startsWith('/') ? openPath : `/${openPath}`;
+  exec(`${cmd} http://localhost:${port}${path}`);
 }
 
 const prog = sade('flatbread').version(version);
@@ -41,26 +42,68 @@ prog
   .command('start [corunner]', 'Start flatbread with a GraphQL server')
   .option('--, _', 'Pass options to the corunning script')
   .option('-p, --port', 'Port to run the GraphQL server', 5057)
-  .option('-H, --https', 'Use self-signed HTTPS certificate', false)
+  .option(
+    '-H, --https',
+    'Reserved. Flatbread serves HTTP only; this flag does nothing',
+    false
+  )
   .option('-w, --watch', 'Hot-swap content and reload config', false)
-  .option('-o, --open', 'Open the explorer in a browser tab', false)
+  .option(
+    '-o, --open',
+    'Open the explorer (or GraphQL sandbox) in a browser tab',
+    false
+  )
   .option(
     '-X, --exec',
     'The runner to execute the corunning script with. Defaults to your package manager (i.e. npm, pnpm, yarn)'
   )
-  .action(async (corunner, { _, port, https, watch, open, exec }) => {
-    // Combine the corunning script & the options passed to it
-    const secondaryScript = `${corunner} ${_.join(' ')}`;
-    // Yeet it into the all seeing eye of the universe
+  .action(async (corunner, { _, port, watch, open, exec }) => {
+    const args = Array.isArray(_) ? _ : [];
+    const secondaryScript =
+      typeof corunner === 'string' && corunner.length > 0
+        ? `${corunner} ${args.join(' ')}`.trim()
+        : '';
+
+    // Fork before reading the config so config load stays off the critical
+    // path to `flatbread-gql-ready` (and to the corunner). `--open` waits on
+    // this promise, then resolves the browser path as late as possible.
+    let settleOpenContent!: (
+      content: readonly ContentEntry[] | undefined
+    ) => void;
+    const loadedOpenContent = new Promise<readonly ContentEntry[] | undefined>(
+      (resolve) => {
+        settleOpenContent = resolve;
+      }
+    );
+
     orchestrateProcesses({
       corunner: secondaryScript,
       flatbreadPort: port,
-      https,
       watch,
       packageManager: exec,
+      onReady: open
+        ? () => {
+            void loadedOpenContent.then((content) => {
+              void launch(port, resolveOpenPath(content));
+            });
+          }
+        : undefined,
     });
-    // Say hi for good measure
-    welcome({ port, https, open });
+
+    let openPath = GRAPHQL_ENDPOINT;
+    let explorer = false;
+    let contentForOpen: readonly ContentEntry[] | undefined;
+    try {
+      const loaded = await loadFlatbreadConfig(process.cwd());
+      contentForOpen = loaded.config?.content;
+      openPath = resolveOpenPath(contentForOpen);
+      explorer = openPath === EXPLORER_ENDPOINT;
+    } catch {
+      // Config may be missing during init; fall back to GraphQL sandbox.
+    }
+    settleOpenContent(contentForOpen);
+
+    welcome({ port, explorer });
   });
 
 prog
@@ -102,20 +145,14 @@ prog.parse(process.argv, { unknown: (arg) => `Unknown option: ${arg}` });
  * The welcome message for the user when starting the server.
  *
  * Yoinked from [SvelteKit's CLI](https://github.com/sveltejs/kit/blob/2c133ff5b8798c885161ed57bfb45c88fc77f516/packages/kit/src/cli.js) with some modifications.
- *
- * @param serverConfig server config object
  */
 function welcome({
   port,
-  https,
-  open,
+  explorer,
 }: {
-  open: boolean;
-  https: boolean;
   port: number;
+  explorer: boolean;
 }): void {
-  if (open) launch(port, https);
-
   console.log(
     colors.bold(
       gradient.fruit('\n Flatbread 🥯') + gradient.vice(` v${version}\n`)
@@ -128,21 +165,18 @@ function welcome({
       if (details.family !== 'IPv4') return;
 
       if (details.internal) {
-        // Always show HTTP endpoint
+        if (explorer) {
+          console.log(
+            `  ${colors.gray('explorer:')} http://${colors.bold(
+              `localhost:${port}${EXPLORER_ENDPOINT}`
+            )}`
+          );
+        }
         console.log(
           `  ${colors.gray('graphql:')} http://${colors.bold(
             `localhost:${port}${GRAPHQL_ENDPOINT}`
           )}`
         );
-
-        // Show HTTPS endpoint if enabled (uses port + 1)
-        if (https) {
-          console.log(
-            `  ${colors.gray('graphql:')} https://${colors.bold(
-              `localhost:${port + 1}${GRAPHQL_ENDPOINT}`
-            )}`
-          );
-        }
       } else {
         if (details.mac === '00:00:00:00:00:00') return;
       }

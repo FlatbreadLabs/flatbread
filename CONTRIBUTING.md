@@ -24,8 +24,7 @@ Use this path first. The Next.js app reads shared content from
 2. `cd examples/nextjs`
 3. One-shot codegen: `pnpm exec flatbread codegen --verbose` (output: `generated/graphql.ts`; globs and dirs come from `flatbread.config.js`).
 4. Run the app **and** Flatbread together with **`flatbread start`** (there is **no** `flatbread dev` subcommand):
-   - **`pnpm dev`** — starts Next with local HTTPS and watches Flatbread content, config, and GraphQL documents. GraphQL runs on **5057** and Next on **3000**.
-   - Headless / no HTTPS: `pnpm exec flatbread start --watch -- next dev --turbopack`.
+   - **`pnpm dev`** — starts Next and watches Flatbread content, config, and GraphQL documents (`pnpm exec flatbread start --watch -- next dev --turbopack`). GraphQL runs on **5057** and Next on **3000**.
 
 Optional **`pnpm play`** from the repo root is a shortcut for **`cd examples/nextjs && pnpm dev`** — same as step 4 above, not a separate product command.
 
@@ -35,7 +34,10 @@ Optional **`pnpm play`** from the repo root is a shortcut for **`cd examples/nex
 - Build all packages: `pnpm build`
 - **Workspace libraries (watch-only):** `pnpm dev` — runs package `dev` scripts (e.g. `tsup --watch`) for `packages/*`; it does **not** start the Next.js example.
 - **Next.js example:** prefer the flow under [Recommended onboarding](#recommended-onboarding-try-flatbread-in-the-nextjs-example); or `pnpm play` as a convenience alias.
-- **Effort Graph viz (`examples/effort-viz`):** after `pnpm build`, run `pnpm play:efforts` (or `pnpm --filter effort-viz dev`) to dogfood `.flatbread-efforts` with live SSE updates — see that example's README.
+- **Effort Graph explorer:**
+  1. Run `pnpm play:efforts` (builds `@flatbread/explorer` via `preplay:efforts`, then `flatbread start --watch --open`).
+  2. When `flatbread.config.js` uses `effortGraphContent()`, Flatbread serves `@flatbread/explorer` at `http://localhost:5057/`. The Apollo sandbox is at `/graphql`.
+  3. For hot module replacement (HMR) on the single-page app (SPA) shell, run `pnpm exec flatbread start --watch` and `pnpm --filter @flatbread/explorer dev` in parallel. Vite on **5173** proxies API routes to **5057**.
 - Check local CI parity before opening a PR: `pnpm verify`
 
 ## Working on a package

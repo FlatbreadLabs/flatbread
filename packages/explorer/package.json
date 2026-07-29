@@ -1,0 +1,59 @@
+{
+  "name": "@flatbread/explorer",
+  "version": "0.1.0-alpha.0",
+  "description": "Content-relation explorer SPA for Flatbread — generic graph shell with Effort Graph as the first preset.",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm build:node && pnpm build:web",
+    "build:node": "tsup",
+    "build:web": "vite build",
+    "dev": "vite",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test src/node/matchPreset.test.ts src/node/staticDir.test.ts src/web/core/endpoints.test.ts src/web/core/physics/forces.test.ts src/web/core/physics/simulation.test.ts src/web/presets/effort-graph/glyphs.test.ts src/web/presets/effort-graph/lifecycle.test.ts src/web/presets/effort-graph/normalize.test.ts src/web/presets/effort-graph/query.test.ts src/web/presets/effort-graph/useEffortGraphLive.test.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FlatbreadLabs/flatbread.git",
+    "directory": "packages/explorer"
+  },
+  "homepage": "https://github.com/FlatbreadLabs/flatbread#readme",
+  "author": "Tony Ketcham <ketcham.dev@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/FlatbreadLabs/flatbread/issues"
+  },
+  "exports": {
+    ".": "./dist/node/index.js"
+  },
+  "main": "dist/node/index.js",
+  "module": "dist/node/index.js",
+  "types": "dist/node/index.d.ts",
+  "files": [
+    "dist",
+    "*.d.ts"
+  ],
+  "dependencies": {
+    "@flatbread/effort-graph": "workspace:*"
+  },
+  "devDependencies": {
+    "@react-three/drei": "^10.0.6",
+    "@react-three/fiber": "^9.1.2",
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^20.19.10",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "@types/three": "^0.175.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-markdown": "10.1.0",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.1",
+    "tailwindcss": "^4.1.11",
+    "three": "^0.175.0",
+    "tsup": "8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "6.0.3",
+    "vite": "^6.3.5"
+  }
+}

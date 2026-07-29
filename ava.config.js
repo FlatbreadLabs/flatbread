@@ -13,6 +13,8 @@ export default {
     // parser/runtime guardrails.
     '!packages/codegen/src/__tests__/**',
     '!packages/utils/src/__tests__/**',
+    // Explorer SPA uses Node's built-in test runner (see package scripts).
+    '!packages/explorer/**',
   ],
   extensions: {
     js: true,

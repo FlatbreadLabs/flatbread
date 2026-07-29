@@ -26,12 +26,11 @@ cd examples/nextjs
 pnpm exec flatbread codegen --verbose
 ```
 
-For development, use the unified watcher. This path avoids the example
-package's HTTPS convenience script and keeps the Flatbread GraphQL endpoint on
-plain HTTP port `5057`.
+For development, use the unified watcher. It serves GraphQL on port `5057`,
+refreshes generated artifacts, and runs Next.js. The example package's
+`pnpm dev` script runs the same command.
 
 ```bash
-# serve GraphQL, refresh generated artifacts, and run Next.js without HTTPS
 pnpm exec flatbread start --watch -- next dev --turbopack
 ```
 
@@ -104,10 +103,8 @@ Watch mode does the following:
   or config change. If a change is invalid, it keeps the previous schema.
 - Watch mode is a long-running process; do not use it in CI or one-shot
   scripts.
-- The Next.js example `pnpm dev` includes `--https` for local convenience, but
-  the Flatbread GraphQL endpoint remains documented as HTTP on `5057`. In
-  headless environments prefer
-  `pnpm exec flatbread start --watch -- next dev --turbopack`.
+- Flatbread serves plain HTTP. The `-H, --https` flag does not change how it
+  listens, so the GraphQL endpoint is always HTTP on `5057`.
 - Codegen failures are logged and do not undo a committed schema generation.
 - Watch mode requires a source plugin with `fetchPaths`; sources without it fail
   fast at startup.

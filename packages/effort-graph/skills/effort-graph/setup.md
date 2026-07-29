@@ -84,3 +84,22 @@ On resume, begin with `flatbread effort list --status active`, then use bounded
 effort-scoped reads. Capture mutation `generation` tokens and use
 `--strict-min-generation` for immediate read-after-write checks; never implement
 client polling loops. Semantic changes go through `flatbread effort write`.
+
+## 4. Open the explorer (optional)
+
+With a complete `effortGraphContent()` preset in config, Flatbread serves the
+content-relation explorer automatically (`@flatbread/explorer` ships with
+`flatbread`):
+
+```bash
+npx flatbread start --watch --open
+```
+
+Flatbread checks for the prebuilt single-page app (SPA) assets under
+`dist/static/`. When those assets are missing, Flatbread does not serve the
+explorer and `npx flatbread start --open` opens `/graphql` instead.
+
+- Explorer UI (when served): `http://localhost:5057/`
+- Apollo GraphQL sandbox: `http://localhost:5057/graphql`
+
+No separate app install is required.
