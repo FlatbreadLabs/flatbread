@@ -55,7 +55,7 @@
     "picomatch": "4.0.5",
     "remark-github": "^11.2.4",
     "sade": "^1.8.1",
-    "serialize-javascript": "^6.0.2"
+    "serialize-javascript": "^7.0.0"
   },
   "devDependencies": {
     "@types/cors": "2.8.12",
