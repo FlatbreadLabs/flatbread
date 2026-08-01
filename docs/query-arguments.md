@@ -1,20 +1,21 @@
 # Query arguments
 
-Every list field in the generated GraphQL schema takes the same four arguments.
-Flatbread applies them in this order: `filter`, then `sortBy` with `order`, then
-`skip`, then `limit`.
+Every list field in the generated GraphQL schema accepts the same four
+arguments, and Flatbread applies them in a fixed order: `filter` first, then
+`sortBy` together with `order`, then `skip`, and finally `limit`.
 
-For what a collection, record, and relation are, see the
-[glossary](./glossary.md). For the README, see
-[the main README](../README.md).
+For definitions of a collection, a record, and a relation, see the
+[glossary](./glossary.md), and for installation and usage see [the main
+README](../README.md).
 
 ## `filter`
 
-`filter` narrows the results of a list field. Any leaf field can be used in a
-filter.
+`filter` narrows the results of a list field, and any leaf field in your content
+can be used inside a filter.
 
-The syntax is a subset of
-[MongoDB's query syntax](https://docs.mongodb.com/manual/reference/operator/query/).
+The syntax follows a subset of [MongoDB's query
+syntax](https://docs.mongodb.com/manual/reference/operator/query/), covering
+comparison, membership, existence, and pattern matching.
 
 ### Syntax
 
@@ -69,8 +70,7 @@ result = [
   - Like `resultValue.includes(filterValue)` in JavaScript
   - Takes a single value that passes strict comparison
   - The field must hold an array or a string on **every** entry in the
-    collection. A record that omits the field fails the query with
-    `Comparator "includes" requires an array or string field.`
+    collection. A record that omits the field fails the query with `Comparator "includes" requires an array or string field.`
 - `excludes`
   - Like `!resultValue.includes(filterValue)` in JavaScript
   - Takes a single value that passes strict comparison
@@ -96,17 +96,17 @@ result = [
 
 ### Caveats
 
-Flatbread cannot infer date strings and then compare `Date` types in filters. It
-should work if your client passes a `Date` object, though that path is not
-tested much. To fix it, add argument `typeof` checks and the matching comparator
-functions in
+Flatbread cannot infer date strings and then compare `Date` types inside
+filters, although it should work if your client passes an actual `Date` object,
+a path that is not extensively tested. To fix it, add argument `typeof` checks
+and the matching comparator functions in
 [`packages/core/src/utils/sift.ts`](../packages/core/src/utils/sift.ts), then
 open a pull request.
 
 ### Combining filters
 
-Add peer objects inside one filter object to point at several paths at once.
-Flatbread unions them.
+Add peer objects inside one filter object to point at several paths
+simultaneously, and Flatbread unions the resulting comparisons together.
 
 Using the `entries` above:
 
@@ -128,16 +128,20 @@ result = [{ title: 'My pretzel collection' }];
 
 ## `sortBy`
 
-Sorts by the named field. Takes a root-level field name. Defaults to no sorting.
+Sorts the results by the named field, accepting a root-level field name, and
+defaults to no sorting at all.
 
 ## `order`
 
-The direction of the sort. Takes `ASC` or `DESC`. Defaults to `ASC`.
+Controls the direction of the sort, accepting either `ASC` or `DESC`, and
+defaults to `ASC` whenever you omit it.
 
 ## `skip`
 
-Skips the given number of entries. Takes an integer.
+Skips the given number of entries before returning anything, and accepts any
+integer.
 
 ## `limit`
 
-Caps the number of returned entries. Takes an integer.
+Limits the number of returned entries to whatever amount you specify, and
+accepts any integer.
