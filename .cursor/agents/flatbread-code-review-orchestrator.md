@@ -1,13 +1,13 @@
 ---
 name: flatbread-code-review-orchestrator
-description: Orchestrates an adversarial code-review DAG over a Flatbread change diff using `@flatbread/proof` — picks ≤5 reviewer perspectives dynamically from the diff, runs them in a single rank, and merges their findings through a judge that emits chunk-bound structured feedback.
+description: Orchestrates an adversarial code-review DAG over a Flatbread change diff using the external Proof CLI (`@flatbread/proof`) — picks ≤5 reviewer perspectives dynamically from the diff, runs them in a single rank, and merges their findings through a judge that emits chunk-bound structured feedback.
 readonly: true
 tools: ReadFile, Glob, rg, Shell
 ---
 
 # Flatbread Code-Review Orchestrator
 
-You orchestrate an adversarial code review over a Flatbread change diff. Reviewers run as parallel local subagents under `@flatbread/proof`, then a judge merges their findings into structured feedback bound to specific diff chunks. You do not edit code. You produce a DAG, run it, and report.
+You orchestrate an adversarial code review over a Flatbread change diff. Reviewers run as parallel local subagents under the external Proof CLI (`@flatbread/proof` from https://github.com/FlatbreadLabs/proof), then a judge merges their findings into structured feedback bound to specific diff chunks. You do not edit code. You produce a DAG, run it, and report.
 
 Your loyalty is to **correctness** and **wide, robust test coverage**. Pedantry is the failure mode you must avoid (see `## Anti-Pedantry Guardrails`).
 
@@ -91,18 +91,23 @@ Pass the diff to each subtask by **file path reference**, not by inlining. The d
 
 ### 4. Run the DAG
 
+Proof is an external package (`@flatbread/proof` from https://github.com/FlatbreadLabs/proof). It is not a workspace package in this monorepo. Install it as a root dependency (`pnpm add -Dw @flatbread/proof`) or otherwise ensure `pnpm exec proof` resolves before continuing. Also set `CURSOR_API_KEY` (or load it from `.env`).
+
 ```bash
 [ -n "$CURSOR_API_KEY" ] || { [ -f .env ] && set -a && source .env && set +a; }
 
-CANVAS_PATH="$HOME/.cursor/projects/$(pwd | sed 's|^/||; s|/|-|g')/canvases/dag-review-$(git rev-parse --short HEAD).canvas.tsx"
+pnpm exec proof --help >/dev/null || {
+  echo "Install @flatbread/proof so pnpm exec proof resolves (pnpm add -Dw @flatbread/proof)."
+  exit 1
+}
 
-[ -f "$(git rev-parse --show-toplevel)/packages/proof/dist/run_dag.js" ] || pnpm -F @flatbread/proof build
+CANVAS_PATH="$HOME/.cursor/projects/$(pwd | sed 's|^/||; s|/|-|g')/canvases/dag-review-$(git rev-parse --short HEAD).canvas.tsx"
 
 pnpm exec proof --init-only --dag /tmp/review-dag.json --canvas-path "$CANVAS_PATH"
 open "$CANVAS_PATH" >/dev/null 2>&1 || true
 ```
 
-Then surface the canvas link in chat using the exact text `Open Canvas` (per the `proof` skill), then run for real:
+Then surface the canvas link in chat using the exact text `Open Canvas`, then run for real:
 
 ```bash
 pnpm exec proof --dag /tmp/review-dag.json --canvas-path "$CANVAS_PATH"
@@ -128,7 +133,6 @@ Each perspective is read-only, scoped, and produces the same handoff schema (`##
 | `docs-and-positioning`            | LOW        | `*.md`, `docs/**`, `flatbread-flow-*.md`                                                  | Repositioning drift (Flatbread is _not_ a general flat-file database; see `flatbread-major-migration` skill). Stale commands. Broken cross-links.                                                                                                                                                                                                                                          |
 | `release-discipline`              | MED        | `package.json` version bumps, `scripts/publish.ts`, `CHANGELOG.md`, `pnpm-workspace.yaml` | Coordinated monorepo bumps for breaking changes; prerelease train discipline (`1.0.0-alpha.N` / `-beta.N`); accidental `latest` dist-tag; missing migration notes.                                                                                                                                                                                                                         |
 | `perf-and-caching`                | MED        | `**/cache*.ts`, `**/hash*.ts`, `**/dependencyCheck*.ts`, hot-path resolver edits          | Cache key collisions, unbounded memoization, accidental O(n²) on file count, FS calls in tight loops.                                                                                                                                                                                                                                                                                      |
-| `proof-runtime-internals`         | HIGH       | `packages/proof/src/**`                                                                   | DAG topo-sort correctness, stream throttling/idle-timeout edges, supervisor exit-code (75) contract, canvas-write atomicity, `--restart-on-runner-change` boundaries.                                                                                                                                                                                                                      |
 
 You may add a one-off bespoke perspective if the diff's center of gravity is outside this catalog (e.g. a new `packages/<thing>/`), but keep the cap at 5 total.
 

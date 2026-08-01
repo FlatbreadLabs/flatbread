@@ -1,0 +1,74 @@
+{
+  "title": "Flatbread codegen-only change (no sub-sub-agents)",
+  "framing": "Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.",
+  "models": {
+    "HIGH": { "id": "claude-opus-4-7" },
+    "MED": { "id": "gpt-5.5" },
+    "LOW": { "id": "gpt-5.4-mini" }
+  },
+  "tasks": [
+    {
+      "id": "diag-core-types",
+      "depends_on": [],
+      "complexity": "MED",
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files (frontmatter `readonly: true` is advisory in DAG runs).\n\nDiagnose every `@flatbread/core` type that `packages/codegen` consumes (e.g. `CodegenOptions`, `CodegenResult`, `CodegenStrategy`, `Content`, `BaseContentNode`, `Override`, `Source`, `Transformer`). Note which generated artifact in `examples/nextjs/generated/**` is downstream of each. Reference files as `path/to/file.ts:line`."
+    },
+    {
+      "id": "diag-codegen-input",
+      "depends_on": [],
+      "complexity": "MED",
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files.\n\nDiagnose how `packages/codegen/**` currently consumes inputs from `packages/core` for the proposed change: <FILL IN>. Capture introspection vs. type sourcing, document discovery, generated artifact paths landed into `examples/nextjs/generated/**`. Reference files as `path/to/file.ts:line`."
+    },
+    {
+      "id": "diag-generated-output",
+      "depends_on": [],
+      "complexity": "MED",
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files.\n\nDiagnose the current generated output shape consumed by `examples/nextjs`. Capture every generated file path, every TS export name the example imports, and every GraphQL document the example references. Reference files as `path/to/file.ts:line`."
+    },
+    {
+      "id": "contract-synth",
+      "depends_on": [
+        "diag-core-types",
+        "diag-codegen-input",
+        "diag-generated-output"
+      ],
+      "complexity": "HIGH",
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner` operating as the rank-2 merge node. Follow its output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`.\n\nProduce the codegen before/after contract for the proposed change: <FILL IN>. `## Proposed contract` must lead with an executor-actionable diff: changed file paths grouped by directory, changed TS export names, changed GraphQL document shape. `## Human checkpoints` must call out DevEx Validation gate before release."
+    },
+    {
+      "id": "wait-contract-approval",
+      "depends_on": ["contract-synth"],
+      "kind": "pause"
+    },
+    {
+      "id": "impl-codegen",
+      "depends_on": ["wait-contract-approval"],
+      "complexity": "MED",
+      "subtask_prompt": "You are acting as `flatbread-migration-executor`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Files changed`, `## Contract implemented`, `## Checks run`, `## Checks skipped`, `## Residual risk`, `## Release gate state`. Group multi-file references under brace expansion.\n\nImplement the contract from the upstream synthesis exactly. Do not expand scope. Touch only `packages/codegen/**` and the generation pipeline. Run `pnpm --filter @flatbread/codegen test` and lint edited files."
+    },
+    {
+      "id": "impl-example-regen",
+      "depends_on": ["impl-codegen"],
+      "complexity": "LOW",
+      "subtask_prompt": "You are acting as `flatbread-migration-executor`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Files changed`, `## Contract implemented`, `## Checks run`, `## Checks skipped`, `## Residual risk`, `## Release gate state`.\n\nRegenerate `examples/nextjs` GraphQL artifacts via `pnpm --filter nextjs exec flatbread codegen` (the `--filter` is required because `flatbread.config.js` only exists at `examples/nextjs/flatbread.config.js`; `loadConfig` does not search up). Do NOT use `pnpm codegen`, which is `--watch` per `examples/nextjs/package.json:7` and would hang the DAG node. Do not hand-edit generated files. List every generated file that changed (group under brace expansion) plus any example source file that needed an import or query update."
+    },
+    {
+      "id": "verify-codegen-tests",
+      "depends_on": ["impl-codegen"],
+      "complexity": "LOW",
+      "subtask_prompt": "You are acting as `flatbread-adversarial-reviewer`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Blockers`, `## High-severity findings`, `## Medium-severity findings`, `## Low-severity findings`, `## Residual risk`, `## Recommended next DAG tasks`.\n\nRun `pnpm --filter @flatbread/codegen test`. Report failures, snapshot diffs, and any contract drift between the synthesized contract and what landed. If anything fails, populate `## Recommended next DAG tasks` with `id` + one-line subtask_prompt sketches the parent can append directly."
+    },
+    {
+      "id": "verify-example-build",
+      "depends_on": ["impl-example-regen"],
+      "complexity": "LOW",
+      "subtask_prompt": "You are acting as `flatbread-adversarial-reviewer`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Blockers`, `## High-severity findings`, `## Medium-severity findings`, `## Low-severity findings`, `## Residual risk`, `## Recommended next DAG tasks`.\n\nRun `pnpm --filter nextjs build` (binds port `5057` via `flatbread start -- next build` per `examples/nextjs/package.json:8`). Stop the build before exit. Report TS errors, missing imports, or query/document mismatches caused by the regenerated artifacts. If anything fails, populate `## Recommended next DAG tasks` with `id` + one-line subtask_prompt sketches."
+    },
+    {
+      "id": "browser-verify",
+      "depends_on": ["verify-example-build"],
+      "complexity": "MED",
+      "subtask_prompt": "You are acting as `flatbread-browser-verifier`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Commands run`, `## Routes checked`, `## Observed behavior`, `## Mismatches`, `## Screenshots`, `## Residual risk`.\n\nRun `pnpm browser:doctor` first to fail fast if the browser CLI is unavailable. Start the example dev server in the background: `pnpm --filter nextjs dev` (binds port `5057` HTTP, `5058` HTTPS per `packages/flatbread/src/cli/index.ts:128-135`); the upstream `verify-example-build` task already finished and freed the port. Wait for the server to come up before driving `pnpm exec agent-browser`. Verify documented queries and the rendered example pages still match the README. Tear the dev server down before completing the task. If the browser CLI is unavailable, your `## Residual risk` MUST lead with `BROWSER UNAVAILABLE`."
+    }
+  ]
+}
