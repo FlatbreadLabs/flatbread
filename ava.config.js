@@ -7,10 +7,10 @@ export default {
   concurrency: 4,
   files: [
     'packages/**/*.test.(j|t)s',
+    'scripts/**/*.test.(j|t)s',
     // Codegen + utils use Vitest under src/__tests__. Keep those out of the
-    // root AVA run, but allow AVA-owned proof coverage under the same folder
-    // layout so `pnpm test` exercises the proof bounded-loop suite and its
-    // parser/runtime guardrails.
+    // root AVA run so `pnpm test` only exercises AVA-owned package and root
+    // script coverage.
     '!packages/codegen/src/__tests__/**',
     '!packages/utils/src/__tests__/**',
     // Explorer SPA uses Node's built-in test runner (see package scripts).
