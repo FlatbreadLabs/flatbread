@@ -20,4 +20,4 @@ yaml/             # Extra YAML-backed samples (e.g. YamlAuthor); secondary to ma
 
 - **Tags:** lists like **`tags: [cats, science]`** in post frontmatter are **string facets** on each **`Post`** (arrays of scalars through the schema). That is **not** the same as a **`refs`-backed `Tag` collection**; normalized tag files require an extra **`Tag`** collection and explicit **`refs`** in config.
 
-Canonical commands and the end-to-end traceability story (same relation model: **files → config → GraphQL / codegen**) live in the [Flatbread README quickstart](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/flatbread/README.md#quickstart-posts-authors-and-tags), including the **§ Traceability** walkthrough tied to the [glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md).
+Canonical commands and the walk from **files → config → read** live in the [Flatbread README quickstart](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/flatbread/README.md#quickstart-posts-authors-and-tags). Terms used there are defined in the [glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md).
