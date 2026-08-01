@@ -16,70 +16,63 @@
   </a>
 </p>
 
-Slice a pile of markdown into a typed relational graph. Journal the decisions
-your agents make into an Effort Graph, so your team can review the thinking and
-not just the diff. Bake out a massive editorial blog without paying anybody for
-a database. Flatbread does all three, from files already sitting in your Git
-repo.
+Slice collections of markdown files into a relational graph, roll out an Effort
+Graph of decision-making and knowledge to align your team's agentic development,
+or even bake out a massive editorial blog without paying for a database -
+Flatbread enables all of this and more.
 
-Flatbread orchestrates relational collections of data over whichever storage you
-prefer, and hands your app one cohesive API to read it. Out of the box it reads
-folders of markdown or YAML — flat files. It is not stuck there. A **source**
-plugin says where the bytes come from and a **transformer** plugin says how to
-parse them, so a collection can come from CSV, Google Sheets, Notion, Figma,
-Linear, or anywhere else you can define and retrieve structured data. Blend them
-all into one graph if you like. You write the plugin, then declare your
-collections and the links between them in `flatbread.config.js`. Today the box
-ships the filesystem, markdown, and YAML; everything past that is a plugin
-somebody has to write, and that somebody could be you.
+Flatbread is a flexible toolset for orchestrating relational collections of data
+against whichever storage format you prefer and querying it from a single
+cohesive API. Its default data source is folders of markdown or yaml files, "flat
+files". Yet it supports far more than that - you could weave together collections
+across csv files, Google Sheets, Notion, Figma, Linear, or anywhere else you can
+define and retrieve structured data - even blend them all together! You just need
+to provide an adaptor for parsing your data and define a config file of
+relational fields and collection metadata.
+
+Today Flatbread ships adaptors for the filesystem, markdown, and YAML. Anything
+else is an adaptor you write.
 
 ```bash
 pnpm add flatbread
-pnpm exec flatbread init     # scaffolds flatbread.config.js
+pnpm exec flatbread init
 ```
 
-Needs Node 20.19 or newer. Every read below runs against files you can open in
-an editor, so nothing here hides in a service you cannot reach.
+`init` writes a starter `flatbread.config.js`. Flatbread needs Node 20.19 or
+newer.
 
 ---
 
 ## For building with agents: the Effort Graph
 
-How many times have you hit that flow state with an agent? Context aligned,
-vision landed, everything possible, you and The Prompt as one. Then you open a
-fresh session for a small follow-up, and it mangles that beautiful alignment
-after burning a whopping post-subsidy $108.13 of tokens, punching holes of slop
-in the walls, and leaving you wondering whether you count as a real engineer
-anymore.
+How many times have you felt in the flow state of communication, aligning on
+context with your agents, they _perfectly_ execute on your vision? Everything
+feels possible; you're at one with The Prompt. But then you kick off a fresh
+session for a followup that just absolutely mangles that beautiful alignment
+after burning through a whopping post-subsidized $108.13 of tokens, punching
+holes of slop in the walls, making you feel powerless to the thought you're not a
+real engineer anymore? WELL, Flatbread's ...bread and butter _(I'm not going to
+stop with the bread puns)_ is putting an end to that feeling. Rather than just
+shipping the very end of the process as the artifact (the code), ship _and
+review_ the chain of decisions that got you there. The Effort Graph is your
+salvation!
 
-Flatbread's ...bread and butter _(I'm not going to stop with the bread puns)_ is
-putting an end to that feeling. Do not ship only the last thing the process
-produced — the code. Ship the chain of decisions that got you there, and review
-that too.
+Alright, so Flatbread's Effort Graph gives your agent advanced memory for key
+decisions, open questions, issues, plans, surprising findings which refute all of
+the stuff I just mentioned, and more - all scoped to Efforts. While performing
+work, an agent will recall memories to understand _why_ something is the way it
+is without just assuming it's malleable. Since the memory entry is well-scoped
+and relational, this prevents over-indexing on a decision outside of its intended
+application. And this is context-efficient, too. The Effort Graph's tools give
+your agent an index of the records in an Effort plus a few follow-up queries to
+run, then on query, it writes cached markdown digests for your agent to grep.
+These contain a minimal representation of the state of an Effort, or maybe all
+open questions and issues, allowing an agent to query deeper only when it needs
+to.
 
-### What it remembers
+### Try it
 
-The Effort Graph gives your agent durable memory for the things that normally
-die with a session: **Decisions**, open questions and **Issues**,
-**Constraints**, **Risks**, and the surprising **Findings** that refute
-everything I just said. Every record belongs to exactly one **Effort** — one
-thread of work — and every record is a markdown file in your repository. So an
-agent reads _why_ something is the way it is instead of assuming it is soft and
-reshaping it. Because a record is scoped to its Effort and linked to what it
-came from, a decision made for one job does not leak into the next one.
-
-### It costs almost nothing to remember
-
-A read never dumps records into the transcript. It returns a short summary, page
-counts, up to ten suggested follow-up queries, and a path to a rendered markdown
-digest — one file the agent Reads once or greps. Digests cap at 25 records, one
-relation hop, 50 edges, and 64 KiB, and browse reads excerpt each body to 600
-characters. Asking "what is blocking this Effort?" therefore costs one small
-file, and going deeper is a deliberate second call.
-
-### The loop, start to finish
-
-Add the content model to your config and check the setup:
+Add the Effort Graph to your config:
 
 ```js
 // flatbread.config.js
@@ -97,29 +90,32 @@ export default defineConfig({
 });
 ```
 
+Then check the setup. Bootstrap tells you what is still missing and never edits
+your files:
+
 ```bash
 $ flatbread effort bootstrap
 {"status":"ready","config_path":"flatbread.config.js","graph_root":".flatbread-efforts","requirements":[]}
 ```
 
-Open an Effort. Every write prints the id it created, which is how the next
-write links to it:
+Open an Effort. Each write prints the id it created, and later writes use that
+id:
 
 ```bash
 $ flatbread effort write '{"type":"CreateEffort","title":"Recipe search without a database","body":"Add search over the recipe collection using the files we already have."}'
 {"generation":"1","artifacts":[{"id":"eff-recipe-search-without-a-database--bpbj5mecw93526df","path":"efforts/eff-recipe-search-without-a-database--bpbj5mecw93526df.md","operation":"created"}], …}
 ```
 
-Record what is in the way, then the call that answers it. `derives_from` is the
-link that says this Decision exists because of that Issue:
+Write the blocker you hit, then the decision that answers it. `derives_from`
+links the decision back to the issue:
 
 ```bash
 $ flatbread effort write '{"type":"WriteIssue","effort":"eff-recipe-search-…","kind":"blocker","title":"Ranking rule for ingredient matches is undecided","body":"Title-only search misses ingredient queries."}'
 $ flatbread effort write '{"type":"WriteDecision","effort":"eff-recipe-search-…","title":"Weight ingredient hits above title hits","body":"Score an ingredient field hit at twice a title hit. Reverse this if editors report that flagship recipes drop off the first page.","derives_from":["iss-ranking-rule-…"]}'
 ```
 
-Two sessions later, a different agent asks what is gating the work and gets back
-an envelope, not a wall of text:
+Two sessions later, another agent asks what is holding up the work. It gets back
+a small JSON envelope with a path to a markdown digest:
 
 ```bash
 $ flatbread effort blocking-decisions eff-recipe-search-without-a-database--bpbj5mecw93526df
@@ -135,8 +131,8 @@ $ flatbread effort blocking-decisions eff-recipe-search-without-a-database--bpbj
 }
 ```
 
-The digest at `artifact_path` is the evidence — the proposed Decision, its
-`derives_from` edge, and the open blocker Issue it answers:
+That digest holds the proposed decision, its `derives_from` link, and the open
+blocker behind it:
 
 ````text
 ## Records
@@ -154,8 +150,8 @@ Relations
 - derives_from: ["iss-ranking-rule-for-ingredient-matches-is-undecided--jbxh0rzhmfak4kqa"]
 ````
 
-And the record itself is a file you can read, review in a pull request, and
-revert:
+The issue itself is a file in your repo. You can read it, review it in a pull
+request, and revert it:
 
 ```markdown
 ---
@@ -171,40 +167,47 @@ Title-only search misses ingredient queries. We must agree on a ranking rule
 before building the index.
 ```
 
-### Teach an agent to use it
+The limits on a read are fixed: 25 records per digest, one relation hop, 50
+edges, and 64 KiB. Browse reads cut each body down to 600 characters, so asking
+"what is blocking this Effort?" costs one small file. When an agent wants a whole
+body, `flatbread effort get <id>` returns that one record in full.
 
-The packaged skill covers all fifteen writes and five reads, so you do not have
-to explain them:
+### Teach your agent the commands
+
+The packaged skill covers all fifteen writes and five reads, so you don't have to
+explain them:
 
 ```bash
 npx skills add https://github.com/FlatbreadLabs/flatbread/tree/v1.0.0/packages/effort-graph/skills/effort-graph --skill effort-graph
 npm install --save-dev flatbread@1.0.0
 ```
 
-The full record model, every mutation, and the read caps live in the
+The record types, every mutation, and the read limits are documented in the
 [Effort Graph README](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/effort-graph/README.md).
 To look at a graph instead of reading it, `flatbread start --open` serves the
 [explorer](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/explorer),
-which draws the records and their edges.
+which draws the records and the links between them.
 
 ---
 
 ## For products: query relational data
 
-Once upon a time I did not want to pay $8/mo to host a Postgres database I was
-going to push to once a day, so I became hyper-fixated on abusing Git as a
-database for my tea log. Now we're here.
+Once upon a time I didn't want to pay $8/mo to host a Postgres DB I was going to
+push to once a day, and then I became hyper-fixated on abusing git as a database
+for my tea log. Now we're here!
 
-Flatbread gives you a vendor-agnostic API for your site's structured data. It
-suits any case that does not need an edit to appear a half-second later. If you
-can wait a minute for CI to cook, you may just want to bake your site with
-Flatbread. Wrap your dev or build command and populate pages on anything — a
-blog, a recipe site, a marketing page, a merch store.
+Flatbread gives you an excellent vendor-agnostic API for your site's structured
+data. It's a robust solution to cases that don't need frequent updates to be
+immediately reflected. If you can wait a minute for CI to cook, you may just want
+to bake your site with Flatbread!
+
+Your dev or build process can be wrapped by Flatbread's GraphQL server to
+populate pages on anything - maybe a blog, recipe site, marketing page, or merch
+store.
 
 ### Quickstart: posts, authors, and tags
 
-Files are the records, and `refs` are the joins. A post names its authors by id
-in frontmatter:
+A post lists its authors by id in frontmatter:
 
 ```markdown
 ---
@@ -223,8 +226,8 @@ tags:
 Everything below the closing `---` is the post body.
 ```
 
-Config says which folder is which collection and which frontmatter field points
-at another collection:
+Config says which folder holds which collection, and which frontmatter field
+points at another collection:
 
 ```js
 import { defineConfig, transformerMarkdown, sourceFilesystem } from 'flatbread';
@@ -249,8 +252,8 @@ export default defineConfig({
 });
 ```
 
-Then `authors` resolves to whole `Author` records, while `tags` stays a plain
-string list on `Post`:
+Now `authors` comes back as whole `Author` records, and `tags` stays a list of
+strings on `Post`:
 
 ```graphql
 query GetPostsAndAuthors {
@@ -282,24 +285,23 @@ query GetPostsAndAuthors {
 }
 ```
 
-That is the whole trick, in three layers:
+Three layers, one model:
 
-| Layer                     | What you write                                         | What you get                                                         |
-| ------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------- |
-| **Files**                 | `authors:` ids in a post match `id:` in author files   | One record per file, with frontmatter as fields                      |
-| **`flatbread.config.js`** | `collection: 'Post'` and `refs: { authors: 'Author' }` | Typed collections, and validation that every ref points at something |
-| **Read**                  | A `.graphql` document or the generated TypeScript API  | `authors` as `Author` objects; `tags` as `[String]`                  |
+| Layer                     | What you write                                         | What you get                                                   |
+| ------------------------- | ------------------------------------------------------ | -------------------------------------------------------------- |
+| **Files**                 | `authors:` ids in a post match `id:` in author files   | One record per file, with frontmatter as fields                |
+| **`flatbread.config.js`** | `collection: 'Post'` and `refs: { authors: 'Author' }` | Typed collections, and a check that every ref points somewhere |
+| **Read**                  | A `.graphql` document or the generated TypeScript API  | `authors` as `Author` objects, `tags` as `[String]`            |
 
-`tags` above is facet metadata repeated on each post, not a link. If you want
-tag **records** shared across posts, model a `Tag` collection and wire `refs`
-yourself. The
+`tags` here is metadata repeated on each post, not a link. For tag **records**
+shared across posts, add a `Tag` collection and wire `refs` yourself. The
 [glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#tag-facet-vs-tag-collection)
-spells out the difference.
+explains the difference.
 
 ### Wire it into your framework
 
-`flatbread start` runs the GraphQL server and passes everything after `--`
-through to your own command. There is no `flatbread dev`.
+`flatbread start` runs the GraphQL server, then runs your own command after `--`.
+There is no `flatbread dev`.
 
 ```json
 {
@@ -310,43 +312,41 @@ through to your own command. There is no `flatbread dev`.
 }
 ```
 
-GraphQL lands on `http://localhost:5057/graphql`. Open it for Apollo Studio
-against your generated schema. With `--watch`, valid content and config edits
-update the running server; a change to a Flatbread package still needs a
-rebuild. The
+GraphQL runs on `http://localhost:5057/graphql`. Open that URL to explore your
+generated schema in Apollo Studio. With `--watch`, edits to content and config
+update the running server. Editing a Flatbread package still needs a rebuild. The
 [local development loop](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/local-dev-loop.md)
-lists exactly what reloads and what does not.
+lists what reloads and what doesn't.
 
 ### Get typed results
 
-Save your operations in `.graphql` files, point `codegen.documents` at them in
+Save your queries in `.graphql` files, point `codegen.documents` at them in
 config, and run:
 
 ```bash
 pnpm exec flatbread codegen --verbose
 ```
 
-That writes `generated/graphql.ts`: TypeScript types and typed document nodes,
-so the result of `GetPostsAndAuthors` above is typed as
-`GetPostsAndAuthorsQuery`.
+That writes `generated/graphql.ts` with TypeScript types and typed document
+nodes. The query above becomes `GetPostsAndAuthorsQuery`.
 
 #### Choosing a read interface
 
-Files come first. They define records, frontmatter fields, ids, and `refs`, and
-`flatbread.config.js` groups them into typed collections. You then have two ways
-to read the same graph.
+Files come first. They hold the records, the frontmatter fields, the ids, and the
+`refs`, and `flatbread.config.js` groups them into typed collections. From there
+you have two ways to read the same graph.
 
-Use **GraphQL operations** when your app wants explicit query documents, custom
+Use **GraphQL operations** when your app wants its own query documents, custom
 selections, Apollo or another GraphQL client, persisted operations, or the
 endpoint directly. Add `.graphql` documents, include the fields you need, and
-rerun codegen so the operation types match the graph.
+rerun codegen so the operation types match your data.
 
-Use the prototype **generated TypeScript read API** when you want
-collection-shaped helpers instead of a GraphQL document at every call site.
-`createFlatbreadReadApi()` reads posts, authors, and tags with a generated
-default selection. It still runs through the GraphQL layer, and its
-selection-string escape hatch is experimental, so GraphQL stays the stable
-lower-level interface. See
+Use the prototype **generated TypeScript read API** when you'd rather call a
+helper than write a GraphQL document at every call site.
+`createFlatbreadReadApi()` reads posts, authors, and tags with a default
+selection. It runs through the same GraphQL layer, and its selection-string
+escape hatch is experimental, so GraphQL is still the stable lower-level
+interface. See
 [`examples/nextjs/lib/read.ts`](https://github.com/FlatbreadLabs/flatbread/blob/main/examples/nextjs/lib/read.ts).
 
 ---
@@ -364,32 +364,32 @@ pnpm exec flatbread codegen --verbose
 pnpm dev                 # Flatbread on 5057, Next on 3000
 ```
 
-From the repository root, `pnpm play` does the same thing, and
-`pnpm play:efforts` opens the explorer on this repository's own Effort Graph.
-More detail lives in the
+From the repository root, `pnpm play` does the same thing, and `pnpm play:efforts`
+opens the explorer on this repository's own Effort Graph. There is more detail in
+the
 [Next.js example README](https://github.com/FlatbreadLabs/flatbread/blob/main/examples/nextjs/README.md).
-There is also a
-[SvelteKit example](https://github.com/FlatbreadLabs/flatbread/tree/main/examples/sveltekit),
-which exercises the svimg resolver, YAML collections, and nested overrides.
+A
+[SvelteKit example](https://github.com/FlatbreadLabs/flatbread/tree/main/examples/sveltekit)
+also exercises the svimg resolver, YAML collections, and nested overrides.
 
 ## What Flatbread does not do
 
 - It is not a hosted CMS, a dashboard, or a writing UI.
 - It is not a general-purpose GraphQL platform or a database. Transactions,
-  detailed access control, and many concurrent writers are outside its scope.
+  detailed access control, and many concurrent writers are out of scope.
 - It does not reload its own packages. `flatbread start --watch` picks up valid
   content and config changes while you work, but editing a Flatbread package
   needs a rebuild and a restart.
-- GraphQL is one read interface over the graph, not the product. Files and
-  config come first; see
+- GraphQL is one way to read the graph, not the product itself. Files and config
+  come first. See
   [positioning](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/positioning.md).
 
-**Who it is for:** people building coding agents that need memory a human can
-review in Git, and teams building TypeScript sites, internal tools, and starters
-that want versioned content with real links between entries.
+It suits people building coding agents that need memory a human can review in
+Git, and teams building TypeScript sites, internal tools, and starters that want
+versioned content with real links between entries.
 
-**If you leave:** your files stay in Git, and the core API writes JSON and CSV
-snapshots. See
+If you ever move off Flatbread, your files stay in Git and the core API writes
+JSON and CSV snapshots. See
 [data ownership](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/data-ownership.md)
 and
 [JSON export](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/json-export.md).
