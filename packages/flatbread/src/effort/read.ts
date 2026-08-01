@@ -4,6 +4,7 @@ import {
   EffortGraphConsistencyError,
   EffortGraphInvalidCursorError,
   EffortGraphReadValidationError,
+  ensureEffortGraphDirectories,
   READ_RELATIONS,
   readQueryHash,
   renderDigest,
@@ -405,6 +406,7 @@ async function makeProjection(
 ): Promise<EngineProjection> {
   const loaded = await loadConfig({ cwd: options.cwd });
   if (!loaded.config) throw new Error('Flatbread config is not defined');
+  await ensureEffortGraphDirectories(options.rootDir);
   return new EngineProjection(configForCwd(loaded.config, options.cwd));
 }
 

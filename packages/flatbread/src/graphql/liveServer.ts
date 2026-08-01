@@ -18,6 +18,7 @@ import cors from 'cors';
 import express, { type RequestHandler } from 'express';
 import http from 'http';
 import { loadFlatbreadConfig } from '../utils/getSchema';
+import { ensureEffortGraphDirectories } from '@flatbread/effort-graph';
 import { createEffortGraphComposition } from './effortGraphComposition';
 import { mountExplorer } from './explorerMount';
 import { buildWatchIgnore } from './watchIgnore';
@@ -93,6 +94,7 @@ export async function startGraphqlServer(
       `Flatbread watch mode requires cwd to equal process.cwd() (${process.cwd()}).`
     );
   }
+  if (composition) await ensureEffortGraphDirectories(composition.rootDir);
   const app = express();
   const httpServer = http.createServer(app);
   let current: GenerationServer | undefined;

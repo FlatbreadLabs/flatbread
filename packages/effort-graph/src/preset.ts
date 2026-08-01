@@ -1,4 +1,7 @@
 import type { ContentEntry } from '@flatbread/core';
+import { mkdir } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { KIND_DIRECTORY } from './ids.js';
 
 const CITE_REFS = { cites: 'Citation' } as const;
 
@@ -76,6 +79,25 @@ export function effortGraphContent(
       refs: { effort: 'Effort' },
     },
   ];
+}
+
+/**
+ * Create every collection directory under a graph root.
+ *
+ * The writer only creates a directory when it stores the first record of that
+ * kind, and the filesystem source throws when a content path is missing. A
+ * young graph therefore has no `findings/` or `risks/` directory, and any read
+ * fails until one exists. Callers run this before a read so the eight preset
+ * directories are always present. `root` should be absolute.
+ */
+export async function ensureEffortGraphDirectories(
+  root: string
+): Promise<void> {
+  await Promise.all(
+    Object.values(KIND_DIRECTORY).map((directory) =>
+      mkdir(resolve(root, directory), { recursive: true })
+    )
+  );
 }
 
 function equalRefs(

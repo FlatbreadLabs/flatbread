@@ -1,5 +1,8 @@
 import test from 'ava';
-import { effortGraphContent } from '../preset.js';
+import { mkdtemp, readdir, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { effortGraphContent, ensureEffortGraphDirectories } from '../preset.js';
 
 test('returns exactly eight entries with exact paths and refs', (t) => {
   const entries = effortGraphContent();
@@ -107,6 +110,30 @@ test('polymorphic union fields are absent from every refs map', (t) => {
       );
     }
   }
+});
+
+test('ensureEffortGraphDirectories creates every directory the preset reads', async (t) => {
+  const root = join(await mkdtemp(join(tmpdir(), 'effort-preset-')), 'graph');
+  await ensureEffortGraphDirectories(root);
+  const created = (await readdir(root, { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  const expected = effortGraphContent(root)
+    .map((entry) => entry.path!.slice(root.length + 1))
+    .sort();
+  t.deepEqual(created, expected);
+});
+
+test('ensureEffortGraphDirectories leaves existing records alone', async (t) => {
+  const root = join(await mkdtemp(join(tmpdir(), 'effort-preset-')), 'graph');
+  await ensureEffortGraphDirectories(root);
+  const record = resolve(root, 'efforts/eff-keep-me--0000000000000000.md');
+  await writeFile(record, 'kept', 'utf8');
+  await ensureEffortGraphDirectories(root);
+  t.deepEqual(await readdir(resolve(root, 'efforts')), [
+    'eff-keep-me--0000000000000000.md',
+  ]);
 });
 
 test('cites is a Citation ref on records that can create cites', (t) => {
