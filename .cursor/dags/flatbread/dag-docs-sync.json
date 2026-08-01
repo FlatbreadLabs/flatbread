@@ -1,0 +1,51 @@
+{
+  "title": "Flatbread docs / README sync (no sub-sub-agents)",
+  "framing": "Treat Flatbread as Git-native relational content for TypeScript apps, backed by flat files. GraphQL is one interface, not the whole product identity.",
+  "models": {
+    "HIGH": { "id": "claude-opus-4-7" },
+    "MED": { "id": "gpt-5.5" },
+    "LOW": { "id": "gpt-5.4-mini" }
+  },
+  "tasks": [
+    {
+      "id": "diag-readme-claims",
+      "depends_on": [],
+      "complexity": "LOW",
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files (frontmatter `readonly: true` is advisory in DAG runs).\n\nList every claim, command, code snippet, and example query in the root `README.md` and each `packages/*/README.md`. For each, mark whether the current implementation still matches. Reference files as `path/to/file.md:line`."
+    },
+    {
+      "id": "diag-example-paths",
+      "depends_on": [],
+      "complexity": "LOW",
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files.\n\nWalk `examples/nextjs` end-to-end and capture the actual first-success path a developer sees: setup commands, codegen invocation (note `package.json:7` is `--watch`; the docs should point users at the appropriate command), dev command, port (`5057` HTTP, `5058` HTTPS sibling), sample query, sample edit. Compare against what the docs claim."
+    },
+    {
+      "id": "diag-positioning",
+      "depends_on": [],
+      "complexity": "LOW",
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`. Do not edit files.\n\nAudit positioning language in `README.md`, package READMEs, and any landing copy. Flag any phrasing that overclaims database-replacement (tables, foreign keys, joins, constraints, indexes, import/export) or treats GraphQL as the entire product identity."
+    },
+    {
+      "id": "docs-plan",
+      "depends_on": [
+        "diag-readme-claims",
+        "diag-example-paths",
+        "diag-positioning"
+      ],
+      "complexity": "MED",
+      "subtask_prompt": "You are acting as `flatbread-architecture-planner` operating as the rank-2 merge node. Follow its output schema. Output must lead with these `##` headings verbatim: `## Current contract`, `## Proposed contract`, `## Migration impact`, `## Validation plan`, `## Human checkpoints`.\n\nProduce a concrete docs-edit plan. `## Proposed contract` must lead with a flat list of `path/to/file.md:line — change` (group adjacent edits) so the executor can apply edits without re-reading the diagnoses."
+    },
+    {
+      "id": "impl-docs",
+      "depends_on": ["docs-plan"],
+      "complexity": "MED",
+      "subtask_prompt": "You are acting as `flatbread-migration-executor`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Files changed`, `## Contract implemented`, `## Checks run`, `## Checks skipped`, `## Residual risk`, `## Release gate state`. Group multi-file references under brace expansion.\n\nApply the docs plan exactly. Touch only `*.md` files. Do not modify code. Run the project's lint/format on changed files."
+    },
+    {
+      "id": "review-docs",
+      "depends_on": ["impl-docs"],
+      "complexity": "LOW",
+      "subtask_prompt": "You are acting as `flatbread-adversarial-reviewer`. Follow its responsibilities and output schema. Output must lead with these `##` headings verbatim: `## Blockers`, `## High-severity findings`, `## Medium-severity findings`, `## Low-severity findings`, `## Residual risk`, `## Recommended next DAG tasks`.\n\nReview the docs diff for: stale commands, drifting code snippets, broken cross-links, and any positioning that overclaims database semantics. If anything fails, populate `## Recommended next DAG tasks` with `id` + one-line subtask_prompt sketches the parent can append directly."
+    }
+  ]
+}

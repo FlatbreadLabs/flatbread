@@ -64,7 +64,7 @@ Treat breaking work as a coordinated monorepo release across `flatbread`, `@flat
 
 ## Default DAG Shape
 
-When this skill is run under `proof` (the `@flatbread/proof` package; legacy alias `dag-task-runner`), use the topology in `flatbread-flow-agentic-workflows.md` ("DAG Topology" section). The canonical schema-migration shape — express the DAG via `depends_on` only; the runner computes ranks via Kahn topo-sort. The shape below is what `pnpm exec proof --init-only` produces for the starter template (21 tasks across 7 ranks):
+When this skill is run under the external Proof CLI (`@flatbread/proof` from https://github.com/FlatbreadLabs/proof), use the topology in `flatbread-flow-agentic-workflows.md` ("DAG Topology" section). The canonical schema-migration shape — express the DAG via `depends_on` only; the runner computes ranks via Kahn topo-sort. The shape below is what `pnpm exec proof --init-only` produces for the starter template (21 tasks across 7 ranks):
 
 ```
 rank 1  diag-schema, diag-resolvers, diag-types, diag-codegen, diag-cli,
@@ -79,7 +79,7 @@ rank 6  verify-cli                                                  (reviewer; b
 rank 7  browser-verify                                              (browser-verifier; binds port 5057, depends_on impl-examples + verify-cli)
 ```
 
-Two ranks bind port `5057` (`verify-cli`, `browser-verify`); they must remain on distinct ranks. A starter JSON lives at `.cursor/skills/proof/examples/flatbread/dag-schema-migration.json`. Edit task contents and `depends_on`, then re-run `--init-only` to confirm the rank shape didn't regress.
+Two ranks bind port `5057` (`verify-cli`, `browser-verify`); they must remain on distinct ranks. A starter JSON lives at `.cursor/dags/flatbread/dag-schema-migration.json`. Edit task contents and `depends_on`, then re-run `--init-only` to confirm the rank shape didn't regress. See `.cursor/dags/README.md` for how to install and run Proof against these DAGs.
 
 ### Safe parallel cuts
 
