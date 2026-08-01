@@ -1,75 +1,145 @@
 # `@flatbread/effort-graph`
 
-Git-native memory for coding agents. Installing this package gives you three
-things:
+**Durable, reviewable memory for coding agents — stored as markdown in your repo.**
 
-- **Record types.** An agent records the work it is doing as an **Effort**,
-  then writes what it learns against that Effort: **Issues**, **Findings**,
-  **Decisions**, **Constraints**, **Risks**, **Citations**, and **Blobs**.
-- **Write operations.** A typed mutation turns into Markdown files on disk, and
-  the writer checks the links between records before it commits them.
-- **A Flatbread content model.** `effortGraphContent()` adds those eight record
-  types to a Flatbread configuration, so the same files come back as a typed
-  graph you can query and page through.
+Your agent makes hundreds of decisions during a session. When the session ends, those decisions evaporate. The next session re-derives them (badly), or worse, contradicts them without knowing they existed. The Effort Graph fixes this by making an agent's reasoning a first-class artifact you commit, diff, review, and query — just like code.
 
-Every record is a Markdown file in your repository, so you commit, diff,
-review, and revert an agent's reasoning the same way you handle code, and the
-next session can read it back.
+## What it gives you
 
-Writes go through a journal, so a change that touches several files either
-finishes in full or leaves nothing behind: if the process dies mid-write, the
-next run restores the earlier contents of the unfinished change.
+1. **Structured record types.** An agent anchors its work to an **Effort**, then writes what it learns: **Issues**, **Findings**, **Decisions**, **Constraints**, **Risks**, **Citations**, and **Blobs**.
+2. **Atomic write operations.** Mutations produce markdown files on disk. A journaled writer ensures multi-file changes either complete in full or leave nothing behind.
+3. **A Flatbread content model.** `effortGraphContent()` plugs into your `flatbread.config.js`, so the same files come back as a typed, queryable graph.
 
-Version 1 supports these actions: `CreateEffort`, `SetEffortStatus`,
-`WriteIssue`, `WriteFinding`, `WriteDecision`, `WriteConstraint`, `WriteRisk`,
-`WriteCitation`, `WriteBlob`, `Supersede`, `Invalidate`, `ResolveIssue`,
-`AcceptDecision`, `MitigateRisk`, and `SetRiskState`.
+Every record is a markdown file under `.flatbread-efforts/`. You review agent reasoning in pull requests the same way you review code.
 
-An Issue, Finding, Decision, Constraint, or Risk may name Citation ids in
-`cites` (Flatbread `refs`). A Citation body alone is valid (e.g. a URL); an
-optional `blob` ref attaches a long payload such as a document, JSON, or image.
+## Quick start
 
-## Where records live, and what to ignore
+```bash
+# 1. Install
+npm install --save-dev flatbread@1.0.0
 
-`effortGraphContent()` stores the graph under `.flatbread-efforts` in your
-project root. Pass a path to choose another root:
-`effortGraphContent('path/to/graph')`.
+# 2. Install the agent skill
+npx skills add https://github.com/FlatbreadLabs/flatbread/tree/v1.0.0/packages/effort-graph/skills/effort-graph --skill effort-graph
 
-Two paths hold working state that Git should not track: the write journal at
-`<root>/.journal`, and the derived read cache at
-`.flatbread/effort-graph/read-cache`. Nothing adds them to `.gitignore` for
-you, so add these lines yourself:
+# 3. Add to your flatbread config
+# (see Configuration below)
+
+# 4. Verify everything is wired
+npx flatbread effort bootstrap --verify
+```
+
+For `pnpm`, `yarn`, or `bun` equivalents, see [setup.md](./skills/effort-graph/setup.md).
+
+## Configuration
+
+Add `effortGraphContent()` to your Flatbread config alongside any existing content entries:
+
+```js
+import {
+  defineConfig,
+  sourceFilesystem,
+  transformerMarkdown,
+  effortGraphContent,
+} from 'flatbread';
+
+export default defineConfig({
+  source: sourceFilesystem(),
+  transformer: transformerMarkdown(),
+  content: [
+    // your existing collections...
+    ...effortGraphContent(),
+  ],
+});
+```
+
+Pass a custom path to store the graph elsewhere: `effortGraphContent('path/to/graph')`.
+
+Add these to `.gitignore`:
 
 ```gitignore
 **/.flatbread-efforts/.journal/
 **/.flatbread/effort-graph/read-cache/
 ```
 
-For a custom root, replace `.flatbread-efforts` with that root. The read cache
-path stays the same.
+Run `flatbread effort bootstrap` to check what's missing. Add `--verify` to fail in CI when something isn't wired.
 
-`flatbread effort bootstrap` reports what is still missing — the config entry
-or either ignore rule. `flatbread effort bootstrap --verify` reports the same
-and exits nonzero when anything is missing, which makes it usable in CI.
+## The domain model
 
-## The domain model and the packaged skill
+The Effort Graph is persistent, queryable memory for long-horizon software work. Each primitive is a Flatbread collection; instances are records; cross-primitive references are relations in frontmatter.
 
-Read [`skills/effort-graph/glossary.md`](./skills/effort-graph/glossary.md) for
-the portable Effort Graph domain model.
+### Primitives
 
-The packaged Agent Skill is in `skills/effort-graph/`. The repository copy in
-`.agents/skills/effort-graph/` is generated from those files. Run
-`pnpm skills:sync` from the repository root after changing the skill.
+| Record         | What it represents                                                                                                                                     |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Effort**     | The anchor for one thread of work — a feature, migration, spike, or refactor. Every other record belongs to exactly one Effort.                        |
+| **Issue**      | Something needing attention: a question, defect, gap, or blocker. Reactive — resolved by Decisions or Findings.                                        |
+| **Finding**    | A grounded observation about code, users, or runtime. Cites evidence. Can resolve Issues, inform Decisions, surface Risks, or invalidate past records. |
+| **Decision**   | A commitment among alternatives. Proposed → accepted → (possibly superseded or deprecated). Cites the Findings, Constraints, and Risks it weighed.     |
+| **Constraint** | A hard or soft boundary limiting the decision space. Known limits, not prospective outcomes.                                                           |
+| **Risk**       | A prospective negative outcome with likelihood and severity. Open → mitigated / realized / accepted.                                                   |
+| **Citation**   | An external source or reference. Other records link here through `cites`. Body can be just a URL; optional `blob` attaches stored content.             |
+| **Blob**       | Stored content of any format (markdown, JSON, images). Accessed via Citations, omitted from digests by default.                                        |
 
-## Install the Effort Graph skill
+### Edges between records
 
-Install from a release tag, then activate the skill for setup:
+- **`derives_from`** — causal upstream evidence or context
+- **`supersedes`** — replaces a record of the same type
+- **`invalidates`** — marks a record as wrong
+- **`cites`** — links to Citations (which may point to Blobs)
+
+All edges stay within the same Effort. Reverse edges (`superseded_by`, `invalidated_by`) are materialized automatically.
+
+For the full glossary, see [`skills/effort-graph/glossary.md`](./skills/effort-graph/glossary.md).
+
+## Write operations
+
+Writes go through `flatbread effort write`. Version 1 supports:
+
+| Action            | What it does                                |
+| ----------------- | ------------------------------------------- |
+| `CreateEffort`    | Start a new effort                          |
+| `SetEffortStatus` | Mark an effort active, completed, or paused |
+| `WriteIssue`      | Record a question, gap, or blocker          |
+| `WriteFinding`    | Record a grounded observation               |
+| `WriteDecision`   | Record a commitment among alternatives      |
+| `WriteConstraint` | Record a known limit                        |
+| `WriteRisk`       | Record a prospective negative outcome       |
+| `WriteCitation`   | Record an external reference                |
+| `WriteBlob`       | Store longform content                      |
+| `Supersede`       | Replace one record with another             |
+| `Invalidate`      | Mark a record as wrong                      |
+| `ResolveIssue`    | Close an issue with a resolution            |
+| `AcceptDecision`  | Commit a proposed decision                  |
+| `MitigateRisk`    | Mark a risk as mitigated                    |
+| `SetRiskState`    | Transition a risk's lifecycle               |
+
+## Reading back: bounded queries
+
+The Effort Graph is designed for context-efficient reads. Rather than dumping the entire graph into an agent's context window, it provides:
+
+- **`flatbread effort list`** — index of efforts with status and keywords
+- **`flatbread effort records`** — records for an effort, compact representation
+- **`flatbread effort relations`** — follow edges between records
+- **`flatbread effort blocking-decisions`** — surface what's blocking progress
+- **`flatbread effort get <id>`** — full content of a single record
+
+On query, the tools create minimal temporary markdown files the agent can grep — so it sees just enough to decide whether to dig deeper.
+
+## The journaled writer
+
+Multi-file writes are atomic. If a process dies mid-write, the next run restores the earlier state from the journal at `<root>/.journal/`. Nothing is half-written.
+
+## The packaged skill
+
+The agent skill lives in `skills/effort-graph/`. It teaches an agent the commands and when to use them. The repository copy at `.agents/skills/effort-graph/` is generated — run `pnpm skills:sync` from the repo root after editing the source skill.
+
+## Explorer (optional)
+
+With `effortGraphContent()` in config, the visual content-relation explorer serves automatically:
 
 ```bash
-npx skills add https://github.com/FlatbreadLabs/flatbread/tree/v1.0.0/packages/effort-graph/skills/effort-graph --skill effort-graph
-npm install --save-dev flatbread@1.0.0
+npx flatbread start --watch --open
 ```
 
-The tag and version come from `gitTag` and `flatbreadVersion` in
-`skills/effort-graph/release.json`. See `skills/effort-graph/setup.md` for the
-equivalent `pnpm`, `yarn`, and `bun` commands.
+- Explorer: `http://localhost:5057/`
+- GraphQL sandbox: `http://localhost:5057/graphql`
