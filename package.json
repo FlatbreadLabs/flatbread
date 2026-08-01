@@ -27,7 +27,7 @@
     "lint:fix": "pnpm lint:fix:prettier",
     "lint:fix:fast": "prettier --write --plugin-search-dir=. .",
     "lint:fix:prettier": "pretty-quick --staged",
-    "typecheck": "pnpm --filter @flatbread/proof --filter @flatbread/explorer typecheck",
+    "typecheck": "pnpm --filter @flatbread/explorer typecheck",
     "play": "cd examples/nextjs && pnpm dev",
     "preplay:efforts": "pnpm --filter @flatbread/explorer build",
     "play:efforts": "pnpm exec flatbread start --watch --open",
@@ -40,7 +40,7 @@
     "test:explorer": "pnpm --filter @flatbread/explorer test",
     "test": "pnpm build && pnpm test:ava && pnpm test:vitest && pnpm test:explorer",
     "verify": "pnpm skills:check && pnpm skills:pack-check && pnpm lint && pnpm typecheck && pnpm build && pnpm test",
-    "cursor:fetch-cloud-agent": "pnpm --filter @flatbread/proof exec node scripts/fetch-cloud-agent-conversation.mjs",
+    "cursor:fetch-cloud-agent": "node scripts/fetch-cloud-agent-conversation.mjs",
     "dev:test": "ava --watch --verbose",
     "prepare": "husky install"
   },
@@ -58,7 +58,6 @@
     "@flatbread/codegen": "workspace:*",
     "@flatbread/config": "workspace:*",
     "@flatbread/core": "workspace:*",
-    "@flatbread/proof": "workspace:*",
     "@flatbread/resolver-svimg": "workspace:*",
     "@flatbread/source-filesystem": "workspace:*",
     "@flatbread/transformer-markdown": "workspace:*",
@@ -66,6 +65,7 @@
   },
   "devDependencies": {
     "@ava/typescript": "3.0.1",
+    "@cursor/sdk": "^1.0.9",
     "@flatbread/effort-graph": "workspace:*",
     "@nrwl/workspace": "14.4.3",
     "@types/inquirer": "8.2.1",
