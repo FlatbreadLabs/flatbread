@@ -1,3 +1,13 @@
+---
+id: glossary
+title: Glossary
+section: start
+order: 2
+summary: The words Flatbread uses — collection, record, ref, relation, transformer, source — each defined in one place.
+related:
+  - positioning
+---
+
 # Flatbread glossary — relational content primitives
 
 This page defines words used by Flatbread. Flatbread turns files in your

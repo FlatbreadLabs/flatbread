@@ -56,26 +56,26 @@ projects that want versioned content with links between entries.
 - It does not reload its own packages. `flatbread start --watch` picks up valid
   content and config changes while you work, but a change to a Flatbread
   package needs a rebuild and a restart. See the
-  [local development loop](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/local-dev-loop.md).
+  [local development loop](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/local-dev-loop.md).
 
 **GraphQL:** GraphQL is one read interface over the graph. For more detail, see
-[Flatbread positioning](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/positioning.md).
+[Flatbread positioning](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/positioning.md).
 
 **Glossary:** Definitions for collections, relations, IDs, validation, and the
 generated GraphQL types are in the
-[glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md).
+[glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/glossary.md).
 
 **Local development:** Learn what updates automatically and what needs a
 restart in the
-[local development loop](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/local-dev-loop.md).
+[local development loop](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/local-dev-loop.md).
 
 **Export:** The core API can create stable JSON snapshots. See
-[JSON export](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/json-export.md).
+[JSON export](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/json-export.md).
 
 **Keeping your data:** Your files, Git history, JSON/CSV exports, GraphQL
 introspection, and generated TypeScript remain available when you move away
 from Flatbread. See
-[data ownership](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/data-ownership.md).
+[data ownership](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/data-ownership.md).
 
 Every published package requires Node 20.19 or newer. To work on this monorepo,
 use Node 20.19+ with pnpm 10.33.x.
@@ -88,7 +88,7 @@ below use that layout.
 
 ### 1 · What you are modeling
 
-- **Collections** (`Post`, `Author`) map to folders of files; see the [glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md).
+- **Collections** (`Post`, `Author`) map to folders of files; see the [glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/glossary.md).
 - **Relations:** posts declare `authors:` in frontmatter as a list of **author ids**; Flatbread resolves them through **`refs`** in config (same idea as joins, over files—**not** a remote database).
 - **Tags:** in the bundled example, each post exposes **`tags`** as a **YAML string list** in frontmatter. That becomes a **`[String]`** field on **`Post`** in the generated schema. That is **facet-style metadata** repeated per post—not the same machinery as **`refs`** to another collection. If you need normalized tag **records** shared across posts, model a **`Tag`** collection and wire **`refs`** yourself (advanced).
 
@@ -121,21 +121,21 @@ The Next example points `flatbread.config.js` at `content/markdown/...` **relati
 
 **Backing files for posts, authors, and tags (this example):**
 
-| What        | Where it lives                                                                                                                           | Glossary terms                                                                                                                                                                         |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Posts**   | `examples/content/markdown/posts/*.md` — one **record** per file                                                                         | [Collection](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#collection), [Record](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#record) |
-| **Authors** | `examples/content/markdown/authors/*.md` — one **record** per file                                                                       | Same; **IDs** in frontmatter wire **relations**                                                                                                                                        |
-| **Tags**    | The `tags:` YAML list **in each post’s frontmatter** (facet metadata on that **Post**). There is **no** `markdown/tags/` directory here. | [Tag (facet) vs `Tag` collection](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#tag-facet-vs-tag-collection)                                                   |
+| What        | Where it lives                                                                                                                           | Glossary terms                                                                                                                                                                                                             |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Posts**   | `examples/content/markdown/posts/*.md` — one **record** per file                                                                         | [Collection](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/glossary.md#collection), [Record](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/glossary.md#record) |
+| **Authors** | `examples/content/markdown/authors/*.md` — one **record** per file                                                                       | Same; **IDs** in frontmatter wire **relations**                                                                                                                                                                            |
+| **Tags**    | The `tags:` YAML list **in each post’s frontmatter** (facet metadata on that **Post**). There is **no** `markdown/tags/` directory here. | [Tag (facet) vs `Tag` collection](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/glossary.md#tag-facet-vs-tag-collection)                                                                     |
 
 ### Traceability: same relation model (files, config, query interface)
 
-The table below follows one relation from files to config to the generated GraphQL schema. Files and config are the source of truth; GraphQL is one [query interface](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#query-interface) over them.
+The table below follows one relation from files to config to the generated GraphQL schema. Files and config are the source of truth; GraphQL is one [query interface](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/glossary.md#query-interface) over them.
 
-| Layer                                     | You see…                                                                                                                         | Glossary                                                                                                                                                                                                                                                                                                         |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Files**                                 | `authors:` ids in a post file match `id:` in author files; `tags:` is a string list on the post                                  | [Relation](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#relation), [ID](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#id), [Tag (facet) vs `Tag` collection](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#tag-facet-vs-tag-collection) |
-| **`flatbread.config.js`**                 | `content` entries with `collection: 'Post' \| 'Author'` and `refs: { authors: 'Author' }`                                        | [Collection](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#collection), [Relation](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#relation)                                                                                                                       |
-| **Generated GraphQL schema + codegen TS** | `allPosts { tags authors { id name } }` — **refs** resolve to **`Author`** objects; **`tags`** stays a scalar list on **`Post`** | [Generated schema and operation types (GraphQL)](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#generated-schema-and-operation-types-graphql), [Cardinality](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#cardinality)                                           |
+| Layer                                     | You see…                                                                                                                         | Glossary                                                                                                                                                                                                                                                                                                                                                               |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Files**                                 | `authors:` ids in a post file match `id:` in author files; `tags:` is a string list on the post                                  | [Relation](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/glossary.md#relation), [ID](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/glossary.md#id), [Tag (facet) vs `Tag` collection](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/glossary.md#tag-facet-vs-tag-collection) |
+| **`flatbread.config.js`**                 | `content` entries with `collection: 'Post' \| 'Author'` and `refs: { authors: 'Author' }`                                        | [Collection](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/glossary.md#collection), [Relation](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/glossary.md#relation)                                                                                                                                         |
+| **Generated GraphQL schema + codegen TS** | `allPosts { tags authors { id name } }` — **refs** resolve to **`Author`** objects; **`tags`** stays a scalar list on **`Post`** | [Generated schema and operation types (GraphQL)](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/glossary.md#generated-schema-and-operation-types-graphql), [Cardinality](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/glossary.md#cardinality)                                                             |
 
 **Illustrative query result** (same **relation model** as [`examples/content/markdown/posts/example-post.md`](https://github.com/FlatbreadLabs/flatbread/blob/main/examples/content/markdown/posts/example-post.md): authors `2a3e` / `40s3`, **tags** from frontmatter). Values are from that file and its resolved **authors**; the shape matches the **`GetPostsAuthorsAndTags`** operation in **§3** after you include **`tags`** and **`authors`** in your **`.graphql`** document (see also `queries/posts.graphql`, which you can extend the same way):
 
@@ -266,7 +266,7 @@ Apollo Studio with the generated schema. You can then save queries in
 
 With `--watch`, valid content and config changes update the running GraphQL
 server. See the
-[local development loop](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/local-dev-loop.md)
+[local development loop](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/local-dev-loop.md)
 for the cases that still need a rebuild or restart.
 
 ## Install Flatbread in your own repo

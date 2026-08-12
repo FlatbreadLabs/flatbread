@@ -1,3 +1,13 @@
+---
+id: local-dev-loop
+title: Local dev loop
+section: guides
+order: 1
+summary: What `flatbread start --watch` picks up, what it does not, and where the four moving parts hand off to each other.
+related:
+  - edit-file-see-query-update-demo
+---
+
 # Local dev loop and watch boundaries
 
 Flatbread's local loop has four moving parts:

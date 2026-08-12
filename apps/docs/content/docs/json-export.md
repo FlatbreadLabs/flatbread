@@ -1,3 +1,13 @@
+---
+id: json-export
+title: Snapshot export
+section: data
+order: 2
+summary: JSON and CSV snapshots of a collection, with a stable sort order you can diff.
+related:
+  - data-ownership
+---
+
 # Snapshot export
 
 Snapshot exports are part of Flatbread's data ownership story: they turn the

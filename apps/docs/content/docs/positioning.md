@@ -1,6 +1,17 @@
+---
+id: positioning
+title: What Flatbread is
+section: start
+order: 1
+summary: Flatbread turns files in Git into a typed relational graph. Collections, records, and refs come first; GraphQL is one way to read them.
+related:
+  - glossary
+  - pmf-decision-rubric
+---
+
 # Flatbread positioning
 
-For installation and usage, see the [main README](../README.md). For
+For installation and usage, see the [main README](../../../../README.md). For
 definitions used in the docs and config, see the [glossary](./glossary.md).
 To compare Flatbread with databases, CMSs, and other file-based tools, see
 [Comparing Flatbread with other tools](./pmf-decision-rubric.md). For keeping
@@ -16,7 +27,7 @@ control how it reads files and turns them into data.
 
 ## The lead use case: memory for coding agents
 
-The [Proof](../packages/proof/README.md) is a Flatbread content
+The [Proof](../../../../packages/proof/README.md) is a Flatbread content
 model for what a coding agent works out along the way. An agent records an
 Effort and then writes Issues, Findings, Decisions, Constraints, Risks,
 Citations, and Blobs against it. Each record is a markdown file under
@@ -56,7 +67,7 @@ without setting up a CMS database.
 it reads data that Flatbread has already loaded, following
 `schema → operations → codegen`. Start with files and configuration, then
 choose how your app reads the data. The
-[Quickstart](../packages/flatbread/README.md#quickstart-posts-authors-and-tags)
+[Quickstart](../../../../packages/flatbread/README.md#quickstart-posts-authors-and-tags)
 shows posts, authors, and tags from files through generated types.
 
 **Keeping your data:** Raw files stay in Git, so you can branch, review,

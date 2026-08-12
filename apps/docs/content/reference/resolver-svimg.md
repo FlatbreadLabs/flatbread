@@ -1,0 +1,1 @@
+../../../../packages/resolver-svimg/readme.md

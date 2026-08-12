@@ -3,6 +3,7 @@ packages:
   - '!**/test/**'
   - '!**/__tests__/**'
   - examples/*
+  - apps/*
 
 onlyBuiltDependencies:
   - '@apollo/protobufjs'

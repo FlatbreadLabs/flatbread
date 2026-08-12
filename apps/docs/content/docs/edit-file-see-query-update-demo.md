@@ -1,3 +1,13 @@
+---
+id: edit-file-see-query-update-demo
+title: Edit a file, watch the query change
+section: guides
+order: 2
+summary: A single-process harness that proves the loop from a saved file to a changed query result.
+related:
+  - local-dev-loop
+---
+
 # Edit file → see query update demo
 
 This is a single-process demo harness, not the long-running `flatbread start`

@@ -1,3 +1,14 @@
+---
+id: pmf-decision-rubric
+title: Compared with other tools
+section: compare
+order: 1
+summary: Where Flatbread sits next to SQLite, a hosted CMS, and Contentlayer-style build steps.
+related:
+  - positioning
+  - data-ownership
+---
+
 # Comparing Flatbread with other tools
 
 This page helps explain where Flatbread fits. It compares Flatbread with tools

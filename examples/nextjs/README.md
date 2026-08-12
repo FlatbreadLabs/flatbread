@@ -68,7 +68,7 @@ pnpm run codegen
 ```
 
 For details about what changes reload automatically, see
-[`docs/local-dev-loop.md`](../../docs/local-dev-loop.md). When Flatbread starts
+[the local dev loop guide](../../apps/docs/content/docs/local-dev-loop.md). When Flatbread starts
 without `--watch`, restart it after content or config changes.
 
 To see a Markdown/YAML edit/query loop without manually restarting a server, run
@@ -80,7 +80,7 @@ pnpm run demo:watch-query
 
 Then run `pnpm run demo:edit`; the terminal prints updated Markdown
 posts/authors/tags and YAML author query results. Full walkthrough:
-[`docs/edit-file-see-query-update-demo.md`](../../docs/edit-file-see-query-update-demo.md).
+[the edit-and-watch demo](../../apps/docs/content/docs/edit-file-see-query-update-demo.md).
 
 ## Content path
 
@@ -92,7 +92,7 @@ Markdown and YAML for this demo live under **`examples/content`**; this package 
 The [Flatbread README quickstart](../../packages/flatbread/README.md#quickstart-posts-authors-and-tags)
 explains the file layout, tags, and how files become app data. See
 [Choosing a read interface](../../packages/flatbread/README.md#choosing-a-read-interface)
-and the [glossary](../../docs/glossary.md) for more detail.
+and the [glossary](../../apps/docs/content/docs/glossary.md) for more detail.
 
 ## Project structure
 
@@ -177,7 +177,7 @@ Run **`pnpm exec flatbread codegen --clear-cache --verbose`**.
 ## Learn more
 
 - [Flatbread package README](../../packages/flatbread/README.md) — quickstart, install, **`flatbread start`**, and choosing GraphQL or the generated TypeScript read API
-- [Glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md) — collections, relations, and GraphQL as one way to read data
+- [Glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/glossary.md) — collections, relations, and GraphQL as one way to read data
 - [Contributing guide](https://github.com/FlatbreadLabs/flatbread/blob/main/CONTRIBUTING.md)
 - [GraphQL Code Generator](https://www.the-guild.dev/graphql/codegen)
 - [Next.js Documentation](https://nextjs.org/docs)

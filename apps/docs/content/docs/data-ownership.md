@@ -1,3 +1,13 @@
+---
+id: data-ownership
+title: Data ownership
+section: data
+order: 1
+summary: Your files stay in Git. What that buys you, and how to take the data somewhere else.
+related:
+  - json-export
+---
+
 # Data ownership and exit story
 
 Flatbread's portability story starts with a simple constraint: **your flat files

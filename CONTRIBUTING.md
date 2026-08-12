@@ -3,7 +3,8 @@
 Thanks for your interest in contributing! This guide covers local development and the release process (bumping versions and publishing packages).
 
 **Flatbread** turns related content files in Git into typed data for TypeScript
-apps. **GraphQL is one way to read that data** (see `docs/glossary.md`); it is
+apps. **GraphQL is one way to read that data** (see
+`apps/docs/content/docs/glossary.md`); it is
 not the whole product.
 
 For a first project with posts, authors, and tags, see the
