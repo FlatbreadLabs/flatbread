@@ -1,0 +1,87 @@
+# Every document the site reads. `flatbread codegen` turns each operation here
+# into a typed document in `generated/graphql.ts`.
+
+query AllSections {
+  allSections(sortBy: "order", order: ASC) {
+    id
+    title
+    order
+    blurb
+  }
+}
+
+query AllDocs {
+  allDocs(sortBy: "order", order: ASC) {
+    id
+    title
+    summary
+    order
+    section {
+      id
+      title
+      order
+    }
+  }
+}
+
+query DocById($id: ID!) {
+  Doc(id: $id) {
+    id
+    title
+    summary
+    section {
+      id
+      title
+    }
+    related {
+      id
+      title
+      summary
+    }
+    _content {
+      html
+      timeToRead
+    }
+  }
+}
+
+query AllPackages {
+  allPackages(sortBy: "id", order: ASC) {
+    id
+    _content {
+      timeToRead
+      excerpt(length: 30)
+    }
+  }
+}
+
+query PackageById($id: ID!) {
+  Package(id: $id) {
+    id
+    _content {
+      html
+      timeToRead
+    }
+  }
+}
+
+query SearchCorpus {
+  allDocs(sortBy: "order", order: ASC) {
+    id
+    title
+    summary
+    section {
+      id
+      title
+    }
+    _content {
+      raw
+    }
+  }
+  allPackages(sortBy: "id", order: ASC) {
+    id
+    _content {
+      raw
+    }
+  }
+}

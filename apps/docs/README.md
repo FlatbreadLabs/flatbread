@@ -1,0 +1,91 @@
+# Flatbread docs site
+
+The documentation site for Flatbread, built on Flatbread.
+
+Every page here is a Markdown file that already lives in this repository. The
+site does not copy or generate that Markdown; it reads the same files through
+Flatbread's GraphQL server while the site is being built, then ships plain
+files. Change a guide or a package README, and the page changes with it.
+
+## Run it
+
+From the repository root:
+
+```bash
+pnpm build        # build the Flatbread packages first
+pnpm docs         # start Flatbread on :5057 and Next on :3000
+```
+
+Or from this directory:
+
+```bash
+pnpm dev          # flatbread start --watch -- next dev --turbopack
+pnpm build        # flatbread start -- next build, writing ./out
+pnpm serve        # serve the built files
+pnpm check:links  # check frontmatter and links without building
+```
+
+`flatbread start` runs the GraphQL server for as long as the command after
+`--` runs, so the production build has data and the finished site needs no
+server at all.
+
+## Where the content lives
+
+| Collection | Files                    | What it holds                                                               |
+| ---------- | ------------------------ | --------------------------------------------------------------------------- |
+| `Doc`      | `content/docs/*.md`      | The guides. Real files, moved here from the old top-level `docs/`.          |
+| `Section`  | `content/nav/*.yaml`     | Navigation groups, written as YAML so the site exercises both transformers. |
+| `Package`  | `content/reference/*.md` | Symlinks to `packages/*/README.md`.                                         |
+
+Two rules shape that layout, and both are worth knowing before you add a
+collection:
+
+1. A content path may not climb above the project directory. `../../packages`
+   matches nothing, which is why `content/reference` holds symlinks.
+2. A capture may name a directory or a filename, but a capture followed by a
+   fixed filename — `packages/[id]/README.md` — is not matched when the
+   content is first loaded. Capturing the filename, `content/reference/[id].md`,
+   works.
+
+Flatbread requires an `id` on every record and never invents one. The guides
+declare `id` in frontmatter, and the filename capture supplies the same value.
+The package pages have no frontmatter at all — a README cannot carry any
+without showing it on npm — so the symlink's own name is the id.
+
+## Adding a page
+
+1. Write `content/docs/<id>.md`.
+2. Give it frontmatter: `id` (matching the filename), `title`, `section` (an
+   id from `content/nav`), `order`, `summary`, and optionally `related`.
+3. Run `pnpm check:links`.
+
+`pnpm build` runs that check first, so a page that names a missing section or
+links to a file that moved fails the build rather than shipping.
+
+## Markdown pipeline
+
+Flatbread's Markdown transformer takes remark and rehype plugins, and the site
+supplies five of its own in `plugins/`:
+
+| Plugin                       | What it does                                                                                              |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `remark-strip-first-heading` | Removes the leading `# Heading` so the page title is not printed twice. The file keeps its H1 for GitHub. |
+| `remark-code-meta`           | Carries a fence's info string onto the `<code>` element as a label.                                       |
+| `remark-repo-links`          | Rewrites `./glossary.md` and `../../packages/core/README.md` into site routes.                            |
+| `rehype-heading-anchors`     | Adds an `id` and a self link to every heading below H1.                                                   |
+| `rehype-shiki`               | Colours code with Shiki, writing both themes as CSS variables.                                            |
+
+They are written against plain syntax trees and pull in no unified packages of
+their own. Flatbread's transformer depends on unified 10, while most published
+plugins now target unified 11, so a plugin from npm may or may not fit.
+
+## What the site does not use
+
+- **No MDX.** MDX would parse the Markdown outside Flatbread, which is the
+  opposite of what this site is meant to demonstrate. Interactive behaviour is
+  added to the rendered HTML afterwards instead — see `CodeCopy`.
+- **No Motion+.** Motion's `splitText` needs a paid membership and a private
+  registry token, which CI on a public repository cannot have. The site splits
+  text itself in `app/components/motion/SplitText.tsx`.
+- **No search service.** Flatbread can filter but not rank. The build flattens
+  every page into a list and the browser scores it.
