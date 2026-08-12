@@ -994,3 +994,40 @@ body {
   color: var(--ink-faint);
   font-size: 0.6875rem;
 }
+
+/* Navigation disclosure ------------------------------------------- */
+
+.fb-nav__summary {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .fb-nav__summary {
+    display: block;
+    padding: calc(var(--line) / 4) 0;
+    color: var(--ink-soft);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .fb-nav__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .fb-nav__summary:hover {
+    color: var(--ink);
+  }
+
+  .fb-nav[open] .fb-nav__summary {
+    margin-bottom: calc(var(--line) / 2);
+  }
+
+  .fb-header__inner {
+    flex-wrap: wrap;
+    row-gap: calc(var(--line) / 4);
+  }
+
+  .fb-button__hint {
+    display: none;
+  }
+}

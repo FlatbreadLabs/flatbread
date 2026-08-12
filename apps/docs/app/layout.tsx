@@ -11,6 +11,7 @@ import {
 import { Rule } from './components/ascii/Rule';
 import { ThemeToggle, themeScript } from './components/chrome/ThemeToggle';
 import { PageTransition } from './components/motion/PageTransition';
+import { NavDisclosure } from './components/nav/NavDisclosure';
 import { Sidebar } from './components/nav/Sidebar';
 import { SearchDialog } from './components/search/SearchDialog';
 import './globals.css';
@@ -78,7 +79,9 @@ export default async function RootLayout({
 
         <div className="fb-shell">
           <aside className="fb-sidebar">
-            <Sidebar sections={sections} docs={docs} packages={packages} />
+            <NavDisclosure label="pages">
+              <Sidebar sections={sections} docs={docs} packages={packages} />
+            </NavDisclosure>
           </aside>
 
           <main id="content" className="fb-main">

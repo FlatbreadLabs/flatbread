@@ -79,7 +79,7 @@ export function SearchDialog({ entries }: { entries: SearchEntry[] }) {
   return (
     <>
       <button type="button" className="fb-button" onClick={() => setOpen(true)}>
-        [search <span className="fb-button__hint">/</span>]
+        [search<span className="fb-button__hint"> /</span>]
       </button>
 
       <AnimatePresence>
