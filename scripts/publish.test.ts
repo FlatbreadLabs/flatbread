@@ -79,6 +79,22 @@ test('npm view preflight treats E404 as needing publish', (t) => {
   );
 });
 
+test('npm view preflight treats execFileSync E404 as needing publish', (t) => {
+  const stderr =
+    'npm ERR! code E404\nnpm ERR! 404 Not Found - GET https://registry.npmjs.org/@flatbread%2fcore - Not found';
+  t.is(
+    classifyNpmViewResult({ error: { status: 1, stderr } }, '1.0.0'),
+    'publish'
+  );
+  t.is(
+    classifyNpmViewResult(
+      { error: { status: 1, stderr: Buffer.from(stderr) } },
+      '1.0.0'
+    ),
+    'publish'
+  );
+});
+
 test('npm view preflight aborts on non-not-found failures', (t) => {
   t.throws(
     () =>
@@ -87,6 +103,20 @@ test('npm view preflight aborts on non-not-found failures', (t) => {
           error: {
             code: 'E401',
             stderr: 'npm ERR! code E401\nUnable to authenticate',
+          },
+        },
+        '1.0.0'
+      ),
+    { message: /npm view failed/ }
+  );
+  t.throws(
+    () =>
+      classifyNpmViewResult(
+        {
+          error: {
+            status: 1,
+            stderr:
+              'npm ERR! code EOTP\nnpm ERR! This operation requires a one-time password',
           },
         },
         '1.0.0'
