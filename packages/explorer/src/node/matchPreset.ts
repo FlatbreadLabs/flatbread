@@ -1,10 +1,10 @@
-import { findEffortGraphContentRoot } from '@flatbread/effort-graph';
+import { findProofContentRoot } from '@flatbread/proof';
 
-export type ExplorerPresetId = 'effort-graph';
+export type ExplorerPresetId = 'proof';
 
 export interface ExplorerPresetMatch {
   preset: ExplorerPresetId;
-  /** Content root for the matched preset (Effort Graph markdown tree). */
+  /** Content root for the matched preset (Proof markdown tree). */
   root: string;
 }
 
@@ -21,9 +21,9 @@ type ContentLike = readonly {
 export function matchExplorerPreset(
   content: ContentLike
 ): ExplorerPresetMatch | null {
-  const root = findEffortGraphContentRoot(
-    content as Parameters<typeof findEffortGraphContentRoot>[0]
+  const root = findProofContentRoot(
+    content as Parameters<typeof findProofContentRoot>[0]
   );
   if (!root) return null;
-  return { preset: 'effort-graph', root };
+  return { preset: 'proof', root };
 }

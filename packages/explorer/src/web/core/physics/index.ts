@@ -1,5 +1,5 @@
 /**
- * Public entry point for the Effort Graph 2D physics + growth engine.
+ * Public entry point for the Proof 2D physics + growth engine.
  *
  * Import from here, not from the submodules, so we can freely refactor
  * internals without breaking consumers.

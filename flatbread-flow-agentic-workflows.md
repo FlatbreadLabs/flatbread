@@ -84,22 +84,22 @@ For schema-breaking work, use the `flatbread-major-migration` project skill and 
 
 ## DAG Topology
 
-When running this workflow under the `proof` skill (the `@flatbread/proof` package; legacy alias `dag-task-runner`), map phases to ranks. The runner executes a rank concurrently, then proceeds to the next.
+When running this workflow under the `oven` skill (the `@flatbread/oven` package; legacy alias `dag-task-runner`), map phases to ranks. The runner executes a rank concurrently, then proceeds to the next.
 
 ### Constraints (read before authoring a Flatbread DAG)
 
-- **No sub-sub-agents in DAG runs.** Each DAG node is a Cursor SDK local agent. It cannot reliably delegate to `.cursor/agents/*` via `Task(subagent_type=…)`. Inline the relevant agent identity into the `subtask_prompt` instead — start the prompt with `You are acting as <agent-name>. Follow its responsibilities and output schema.` and **paste the full output-schema heading list verbatim into every prompt**, not just the first per identity. The runner only forwards `apiKey`/`model`/`cwd` to `Agent.create` (proof: `packages/proof/src/run_dag.ts`), so `.cursor/agents/*` system prompts do not propagate.
+- **No sub-sub-agents in DAG runs.** Each DAG node is a Cursor SDK local agent. It cannot reliably delegate to `.cursor/agents/*` via `Task(subagent_type=…)`. Inline the relevant agent identity into the `subtask_prompt` instead — start the prompt with `You are acting as <agent-name>. Follow its responsibilities and output schema.` and **paste the full output-schema heading list verbatim into every prompt**, not just the first per identity. The runner only forwards `apiKey`/`model`/`cwd` to `Agent.create` (proof: `https://github.com/FlatbreadLabs/oven`), so `.cursor/agents/*` system prompts do not propagate.
 - **`readonly: true` and `tools:` frontmatter are advisory in DAG mode.** A subagent acting as `flatbread-architecture-planner` can still write files because the runner does not pass agent frontmatter to `Agent.create`. `Do not edit files.` is purely a prompt-level instruction; reinforce it in the prompt body for read-only tasks.
-- **Project skills do auto-attach.** `proof` and `flatbread-major-migration` are visible to subagents via description, so subtask prompts can reference them by name without re-explaining their contents.
+- **Project skills do auto-attach.** `flatbread-major-migration` are visible to subagents via description, so subtask prompts can reference them by name without re-explaining their contents.
 - **Same-rank file-write safety for Flatbread.** The coupled chain `packages/core` → `packages/codegen` → `examples/nextjs` is the most common contention. Treat the safe parallel cuts list below as the source of truth.
 - **Same-rank port-5057 safety.** `flatbread start` binds port `5057` over plain HTTP. Never put two tasks that invoke `flatbread start`, `pnpm dev`, `pnpm build`, or `agent-browser` against `examples/nextjs` in the same rank.
 - **2000-char upstream stitch cap on a 4000-char `STREAM_CAP`.** Each child sees at most 2000 chars of each parent's `resultText`, and the parent's output is itself capped at 4000 chars. Subagent output must lead with the structured headings the downstream task needs and group related entries (e.g. `packages/core/src/{generators,resolvers,types}.ts`) to fit in the window.
 
 ### Default DAG shape per phase
 
-"Rank" is computed by the runner via Kahn topo-sort over `depends_on`. Author the DAG by `depends_on` only and let the runner derive ranks. Run `pnpm exec proof --init-only --dag <path>` after editing to confirm the rank count didn't regress.
+"Rank" is computed by the runner via Kahn topo-sort over `depends_on`. Author the DAG by `depends_on` only and let the runner derive ranks. Run `pnpm exec oven --init-only --dag <path>` after editing to confirm the rank count didn't regress.
 
-The schema-migration starter (`.cursor/skills/proof/examples/flatbread/dag-schema-migration.json`, 21 tasks) collapses to 7 ranks:
+The schema-migration starter (`https://github.com/FlatbreadLabs/oven/tree/main/examples/flatbread/dag-schema-migration.json`, 21 tasks) collapses to 7 ranks:
 
 | Phase                             | Rank | Tasks                                                                                                          | Identity                         |
 | --------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------- | -------------------------------- |
@@ -142,7 +142,7 @@ Every DAG subtask whose work touches positioning, docs, README, examples, or roa
 
 ### Templates
 
-Reusable DAG JSONs live at `.cursor/skills/proof/examples/flatbread/`. Start from the closest template and edit task-level details rather than re-deriving the rank structure each time.
+Reusable DAG JSONs live at `https://github.com/FlatbreadLabs/oven/tree/main/examples/flatbread/`. Start from the closest template and edit task-level details rather than re-deriving the rank structure each time.
 
 ## Failure Recovery
 

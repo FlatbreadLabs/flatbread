@@ -1,13 +1,13 @@
 # `@flatbread/explorer`
 
 Content-relation explorer for Flatbread. v1 ships a generic single-page app
-(SPA) shell plus an **Effort Graph** preset. When your config uses
-`effortGraphContent()`, `flatbread start` serves this UI at `/`.
+(SPA) shell plus an **Proof** preset. When your config uses
+`proofContent()`, `flatbread start` serves this UI at `/`.
 
 ## Try it locally
 
 ```bash
-# flatbread.config.js includes effortGraphContent()
+# flatbread.config.js includes proofContent()
 npx flatbread start --watch --open
 # → http://localhost:5057/          explorer
 # → http://localhost:5057/graphql   Apollo sandbox
@@ -36,7 +36,7 @@ Same-origin deploys (assets served by Flatbread) need no query param.
 | ------------------------------ | ------------------------------------------ |
 | `getExplorerStaticDir()`       | Absolute path to `dist/static` for Express |
 | `explorerAssetsPresent()`      | Whether prebuilt `index.html` exists       |
-| `matchExplorerPreset(content)` | Detect Effort Graph (and later presets)    |
+| `matchExplorerPreset(content)` | Detect Proof (and later presets)           |
 | `EXPLORER_BOOTSTRAP_PATH`      | Bootstrap JSON path Flatbread injects      |
 
 There is no public React component export in v1.

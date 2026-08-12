@@ -1,14 +1,8 @@
-import type {
-  GraphEdgeKind,
-  GraphNodeKind,
-} from '@/presets/effort-graph/types';
+import type { GraphEdgeKind, GraphNodeKind } from '@/presets/proof/types';
 import type { ColorMode } from '@/core/oklch';
 import { oklchCss, structuralOklch } from '@/core/oklch';
-import { PRIMITIVES, primitiveOklch } from '@/presets/effort-graph/primitives';
-import {
-  RING_INNER_RATIO,
-  glyphSvgPoints,
-} from '@/presets/effort-graph/glyphs';
+import { PRIMITIVES, primitiveOklch } from '@/presets/proof/primitives';
+import { RING_INNER_RATIO, glyphSvgPoints } from '@/presets/proof/glyphs';
 
 export type RelationGroupId =
   | 'lineage'

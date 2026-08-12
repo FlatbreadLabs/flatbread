@@ -47,7 +47,8 @@ See `CONTRIBUTING.md` for full details. Quick reference:
 - **Typecheck**: `pnpm typecheck`
 - **Test**: `pnpm test` (builds, then runs ava + vitest suites). Vitest packages use `pnpm -F @flatbread/utils exec vitest run` / `pnpm -F @flatbread/codegen exec vitest run` (`run` avoids watch mode).
 - **Full verify**: `pnpm verify` (lint + typecheck + build + test)
-- **Proof**: the DAG task runner now lives at https://github.com/FlatbreadLabs/proof.
+- **Oven**: the DAG task runner lives at https://github.com/FlatbreadLabs/oven.
+- **Proof**: agent memory in this repo. CLI is `flatbread proof …`; records live under `.flatbread-proof/`.
 - **Dev server**: `pnpm play` (GraphQL on port 5057, Next.js on port 3000). From `examples/nextjs`, prefer `pnpm exec flatbread start -- next dev --turbopack`. Use `flatbread start` — `flatbread dev` is not a CLI command.
 
 ### Mergify Stacks

@@ -11,7 +11,7 @@ test('publish ordering is a stable topological sort', (t) => {
       name: 'flatbread',
       dirName: 'flatbread',
       dependencies: {
-        '@flatbread/effort-graph': 'workspace:*',
+        '@flatbread/proof': 'workspace:*',
         '@flatbread/codegen': 'workspace:*',
       },
     },
@@ -21,7 +21,7 @@ test('publish ordering is a stable topological sort', (t) => {
       dependencies: { '@flatbread/utils': 'workspace:*' },
     },
     { name: '@flatbread/utils', dirName: 'utils' },
-    { name: '@flatbread/effort-graph', dirName: 'effort-graph' },
+    { name: '@flatbread/proof', dirName: 'proof' },
     { name: '@flatbread/config', dirName: 'config' },
   ]);
 
@@ -29,7 +29,7 @@ test('publish ordering is a stable topological sort', (t) => {
     sorted.map((pkg) => pkg.name),
     [
       '@flatbread/config',
-      '@flatbread/effort-graph',
+      '@flatbread/proof',
       '@flatbread/utils',
       '@flatbread/codegen',
       'flatbread',

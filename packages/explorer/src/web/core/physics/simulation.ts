@@ -1,5 +1,5 @@
 /**
- * `createGraphSimulation` — the primary entry point for the Effort Graph
+ * `createGraphSimulation` — the primary entry point for the Proof
  * physics + growth engine.
  *
  * The engine keeps its own `SimNode` / `SimEdge` for each id it has ever

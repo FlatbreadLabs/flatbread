@@ -1,5 +1,5 @@
 import test from 'ava';
-import { effortGraphContent } from '@flatbread/effort-graph';
+import { proofContent } from '@flatbread/proof';
 import {
   explorerAssetsPresent,
   setExplorerStaticDirOverride,
@@ -28,10 +28,10 @@ test.serial(
       );
       return;
     }
-    t.is(resolveOpenPath(effortGraphContent()), EXPLORER_ENDPOINT);
-    t.is(resolveOpenPath(effortGraphContent()), '/');
-    t.is(resolveCliOpenPath(effortGraphContent()), EXPLORER_ENDPOINT);
-    t.is(resolveCliOpenPath(effortGraphContent()), '/');
+    t.is(resolveOpenPath(proofContent()), EXPLORER_ENDPOINT);
+    t.is(resolveOpenPath(proofContent()), '/');
+    t.is(resolveCliOpenPath(proofContent()), EXPLORER_ENDPOINT);
+    t.is(resolveCliOpenPath(proofContent()), '/');
   }
 );
 
@@ -60,14 +60,14 @@ test.serial(
       await rm(emptyDir, { recursive: true, force: true });
     });
 
-    t.is(resolveOpenPath(effortGraphContent()), GRAPHQL_ENDPOINT);
-    t.is(resolveOpenPath(effortGraphContent()), '/graphql');
-    t.not(resolveOpenPath(effortGraphContent()), EXPLORER_ENDPOINT);
-    t.not(resolveOpenPath(effortGraphContent()), '/');
+    t.is(resolveOpenPath(proofContent()), GRAPHQL_ENDPOINT);
+    t.is(resolveOpenPath(proofContent()), '/graphql');
+    t.not(resolveOpenPath(proofContent()), EXPLORER_ENDPOINT);
+    t.not(resolveOpenPath(proofContent()), '/');
 
-    t.is(resolveCliOpenPath(effortGraphContent()), GRAPHQL_ENDPOINT);
-    t.is(resolveCliOpenPath(effortGraphContent()), '/graphql');
-    t.not(resolveCliOpenPath(effortGraphContent()), EXPLORER_ENDPOINT);
-    t.not(resolveCliOpenPath(effortGraphContent()), '/');
+    t.is(resolveCliOpenPath(proofContent()), GRAPHQL_ENDPOINT);
+    t.is(resolveCliOpenPath(proofContent()), '/graphql');
+    t.not(resolveCliOpenPath(proofContent()), EXPLORER_ENDPOINT);
+    t.not(resolveCliOpenPath(proofContent()), '/');
   }
 );

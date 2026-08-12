@@ -18,7 +18,7 @@
       "@flatbread/resolver-svimg": ["./packages/resolver-svimg/src/index.ts"],
       "@flatbread/utils": ["./packages/utils/src/index.ts"],
       "@flatbread/explorer": ["./packages/explorer/src/node/index.ts"],
-      "@flatbread/effort-graph": ["./packages/effort-graph/src/index.ts"],
+      "@flatbread/proof": ["./packages/proof/src/index.ts"],
       "@flatbread/source-filesystem": [
         "./packages/source-filesystem/src/index.ts"
       ],

@@ -11,8 +11,8 @@ import {
   PRIMITIVES,
   PRIMITIVE_ORDER,
   primitiveOklch,
-} from '@/presets/effort-graph/primitives';
-import type { GraphNode } from '@/presets/effort-graph/types';
+} from '@/presets/proof/primitives';
+import type { GraphNode } from '@/presets/proof/types';
 import { useTheme } from '../hooks/useTheme';
 import {
   PrimitiveGlyph,

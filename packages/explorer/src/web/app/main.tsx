@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from './hooks/useTheme';
-import { EffortGraphApp } from './components/EffortGraphApp';
+import { ProofApp } from './components/ProofApp';
 import './globals.css';
 
 const root = document.getElementById('root');
@@ -12,7 +12,7 @@ if (!root) {
 createRoot(root).render(
   <StrictMode>
     <ThemeProvider>
-      <EffortGraphApp />
+      <ProofApp />
     </ThemeProvider>
   </StrictMode>
 );

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { oklchCss, effortColor, retiredOklch } from '@/core/oklch';
-import { PRIMITIVES, primitiveOklch } from '@/presets/effort-graph/primitives';
+import { PRIMITIVES, primitiveOklch } from '@/presets/proof/primitives';
 import {
   effectiveLifecycle,
   type LifecycleIndex,
-} from '@/presets/effort-graph/lifecycle';
-import type { GraphEdge, GraphNode } from '@/presets/effort-graph/types';
+} from '@/presets/proof/lifecycle';
+import type { GraphEdge, GraphNode } from '@/presets/proof/types';
 import { useTheme } from '../hooks/useTheme';
 import { MarkdownSurface } from './MarkdownSurface';
 import {

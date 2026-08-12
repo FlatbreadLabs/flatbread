@@ -55,7 +55,7 @@ export function mountExplorer(
   let active = false;
   let indexHtml = '';
   let bootstrap: ExplorerBootstrap = {
-    preset: 'effort-graph',
+    preset: 'proof',
     graphqlPath: GRAPHQL_PATH,
     eventsPath: EVENTS_PATH,
   };

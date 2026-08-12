@@ -4,7 +4,7 @@ Research and product perspective on relational agent artifacts stored in git, st
 
 ## 1. Executive Summary
 
-The agent artifact layer in 2026 is dense with conventions and files (`AGENTS.md`, `SKILL.md`, `.handoff/*.md`, `.GCC/branches/*`, `.cs/discoveries.md`, vault MCPs) but thin on **typed relational schemas** over those artifacts. Teams get search, backlinks, versioned memory trees, and handoff packets; they rarely get reference integrity, stable cross-tool IDs, or filterable graph queries like "all blocking decisions for this effort with owning plan and producing sessions." Flatbread already models collections, refs, and rich filters over markdown/YAML in git. Positioning it as **the relational layer for agent efforts in git**—with MCP and generated TypeScript alongside GraphQL—is a credible category move. The recommended posture is an **Effort Graph**: a preset schema (Effort → Plan, Decision, Session, Artifact, Run) plus validation, append-oriented writes, and agent-facing query APIs, without building a CMS or competing on generic databases.
+The agent artifact layer in 2026 is dense with conventions and files (`AGENTS.md`, `SKILL.md`, `.handoff/*.md`, `.GCC/branches/*`, `.cs/discoveries.md`, vault MCPs) but thin on **typed relational schemas** over those artifacts. Teams get search, backlinks, versioned memory trees, and handoff packets; they rarely get reference integrity, stable cross-tool IDs, or filterable graph queries like "all blocking decisions for this effort with owning plan and producing sessions." Flatbread already models collections, refs, and rich filters over markdown/YAML in git. Positioning it as **the relational layer for agent efforts in git**—with MCP and generated TypeScript alongside GraphQL—is a credible category move. The recommended posture is an **Proof**: a preset schema (Effort → Plan, Decision, Session, Artifact, Run) plus validation, append-oriented writes, and agent-facing query APIs, without building a CMS or competing on generic databases.
 
 ## 2. The Problem
 
@@ -90,7 +90,7 @@ Flatbread becomes a full memory product: authoring UI, lifecycle, branching UX, 
 
 Read-mostly preset: index existing harness folders, validate optional schemas, expose MCP + TS helpers. **Target:** harness engineers wiring Cursor/Claude/GCC without migrating storage. **Strength:** low displacement, fits today's read skew. **Risk:** commodity "nice indexer" unless paired with a sharp noun and integrity story.
 
-### Posture C — Effort Graph (recommended)
+### Posture C — Proof (recommended)
 
 Own the **Effort** aggregate explicitly: typed collections **Effort**, **Plan**, **Decision**, **Session**, **Artifact**, **Run** (and optional **Agent**, **Review**) with refs and validation; MCP + generated TS + GraphQL over one model; **append-oriented** agent writes into the graph. **Target:** multi-week agentic work in repos. **Strength:** differentiated category, testable MVP, uses every Flatbread primitive; clarifies the GraphQL pivot as "one of several query adapters." **Risk:** needs a minimal credible write path and a schema flexible enough for real harness diversity without dissolving into bespoke configs.
 
@@ -126,27 +126,27 @@ export default defineConfig({
   transformer: transformerMarkdown({ markdown: { gfm: true } }),
   content: [
     {
-      path: '.flatbread-efforts/efforts',
+      path: '.flatbread-proof/efforts',
       collection: 'Effort',
       refs: { owner_agent: 'Agent' },
     },
     {
-      path: '.flatbread-efforts/plans',
+      path: '.flatbread-proof/plans',
       collection: 'Plan',
       refs: { effort: 'Effort' },
     },
     {
-      path: '.flatbread-efforts/decisions',
+      path: '.flatbread-proof/decisions',
       collection: 'Decision',
       refs: { effort: 'Effort', plan: 'Plan', session: 'Session' },
     },
     {
-      path: '.flatbread-efforts/sessions',
+      path: '.flatbread-proof/sessions',
       collection: 'Session',
       refs: { effort: 'Effort' },
     },
     {
-      path: '.flatbread-efforts/artifacts',
+      path: '.flatbread-proof/artifacts',
       collection: 'Artifact',
       refs: {
         effort: 'Effort',
@@ -155,12 +155,12 @@ export default defineConfig({
       },
     },
     {
-      path: '.flatbread-efforts/runs',
+      path: '.flatbread-proof/runs',
       collection: 'Run',
       refs: { session: 'Session', effort: 'Effort' },
     },
     {
-      path: '.flatbread-efforts/agents',
+      path: '.flatbread-proof/agents',
       collection: 'Agent',
     },
   ],
@@ -189,13 +189,13 @@ Frontmatter fields (e.g. `id`, `status`, `blocking`, `decided_at`, `tool`) would
 
 Cross-check against [What Not To Build Yet](flatbread-flow-pmf-audit.md) and related warnings.
 
-| Audit constraint                                                                                   | Relationship to Posture C (Effort Graph)                                                                                                                                         |
+| Audit constraint                                                                                   | Relationship to Posture C (Proof)                                                                                                                                                |
 | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Do not build hosted CMS, dashboard, or editing UI yet                                              | **Respects.** MCP/CLI/codegen only; no mandated admin UI.                                                                                                                        |
 | Do not compete with full databases on transactions, auth, permissions, high-scale writes           | **Respects** if writes stay append-oriented, local, and validation-focused; **stretches** if users demand multi-user locking or roles—then explicitly out of scope.              |
-| Do not over-invest in many source plugins before local filesystem relational workflow is excellent | **Respects** if Effort Graph ships as one filesystem preset + optional path mappings; **stretches** if many SaaS sources are added prematurely—avoid.                            |
+| Do not over-invest in many source plugins before local filesystem relational workflow is excellent | **Respects** if Proof ships as one filesystem preset + optional path mappings; **stretches** if many SaaS sources are added prematurely—avoid.                                   |
 | Do not keep GraphQL as the only story                                                              | **Aligns.** MCP + TS are first-class in this thesis.                                                                                                                             |
-| Do not add complex migration systems before schemas, IDs, validation, exports, watch               | **Aligns.** Effort Graph assumes those foundations land first; **reopens** migration only as import from handoff/GCC folders once core is stable.                                |
+| Do not add complex migration systems before schemas, IDs, validation, exports, watch               | **Aligns.** Proof assumes those foundations land first; **reopens** migration only as import from handoff/GCC folders once core is stable.                                       |
 | Avoid database replacement framing until write path exists                                         | **Stretches language**—"relational layer" must stay precise: **not** a serverless Postgres; **reopens** the need for a documented, minimal write story before marketing breadth. |
 
 Section **8** (schema sketch) and **9** (surfaces) should stay synchronized with audit honesty: no promise of generic mutations until shipped.
@@ -205,7 +205,7 @@ Section **8** (schema sketch) and **9** (surfaces) should stay synchronized with
 Before roadmap commitment:
 
 1. **Preset wire-up** — Point Flatbread at an existing agent folder in a real repo (e.g. `.agents/` or documented handoff layout). Can one MCP query return _all blocking decisions for the current effort with plan title_ without custom scripts?
-2. **Adversarial schema** — One Effort Graph schema against three layouts: Claude Code-oriented tree, Cursor rules + skills layout, GCC `.GCC/` layout. Where does a single schema break? What mapping layer is minimal?
+2. **Adversarial schema** — One Proof schema against three layouts: Claude Code-oriented tree, Cursor rules + skills layout, GCC `.GCC/` layout. Where does a single schema break? What mapping layer is minimal?
 3. **Token budget** — Compare cold-start context stuffing vs Flatbread-mediated retrieval over a multi-session effort; benchmark against published handoff savings orders (e.g. AgentHandoff's reported range) as a directional bar, not a guarantee.
 
 ## 13. What Not To Build Yet
@@ -213,7 +213,7 @@ Before roadmap commitment:
 - Hosted editing UI or CMS.
 - Mandatory vector index inside core (optional plugin later).
 - Arbitrary update/delete mutation API on arbitrary fields.
-- New source plugins for proprietary SaaS artifact stores before filesystem Effort Graph is excellent.
+- New source plugins for proprietary SaaS artifact stores before filesystem Proof is excellent.
 - Replacing Claude Code, Cursor, or Codex harnesses—Flatbread should **compose**, not compete.
 
 ## 14. Bottom Line

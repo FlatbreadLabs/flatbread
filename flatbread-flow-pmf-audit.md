@@ -147,7 +147,7 @@ Agent harnesses emit large markdown artifacts but rarely persist them as a **typ
 
 Flatbread can pivot query surfaces beyond GraphQL-only by positioning as **the relational layer for agent efforts in git**: collections and refs over markdown/YAML, with **MCP and generated TypeScript** as agent-first adapters alongside GraphQL. That use case **raises the priority** of work already called out near term—config typing, ID normalization, relation validation, and watch mode—and stays compatible with “no hosted CMS/UI yet” if writes stay narrow (e.g. append-oriented artifact deposits).
 
-Full survey, five-layer SOTA map, product postures (including recommended **Effort Graph**), schema sketch, validation experiments, and explicit tensions with this audit’s “What Not To Build Yet” list: **[flatbread-agent-artifact-opportunity.md](./flatbread-agent-artifact-opportunity.md)**.
+Full survey, five-layer SOTA map, product postures (including recommended **Proof**), schema sketch, validation experiments, and explicit tensions with this audit’s “What Not To Build Yet” list: **[flatbread-agent-artifact-opportunity.md](./flatbread-agent-artifact-opportunity.md)**.
 
 ## Near-Term Experiments
 

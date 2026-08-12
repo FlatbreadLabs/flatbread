@@ -10,5 +10,5 @@ export default defineConfig({
   minify: false,
   treeshake: true,
   tsconfig: 'tsconfig.node.json',
-  external: ['@flatbread/effort-graph', 'node:path', 'node:url'],
+  external: ['@flatbread/proof', 'node:path', 'node:url'],
 });
