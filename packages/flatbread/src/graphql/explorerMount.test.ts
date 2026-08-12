@@ -10,7 +10,7 @@ import {
 } from 'node:fs/promises';
 import os from 'node:os';
 import { join } from 'node:path';
-import { effortGraphContent } from '@flatbread/effort-graph';
+import { proofContent } from '@flatbread/proof';
 import {
   EXPLORER_BOOTSTRAP_PATH,
   explorerAssetsPresent,
@@ -56,7 +56,7 @@ test.serial(
     if (!requireExplorerAssets(t)) return;
 
     const app = express();
-    const mounted = mountExplorerIfMatched(app, effortGraphContent());
+    const mounted = mountExplorerIfMatched(app, proofContent());
     t.truthy(mounted);
     t.is(mounted!.openPath, '/');
 
@@ -76,7 +76,7 @@ test.serial(
     t.is(home.status, 200);
     const html = await home.text();
     t.true(html.includes('__FLATBREAD_EXPLORER__'));
-    t.true(html.includes('effort-graph'));
+    t.true(html.includes('proof'));
 
     const boot = await fetch(`${server.base}${EXPLORER_BOOTSTRAP_PATH}`);
     t.is(boot.status, 200);
@@ -85,7 +85,7 @@ test.serial(
       graphqlPath: string;
       eventsPath: string;
     };
-    t.is(json.preset, 'effort-graph');
+    t.is(json.preset, 'proof');
     t.is(json.graphqlPath, '/graphql');
     t.is(json.eventsPath, '/events');
 
@@ -113,17 +113,17 @@ test.serial(
     if (!requireExplorerAssets(t)) return;
 
     const app = express();
-    const mounted = mountExplorerIfMatched(app, effortGraphContent());
+    const mounted = mountExplorerIfMatched(app, proofContent());
     t.truthy(mounted);
 
     const server = await listen(app);
     t.teardown(server.close);
 
-    const clientRoute = await fetch(`${server.base}/effort-graph/view`);
+    const clientRoute = await fetch(`${server.base}/proof/view`);
     t.is(clientRoute.status, 200);
     const html = await clientRoute.text();
     t.true(html.includes('__FLATBREAD_EXPLORER__'));
-    t.true(html.includes('effort-graph'));
+    t.true(html.includes('proof'));
   }
 );
 
@@ -133,7 +133,7 @@ test.serial(
     if (!requireExplorerAssets(t)) return;
 
     const app = express();
-    const mounted = mountExplorerIfMatched(app, effortGraphContent());
+    const mounted = mountExplorerIfMatched(app, proofContent());
     t.truthy(mounted);
 
     app.use((_req, res) => {
@@ -167,7 +167,7 @@ test.serial(
     }
 
     const app = express();
-    const mounted = mountExplorerIfMatched(app, effortGraphContent());
+    const mounted = mountExplorerIfMatched(app, proofContent());
     t.truthy(mounted);
 
     const server = await listen(app);
@@ -225,7 +225,7 @@ test.serial(
     });
 
     const app = express();
-    const mounted = mountExplorerIfMatched(app, effortGraphContent());
+    const mounted = mountExplorerIfMatched(app, proofContent());
     t.is(mounted, null);
     t.true(
       warnings.some((message) =>
@@ -264,7 +264,7 @@ test.serial(
     });
 
     const app = express();
-    const handle = mountExplorer(app, effortGraphContent());
+    const handle = mountExplorer(app, proofContent());
     t.true(handle.isActive());
 
     const server = await listen(app);
@@ -275,7 +275,7 @@ test.serial(
     t.true((await homeActive.text()).includes('__FLATBREAD_EXPLORER__'));
 
     setExplorerStaticDirOverride(emptyDir);
-    handle.update(effortGraphContent());
+    handle.update(proofContent());
     t.false(handle.isActive());
     t.is(
       warnings.filter((message) =>
@@ -287,7 +287,7 @@ test.serial(
     const homeInactive = await fetch(`${server.base}/`);
     t.false((await homeInactive.text()).includes('__FLATBREAD_EXPLORER__'));
 
-    handle.update(effortGraphContent());
+    handle.update(proofContent());
     t.false(handle.isActive());
     t.is(
       warnings.filter((message) =>
@@ -297,7 +297,7 @@ test.serial(
     );
 
     setExplorerStaticDirOverride(undefined);
-    handle.update(effortGraphContent());
+    handle.update(proofContent());
     t.true(handle.isActive());
 
     const homeRestored = await fetch(`${server.base}/`);
@@ -334,7 +334,7 @@ test.serial(
     });
 
     const app = express();
-    const handle = mountExplorer(app, effortGraphContent());
+    const handle = mountExplorer(app, proofContent());
     t.true(handle.isActive());
 
     const server = await listen(app);
@@ -343,7 +343,7 @@ test.serial(
     await unlink(indexHtmlPath);
     await mkdir(indexHtmlPath);
 
-    handle.update(effortGraphContent());
+    handle.update(proofContent());
     t.false(handle.isActive());
     t.is(
       warnings.filter((message) =>

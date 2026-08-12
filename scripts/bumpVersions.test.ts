@@ -12,7 +12,7 @@ type TestPackage = WorkspaceBumpPackage & {
 
 const packages: TestPackage[] = [
   {
-    name: '@flatbread/effort-graph',
+    name: '@flatbread/proof',
     changedSinceLastPublish: true,
   },
   {
@@ -27,7 +27,7 @@ const packages: TestPackage[] = [
   {
     name: 'flatbread',
     dependencies: {
-      '@flatbread/effort-graph': 'workspace:*',
+      '@flatbread/proof': 'workspace:*',
       '@flatbread/codegen': 'workspace:^',
     },
     devDependencies: { '@flatbread/utils': 'workspace:*' },
@@ -37,10 +37,8 @@ const packages: TestPackage[] = [
 
 test('workspace dependent closure follows production workspace dependencies', (t) => {
   t.deepEqual(
-    [
-      ...getWorkspaceDependentClosure(packages, ['@flatbread/effort-graph']),
-    ].sort(),
-    ['@flatbread/effort-graph', 'flatbread']
+    [...getWorkspaceDependentClosure(packages, ['@flatbread/proof'])].sort(),
+    ['@flatbread/proof', 'flatbread']
   );
   t.deepEqual(
     [...getWorkspaceDependentClosure(packages, ['@flatbread/utils'])].sort(),
@@ -54,7 +52,7 @@ test('changed package propagation includes transitive public dependents', (t) =>
       .filter((pkg) => pkg.changedSinceLastPublish)
       .map((pkg) => pkg.name)
       .sort(),
-    ['@flatbread/codegen', '@flatbread/effort-graph', 'flatbread']
+    ['@flatbread/codegen', '@flatbread/proof', 'flatbread']
   );
 });
 
@@ -62,15 +60,15 @@ test('selection validation reports omitted required dependents', (t) => {
   t.deepEqual(
     validateBumpSelection(
       packages,
-      ['@flatbread/effort-graph', '@flatbread/codegen', 'flatbread'],
-      ['@flatbread/effort-graph']
+      ['@flatbread/proof', '@flatbread/codegen', 'flatbread'],
+      ['@flatbread/proof']
     ),
     ['flatbread']
   );
   t.deepEqual(
     validateBumpSelection(
       packages,
-      ['@flatbread/effort-graph', '@flatbread/codegen', 'flatbread'],
+      ['@flatbread/proof', '@flatbread/codegen', 'flatbread'],
       ['flatbread']
     ),
     []

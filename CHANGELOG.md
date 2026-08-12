@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The DAG runner is now `@flatbread/oven` (`pnpm exec oven`); the memory package is now `@flatbread/proof` with the `flatbread proof` CLI.
+
 Notes for the Flatbread release train. Some packages also keep their own
 changelog; this file covers the repository as a whole.
 

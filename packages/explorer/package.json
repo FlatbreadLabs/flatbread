@@ -1,7 +1,7 @@
 {
   "name": "@flatbread/explorer",
   "version": "1.0.0",
-  "description": "Single-page app for browsing a Flatbread content graph, served by flatbread start. Ships an Effort Graph preset.",
+  "description": "Single-page app for browsing a Flatbread content graph, served by flatbread start. Ships an Proof preset.",
   "type": "module",
   "scripts": {
     "build": "pnpm build:node && pnpm build:web",
@@ -9,7 +9,7 @@
     "build:web": "vite build",
     "dev": "vite",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx --test src/node/matchPreset.test.ts src/node/staticDir.test.ts src/web/core/endpoints.test.ts src/web/core/physics/forces.test.ts src/web/core/physics/simulation.test.ts src/web/presets/effort-graph/glyphs.test.ts src/web/presets/effort-graph/lifecycle.test.ts src/web/presets/effort-graph/normalize.test.ts src/web/presets/effort-graph/query.test.ts src/web/presets/effort-graph/useEffortGraphLive.test.ts"
+    "test": "node --import tsx --test src/node/matchPreset.test.ts src/node/staticDir.test.ts src/web/core/endpoints.test.ts src/web/core/physics/forces.test.ts src/web/core/physics/simulation.test.ts src/web/presets/proof/glyphs.test.ts src/web/presets/proof/lifecycle.test.ts src/web/presets/proof/normalize.test.ts src/web/presets/proof/query.test.ts src/web/presets/proof/useProofLive.test.ts"
   },
   "repository": {
     "type": "git",
@@ -36,7 +36,7 @@
     "node": ">=20.19"
   },
   "dependencies": {
-    "@flatbread/effort-graph": "workspace:*"
+    "@flatbread/proof": "workspace:*"
   },
   "devDependencies": {
     "@react-three/drei": "^10.0.6",

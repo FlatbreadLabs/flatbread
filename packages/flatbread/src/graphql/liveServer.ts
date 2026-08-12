@@ -10,7 +10,7 @@ import {
   createWatchCoordinator,
   type WatchCoordinator,
 } from '@flatbread/core';
-import type { EffortGraphLiveBridge } from '@flatbread/effort-graph';
+import type { ProofLiveBridge } from '@flatbread/proof';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@as-integrations/express5';
 import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache';
@@ -18,7 +18,7 @@ import cors from 'cors';
 import express, { type RequestHandler } from 'express';
 import http from 'http';
 import { loadFlatbreadConfig } from '../utils/getSchema';
-import { createEffortGraphComposition } from './effortGraphComposition';
+import { createProofComposition } from './proofComposition';
 import { mountExplorer } from './explorerMount';
 import { buildWatchIgnore } from './watchIgnore';
 
@@ -61,7 +61,7 @@ export interface GraphqlServerOptions {
 export interface RunningGraphqlServer {
   readonly port: number;
   readonly reloader: LiveSchemaReloader;
-  readonly effortGraph?: EffortGraphLiveBridge;
+  readonly proof?: ProofLiveBridge;
   /**
    * Whether the explorer SPA currently answers `/`.
    * May change under `--watch` when config reload adds or removes a matching
@@ -77,10 +77,10 @@ export async function startGraphqlServer(
   const cwd = options.cwd ?? process.cwd();
   if (!options.config.config) throw new Error('Config is not defined');
   const config = options.config.config;
-  const composition = createEffortGraphComposition(config.content, { cwd });
+  const composition = createProofComposition(config.content, { cwd });
   if (composition && !config.source.fetchPaths) {
     throw new Error(
-      'Flatbread effort-graph mode requires the configured source to implement fetchPaths(paths).'
+      'Flatbread proof mode requires the configured source to implement fetchPaths(paths).'
     );
   }
   if (options.watch && !config.source.fetchPaths) {
@@ -218,12 +218,12 @@ export async function startGraphqlServer(
     res.on('error', cleanup);
   });
   app.use((req, res, next) => currentMiddleware(req, res, next));
-  const effortGraph = await composition?.attach(reloader);
-  if (effortGraph) {
+  const proof = await composition?.attach(reloader);
+  if (proof) {
     try {
-      await effortGraph.writer.recover();
+      await proof.writer.recover();
     } catch (error) {
-      console.error('Flatbread effort-graph recovery failed:', error);
+      console.error('Flatbread proof recovery failed:', error);
     }
   }
   await new Promise<void>((listenResolve) =>
@@ -324,7 +324,7 @@ export async function startGraphqlServer(
   return {
     port,
     reloader,
-    effortGraph,
+    proof,
     get explorer() {
       return explorerHandle.isActive();
     },

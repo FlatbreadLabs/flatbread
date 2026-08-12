@@ -1,9 +1,6 @@
 import { useTheme } from '../hooks/useTheme';
-import type { GraphSummary } from '@/presets/effort-graph/lifecycle';
-import {
-  liveStatusLabel,
-  type LiveStatus,
-} from '@/presets/effort-graph/useEffortGraphLive';
+import type { GraphSummary } from '@/presets/proof/lifecycle';
+import { liveStatusLabel, type LiveStatus } from '@/presets/proof/useProofLive';
 
 interface TopBarProps {
   status: LiveStatus;
@@ -16,7 +13,7 @@ export function TopBar({ status, generation, summary }: TopBarProps) {
     <header className="pointer-events-auto flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-background/70 px-4 safe-area-x sm:px-5">
       <div className="flex min-w-0 items-baseline gap-3">
         <h1 className="shrink-0 text-[14px] font-semibold tracking-tight text-foreground">
-          Effort Graph
+          Proof
         </h1>
         {/*
           Counts are phrased in primitives, not nodes and edges: roughly half of

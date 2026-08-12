@@ -356,16 +356,16 @@ async function main(): Promise<void> {
   const flatbreadManifest = JSON.parse(
     await fs.readFile('packages/flatbread/package.json', 'utf8')
   );
-  const effortGraphManifest = JSON.parse(
-    await fs.readFile('packages/effort-graph/package.json', 'utf8')
+  const proofManifest = JSON.parse(
+    await fs.readFile('packages/proof/package.json', 'utf8')
   );
   await fs.writeFile(
-    'packages/effort-graph/skills/effort-graph/release.json',
+    'packages/proof/skills/proof/release.json',
     `${JSON.stringify(
       {
         format: 1,
         flatbreadVersion: flatbreadManifest.version,
-        effortGraphVersion: effortGraphManifest.version,
+        proofVersion: proofManifest.version,
         gitTag: `v${flatbreadManifest.version}`,
       },
       null,

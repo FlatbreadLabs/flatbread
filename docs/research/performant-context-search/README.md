@@ -16,4 +16,4 @@ The intermediate filenames below name that pipeline only — **they are not chec
 
 ## Proof run artifacts
 
-When reproducing or extending this research with `@flatbread/proof`, full DAG runs write per-task transcripts under **`<cwd>/.flatbread/artifacts/`** by default. See [`packages/proof/README.md`](../../../packages/proof/README.md) (`--full-output-dir`, `--no-artifacts`).
+When reproducing or extending this research with `@flatbread/oven`, full DAG runs write per-task transcripts under **`<cwd>/.oven/artifacts/`** by default. See the [Oven README](https://github.com/FlatbreadLabs/oven#readme) (`--full-output-dir`, `--no-artifacts`).

@@ -5,7 +5,7 @@ import { join, relative } from 'node:path';
 import filesystem from '@flatbread/source-filesystem';
 import markdownTransformer from '@flatbread/transformer-markdown';
 import { initializeConfig } from '@flatbread/core';
-import { effortGraphContent } from '@flatbread/effort-graph';
+import { proofContent } from '@flatbread/proof';
 import {
   explorerAssetsPresent,
   setExplorerStaticDirOverride,
@@ -41,7 +41,7 @@ function config(
       source: filesystem(),
       transformer: markdownTransformer(),
       content: active
-        ? effortGraphContent(root)
+        ? proofContent(root)
         : [{ collection: 'Plain', path: `${root}/plain` }],
     }),
   };
@@ -91,7 +91,7 @@ test.serial(
     requireExplorerAssets();
 
     const app = express();
-    const handle = mountExplorer(app, effortGraphContent('.flatbread-efforts'));
+    const handle = mountExplorer(app, proofContent('.flatbread-proof'));
     t.true(handle.isActive());
 
     app.post('/graphql', (_req, res) => {
@@ -120,7 +120,7 @@ test.serial(
     t.is(graphql.status, 200);
     t.true((await graphql.text()).includes('"ok":true'));
 
-    handle.update(effortGraphContent('.flatbread-efforts'));
+    handle.update(proofContent('.flatbread-proof'));
     t.true(handle.isActive());
 
     const homeReenabled = await fetch(`${server.base}/`);

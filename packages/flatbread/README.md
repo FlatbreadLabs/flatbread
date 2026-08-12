@@ -24,15 +24,15 @@ CLI.
 People use it two ways.
 
 **Durable memory for coding agents.** The
-[Effort Graph](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/effort-graph)
+[Proof](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/proof)
 stores an agent's reasoning as markdown records in the repository: Efforts,
 Issues, Findings, Decisions, Constraints, Risks, Citations, and Blobs. An agent
-writes them with `flatbread effort write` and reads them back through bounded
-queries such as `flatbread effort list` and
-`flatbread effort blocking-decisions`. Records live under
-`.flatbread-efforts/`, so you commit, review, diff, and revert them like any
+writes them with `flatbread proof write` and reads them back through bounded
+queries such as `flatbread proof list` and
+`flatbread proof blocking-decisions`. Records live under
+`.flatbread-proof/`, so you commit, review, diff, and revert them like any
 other file, and the memory outlives the session that produced it. The bundled
-[Effort Graph skill](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/effort-graph/skills/effort-graph/SKILL.md)
+[Proof skill](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/proof/skills/proof/SKILL.md)
 teaches an agent the commands.
 
 **Relational content for sites, docs, and internal tools.** Markdown and YAML
@@ -288,10 +288,10 @@ Point **`content`** entries at **your** `posts/` and **`authors/`** folders, reu
 More detail on the bundled example is in the
 [Next.js example README](https://github.com/FlatbreadLabs/flatbread/blob/main/examples/nextjs/README.md).
 
-For agent memory instead of site content, add `effortGraphContent()` to your
-config, then run `flatbread effort bootstrap` to check the setup and
-`flatbread effort bootstrap --verify` to fail when something is missing. The
-[Effort Graph README](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/effort-graph/README.md)
+For agent memory instead of site content, add `proofContent()` to your
+config, then run `flatbread proof bootstrap` to check the setup and
+`flatbread proof bootstrap --verify` to fail when something is missing. The
+[Proof README](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/proof/README.md)
 has the install commands.
 
 ## Query arguments (GraphQL read interface)

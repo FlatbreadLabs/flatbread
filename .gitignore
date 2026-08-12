@@ -14,7 +14,7 @@
 # logs
 yarn-error.log
 .pnpm-debug.log
-**/.flatbread-efforts/.journal/
-**/.flatbread/effort-graph/read-cache/
-# Local Proof DAG artifacts (external Proof tool may write here)
-.flatbread/artifacts/
+**/.flatbread-proof/.journal/
+**/.flatbread/proof/read-cache/
+# Local Oven DAG artifacts (external Oven tool may write here)
+.oven/artifacts/

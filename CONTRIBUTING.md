@@ -34,9 +34,9 @@ Optional **`pnpm play`** from the repo root is a shortcut for **`cd examples/nex
 - Build all packages: `pnpm build`
 - **Workspace libraries (watch-only):** `pnpm dev` — runs package `dev` scripts (e.g. `tsup --watch`) for `packages/*`; it does **not** start the Next.js example.
 - **Next.js example:** prefer the flow under [Recommended onboarding](#recommended-onboarding-try-flatbread-in-the-nextjs-example); or `pnpm play` as a convenience alias.
-- **Effort Graph explorer:**
+- **Proof explorer:**
   1. Run `pnpm play:efforts` (builds `@flatbread/explorer` via `preplay:efforts`, then `flatbread start --watch --open`).
-  2. When `flatbread.config.js` uses `effortGraphContent()`, Flatbread serves `@flatbread/explorer` at `http://localhost:5057/`. The Apollo sandbox is at `/graphql`.
+  2. When `flatbread.config.js` uses `proofContent()`, Flatbread serves `@flatbread/explorer` at `http://localhost:5057/`. The Apollo sandbox is at `/graphql`.
   3. For hot module replacement (HMR) on the single-page app (SPA) shell, run `pnpm exec flatbread start --watch` and `pnpm --filter @flatbread/explorer dev` in parallel. Vite on **5173** proxies API routes to **5057**.
 - Check local CI parity before opening a PR: `pnpm verify`
 
@@ -83,8 +83,8 @@ pnpm build
   - Single package: `pnpm -F <package-name> test`
   - Watch (where supported): `pnpm -F <package-name> test:watch`
 
-Proof (the DAG task runner for Cursor agents) now lives at
-https://github.com/FlatbreadLabs/proof.
+Oven (the DAG task runner for Cursor agents) now lives at
+https://github.com/FlatbreadLabs/oven.
 
 ## Releasing packages
 
@@ -100,10 +100,10 @@ letting each package carry its own alpha number. `pnpm bump` still works the
 same way: it preselects the packages that changed plus their workspace
 dependents. Only bump every package together again when a release calls for it.
 
-`packages/effort-graph/skills/effort-graph/release.json` records the version an
+`packages/proof/skills/proof/release.json` records the version an
 end user installs. Edit that file, not the copy in `.agents/`. Then run
 `pnpm skills:sync` to refresh the `.agents/` copy and `pnpm skills:pack-check`,
-which fails unless `flatbreadVersion` and `effortGraphVersion` match the current
+which fails unless `flatbreadVersion` and `proofVersion` match the current
 `package.json` versions and `gitTag` equals `v<flatbreadVersion>`. `pnpm verify`
 runs both checks.
 
@@ -147,8 +147,8 @@ Notes:
 
 > Note: you must have access permissions on NPM
 
-When changing the Effort Graph skill, edit the source files under
-`packages/effort-graph/skills/effort-graph/`, then run these checks in order:
+When changing the Proof skill, edit the source files under
+`packages/proof/skills/proof/`, then run these checks in order:
 
 ```bash
 pnpm skills:sync
@@ -156,10 +156,10 @@ pnpm skills:check
 pnpm skills:pack-check
 ```
 
-Bump and publish `@flatbread/effort-graph` and `flatbread` together when the
+Bump and publish `@flatbread/proof` and `flatbread` together when the
 skill and runtime need matching versions. The publish script checks the copied
 skill files and package contents first. It then publishes ordinary packages,
-`@flatbread/effort-graph`, and finally `flatbread`, stopping at the first
+`@flatbread/proof`, and finally `flatbread`, stopping at the first
 failure.
 
 Publish all public packages (the script builds first and then attempts to publish each package):
@@ -207,7 +207,7 @@ End users install the skill from that release tag and install the matching
 first stable release, so the tag is `v1.0.0`:
 
 ```bash
-npx skills add https://github.com/FlatbreadLabs/flatbread/tree/vX/packages/effort-graph/skills/effort-graph --skill effort-graph
+npx skills add https://github.com/FlatbreadLabs/flatbread/tree/vX/packages/proof/skills/proof --skill proof
 npm install --save-dev flatbread@X
 ```
 

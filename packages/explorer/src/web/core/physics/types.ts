@@ -1,5 +1,5 @@
 /**
- * Public types for the Effort Graph physics + growth engine.
+ * Public types for the Proof physics + growth engine.
  *
  * The engine is a pure-TypeScript layer intended to be stepped from an R3F
  * `useFrame` callback. It knows nothing about React or Three.js — it produces

@@ -7,7 +7,7 @@ import { networkInterfaces, release } from 'node:os';
 import orchestrateProcesses from './runner';
 import initConfig from './initConfig';
 import { createCodegenCommand } from '@flatbread/codegen';
-import { registerEffortCommands } from './effort';
+import { registerProofCommands } from './proof';
 import {
   EXPLORER_ENDPOINT,
   GRAPHQL_ENDPOINT,
@@ -137,7 +137,7 @@ prog
     });
   });
 
-registerEffortCommands(prog);
+registerProofCommands(prog);
 
 prog.parse(process.argv, { unknown: (arg) => `Unknown option: ${arg}` });
 

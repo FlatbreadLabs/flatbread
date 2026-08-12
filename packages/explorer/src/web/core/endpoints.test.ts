@@ -8,7 +8,7 @@ import {
 } from './endpoints.js';
 
 const DEFAULT_BOOTSTRAP: ExplorerBootstrap = {
-  preset: 'effort-graph',
+  preset: 'proof',
   graphqlPath: '/graphql',
   eventsPath: '/events',
 };
@@ -214,7 +214,7 @@ describe('resolveEventsUrl', () => {
   it('uses custom eventsPath from window bootstrap', () => {
     withExplorerBootstrap(
       {
-        preset: 'effort-graph',
+        preset: 'proof',
         graphqlPath: '/graphql',
         eventsPath: '/custom-events',
       },
@@ -230,7 +230,7 @@ describe('resolveEventsUrl', () => {
   it('derives custom eventsPath from the GraphQL endpoint origin only', () => {
     withExplorerBootstrap(
       {
-        preset: 'effort-graph',
+        preset: 'proof',
         graphqlPath: '/graphql',
         eventsPath: '/sse/stream',
       },
