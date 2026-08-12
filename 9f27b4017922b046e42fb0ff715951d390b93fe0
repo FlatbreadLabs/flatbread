@@ -1,0 +1,1 @@
+Fold the Effort Graph to Proof path rename into the branding commit because PR #243 could not pass frozen-lockfile CI alone; preserve the corrected Proof README install placeholders.
