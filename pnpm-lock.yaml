@@ -307,6 +307,9 @@ importers:
       plur:
         specifier: 5.1.0
         version: 5.1.0
+      vfile:
+        specifier: 5.3.4
+        version: 5.3.4
     devDependencies:
       '@types/lodash-es':
         specifier: 4.17.6
@@ -320,9 +323,6 @@ importers:
       typescript:
         specifier: 4.7.4
         version: 4.7.4
-      vfile:
-        specifier: 5.3.4
-        version: 5.3.4
 
   packages/effort-graph:
     dependencies:

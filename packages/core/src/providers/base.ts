@@ -2,7 +2,8 @@ import { generateSchema } from '../generators/schema';
 import { FlatbreadConfig } from '../types';
 import { initializeConfig } from '../utils/initializeConfig';
 
-import { graphql, GraphQLArgs, GraphQLSchema } from 'graphql';
+import { graphql } from 'graphql';
+import type { ExecutionResult, GraphQLArgs, GraphQLSchema } from 'graphql';
 
 /**
  * **Flatbread Provider**
@@ -23,7 +24,7 @@ export class FlatbreadProvider {
    * @param args GraphQLArgs needed for executing a query. Typically, this is just a standard GraphQL query.
    * @returns GraphQL response
    */
-  async query(args: Omit<GraphQLArgs, 'schema'>) {
+  async query(args: Omit<GraphQLArgs, 'schema'>): Promise<ExecutionResult> {
     const schema = await this.schemaPromise;
     return await graphql({ schema, ...args });
   }
