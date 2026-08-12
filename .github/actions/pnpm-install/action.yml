@@ -1,0 +1,23 @@
+name: pnpm install
+description: Install workspace dependencies with a frozen lockfile. Retry on transient native-binary download failures.
+
+runs:
+  using: composite
+  steps:
+    - name: Install dependencies
+      shell: bash
+      run: |
+        max=3
+        attempt=1
+        while [ "$attempt" -le "$max" ]; do
+          if pnpm install --frozen-lockfile; then
+            exit 0
+          fi
+          if [ "$attempt" -eq "$max" ]; then
+            echo "pnpm install failed after ${max} attempts" >&2
+            exit 1
+          fi
+          echo "pnpm install failed (attempt ${attempt}/${max}); retrying in 20s" >&2
+          attempt=$((attempt + 1))
+          sleep 20
+        done
