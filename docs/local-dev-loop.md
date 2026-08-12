@@ -1,3 +1,13 @@
+---
+id: local-dev-loop
+title: Local dev loop and watch boundaries
+section: guides
+order: 10
+summary: The four moving parts of Flatbread's watch loop and what reloads when.
+related:
+  - edit-file-see-query-update-demo
+---
+
 # Local dev loop and watch boundaries
 
 Flatbread's local loop has four moving parts:

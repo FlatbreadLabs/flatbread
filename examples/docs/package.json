@@ -1,0 +1,28 @@
+{
+  "name": "docs",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "flatbread start --watch -- next dev --turbopack -p 3001",
+    "codegen": "flatbread codegen --watch",
+    "build": "flatbread start -- next build",
+    "start": "next start -p 3001",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@graphql-typed-document-node/core": "^3.2.0",
+    "motion": "^13.1.0",
+    "next": "15.4.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^20.19.10",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "flatbread": "workspace:*",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.9.2"
+  }
+}
