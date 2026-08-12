@@ -36,8 +36,6 @@
   "files": [
     "bin",
     "dist",
-    "src",
-    "scripts",
     "*.d.ts"
   ],
   "engines": {
