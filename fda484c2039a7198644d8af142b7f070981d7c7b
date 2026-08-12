@@ -1,0 +1,1 @@
+Fix the release commit by prefixing every Proof CLI command in positioning docs and replacing pre-tag v1.0.0 install literals with <gitTag> and <flatbreadVersion> placeholders.
