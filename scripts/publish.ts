@@ -42,26 +42,34 @@ export function classifyNpmViewResult(
     error && typeof error === 'object'
       ? (error as Record<string, unknown>)
       : undefined;
-  if (
-    errorRecord &&
-    (errorRecord.code === 'E404' ||
-      errorRecord.status === 404 ||
-      errorRecord.statusCode === 404)
-  ) {
-    return 'publish';
-  }
-
   const details = errorRecord
     ? [
         errorRecord.code,
         errorRecord.status,
         errorRecord.stderr,
+        errorRecord.stdout,
         errorRecord.message,
       ]
-        .filter(Boolean)
-        .map(String)
+        .filter((value) => value != null && value !== '')
+        .map((value) =>
+          Buffer.isBuffer(value) ? value.toString('utf8') : String(value)
+        )
         .join(' ')
     : String(error ?? '');
+
+  // execFileSync throws with status 1 and E404 in stderr; error.code is not
+  // npm's E404 (that lives in the child stderr). Treat either shape as
+  // "version not on the registry yet."
+  if (
+    errorRecord &&
+    (errorRecord.code === 'E404' ||
+      errorRecord.status === 404 ||
+      errorRecord.statusCode === 404 ||
+      details.includes('E404') ||
+      details.includes('404 Not Found'))
+  ) {
+    return 'publish';
+  }
 
   if (!error && version === undefined) {
     throw new Error('npm view returned an unexpected response');
