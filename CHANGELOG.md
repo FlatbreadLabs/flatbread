@@ -59,6 +59,21 @@ Three reach npm for the first time in this release:
   `tonyketcham/flatbread` fork.
 - Every package carries a description that says what that package does.
 
+### Known dependency limits
+
+A clean install of all twelve packages reports seven `npm audit` entries that
+npm marks as having no fix available; the main `flatbread` install and its
+nine-package set report none, so the two packages below do not affect it.
+
+- `@flatbread/proof` inherits three moderate and high entries from
+  `@cursor/sdk`, which depends on `@connectrpc/connect-node@1.x` and through it
+  `undici@5.x`. No current or later `@cursor/sdk` release clears them, and the
+  later releases require Node 22.13 or newer.
+- `@flatbread/resolver-svimg` inherits four high entries from its required peer
+  `svimg`, which depends on `sharp`. The latest `svimg@4` still pins `sharp`
+  below the patched 0.35 line, and it changes the import API this resolver
+  uses.
+
 ### Docs
 
 - The READMEs and `docs/positioning.md` now lead with the Effort Graph: an
