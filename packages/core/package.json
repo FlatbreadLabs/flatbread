@@ -1,7 +1,7 @@
 {
   "name": "@flatbread/core",
-  "version": "1.0.0-alpha.16",
-  "description": "Flatbread's essential logic",
+  "version": "1.0.0",
+  "description": "Flatbread's engine: runs source and transformer plugins, validates records and refs, and builds the GraphQL schema plus JSON and CSV snapshots.",
   "type": "module",
   "scripts": {
     "build": "tsup",
@@ -28,6 +28,9 @@
     "dist",
     "*.d.ts"
   ],
+  "engines": {
+    "node": ">=20.19"
+  },
   "dependencies": {
     "graphql": "16.5.0",
     "graphql-compose": "9.0.8",
