@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 import test from 'ava';
 
 const run = promisify(execFile);
-const script = resolve('packages/effort-graph/scripts/sync-skills.mjs');
+const script = resolve('packages/proof/scripts/sync-skills.mjs');
 
 test('skill projection syncs, removes stale files, and checks without writing', async (t) => {
   const root = await mkdtemp(resolve(tmpdir(), 'flatbread-skills-'));

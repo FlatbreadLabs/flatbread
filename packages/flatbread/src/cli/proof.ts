@@ -18,7 +18,7 @@ import {
   relations,
   getRecord,
   listEfforts,
-} from '../effort/read.js';
+} from '../proof/read.js';
 import type { PrimitiveKind, ReadRelation } from '@flatbread/effort-graph';
 
 export interface EffortCliOptions {

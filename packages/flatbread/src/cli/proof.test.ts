@@ -26,7 +26,7 @@ import {
   handleEffortWrite,
   inspectEffortBootstrap,
   mapEffortCliOptions,
-} from './effort.js';
+} from './proof.js';
 
 type TeardownContext = {
   teardown(callback: () => void | Promise<void>): void;

@@ -29,25 +29,25 @@ import {
   structuralOklch,
   type Oklch,
 } from '@/core/oklch';
-import { PRIMITIVES, primitiveOklch } from '@/presets/effort-graph/primitives';
+import { PRIMITIVES, primitiveOklch } from '@/presets/proof/primitives';
 import {
   CIRCLE_SEGMENTS,
   GLYPH_OUTLINES,
   RING_INNER_RATIO,
   glyphExtent,
   type GlyphId,
-} from '@/presets/effort-graph/glyphs';
+} from '@/presets/proof/glyphs';
 import {
   buildAlivenessMap,
   isOpenBlocker,
   type Aliveness,
   type EffectiveLifecycle,
-} from '@/presets/effort-graph/lifecycle';
+} from '@/presets/proof/lifecycle';
 import type {
   GraphEdge,
   GraphEdgeKind,
   GraphNode,
-} from '@/presets/effort-graph/types';
+} from '@/presets/proof/types';
 import { useTheme, type ColorMode } from '../hooks/useTheme';
 import {
   RELATION_META,

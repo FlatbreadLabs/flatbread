@@ -6,19 +6,19 @@ const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 export const repositoryRoot = resolve(scriptDirectory, '../../..');
 export const defaultSource = resolve(
   repositoryRoot,
-  'packages/effort-graph/skills/effort-graph'
+  'packages/proof/skills/proof'
 );
 export const defaultDestination = resolve(
   repositoryRoot,
-  '.agents/skills/effort-graph'
+  '.agents/skills/proof'
 );
 export const managedSkillNames = [
-  'effort-graph',
+  'proof',
   'effort-modeling',
   'grill-with-efforts',
 ];
 export const managedSkillSources = managedSkillNames.map((name) =>
-  resolve(repositoryRoot, 'packages/effort-graph/skills', name)
+  resolve(repositoryRoot, 'packages/proof/skills', name)
 );
 
 async function entries(root) {

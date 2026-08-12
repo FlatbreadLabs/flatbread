@@ -1,13 +1,13 @@
 import { lazy, Suspense, useEffect, useMemo } from 'react';
 
 import { resolveGraphqlEndpoint } from '@/core/endpoints';
-import { useEffortGraphLive } from '@/presets/effort-graph/useEffortGraphLive';
+import { useEffortGraphLive } from '@/presets/proof/useProofLive';
 import {
   buildAlivenessMap,
   buildLifecycleIndex,
   summarizeGraph,
-} from '@/presets/effort-graph/lifecycle';
-import type { GraphNode } from '@/presets/effort-graph/types';
+} from '@/presets/proof/lifecycle';
+import type { GraphNode } from '@/presets/proof/types';
 
 import { TopBar } from './TopBar';
 import { Legend } from './Legend';

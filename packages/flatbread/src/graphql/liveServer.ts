@@ -18,7 +18,7 @@ import cors from 'cors';
 import express, { type RequestHandler } from 'express';
 import http from 'http';
 import { loadFlatbreadConfig } from '../utils/getSchema';
-import { createEffortGraphComposition } from './effortGraphComposition';
+import { createEffortGraphComposition } from './proofComposition';
 import { mountExplorer } from './explorerMount';
 import { buildWatchIgnore } from './watchIgnore';
 

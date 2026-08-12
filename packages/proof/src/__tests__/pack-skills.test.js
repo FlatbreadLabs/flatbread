@@ -5,10 +5,10 @@ import {
 } from '../../scripts/pack-skills.mjs';
 
 const canonicalFiles = [
-  'skills/effort-graph/release.json',
-  'skills/effort-graph/SKILL.md',
-  'skills/effort-graph/reference.md',
-  'skills/effort-graph/setup.md',
+  'skills/proof/release.json',
+  'skills/proof/SKILL.md',
+  'skills/proof/reference.md',
+  'skills/proof/setup.md',
 ];
 const release = JSON.stringify({
   format: 1,

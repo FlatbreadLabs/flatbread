@@ -11,7 +11,7 @@ export const forbiddenInvocation = 'node packages/flatbread/bin/flatbread.js';
 
 export function verifyReleaseIdentity(canonicalTexts, packageVersions) {
   const entry = canonicalTexts.find(
-    ({ path }) => path === 'skills/effort-graph/release.json'
+    ({ path }) => path === 'skills/proof/release.json'
   );
   if (!entry)
     throw new Error('Canonical skill payload is missing release.json');

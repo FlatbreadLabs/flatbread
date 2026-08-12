@@ -8,7 +8,7 @@ import type {
   LiveSchemaReloader,
   SchemaSnapshot,
 } from '@flatbread/core';
-import { createEffortGraphComposition } from './effortGraphComposition.js';
+import { createEffortGraphComposition } from './proofComposition.js';
 
 function fakeReloader(): LiveSchemaReloader {
   let generation = 0;

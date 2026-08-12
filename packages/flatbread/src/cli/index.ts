@@ -7,7 +7,7 @@ import { networkInterfaces, release } from 'node:os';
 import orchestrateProcesses from './runner';
 import initConfig from './initConfig';
 import { createCodegenCommand } from '@flatbread/codegen';
-import { registerEffortCommands } from './effort';
+import { registerEffortCommands } from './proof';
 import {
   EXPLORER_ENDPOINT,
   GRAPHQL_ENDPOINT,

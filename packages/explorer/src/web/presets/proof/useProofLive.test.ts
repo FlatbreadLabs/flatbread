@@ -9,7 +9,7 @@ import {
   rollbackRequestedGeneration,
   shouldCommitGeneration,
   type LiveStatus,
-} from './useEffortGraphLive';
+} from './useProofLive';
 import type { SchemaProbeResult } from './query';
 
 const SAMPLE_SCHEMA: SchemaProbeResult = {

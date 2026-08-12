@@ -9,13 +9,13 @@
     "skills:sync": "node scripts/sync-skills.mjs",
     "skills:check": "node scripts/sync-skills.mjs --check",
     "skills:pack-check": "node scripts/pack-skills.mjs",
-    "test": "pnpm --dir ../.. exec ava \"packages/effort-graph/src/__tests__/**/*.test.{js,ts}\"",
+    "test": "pnpm --dir ../.. exec ava \"packages/proof/src/__tests__/**/*.test.{js,ts}\"",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/FlatbreadLabs/flatbread.git",
-    "directory": "packages/effort-graph"
+    "directory": "packages/proof"
   },
   "homepage": "https://github.com/FlatbreadLabs/flatbread#readme",
   "author": "Tony Ketcham <ketcham.dev@gmail.com>",

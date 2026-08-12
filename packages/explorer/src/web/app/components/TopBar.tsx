@@ -1,9 +1,6 @@
 import { useTheme } from '../hooks/useTheme';
-import type { GraphSummary } from '@/presets/effort-graph/lifecycle';
-import {
-  liveStatusLabel,
-  type LiveStatus,
-} from '@/presets/effort-graph/useEffortGraphLive';
+import type { GraphSummary } from '@/presets/proof/lifecycle';
+import { liveStatusLabel, type LiveStatus } from '@/presets/proof/useProofLive';
 
 interface TopBarProps {
   status: LiveStatus;
