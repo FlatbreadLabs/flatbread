@@ -63,33 +63,64 @@ export interface SearchEntry {
 }
 
 /**
- * A build reads the same collections from several pages. One promise per
- * query keeps that to a single round trip.
+ * A production build reads the same collections from several pages. One
+ * promise per query keeps that to a single round trip. Outside production the
+ * Next process lives across file saves, so each call re-queries and the
+ * sidebar, home page, and search stay in step with the files.
  */
 function once<T>(read: () => Promise<T>): () => Promise<T> {
+  if (process.env.NODE_ENV !== 'production') {
+    return read;
+  }
   let pending: Promise<T> | undefined;
   return () => (pending ??= read());
 }
 
+/** The files behind each collection, named in the error when one comes back empty. */
+const CONTENT_DIRS = {
+  allSections: 'apps/docs/content/nav',
+  allDocs: 'apps/docs/content/docs',
+  allPackages: 'apps/docs/content/reference',
+} as const;
+
+/**
+ * An empty collection means the GraphQL server read no files. The site always
+ * has guides, sections, and package pages on disk, so an empty answer is a
+ * broken content path rather than an empty site. Fail the build and say where
+ * to look, instead of shipping a blank home page and an empty sidebar.
+ */
+function expectRecords<T>(
+  collection: keyof typeof CONTENT_DIRS,
+  records: T[]
+): T[] {
+  if (records.length === 0) {
+    throw new Error(
+      `Flatbread returned no \`${collection}\` records. Check that \`flatbread start\` is reading this repository, that \`apps/docs/flatbread.config.js\` is valid, and that ${CONTENT_DIRS[collection]} holds files.`
+    );
+  }
+  return records;
+}
+
 export const getSections = once(async (): Promise<Section[]> => {
   const data = await query(AllSectionsDocument);
-  return (data.allSections ?? []).flatMap((section) =>
-    section?.id && section.title
-      ? [
-          {
-            id: section.id,
-            title: section.title,
-            order: section.order ?? 0,
-            blurb: section.blurb ?? '',
-          },
-        ]
-      : []
+  return expectRecords('allSections', data.allSections ?? []).flatMap(
+    (section) =>
+      section?.id && section.title
+        ? [
+            {
+              id: section.id,
+              title: section.title,
+              order: section.order ?? 0,
+              blurb: section.blurb ?? '',
+            },
+          ]
+        : []
   );
 });
 
 export const getDocs = once(async (): Promise<DocSummary[]> => {
   const data = await query(AllDocsDocument);
-  return (data.allDocs ?? []).flatMap((doc) =>
+  return expectRecords('allDocs', data.allDocs ?? []).flatMap((doc) =>
     doc?.id && doc.title
       ? [
           {
@@ -133,7 +164,7 @@ export async function getDoc(id: string): Promise<DocPage | undefined> {
 
 export const getPackages = once(async (): Promise<PackageSummary[]> => {
   const data = await query(AllPackagesDocument);
-  return (data.allPackages ?? []).flatMap((entry) =>
+  return expectRecords('allPackages', data.allPackages ?? []).flatMap((entry) =>
     entry?.id
       ? [
           {
@@ -165,7 +196,7 @@ export async function getPackage(id: string): Promise<PackagePage | undefined> {
 export const getSearchEntries = once(async (): Promise<SearchEntry[]> => {
   const data = await query(SearchCorpusDocument);
 
-  const guides = (data.allDocs ?? []).flatMap((doc) =>
+  const guides = expectRecords('allDocs', data.allDocs ?? []).flatMap((doc) =>
     doc?.id && doc.title
       ? [
           {
@@ -181,20 +212,21 @@ export const getSearchEntries = once(async (): Promise<SearchEntry[]> => {
       : []
   );
 
-  const packages = (data.allPackages ?? []).flatMap((entry) =>
-    entry?.id
-      ? [
-          {
-            id: entry.id,
-            title: entry.id,
-            href: `/reference/${entry.id}/`,
-            kind: 'package' as const,
-            group: 'Reference',
-            summary: firstSentence(entry._content?.raw ?? ''),
-            body: condense(entry._content?.raw ?? ''),
-          },
-        ]
-      : []
+  const packages = expectRecords('allPackages', data.allPackages ?? []).flatMap(
+    (entry) =>
+      entry?.id
+        ? [
+            {
+              id: entry.id,
+              title: entry.id,
+              href: `/reference/${entry.id}/`,
+              kind: 'package' as const,
+              group: 'Reference',
+              summary: firstSentence(entry._content?.raw ?? ''),
+              body: condense(entry._content?.raw ?? ''),
+            },
+          ]
+        : []
   );
 
   return [...guides, ...packages];
