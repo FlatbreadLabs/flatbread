@@ -12,15 +12,14 @@ files. Change a guide or a package README, and the page changes with it.
 From the repository root:
 
 ```bash
-pnpm build        # build the Flatbread packages first
-pnpm docs         # start Flatbread on :5057 and Next on :3000
+pnpm docs:dev     # build the packages, then Flatbread on :5057 and Next on :3000
 ```
 
-`pnpm play` (the Next.js example) and `pnpm docs` both use Flatbread on **5057**
+`pnpm play` (the Next.js example) and `pnpm docs:dev` both use Flatbread on **5057**
 and Next on **3000**. Running the two at once fails; stop one before you start
 the other.
 
-Or from this directory:
+Or from this directory, once the packages are built:
 
 ```bash
 pnpm dev          # flatbread start --watch -- next dev --turbopack
