@@ -71,6 +71,53 @@ describe('remarkRepoLinks', () => {
     expect(apply('mailto:hi@example.com')).toBe('mailto:hi@example.com');
     expect(apply('/docs/x/')).toBe('/docs/x/');
   });
+
+  it('rewrites a blob URL naming a guide to the guide route', () => {
+    expect(apply(`${BLOB}/apps/docs/content/docs/glossary.md`)).toBe(
+      '/docs/glossary/'
+    );
+    expect(apply(`${BLOB}/apps%2Fdocs%2Fcontent%2Fdocs%2Fglossary.md`)).toBe(
+      '/docs/glossary/'
+    );
+  });
+
+  it('keeps a hash on a rewritten blob URL naming a guide', () => {
+    expect(
+      apply(`${BLOB}/apps/docs/content/docs/glossary.md#cardinality`)
+    ).toBe('/docs/glossary/#cardinality');
+  });
+
+  it('rewrites a blob URL naming a package README or the root README', () => {
+    expect(apply(`${BLOB}/packages/core/README.md`)).toBe('/reference/core/');
+    expect(apply(`${BLOB}/README.md`)).toBe('/reference/flatbread/');
+  });
+
+  it('leaves a blob URL naming a file with no page untouched', () => {
+    expect(apply(`${BLOB}/CONTRIBUTING.md`)).toBe(`${BLOB}/CONTRIBUTING.md`);
+  });
+
+  it('leaves a blob URL naming a file that does not exist untouched', () => {
+    const url = `${BLOB}/apps/docs/content/docs/nope.md`;
+    expect(apply(url)).toBe(url);
+  });
+
+  it('leaves a blob URL on another branch or another repository untouched', () => {
+    const otherBranch = `${BLOB.replace(
+      /\/main$/,
+      '/dev'
+    )}/apps/docs/content/docs/glossary.md`;
+    const otherRepo =
+      'https://github.com/other/flatbread/blob/main/apps/docs/content/docs/glossary.md';
+    expect(apply(otherBranch)).toBe(otherBranch);
+    expect(apply(otherRepo)).toBe(otherRepo);
+  });
+
+  it('leaves a blob URL with a query string untouched', () => {
+    const withQuery = `${BLOB}/apps/docs/content/docs/glossary.md?plain=1`;
+    const withQueryAndHash = `${BLOB}/apps/docs/content/docs/glossary.md?plain=1#cardinality`;
+    expect(apply(withQuery)).toBe(withQuery);
+    expect(apply(withQueryAndHash)).toBe(withQueryAndHash);
+  });
 });
 
 function apply(url) {
