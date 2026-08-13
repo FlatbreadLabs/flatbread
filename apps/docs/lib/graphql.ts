@@ -8,7 +8,7 @@ import { print } from 'graphql';
  * record through here, writes plain files, and the server shuts down with the
  * build, so nothing calls this at run time.
  */
-const endpoint =
+const graphqlOrigin =
   process.env.FLATBREAD_GRAPHQL_ENDPOINT ?? 'http://localhost:5057/graphql';
 
 /**
@@ -16,9 +16,18 @@ const endpoint =
  * fetch must be cacheable — an uncached fetch makes the route dynamic, and a
  * dynamic route cannot be exported as a file.
  *
+ * Next writes those answers under `.next/cache/fetch-cache`, and that
+ * directory outlives the build. The request URL carries a stamp computed once
+ * when this module loads, so a new build never reads an older build's answers,
+ * while identical queries within one build still hit the cache.
+ *
  * `flatbread start --watch` is the opposite case: the point of the dev server
- * is that a saved file shows up straight away, so nothing is cached there.
+ * is that a saved file shows up straight away, so nothing is cached there. The
+ * stamp goes on either way, since a `no-store` fetch ignores it.
  */
+const endpoint = new URL(graphqlOrigin);
+endpoint.searchParams.set('build', Date.now().toString(36));
+
 const cache: RequestCache =
   process.env.NODE_ENV === 'production' ? 'force-cache' : 'no-store';
 
@@ -42,7 +51,7 @@ export async function query<TData, TVariables>(
 
   if (!response.ok) {
     throw new Error(
-      `Flatbread answered ${response.status} for a query. Is \`flatbread start\` running on ${endpoint}?`
+      `Flatbread answered ${response.status} for a query. Is \`flatbread start\` running on ${graphqlOrigin}?`
     );
   }
 
