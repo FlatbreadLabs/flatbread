@@ -16,6 +16,10 @@ pnpm build        # build the Flatbread packages first
 pnpm docs         # start Flatbread on :5057 and Next on :3000
 ```
 
+`pnpm play` (the Next.js example) and `pnpm docs` both use Flatbread on **5057**
+and Next on **3000**. Running the two at once fails; stop one before you start
+the other.
+
 Or from this directory:
 
 ```bash
@@ -23,6 +27,7 @@ pnpm dev          # flatbread start --watch -- next dev --turbopack
 pnpm build        # flatbread start -- next build, writing ./out
 pnpm serve        # serve the built files
 pnpm check:links  # check frontmatter and links without building
+pnpm test         # vitest run: link rewriter, contents list, search ranking, page checker
 ```
 
 `flatbread start` runs the GraphQL server for as long as the command after
@@ -51,6 +56,11 @@ Flatbread requires an `id` on every record and never invents one. The guides
 declare `id` in frontmatter, and the filename capture supplies the same value.
 The package pages have no frontmatter at all — a README cannot carry any
 without showing it on npm — so the symlink's own name is the id.
+
+A clone on Windows without symlink support gets plain text files that hold a
+path, and the package pages then render that path instead of the README. Enable
+Git symlinks (`git config core.symlinks true`) and clone again. On Windows that
+needs Developer Mode or an elevated shell.
 
 ## Adding a page
 

@@ -29,5 +29,5 @@ level package:
 import { exportCollectionsAsJson, exportCollectionsAsCsv } from 'flatbread';
 ```
 
-See [the snapshot export guide](../../apps/docs/content/docs/json-export.md)
+See [the snapshot export guide](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/json-export.md)
 for the full export contract and examples.
