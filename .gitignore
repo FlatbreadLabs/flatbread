@@ -5,6 +5,7 @@
 # docs site build output
 apps/docs/.next/
 apps/docs/out/
+apps/docs/tsconfig.tsbuildinfo
 apps/docs/generated/.flatbread-codegen-cache.json
 apps/docs/public/search-index.json
 
