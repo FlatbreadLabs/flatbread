@@ -4,7 +4,8 @@ export interface TocEntry {
   depth: 2 | 3;
 }
 
-const HEADING = /<h([23])\s+id="([^"]+)"[^>]*>([\s\S]*?)<\/h\1>/g;
+const HEADING = /<h([23])(\s[^>]*)?>([\s\S]*?)<\/h\1>/g;
+const ID = /\bid="([^"]*)"/;
 
 /**
  * Read the contents list out of rendered HTML.
@@ -16,10 +17,12 @@ export function tableOfContents(html: string): TocEntry[] {
   const entries: TocEntry[] = [];
 
   for (const match of html.matchAll(HEADING)) {
+    const id = match[2]?.match(ID)?.[1];
+    if (!id) continue;
     const text = stripTags(match[3]).trim();
     if (!text) continue;
     entries.push({
-      id: match[2],
+      id,
       text,
       depth: match[1] === '2' ? 2 : 3,
     });

@@ -3,8 +3,8 @@ import { walk } from './walk.mjs';
 /**
  * Give every heading below H1 a stable `id` and a link to itself.
  *
- * The table of contents in the sidebar reads these ids straight out of the
- * rendered HTML, so the slug rule here and the one in `lib/toc.ts` must agree.
+ * This plugin is the only place a heading id is made. `lib/toc.ts` reads
+ * those ids back out of the rendered HTML.
  */
 export function rehypeHeadingAnchors(options = {}) {
   const depths = options.depths ?? ['h2', 'h3', 'h4'];
@@ -45,7 +45,7 @@ function textOf(node) {
   return text;
 }
 
-/** Kept in step with `slug()` in `lib/toc.ts`. */
+/** Turn heading text into the `id` that `lib/toc.ts` later reads from the HTML. */
 function slug(value) {
   return value
     .trim()
