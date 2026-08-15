@@ -40,6 +40,8 @@ test('renderDigest is deterministic and reuses the atomic cache artifact', async
   const bytes = await readFile(first.artifact_path);
   const second = await renderDigest(input);
   t.deepEqual(first, second);
+  t.true(first.complete);
+  t.deepEqual(first.cap_reasons, []);
   t.is(await stat(first.artifact_path).then((x) => x.isFile()), true);
   const digest = bytes.toString();
   t.true(digest.includes(longBody));
@@ -99,6 +101,8 @@ test('renderDigest fullBody byte-cap miss does not fake-full with excerpt', asyn
     edges: [],
   });
   const digest = await readFile(result.artifact_path, 'utf8');
+  t.false(result.complete);
+  t.deepEqual(result.cap_reasons, ['bytes']);
   t.true(digest.includes('complete: false'));
   t.true(digest.includes('cap_reasons'));
   t.true(digest.includes('body exceeded digest byte cap'));
@@ -162,12 +166,66 @@ test('pagination is incomplete without adding a cap reason', async (t) => {
     nextCursor: 'next',
   });
   const digest = await readFile(result.artifact_path, 'utf8');
+  t.false(result.complete);
+  t.deepEqual(result.cap_reasons, []);
   t.true(digest.includes('complete: false'));
   t.true(digest.includes('"total_known":2'));
   t.false(digest.includes('cap_reasons'));
   t.true(result.summary.includes('incomplete: pagination'));
   t.true(result.page.has_more);
   t.is(result.page.next_cursor, 'next');
+});
+
+test('primary-record caps are machine readable', async (t) => {
+  const cacheRoot = await mkdtemp(join(tmpdir(), 'eg-digest-record-cap-'));
+  const result = await renderDigest({
+    query: { type: 'listRecords', effort: 'eff-one--0123456789abcdef' },
+    queryHash: 'record-cap',
+    generation: '4',
+    consistency: { mode: 'eventual' as const, min_generation: null },
+    cacheRoot,
+    records: Array.from({ length: 26 }, (_, index) => ({
+      id: `fnd-record-${index}--0123456789abcdef`,
+      kind: 'finding' as const,
+      path: `findings/record-${index}.md`,
+      frontmatter: { title: `Record ${index}` },
+      body_excerpt: '',
+      relations: {},
+    })),
+    edges: [],
+  });
+  t.false(result.complete);
+  t.deepEqual(result.cap_reasons, ['primary_records']);
+  t.true(result.page.has_more);
+});
+
+test('displayed-edge caps are machine readable', async (t) => {
+  const cacheRoot = await mkdtemp(join(tmpdir(), 'eg-digest-edge-cap-'));
+  const result = await renderDigest({
+    query: { type: 'relations', effort_id: 'eff-one--0123456789abcdef' },
+    queryHash: 'edge-cap',
+    generation: '4',
+    consistency: { mode: 'eventual' as const, min_generation: null },
+    cacheRoot,
+    records: [
+      {
+        id: 'dec-one--0123456789abcdef',
+        kind: 'decision' as const,
+        path: 'decisions/one.md',
+        frontmatter: { title: 'One' },
+        body_excerpt: '',
+        relations: {},
+      },
+    ],
+    edges: Array.from({ length: 51 }, (_, index) => ({
+      from_id: 'dec-one--0123456789abcdef',
+      relation: 'derives_from' as const,
+      to_id: `fnd-edge-${index}--0123456789abcdef`,
+    })),
+  });
+  t.false(result.complete);
+  t.deepEqual(result.cap_reasons, ['displayed_edges']);
+  t.is(new Set(result.cap_reasons).size, result.cap_reasons.length);
 });
 
 test('renderDigest omits Blob bodies from bounded digests', async (t) => {

@@ -333,6 +333,72 @@ export default {
 );
 
 test.serial(
+  'spawned CLI exposes complete, paged, and byte-capped reads',
+  async (t) => {
+    const cwd = await createTempProject('flatbread-effort-completeness-', t);
+    await writeFile(
+      join(cwd, 'flatbread.config.js'),
+      `import { source } from '@flatbread/source-filesystem';
+import { transformer } from '@flatbread/transformer-markdown';
+import { proofContent } from '@flatbread/proof';
+export default {
+  source: source(),
+  transformer: transformer(),
+  content: proofContent('.flatbread-proof'),
+};`
+    );
+    const firstEffort = await handleEffortWrite(
+      JSON.stringify({ type: 'CreateEffort', title: 'First', body: '' }),
+      { cwd }
+    );
+    await handleEffortWrite(
+      JSON.stringify({ type: 'CreateEffort', title: 'Second', body: '' }),
+      { cwd }
+    );
+    const blob = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteBlob',
+        effort: firstEffort.artifacts[0].id,
+        title: 'Large payload',
+        body: 'x'.repeat(70 * 1024),
+        kind: 'markdown',
+      }),
+      { cwd }
+    );
+
+    const completeResult = await runCli(
+      cwd,
+      'proof',
+      'get',
+      firstEffort.artifacts[0].id
+    );
+    t.is(completeResult.code, 0);
+    const complete = JSON.parse(completeResult.stdout);
+    t.true(complete.complete);
+    t.deepEqual(complete.cap_reasons, []);
+
+    const pagedResult = await runCli(cwd, 'proof', 'list', '--limit', '1');
+    t.is(pagedResult.code, 0);
+    const paged = JSON.parse(pagedResult.stdout);
+    t.false(paged.complete);
+    t.deepEqual(paged.cap_reasons, []);
+    t.true(paged.page.has_more);
+
+    const cappedResult = await runCli(
+      cwd,
+      'proof',
+      'get',
+      blob.artifacts[0].id
+    );
+    t.is(cappedResult.code, 0);
+    const capped = JSON.parse(cappedResult.stdout);
+    t.false(capped.complete);
+    t.deepEqual(capped.cap_reasons, ['bytes']);
+    t.false(capped.page.has_more);
+  }
+);
+
+test.serial(
   'effort list defaults to active and supports explicit statuses and cursors',
   async (t) => {
     const cwd = await createTempProject('flatbread-effort-list-', t);

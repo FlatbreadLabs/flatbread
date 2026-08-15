@@ -3,6 +3,9 @@
 ## Unreleased
 
 - The DAG runner is now `@flatbread/oven` (`pnpm exec oven`); the memory package is now `@flatbread/proof` with the `flatbread proof` CLI.
+- Proof read envelopes now expose `complete` and `cap_reasons`. Callers can
+  tell paging from the `primary_records`, `displayed_edges`, and `bytes` caps
+  without parsing the digest Markdown or `summary` text.
 - `@flatbread/source-filesystem` reads a content directory that does not exist
   as an empty collection instead of throwing `ENOENT`. Git cannot store an
   empty directory, and a Proof write creates only the directory it writes, so

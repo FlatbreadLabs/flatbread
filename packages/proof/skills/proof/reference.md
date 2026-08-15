@@ -99,6 +99,8 @@ the generated schema) and return a `ReadEnvelope`:
   "artifact_sha256": "...",
   "served_generation": "55",
   "consistency": { "mode": "eventual|strict", "min_generation": null },
+  "complete": true,
+  "cap_reasons": [],
   "page": { "returned": 2, "has_more": false, "next_cursor": null },
   "hints": ["getRecord(\"dec-...\")"]
 }
@@ -120,6 +122,12 @@ Caps: 25 primary records, one hop, 50 edges, 64 KiB; hitting a cap sets
 than expecting more. If a `get` body alone exceeds the 64 KiB digest byte
 cap, the digest fails closed with a byte-cap banner (it does **not** fake a
 full body via the 600/12 excerpt).
+
+Every read envelope carries `complete` and `cap_reasons`. A page with more
+records has `complete: false`, an empty `cap_reasons`, and
+`page.has_more: true`. Hard caps use the stable reasons `primary_records`,
+`displayed_edges`, and `bytes`. Programs must read these fields from the JSON
+envelope; do not parse the digest or `summary` as a data feed.
 
 ### Commands
 

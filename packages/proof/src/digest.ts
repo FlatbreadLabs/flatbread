@@ -30,12 +30,16 @@ export interface ReadEdge {
   to_id: string;
 }
 
+export type ReadCapReason = 'primary_records' | 'displayed_edges' | 'bytes';
+
 export interface ReadEnvelope {
   summary: string;
   artifact_path: string;
   artifact_sha256: string;
   served_generation: string;
   consistency: { mode: 'eventual' | 'strict'; min_generation: string | null };
+  complete: boolean;
+  cap_reasons: ReadCapReason[];
   page: { returned: number; has_more: boolean; next_cursor: string | null };
   hints: string[];
 }
@@ -93,7 +97,20 @@ function scalar(value: unknown): string {
   return JSON.stringify(value);
 }
 
-function yamlHeader(input: DigestInput, complete: boolean, reasons: string[]) {
+interface DigestCompleteness {
+  complete: boolean;
+  capReasons: ReadCapReason[];
+}
+
+function digestCompleteness(
+  hasMore: boolean,
+  reasons: readonly ReadCapReason[]
+): DigestCompleteness {
+  const capReasons = [...new Set(reasons)].sort();
+  return { complete: !hasMore && capReasons.length === 0, capReasons };
+}
+
+function yamlHeader(input: DigestInput, state: DigestCompleteness) {
   const query = JSON.stringify(input.query);
   return [
     '---',
@@ -107,15 +124,15 @@ function yamlHeader(input: DigestInput, complete: boolean, reasons: string[]) {
       total_known: input.totalKnown ?? input.records.length,
       has_more: Boolean(input.hasMore),
     })}`,
-    `complete: ${complete}`,
+    `complete: ${state.complete}`,
     `caps: ${JSON.stringify({
       primary_records: CAP_RECORDS,
       relation_hops: 1,
       displayed_edges: CAP_EDGES,
       bytes: CAP_BYTES,
     })}`,
-    ...(reasons.length
-      ? [`cap_reasons: ${JSON.stringify(reasons.sort())}`]
+    ...(state.capReasons.length
+      ? [`cap_reasons: ${JSON.stringify(state.capReasons)}`]
       : []),
     '---',
   ].join('\n');
@@ -200,7 +217,7 @@ function renderRecord(
 function summary(
   records: readonly ReadRecord[],
   complete: boolean,
-  reasons: string[],
+  reasons: readonly string[],
   hasMore: boolean
 ): string {
   const states = new Map<string, number>();
@@ -255,10 +272,10 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
       )
     )
     .slice(0, CAP_EDGES);
-  const reasons = [
-    ...(records.length > CAP_RECORDS ? ['primary_records'] : []),
-    ...(input.edges.length > CAP_EDGES ? ['displayed_edges'] : []),
-  ];
+  const reasons: ReadCapReason[] = [];
+  if (records.length > CAP_RECORDS) reasons.push('primary_records');
+  if (input.edges.length > CAP_EDGES) reasons.push('displayed_edges');
+  let completeness = digestCompleteness(Boolean(input.hasMore), reasons);
   const checkpoints = input.checkpointLines?.length
     ? ['## Lineage checkpoints', ...input.checkpointLines, '']
     : [];
@@ -270,7 +287,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
   const renderRelated = (record: ReadRecord) =>
     renderRecord(record, { bodyMode: 'excerpt' });
   let markdown = [
-    yamlHeader(input, reasons.length === 0 && !input.hasMore, reasons),
+    yamlHeader(input, completeness),
     ...(input.anomaly ? [`> anomaly: ${input.anomaly}`, ''] : []),
     '# Proof read',
     '## Index',
@@ -291,6 +308,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
   ].join('\n');
   if (Buffer.byteLength(markdown) > CAP_BYTES) {
     reasons.push('bytes');
+    completeness = digestCompleteness(Boolean(input.hasMore), reasons);
     // Full-body digests must not silently fall back to the 600/12 excerpt.
     // Prefer a visible byte-cap miss banner over a fake "full" body.
     const overflowBodyMode: RecordBodyMode = input.fullBody
@@ -303,7 +321,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
         ? 'body exceeded digest byte cap'
         : input.anomaly;
     const header = [
-      yamlHeader(input, false, reasons),
+      yamlHeader(input, completeness),
       ...(anomaly ? [`> anomaly: ${anomaly}`, ''] : []),
       '# Proof read',
       '## Index',
@@ -363,14 +381,16 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
   const envelope: ReadEnvelope = {
     summary: summary(
       visible,
-      reasons.length === 0 && !input.hasMore,
-      reasons,
+      completeness.complete,
+      completeness.capReasons,
       Boolean(input.hasMore)
     ),
     artifact_path: path,
     artifact_sha256: createHash('sha256').update(bytes).digest('hex'),
     served_generation: input.generation,
     consistency: input.consistency,
+    complete: completeness.complete,
+    cap_reasons: completeness.capReasons,
     page: {
       returned: visible.length,
       has_more: Boolean(input.hasMore || records.length > CAP_RECORDS),
