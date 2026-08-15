@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/resolver-svimg",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Flatbread field resolver that turns an image path into svimg attributes: responsive srcsets, WebP and AVIF variants, and a blurred placeholder.",
   "type": "module",
   "repository": {

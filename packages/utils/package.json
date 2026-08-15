@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/utils",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared helpers for Flatbread packages, including package manager and lockfile detection.",
   "type": "module",
   "scripts": {

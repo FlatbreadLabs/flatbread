@@ -12,7 +12,7 @@ export type NpmViewResult = {
 
 export type PreflightStatus = 'publish' | 'already-published';
 
-type PublishPackage = {
+export type PublishPackage = {
   name: string;
   dirName: string;
   version?: string;
@@ -130,6 +130,46 @@ export function sortPackages<T extends PublishPackage>(packages: T[]): T[] {
   return result;
 }
 
+export function assertLockstepVersions(
+  packages: readonly PublishPackage[]
+): string {
+  const missingVersions = packages
+    .filter((pkg) => !pkg.version)
+    .map((pkg) => pkg.name)
+    .sort();
+  if (missingVersions.length > 0) {
+    throw new Error(
+      `Every public package must declare a version. Missing: ${missingVersions.join(
+        ', '
+      )}`
+    );
+  }
+
+  const versions = new Map<string, string[]>();
+  for (const pkg of packages) {
+    const names = versions.get(pkg.version!) ?? [];
+    names.push(pkg.name);
+    versions.set(pkg.version!, names);
+  }
+  if (versions.size !== 1) {
+    const groups = [...versions.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(
+        ([version, names]) =>
+          `${version}: ${names
+            .sort((left, right) => left.localeCompare(right))
+            .join(', ')}`
+      );
+    throw new Error(
+      `Release requires one version across every public package:\n${groups.join(
+        '\n'
+      )}`
+    );
+  }
+
+  return versions.keys().next().value!;
+}
+
 function comparePackageNames(
   left: PublishPackage,
   right: PublishPackage
@@ -183,13 +223,17 @@ export function preflightPackage(
 
 export async function publishPackages(): Promise<void> {
   const releaseSha = assertCleanRelease();
-  execSync('pnpm run build', { stdio: 'inherit' });
-  execSync('pnpm run skills:check', { stdio: 'inherit' });
-  execSync('pnpm run skills:pack-check', { stdio: 'inherit' });
-
   const packages = sortPackages(
     (await getMonorepoPublicPackages()) as unknown as PublishPackage[]
   );
+  const releaseVersion = assertLockstepVersions(packages);
+  console.log(
+    colors.bold().green(`Public package release version: ${releaseVersion}`)
+  );
+
+  execSync('pnpm run build', { stdio: 'inherit' });
+  execSync('pnpm run skills:check', { stdio: 'inherit' });
+  execSync('pnpm run skills:pack-check', { stdio: 'inherit' });
 
   for (const { dirName, name, version } of packages) {
     try {

@@ -142,7 +142,11 @@ flatbread proof cache prune
   `--since`/`--until` bound `created_at` (gte/lte, ISO strings).
 - `--relations` values: `derives_from`, `supersedes`, `superseded_by`,
   `invalidates`, `invalidated_by`, `rejected_by`, `mitigated_by`,
-  `resolved_by`, `evidence`, `cites` (one hop, explicit only).
+  `resolved_by`, `evidence`, `cites` (one hop, explicit only). Missing targets
+  never produce a partial success. For `derives_from`, `invalidates`,
+  `invalidated_by`, `resolved_by`, and `evidence`, the CLI returns
+  `PROOF_DANGLING_RELATION`. Flatbread's core reference check rejects missing
+  targets for the other relations.
 - `--resolve head`: follow `superseded_by` to the current tip; ancestors
   render as checkpoint lines (max 5, then a count).
 - `blocking-decisions` membership (frozen): Decision in the effort with
@@ -157,7 +161,8 @@ flatbread proof cache prune
   generation, or fail. `--timeout-ms <ms>` bounds the wait (default 3000).
 - Errors (stderr JSON, exit 1): `PROOF_GENERATION_WAIT_TIMEOUT`,
   `PROOF_INVALID_CURSOR` (cursor reused across a different query or
-  generation).
+  generation), and `PROOF_DANGLING_RELATION` (a stored relation target is
+  missing).
 
 ## Configuration surface
 

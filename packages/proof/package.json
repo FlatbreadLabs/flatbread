@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/proof",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Git-native memory records for coding agents. Writes typed Effort, Issue, Finding, Decision, Constraint, Risk, Citation, and Blob records to Markdown as journaled changes, and reads them back in bounded pages.",
   "type": "module",
   "scripts": {

@@ -4,8 +4,7 @@ Thanks for your interest in contributing! This guide covers local development an
 
 **Flatbread** turns related content files in Git into typed data for TypeScript
 apps. **GraphQL is one way to read that data** (see
-`apps/docs/content/docs/glossary.md`); it is
-not the whole product.
+`apps/docs/content/docs/glossary.md`); it is not the whole product.
 
 For a first project with posts, authors, and tags, see the
 [Flatbread package README quickstart](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/flatbread/README.md#quickstart-posts-authors-and-tags).
@@ -92,15 +91,14 @@ https://github.com/FlatbreadLabs/oven.
 
 There are two steps:
 
-1. Bump versions where there are changes
-2. Publish the changed packages
+1. Bump every public package to one version
+2. Publish the release
 
-### One-time note for 1.0
+### Lockstep versions
 
-The 1.0 release put every published package on `1.0.0` at once, rather than
-letting each package carry its own alpha number. `pnpm bump` still works the
-same way: it preselects the packages that changed plus their workspace
-dependents. Only bump every package together again when a release calls for it.
+Every public package shares one version. A release bumps the whole set even
+when only one package changed. This keeps package combinations, the Proof skill
+manifest, and the Git tag tied to one release.
 
 `packages/proof/skills/proof/release.json` records the version an
 end user installs. Edit that file, not the copy in `.agents/`. Then run
@@ -109,7 +107,7 @@ which fails unless `flatbreadVersion` and `proofVersion` match the current
 `package.json` versions and `gitTag` equals `v<flatbreadVersion>`. `pnpm verify`
 runs both checks.
 
-### 1) Bump versions only where there are changes
+### 1) Bump every public package
 
 Use the interactive bump script:
 
@@ -119,14 +117,14 @@ pnpm bump
 
 What the script does:
 
-- Detects changes since last publish per package by:
+- Detects whether any public package changed since the last publish by:
   - Querying npm for the package's latest published version and its publish time
   - Comparing git commits in `packages/<name>` since that time
   - Ignoring commits that only change the `version` field in `package.json`
   - Skipping packages that are not yet published on npm
-- Preselects changed packages and their workspace dependents for you to bump
-- Required workspace dependents must remain selected when a changed dependency is selected
-- Runs `pnpm bumpp --no-commit --no-push --no-tag` in each selected package directory
+- Passes every public package manifest to one `bumpp` command so one chosen
+  version is written across the set
+- Stops before publishing if any public package version differs
 
 Notes:
 
@@ -134,7 +132,7 @@ Notes:
 
   ```bash
   git add packages/**/package.json
-  git commit -m "release: bump versions for changed packages"
+  git commit -m "release: bump public packages"
   ```
 
 - Debugging: set `FLATBREAD_BUMP_DEBUG=1` to see detection details
@@ -143,7 +141,7 @@ Notes:
   FLATBREAD_BUMP_DEBUG=1 pnpm bump
   ```
 
-- New (unpublished) packages: these are excluded from the bump prompt. Ensure their `package.json` has the desired starting version before publishing (see below).
+- New public packages join the same version as the rest of the release set.
 
 ### 2) Publish packages
 
@@ -164,7 +162,8 @@ skill files and package contents first. It then publishes ordinary packages,
 `@flatbread/proof`, and finally `flatbread`, stopping at the first
 failure.
 
-Publish all public packages (the script builds first and then attempts to publish each package):
+Publish all public packages (the script checks for one shared version, builds,
+then attempts to publish each package):
 
 ```bash
 pnpm publish:ci

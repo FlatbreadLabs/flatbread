@@ -2,6 +2,7 @@ import { FlatbreadProvider, type LoadedFlatbreadConfig } from '@flatbread/core';
 import {
   canonicalizeReadQuery,
   ProofConsistencyError,
+  ProofDanglingRelationError,
   ProofInvalidCursorError,
   ProofReadValidationError,
   READ_RELATIONS,
@@ -663,17 +664,26 @@ export async function relations(
   if (!source || !sourceInEffort)
     throw new Error(`Record ${fromId} does not exist in effort ${effortId}`);
   const selected = new Map<string, ReadRecord>();
+  const dangling: { relation: ReadRelation; to_id: string }[] = [];
   for (const relation of relationNames) {
     for (const targetId of source.relations[relation] ?? []) {
       const targetCollection = collectionForId(targetId);
-      if (!targetCollection) continue;
-      const target = await projection.one(targetCollection, targetId);
-      // Only return targets that belong to this Effort. The writer should
-      // prevent foreign links, but this keeps hand-authored files contained.
-      if (target?.frontmatter.effort === effortId)
+      const target = targetCollection
+        ? await projection.one(targetCollection, targetId)
+        : undefined;
+      // A stored id that no record answers to means the graph is corrupt. Report
+      // it instead of returning provenance that dropped the edge in silence.
+      if (!target) {
+        dangling.push({ relation, to_id: targetId });
+        continue;
+      }
+      // Keep the existing effort-scoped read behavior for legacy or
+      // hand-authored cross-effort links.
+      if (target.frontmatter.effort === effortId)
         selected.set(target.id, target);
     }
   }
+  if (dangling.length) throw new ProofDanglingRelationError(fromId, dangling);
   const records = sortRecords([...selected.values()]);
   const edges = records.flatMap((record) =>
     relationNames
