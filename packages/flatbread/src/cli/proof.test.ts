@@ -16,6 +16,7 @@ import { tmpdir } from 'node:os';
 import { proofContent } from '@flatbread/proof';
 import { proofContent as publicProofContent } from '../index.js';
 import {
+  ProofCrossEffortRelationError,
   ProofDanglingRelationError,
   ProofValidationError,
   serializeDocument,
@@ -824,6 +825,239 @@ export default {
     t.is(result.code, 1);
     t.is(result.stdout, '');
     t.deepEqual(JSON.parse(result.stderr), error?.shape);
+    t.false(result.stderr.includes(' at '));
+  }
+);
+
+test.serial(
+  'cross-Effort relations reject on write and report legacy edges',
+  async (t) => {
+    const cwd = await createTempProject('flatbread-effort-cross-edge-', t);
+    await writeFile(
+      join(cwd, 'flatbread.config.js'),
+      `import { source } from '@flatbread/source-filesystem';
+import { transformer } from '@flatbread/transformer-markdown';
+import { proofContent } from '@flatbread/proof';
+export default {
+  source: source(),
+  transformer: transformer(),
+  content: proofContent('.flatbread-proof'),
+};`
+    );
+    const effortA = await handleEffortWrite(
+      JSON.stringify({ type: 'CreateEffort', title: 'Effort A', body: '' }),
+      { cwd }
+    );
+    const effortB = await handleEffortWrite(
+      JSON.stringify({ type: 'CreateEffort', title: 'Effort B', body: '' }),
+      { cwd }
+    );
+    const effortAId = effortA.artifacts[0].id;
+    const effortBId = effortB.artifacts[0].id;
+    const findingA = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteFinding',
+        effort: effortAId,
+        title: 'Finding A',
+        body: '',
+        kind: 'measurement',
+      }),
+      { cwd }
+    );
+    const findingAId = findingA.artifacts[0].id;
+    const decisionA = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteDecision',
+        effort: effortAId,
+        title: 'Decision A',
+        body: '',
+      }),
+      { cwd }
+    );
+    const decisionAId = decisionA.artifacts[0].id;
+
+    const ownEffortDecision = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteDecision',
+        effort: effortBId,
+        title: 'Own Effort context',
+        body: '',
+        derives_from: [effortBId],
+      }),
+      { cwd }
+    );
+    const ownEffortRead = await handleEffortRelations(
+      effortBId,
+      ownEffortDecision.artifacts[0].id,
+      {
+        cwd,
+        relations: ['derives_from'],
+        strictMinGeneration: ownEffortDecision.generation,
+      }
+    );
+    t.is(ownEffortRead.page.returned, 1);
+
+    const decisionB = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteDecision',
+        effort: effortBId,
+        title: 'Decision B',
+        body: '',
+      }),
+      { cwd }
+    );
+    const decisionBId = decisionB.artifacts[0].id;
+    const rejectedWrites = [
+      {
+        relation: 'derives_from',
+        input: {
+          type: 'WriteDecision',
+          effort: effortBId,
+          title: 'Cross derive',
+          body: '',
+          derives_from: [findingAId],
+        },
+      },
+      {
+        relation: 'supersedes',
+        input: {
+          type: 'WriteDecision',
+          effort: effortBId,
+          title: 'Cross supersede',
+          body: '',
+          supersedes: [decisionAId],
+        },
+      },
+      {
+        relation: 'invalidates',
+        input: {
+          type: 'WriteDecision',
+          effort: effortBId,
+          title: 'Cross invalidate',
+          body: '',
+          invalidates: [decisionAId],
+        },
+      },
+    ];
+    for (const attempt of rejectedWrites)
+      await t.throwsAsync(
+        () => handleEffortWrite(JSON.stringify(attempt.input), { cwd }),
+        {
+          instanceOf: ProofValidationError,
+          message: `${attempt.relation} target ${
+            attempt.relation === 'derives_from' ? findingAId : decisionAId
+          } belongs to a different effort`,
+        }
+      );
+    t.is(
+      JSON.parse(
+        await readFile(
+          join(cwd, '.flatbread-proof', '.journal', 'generation.json'),
+          'utf8'
+        )
+      ).generation,
+      Number(decisionB.generation)
+    );
+
+    await writeFile(
+      join(cwd, '.flatbread-proof', 'decisions', `${decisionBId}.md`),
+      serializeDocument('Legacy foreign edges.', {
+        id: decisionBId,
+        effort: effortBId,
+        title: 'Decision B',
+        created_at: '2025-01-02T00:00:00.000Z',
+        state: 'proposed',
+        derives_from: [findingAId],
+        supersedes: [decisionAId],
+        invalidates: [decisionAId],
+      })
+    );
+    await writeFile(
+      join(cwd, '.flatbread-proof', 'decisions', `${decisionAId}.md`),
+      serializeDocument('Legacy reverse edges.', {
+        id: decisionAId,
+        effort: effortAId,
+        title: 'Decision A',
+        created_at: '2025-01-01T00:00:00.000Z',
+        state: 'proposed',
+        superseded_by: [decisionBId],
+        invalidated_by: [decisionBId],
+      })
+    );
+
+    const forwardEdges = [
+      {
+        relation: 'derives_from',
+        to_id: findingAId,
+        target_effort_id: effortAId,
+      },
+      {
+        relation: 'supersedes',
+        to_id: decisionAId,
+        target_effort_id: effortAId,
+      },
+      {
+        relation: 'invalidates',
+        to_id: decisionAId,
+        target_effort_id: effortAId,
+      },
+    ];
+    const forwardError = await t.throwsAsync<ProofCrossEffortRelationError>(
+      () =>
+        handleEffortRelations(effortBId, decisionBId, {
+          cwd,
+          relations: ['derives_from', 'supersedes', 'invalidates'],
+          strictMinGeneration: decisionB.generation,
+        }),
+      { instanceOf: ProofCrossEffortRelationError }
+    );
+    t.deepEqual(forwardError?.shape, {
+      error: {
+        code: 'PROOF_CROSS_EFFORT_RELATION',
+        message: `Record ${decisionBId} in effort ${effortBId} stores relation targets outside that effort: derives_from -> ${findingAId} (effort ${effortAId}), supersedes -> ${decisionAId} (effort ${effortAId}), invalidates -> ${decisionAId} (effort ${effortAId})`,
+        effort_id: effortBId,
+        from_id: decisionBId,
+        edges: forwardEdges,
+      },
+    });
+
+    const reverseEdges = [
+      {
+        relation: 'superseded_by',
+        to_id: decisionBId,
+        target_effort_id: effortBId,
+      },
+      {
+        relation: 'invalidated_by',
+        to_id: decisionBId,
+        target_effort_id: effortBId,
+      },
+    ];
+    const reverseError = await t.throwsAsync<ProofCrossEffortRelationError>(
+      () =>
+        handleEffortRelations(effortAId, decisionAId, {
+          cwd,
+          relations: ['superseded_by', 'invalidated_by'],
+          strictMinGeneration: decisionB.generation,
+        }),
+      { instanceOf: ProofCrossEffortRelationError }
+    );
+    t.deepEqual(reverseError?.shape.error.edges, reverseEdges);
+
+    const result = await runCli(
+      cwd,
+      'proof',
+      'relations',
+      effortBId,
+      decisionBId,
+      '--relations',
+      'derives_from,supersedes,invalidates',
+      '--strict-min-generation',
+      decisionB.generation
+    );
+    t.is(result.code, 1);
+    t.is(result.stdout, '');
+    t.deepEqual(JSON.parse(result.stderr), forwardError?.shape);
     t.false(result.stderr.includes(' at '));
   }
 );
