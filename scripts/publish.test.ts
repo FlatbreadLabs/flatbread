@@ -1,5 +1,6 @@
 import test from 'ava';
 import {
+  assertLockstepVersions,
   classifyNpmViewResult,
   parseNpmViewVersion,
   sortPackages,
@@ -54,6 +55,39 @@ test('publish ordering rejects local dependency cycles', (t) => {
   );
   t.regex(error?.message ?? '', /dependency cycle/);
   t.regex(error?.message ?? '', /@flatbread\/a/);
+});
+
+test('publish preflight accepts one shared public package version', (t) => {
+  t.is(
+    assertLockstepVersions([
+      { name: '@flatbread/core', dirName: 'core', version: '1.0.1' },
+      { name: 'flatbread', dirName: 'flatbread', version: '1.0.1' },
+    ]),
+    '1.0.1'
+  );
+});
+
+test('publish preflight rejects fragmented public package versions', (t) => {
+  const error = t.throws(() =>
+    assertLockstepVersions([
+      { name: '@flatbread/core', dirName: 'core', version: '1.0.0' },
+      { name: 'flatbread', dirName: 'flatbread', version: '1.0.1' },
+    ])
+  );
+  t.regex(error?.message ?? '', /one version across every public package/);
+  t.regex(error?.message ?? '', /1\.0\.0: @flatbread\/core/);
+  t.regex(error?.message ?? '', /1\.0\.1: flatbread/);
+});
+
+test('publish preflight rejects a public package without a version', (t) => {
+  const error = t.throws(() =>
+    assertLockstepVersions([
+      { name: '@flatbread/core', dirName: 'core' },
+      { name: 'flatbread', dirName: 'flatbread', version: '1.0.1' },
+    ])
+  );
+  t.regex(error?.message ?? '', /must declare a version/);
+  t.regex(error?.message ?? '', /@flatbread\/core/);
 });
 
 test('npm view preflight recognizes an exact published version', (t) => {

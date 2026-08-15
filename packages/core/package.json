@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Flatbread's engine: runs source and transformer plugins, validates records and refs, and builds the GraphQL schema plus JSON and CSV snapshots.",
   "type": "module",
   "scripts": {
