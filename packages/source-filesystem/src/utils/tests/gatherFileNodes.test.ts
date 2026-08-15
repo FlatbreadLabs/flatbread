@@ -71,3 +71,13 @@ test('triple level', async (t) => {
   const result = await gatherFileNodes('./[random]/[name]/[title].md', opts);
   t.snapshot(result);
 });
+
+// Uses the real directory reader, not the mock: a content directory nobody has
+// written yet must read as an empty collection instead of throwing ENOENT.
+test('a missing directory reads as an empty collection', async (t) => {
+  const missing =
+    'packages/source-filesystem/src/utils/tests/fixtures/never-written';
+
+  t.deepEqual(await gatherFileNodes(missing), []);
+  t.deepEqual(await gatherFileNodes(`${missing}/[category]/[slug].md`), []);
+});

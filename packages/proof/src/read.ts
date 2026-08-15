@@ -90,6 +90,38 @@ export class ProofInvalidCursorError extends Error {
   }
 }
 
+/**
+ * Raised when a record stores a relation id that no record answers to. Relation
+ * recall fails closed instead of handing back provenance that quietly lost an
+ * edge, and the message names the record, the relation, and the missing id so a
+ * reader can repair the file.
+ */
+export class ProofDanglingRelationError extends Error {
+  readonly shape: {
+    error: {
+      code: 'PROOF_DANGLING_RELATION';
+      message: string;
+      from_id: string;
+      edges: { relation: string; to_id: string }[];
+    };
+  };
+  constructor(fromId: string, edges: { relation: string; to_id: string }[]) {
+    const message = `Record ${fromId} stores relation targets that do not exist: ${edges
+      .map((edge) => `${edge.relation} -> ${edge.to_id}`)
+      .join(', ')}`;
+    super(message);
+    this.name = 'ProofDanglingRelationError';
+    this.shape = {
+      error: {
+        code: 'PROOF_DANGLING_RELATION',
+        message,
+        from_id: fromId,
+        edges,
+      },
+    };
+  }
+}
+
 export class ProofConsistencyError extends Error {
   readonly shape: ConsistencyErrorShape;
   constructor(shape: ConsistencyErrorShape) {

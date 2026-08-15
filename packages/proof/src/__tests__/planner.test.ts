@@ -768,3 +768,54 @@ test('29 same-effort cites and blob happy path', (t) => {
     citId,
   ]);
 });
+test('derives_from must target an existing record', (t) => {
+  const missing = 'fnd-does-not-exist--0000000000000000';
+  t.throws(
+    () =>
+      planMutation(
+        {
+          type: 'WriteDecision',
+          id: ids.decision,
+          effort: E,
+          title: 'D',
+          body: '',
+          derives_from: [missing],
+        },
+        snap(),
+        '/root',
+        now
+      ),
+    { message: new RegExp(`Unknown artifact ${missing}`) }
+  );
+});
+test('derives_from accepts an existing record', (t) => {
+  const issue = record(ids.issue, 'issue', {
+    id: ids.issue,
+    effort: E,
+    title: 'I',
+    kind: 'blocker',
+    created_at: '2025-01-01T00:00:00.000Z',
+    status: 'open',
+  });
+  const w = planMutation(
+    {
+      type: 'WriteDecision',
+      id: ids.decision,
+      effort: E,
+      title: 'D',
+      body: '',
+      derives_from: [ids.issue],
+    },
+    snap([issue]),
+    '/root',
+    now
+  );
+  one(t, w, ids.decision, `decisions/${ids.decision}.md`, 'create', {
+    id: ids.decision,
+    effort: E,
+    title: 'D',
+    derives_from: [ids.issue],
+    created_at: now.toISOString(),
+    state: 'proposed',
+  });
+});

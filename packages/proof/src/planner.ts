@@ -70,6 +70,19 @@ function assertCites(
   }
 }
 
+/**
+ * `derives_from` is the one forward edge with no reverse projection, so nothing
+ * else in the create path ever looks its targets up. Resolve each one here:
+ * `get` throws `Unknown artifact <id>` for a missing target, which keeps a
+ * record that points at nothing from ever reaching the journal.
+ */
+function assertDerivesFrom(
+  get: (id: string) => NonNullable<ReturnType<ProofSnapshot['getRecord']>>,
+  derivesFrom: string[] | undefined
+): void {
+  for (const targetId of derivesFrom ?? []) get(targetId);
+}
+
 export function planMutation(
   input: ProofMutation,
   snapshot: ProofSnapshot,
@@ -161,6 +174,7 @@ export function planMutation(
       created_at?: string;
       blob?: string;
       cites?: string[];
+      derives_from?: string[];
     };
     if (kind === 'blob' || kind === 'citation')
       assertNoCitationBlobEdges(input.type, raw);
@@ -181,7 +195,10 @@ export function planMutation(
           `Citation.blob ${raw.blob} belongs to a different effort`
         );
     }
-    if (EPISTEMIC_CREATE.has(kind)) assertCites(get, raw.effort, raw.cites);
+    if (EPISTEMIC_CREATE.has(kind)) {
+      assertCites(get, raw.effort, raw.cites);
+      assertDerivesFrom(get, raw.derives_from);
+    }
     const fm: Record<string, unknown> = {
       ...raw,
       id,

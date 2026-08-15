@@ -44,23 +44,22 @@ async function getAllNodes(
   allContentTypes: Record<string, any>[],
   config: InitializedSourceFilesystemConfig
 ): Promise<Record<string, VFile[]>> {
+  /**
+   * Build each entry with a plain `async` callback. An `async` executor passed
+   * to `new Promise` loses a rejection: the outer promise never settles, so a
+   * caller waits forever and the failure escapes as an unhandled rejection
+   * instead of an error it can report.
+   */
   const nodeEntries = await Promise.all(
     allContentTypes.map(
-      async (contentType): Promise<Record<string, any>> =>
-        new Promise(async (res) =>
-          res([
-            contentType.collection,
-            await getNodesFromDirectory(contentType.path, config),
-          ])
-        )
+      async (contentType): Promise<readonly [string, VFile[]]> => [
+        contentType.collection,
+        await getNodesFromDirectory(contentType.path, config),
+      ]
     )
   );
 
-  const nodes = Object.fromEntries(
-    nodeEntries as Iterable<readonly [PropertyKey, any]>
-  );
-
-  return nodes;
+  return Object.fromEntries(nodeEntries);
 }
 
 async function getNodesFromPaths(

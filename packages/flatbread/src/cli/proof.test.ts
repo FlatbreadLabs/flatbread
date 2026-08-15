@@ -15,7 +15,11 @@ import { join, relative } from 'node:path';
 import { tmpdir } from 'node:os';
 import { proofContent } from '@flatbread/proof';
 import { proofContent as publicProofContent } from '../index.js';
-import { ProofValidationError } from '@flatbread/proof';
+import {
+  ProofDanglingRelationError,
+  ProofValidationError,
+  serializeDocument,
+} from '@flatbread/proof';
 import {
   handleEffortBlockingDecisions,
   handleEffortBootstrap,
@@ -650,6 +654,177 @@ export default {
       relations: ['cites'],
     });
     t.is(effortRelations.page.returned, 0);
+  }
+);
+
+test.serial(
+  'a strict read of a sparse Proof succeeds without pre-created collection directories',
+  async (t) => {
+    const cwd = await createTempProject('flatbread-effort-sparse-', t);
+    await writeFile(
+      join(cwd, 'flatbread.config.js'),
+      `import { source } from '@flatbread/source-filesystem';
+import { transformer } from '@flatbread/transformer-markdown';
+import { proofContent } from '@flatbread/proof';
+export default {
+  source: source(),
+  transformer: transformer(),
+  content: proofContent('.flatbread-proof'),
+};`
+    );
+    const effort = await handleEffortWrite(
+      JSON.stringify({
+        type: 'CreateEffort',
+        title: 'Critical path',
+        body: 'Exercise storage and consistency.',
+      }),
+      { cwd }
+    );
+    const effortId = effort.artifacts[0].id;
+    const issue = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteIssue',
+        effort: effortId,
+        title: 'Need a decision',
+        body: 'A blocker for the strict-read path.',
+        kind: 'blocker',
+      }),
+      { cwd }
+    );
+
+    // Writes create only the directories they touch, and Git cannot store an
+    // empty directory, so a fresh clone always reads a sparse graph.
+    t.is(
+      await lstat(join(cwd, '.flatbread-proof', 'findings')).catch(() => null),
+      null
+    );
+
+    const result = await runCli(
+      cwd,
+      'proof',
+      'records',
+      effortId,
+      '--kinds',
+      'issue',
+      '--strict-min-generation',
+      issue.generation,
+      '--timeout-ms',
+      '3000'
+    );
+    t.is(result.code, 0);
+    t.is(result.stderr, '');
+    t.is(JSON.parse(result.stdout).page.returned, 1);
+  }
+);
+
+test.serial(
+  'a dangling derives_from is rejected on write and reported on read',
+  async (t) => {
+    const cwd = await createTempProject('flatbread-effort-dangling-', t);
+    // Create every collection directory so this case turns only on relation
+    // integrity, not on how a sparse graph reads.
+    for (const directory of [
+      'efforts',
+      'issues',
+      'findings',
+      'decisions',
+      'constraints',
+      'risks',
+      'citations',
+      'blobs',
+    ])
+      await mkdir(join(cwd, '.flatbread-proof', directory), {
+        recursive: true,
+      });
+    await writeFile(
+      join(cwd, 'flatbread.config.js'),
+      `import { source } from '@flatbread/source-filesystem';
+import { transformer } from '@flatbread/transformer-markdown';
+import { proofContent } from '@flatbread/proof';
+export default {
+  source: source(),
+  transformer: transformer(),
+  content: proofContent('.flatbread-proof'),
+};`
+    );
+    const effort = await handleEffortWrite(
+      JSON.stringify({ type: 'CreateEffort', title: 'Provenance', body: '' }),
+      { cwd }
+    );
+    const effortId = effort.artifacts[0].id;
+    const missingId = 'fnd-does-not-exist--0000000000000000';
+
+    await t.throwsAsync(
+      () =>
+        handleEffortWrite(
+          JSON.stringify({
+            type: 'WriteDecision',
+            effort: effortId,
+            title: 'Dangling derives-from',
+            body: 'This must have failed closed.',
+            derives_from: [missingId],
+          }),
+          { cwd }
+        ),
+      {
+        instanceOf: ProofValidationError,
+        message: new RegExp(`Unknown artifact ${missingId}`),
+      }
+    );
+    // The rejected write leaves the durable generation where the Effort left it.
+    t.is(
+      JSON.parse(
+        await readFile(
+          join(cwd, '.flatbread-proof', '.journal', 'generation.json'),
+          'utf8'
+        )
+      ).generation,
+      Number(effort.generation)
+    );
+
+    // Legacy or hand-edited data can still hold a dangling edge. Recall must say
+    // so rather than return provenance that dropped the edge in silence.
+    const decisionId = 'dec-legacy--0000000000000000';
+    await writeFile(
+      join(cwd, '.flatbread-proof', 'decisions', `${decisionId}.md`),
+      serializeDocument('Written before its evidence existed.', {
+        id: decisionId,
+        effort: effortId,
+        title: 'Legacy decision',
+        created_at: '2025-01-01T00:00:00.000Z',
+        state: 'proposed',
+        derives_from: [missingId],
+      })
+    );
+    const error = await t.throwsAsync<ProofDanglingRelationError>(
+      () =>
+        handleEffortRelations(effortId, decisionId, {
+          cwd,
+          relations: ['derives_from'],
+        }),
+      { instanceOf: ProofDanglingRelationError }
+    );
+    t.deepEqual(error?.shape, {
+      error: {
+        code: 'PROOF_DANGLING_RELATION',
+        message: `Record ${decisionId} stores relation targets that do not exist: derives_from -> ${missingId}`,
+        from_id: decisionId,
+        edges: [{ relation: 'derives_from', to_id: missingId }],
+      },
+    });
+    const result = await runCli(
+      cwd,
+      'proof',
+      'relations',
+      effortId,
+      decisionId,
+      '--relations',
+      'derives_from'
+    );
+    t.is(result.code, 1);
+    t.is(result.stdout, '');
+    t.deepEqual(JSON.parse(result.stderr), error?.shape);
+    t.false(result.stderr.includes(' at '));
   }
 );
 
