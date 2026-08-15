@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/codegen",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Generates TypeScript types, typed document nodes, and a prototype read API from a Flatbread content model.",
   "type": "module",
   "scripts": {

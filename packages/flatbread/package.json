@@ -1,6 +1,6 @@
 {
   "name": "flatbread",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Git-native memory for coding agents and relational content for TypeScript apps. Files in your repo become a typed graph you read over GraphQL, generated TypeScript, or the CLI.",
   "type": "module",
   "scripts": {

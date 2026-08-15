@@ -1,6 +1,5 @@
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 import { promises as fs } from 'node:fs';
-import inquirer from 'inquirer';
 import colors from 'kleur';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -318,40 +317,30 @@ async function main(): Promise<void> {
     return;
   }
 
-  const { selectedPackages }: Record<string, PathedFlatbreadPackage[]> =
-    await inquirer.prompt([
-      {
-        type: 'checkbox',
-        name: 'selectedPackages',
-        message:
-          'Packages changed since last publish (including workspace dependents). Select which to bump:',
-        choices: changedPackages.map((pkg) => ({
-          name: `${getPkgName(pkg)}`,
-          value: pkg,
-          checked: true,
-        })),
-      },
-    ]);
-  const missingDependents = validateBumpSelection(
-    allPackages,
-    changedPackages.map(getPkgName),
-    selectedPackages.map(getPkgName)
+  console.log(
+    colors
+      .bold()
+      .yellow(
+        `Changes detected in: ${changedPackages.map(getPkgName).join(', ')}`
+      )
   );
-  if (missingDependents.length > 0) {
-    throw new Error(
-      `Cannot deselect required workspace dependents: ${missingDependents.join(
-        ', '
-      )}`
-    );
-  }
-
-  for (const selectedPackage of selectedPackages) {
-    console.log(colors.bold(colors.yellow(`Bumping ${selectedPackage.name}`)));
-    execSync('pnpm bumpp --no-commit --no-push --no-tag', {
-      stdio: 'inherit',
-      cwd: path.resolve(path.join('packages', selectedPackage.dirName)),
-    });
-  }
+  console.log(
+    colors.bold().yellow('Bumping every public package as one release')
+  );
+  execFileSync(
+    'pnpm',
+    [
+      'exec',
+      'bumpp',
+      '--no-commit',
+      '--no-push',
+      '--no-tag',
+      ...allPackages.map((pkg) =>
+        path.join('packages', pkg.dirName, 'package.json')
+      ),
+    ],
+    { stdio: 'inherit' }
+  );
 
   const flatbreadManifest = JSON.parse(
     await fs.readFile('packages/flatbread/package.json', 'utf8')
