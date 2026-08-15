@@ -3,6 +3,26 @@
 ## Unreleased
 
 - The DAG runner is now `@flatbread/oven` (`pnpm exec oven`); the memory package is now `@flatbread/proof` with the `flatbread proof` CLI.
+- `@flatbread/source-filesystem` reads a content directory that does not exist
+  as an empty collection instead of throwing `ENOENT`. Git cannot store an
+  empty directory, and a Proof write creates only the directory it writes, so
+  a sparse graph was unreadable until every collection directory existed.
+  Permission and other I/O faults still fail the read.
+  A failing read now also reports through the normal error path: `fetch` no
+  longer builds its results in an `async` promise executor, which used to
+  leave the caller waiting forever while the failure escaped as an unhandled
+  rejection and a raw stack trace.
+- **Breaking for writes:** a Proof create mutation now rejects a
+  `derives_from` id that no record answers to, with
+  `Unknown artifact <id>`. This matches the documented contract for forward
+  edges and the existing behavior of `cites`, `supersedes`, and `invalidates`.
+  Create the target record first, then link to it.
+- `flatbread proof relations` fails with `PROOF_DANGLING_RELATION` (stderr
+  JSON, exit 1) when a record stores a `derives_from` id that no record answers
+  to. It used to drop the edge and report `page.returned: 0`, which presented
+  incomplete provenance as complete. The error names the record, the relation,
+  and the missing id. Records written before this release keep any dangling
+  edge until you repair the file.
 
 Notes for the Flatbread release train. Some packages also keep their own
 changelog; this file covers the repository as a whole.

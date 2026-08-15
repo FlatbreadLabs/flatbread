@@ -16,6 +16,7 @@ export * from './digest.js';
 export {
   READ_RELATIONS,
   ProofConsistencyError,
+  ProofDanglingRelationError,
   ProofInvalidCursorError,
   ProofReadValidationError,
   canonicalizeReadQuery,

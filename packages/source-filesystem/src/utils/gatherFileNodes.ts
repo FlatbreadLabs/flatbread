@@ -5,7 +5,19 @@ import type { FileNode, GatherFileNodesOptions } from '../types';
 type Segment = { name: string; remove: number } | null;
 
 async function readDir(path: string): Promise<FileNode[]> {
-  const files = (await readdir(path, { withFileTypes: true })) as FileNode[];
+  let files: FileNode[];
+  try {
+    files = (await readdir(path, { withFileTypes: true })) as FileNode[];
+  } catch (error) {
+    /**
+     * A content directory that nothing has written yet is an empty collection,
+     * not a failure. Git cannot store an empty directory, so a fresh clone of a
+     * sparse project has none of them. Permission and I/O faults still throw.
+     */
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === 'ENOENT') return [];
+    throw error;
+  }
 
   return files.map((file) => {
     file.path = join(path, file.name);
