@@ -1,6 +1,6 @@
 # Fixture: Cursor `proof` skill → Effort Graph rows
 
-**Purpose:** Representative markdown files showing how **existing** agent harness paths under [`.cursor/skills/proof/`](../../../../.cursor/skills/proof/) map to **Effort Graph** collections without moving or rewriting the harness.
+**Purpose:** Representative markdown files showing how **existing** agent harness paths under [`.agents/skills/proof/`](../../../../../../../.agents/skills/proof/) map to **Effort Graph** collections without moving or rewriting the harness.
 
 | File here                                    | Collection | Maps from                                                         |
 | -------------------------------------------- | ---------- | ----------------------------------------------------------------- |

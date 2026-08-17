@@ -1,14 +1,14 @@
 # Experiment: Issue #167 — Effort Graph reference layout (agent artifacts → indexed graph)
 
-**Scope:** Map one real in-repo agent artifact layout to the [Effort Graph sketch](../../flatbread-agent-artifact-opportunity.md) (§8): `Effort` → `Plan`, `Session`, `Decision` with `refs`. Demonstrate a **single retrieval surface** query—here, **GraphQL**—that returns **blocking decisions** for a chosen effort with **nested plan and session context**. This satisfies the “reference layout indexed + validated” bar from the [PMF decision rubric](../pmf-decision-rubric.md) as an **experiment**, not a shipped preset.
+**Scope:** Map one real in-repo agent artifact layout to the [Effort Graph sketch](../../../../../flatbread-agent-artifact-opportunity.md) (§8): `Effort` → `Plan`, `Session`, `Decision` with `refs`. Demonstrate a **single retrieval surface** query—here, **GraphQL**—that returns **blocking decisions** for a chosen effort with **nested plan and session context**. This satisfies the “reference layout indexed + validated” bar from the [PMF decision rubric](../../docs/pmf-decision-rubric.md) as an **experiment**, not a shipped preset.
 
-**Non-goals (explicit):** Full **Session** / **Run** fidelity, importer scripts, or turning this repo’s proof harness into production artifact storage. GraphQL is **one** interface; the same filter object is intended to work against codegen-backed TypeScript or MCP when those surfaces expose the shared filter DSL ([§9 agent artifact opportunity](../../flatbread-agent-artifact-opportunity.md)).
+**Non-goals (explicit):** Full **Session** / **Run** fidelity, importer scripts, or turning this repo’s proof harness into production artifact storage. GraphQL is **one** interface; the same filter object is intended to work against codegen-backed TypeScript or MCP when those surfaces expose the shared filter DSL ([§9 agent artifact opportunity](../../../../../flatbread-agent-artifact-opportunity.md)).
 
 ---
 
 ## 1. Source layout mapped (agent artifacts)
 
-**Canonical folder:** [`.cursor/skills/proof/`](../../.cursor/skills/proof/) — Cursor **Skill** for DAG-style proof runs.
+**Canonical folder:** [`.agents/skills/proof/`](../../../../../.agents/skills/proof/) — agent **Skill** for DAG-style proof runs.
 
 | Existing path                                | Role in harness                                      | Effort Graph mapping                                                                                              |
 | -------------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
@@ -17,7 +17,7 @@
 | _(synthetic)_ proof CLI invocation           | One **multi-step run** with canvas streaming         | **`Session`** row: `runner`, `effort` ref, short body describing the run surface                                  |
 | _(synthetic)_ governance row                 | **Blocking** acceptance check                        | **`Decision`** row: `blocking`, `effort` / `plan` / `session` refs                                                |
 
-This is **incremental adoption**: only new markdown under a dedicated tree needs frontmatter; harness files **stay in place** ([agent artifact opportunity §9.6](../../flatbread-agent-artifact-opportunity.md)).
+This is **incremental adoption**: only new markdown under a dedicated tree needs frontmatter; harness files **stay in place** ([agent artifact opportunity §9.6](../../../../../flatbread-agent-artifact-opportunity.md)).
 
 ---
 
@@ -73,7 +73,7 @@ export default defineConfig({
 });
 ```
 
-**Validation story:** Today, **broken `refs`** (typos in `effort` / `plan` / `session`) surface as missing relations at query time; duplicate `id` values within a collection remain a **roadmap** hardening item ([PMF audit §4](../../flatbread-flow-pmf-audit.md), [rubric](../pmf-decision-rubric.md)).
+**Validation story:** Today, **broken `refs`** (typos in `effort` / `plan` / `session`) surface as missing relations at query time; duplicate `id` values within a collection remain a **roadmap** hardening item ([PMF audit §4](../../../../../flatbread-flow-pmf-audit.md), [rubric](../../docs/pmf-decision-rubric.md)).
 
 ---
 
@@ -106,7 +106,7 @@ query BlockingDecisionsForEffort {
 }
 ```
 
-**Expected shape (illustrative):** One row for the #167 **reference layout** decision, with nested `Plan` matching the DAG JSON title and `Session` describing a proof-cli style run. **TS / MCP parity:** use the same `filter` JSON against the list resolver the app exposes ([agent artifact opportunity §9](../../flatbread-agent-artifact-opportunity.md)).
+**Expected shape (illustrative):** One row for the #167 **reference layout** decision, with nested `Plan` matching the DAG JSON title and `Session` describing a proof-cli style run. **TS / MCP parity:** use the same `filter` JSON against the list resolver the app exposes ([agent artifact opportunity §9](../../../../../flatbread-agent-artifact-opportunity.md)).
 
 ---
 
@@ -122,7 +122,7 @@ query BlockingDecisionsForEffort {
 
 ### Issue draft: **[Core] Ref integrity diagnostics for agent presets**
 
-**Problem:** Missing `plan` / `session` on a blocking decision is a **product risk** ([rubric integrity bar](../pmf-decision-rubric.md)); today users discover gaps via empty nested selections, not necessarily a validator error.
+**Problem:** Missing `plan` / `session` on a blocking decision is a **product risk** ([rubric integrity bar](../../docs/pmf-decision-rubric.md)); today users discover gaps via empty nested selections, not necessarily a validator error.
 
 **Acceptance criteria:** Configurable **hard fail** (or structured diagnostic) when `Decision.blocking: true` and `plan` ref does not resolve; integration test from `diag-query-surface` notes.
 
@@ -153,7 +153,7 @@ query BlockingDecisionsForEffort {
 
 ## References
 
-- [flatbread-agent-artifact-opportunity.md §8 sketch](../../flatbread-agent-artifact-opportunity.md)
-- [flatbread-flow-pmf-audit.md — Effort Graph positioning](../../flatbread-flow-pmf-audit.md)
-- [pmf-decision-rubric.md](../pmf-decision-rubric.md)
-- Proof DAG example: [`.cursor/skills/proof/examples/dag-flatbread-flow-pmf-audit.json`](../../.cursor/skills/proof/examples/dag-flatbread-flow-pmf-audit.json)
+- [flatbread-agent-artifact-opportunity.md §8 sketch](../../../../../flatbread-agent-artifact-opportunity.md)
+- [flatbread-flow-pmf-audit.md — Effort Graph positioning](../../../../../flatbread-flow-pmf-audit.md)
+- [pmf-decision-rubric.md](../../docs/pmf-decision-rubric.md)
+- Proof DAG example: [`.cursor/dags/flatbread/dag-flatbread-flow-pmf-audit.json`](../../../../../.cursor/dags/flatbread/dag-flatbread-flow-pmf-audit.json)

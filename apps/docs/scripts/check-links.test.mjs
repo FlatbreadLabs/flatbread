@@ -102,6 +102,23 @@ describe('collectProblems', () => {
     ).toBe('json-export');
   });
 
+  it('rejects explicit related null while keeping a missing key optional', () => {
+    const explicitNull = withRepo({
+      'apps/docs/content/docs/gap.md': page({
+        id: 'gap',
+        relatedScalar: 'null',
+      }),
+    });
+    expect(explicitNull).toEqual([
+      'apps/docs/content/docs/gap.md: `related` must be a list',
+    ]);
+
+    const missing = withRepo({
+      'apps/docs/content/docs/gap.md': page({ id: 'gap' }),
+    });
+    expect(missing).toEqual([]);
+  });
+
   it('reports a related guide that does not exist, and accepts a valid list', () => {
     const missing = withRepo({
       'apps/docs/content/docs/gap.md': page({
@@ -160,6 +177,18 @@ describe('collectProblems', () => {
     });
     expect(problems).toContain(
       'apps/docs/content/docs/gap.md: link `./nope.md` points at nothing'
+    );
+  });
+
+  it('reports a broken link in a nested note', () => {
+    const problems = withRepo({
+      'apps/docs/content/docs/gap.md': page({ id: 'gap' }),
+      'apps/docs/content/notes/experiments/stale.md':
+        '# Stale\n\nSee [missing](../missing.md).\n',
+    });
+
+    expect(problems).toContain(
+      'apps/docs/content/notes/experiments/stale.md: link `../missing.md` points at nothing'
     );
   });
 
@@ -304,6 +333,7 @@ function withRepo(files) {
       docsDir: join(root, 'apps/docs/content/docs'),
       navDir: join(root, 'apps/docs/content/nav'),
       referenceDir: join(root, 'apps/docs/content/reference'),
+      notesDir: join(root, 'apps/docs/content/notes'),
     });
   } finally {
     rmSync(root, { recursive: true, force: true });

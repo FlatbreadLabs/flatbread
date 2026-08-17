@@ -10,7 +10,29 @@ const ping = parse('query { __typename }') as TypedDocumentNode<
 describe('query cache key', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     vi.resetModules();
+  });
+
+  it.each([
+    ['production', 'force-cache'],
+    ['development', 'no-store'],
+    ['test', 'no-store'],
+  ])('uses %s cache policy %s', async (nodeEnv, expectedCache) => {
+    vi.stubEnv('NODE_ENV', nodeEnv);
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { __typename: 'Query' } }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { query } = await import('./graphql');
+    await query(ping);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining({ cache: expectedCache })
+    );
   });
 
   it('uses one URL stamp within a module load and a new stamp after reload', async () => {
@@ -47,6 +69,7 @@ describe('query cache key', () => {
 describe('query failures', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     vi.resetModules();
   });
 

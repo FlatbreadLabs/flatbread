@@ -11,7 +11,7 @@ minutes?
 This uses the repo's canonical onboarding route on the existing example:
 
 1. Read the root README quickstart:
-   [`packages/flatbread/README.md#quickstart-posts-authors-and-tags`](../../packages/flatbread/README.md#quickstart-posts-authors-and-tags).
+   [`packages/flatbread/README.md#quickstart-posts-authors-and-tags`](../../../../../packages/flatbread/README.md#quickstart-posts-authors-and-tags).
 2. Inspect the backing files:
    - `examples/content/markdown/posts/example-post.md`
    - `examples/content/markdown/authors/tony.md`

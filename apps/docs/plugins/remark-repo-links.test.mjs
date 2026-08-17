@@ -132,6 +132,16 @@ describe('remarkRepoLinks', () => {
     ).toBe('/docs/glossary/#cardinality');
   });
 
+  it('prefixes a blob guide but leaves a no-route blob untouched under a base path', () => {
+    const guide = `${BLOB}/apps/docs/content/docs/glossary.md#cardinality`;
+    const noRoute = `${BLOB}/CONTRIBUTING.md`;
+
+    expect(apply(guide, { basePath: '/flatbread' })).toBe(
+      '/flatbread/docs/glossary/#cardinality'
+    );
+    expect(apply(noRoute, { basePath: '/flatbread' })).toBe(noRoute);
+  });
+
   it('refuses an encoded parent-segment traversal in a blob URL', () => {
     const url = `${BLOB}/apps/docs/content/docs/%2e%2e/%2e%2e/%2e%2e/%2e%2e/README.md`;
 
@@ -186,7 +196,7 @@ describe('remarkRepoLinks', () => {
   });
 });
 
-function apply(url) {
+function apply(url, options = {}) {
   const tree = {
     type: 'root',
     children: [
@@ -196,7 +206,7 @@ function apply(url) {
       },
     ],
   };
-  namedRemarkRepoLinks({ repoRoot })(tree);
+  namedRemarkRepoLinks({ repoRoot, ...options })(tree);
   return tree.children[0].children[0].url;
 }
 

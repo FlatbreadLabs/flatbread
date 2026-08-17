@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import type { DocSummary, Section } from '../../../lib/content';
+import { groupPackages } from '../../../lib/package-groups';
 
 interface SidebarProps {
   sections: Section[];
@@ -17,20 +18,6 @@ interface Branch {
   items: Array<{ href: string; label: string }>;
 }
 
-const PACKAGE_GROUPS = [
-  ['Build', ['flatbread', 'core', 'config', 'codegen']],
-  [
-    'Content',
-    [
-      'source-filesystem',
-      'transformer-markdown',
-      'transformer-yaml',
-      'resolver-svimg',
-    ],
-  ],
-  ['Tools', ['explorer', 'proof', 'utils']],
-] as const;
-
 /**
  * The navigation, drawn as a directory tree.
  *
@@ -41,32 +28,14 @@ const PACKAGE_GROUPS = [
  */
 export function Sidebar({ sections, docs, packages }: SidebarProps) {
   const pathname = usePathname();
-  const groupedPackageIds = new Set<string>(
-    PACKAGE_GROUPS.flatMap(([, ids]) => [...ids])
-  );
-  const referenceBranches: Branch[] = PACKAGE_GROUPS.map(([title, ids]) => ({
-    id: `reference-${title.toLowerCase()}`,
-    title: `Reference · ${title}`,
-    items: packages
-      .filter((entry) => (ids as readonly string[]).includes(entry.id))
-      .map((entry) => ({
-        href: `/reference/${entry.id}/`,
-        label: entry.id,
-      })),
+  const referenceBranches: Branch[] = groupPackages(packages).map((group) => ({
+    id: `reference-${group.name.toLowerCase()}`,
+    title: `Reference · ${group.name}`,
+    items: group.packages.map((entry) => ({
+      href: `/reference/${entry.id}/`,
+      label: entry.id,
+    })),
   }));
-  const otherPackages = packages.filter(
-    (entry) => !groupedPackageIds.has(entry.id)
-  );
-  if (otherPackages.length > 0) {
-    referenceBranches.push({
-      id: 'reference-other',
-      title: 'Reference · Other',
-      items: otherPackages.map((entry) => ({
-        href: `/reference/${entry.id}/`,
-        label: entry.id,
-      })),
-    });
-  }
 
   const branches: Branch[] = [
     ...sections.map((section) => ({

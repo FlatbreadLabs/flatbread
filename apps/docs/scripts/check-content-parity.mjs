@@ -23,7 +23,9 @@ const COLLECTIONS = [
 export function compareIds(collection, diskIds, records) {
   const problems = [];
   const graphIds = records.flatMap((record) =>
-    typeof record?.id === 'string' && record.id.length > 0 ? [record.id] : []
+    typeof record?.id === 'string' && record.id.trim().length > 0
+      ? [record.id]
+      : []
   );
   const disk = [...new Set(diskIds)].sort();
   const graph = [...new Set(graphIds)].sort();

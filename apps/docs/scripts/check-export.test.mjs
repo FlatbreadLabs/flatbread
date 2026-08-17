@@ -160,6 +160,30 @@ describe('collectExportProblems', () => {
     );
   });
 
+  it('rejects blank search titles and hrefs with focused errors', () => {
+    const problems = withExport({
+      'index.html': '<main></main>',
+      'search-index.json': JSON.stringify([
+        {
+          id: 'guide',
+          title: '   ',
+          href: '\t',
+          kind: 'guide',
+          group: 'Start',
+          summary: 'Guide',
+          body: 'Guide body',
+        },
+      ]),
+    });
+
+    expect(problems).toContain(
+      'search-index.json entry 0 `title` must not be blank'
+    );
+    expect(problems).toContain(
+      'search-index.json entry 0 `href` must not be blank'
+    );
+  });
+
   it('validates search entry fragments', () => {
     const problems = withExport({
       'index.html': '<main></main>',

@@ -42,6 +42,12 @@ describe('compareIds', () => {
       'allPackages returned duplicate ids: core',
     ]);
   });
+
+  it('reports a whitespace-only graph id as invalid', () => {
+    expect(
+      compareIds('allDocs', ['start'], [{ id: 'start' }, { id: '   ' }])
+    ).toEqual(['allDocs returned a row without an id']);
+  });
 });
 
 describe('collectParityProblems', () => {

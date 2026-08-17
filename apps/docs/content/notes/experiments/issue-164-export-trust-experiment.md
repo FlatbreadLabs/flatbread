@@ -15,7 +15,7 @@ Run command examples from `examples/nextjs`, where `flatbread.config.js` lives:
    - `examples/content/markdown/authors/tony.md`
    - `examples/content/markdown/authors/eva.md`
 2. Show config-owned relations in `examples/nextjs/flatbread.config.js`.
-3. Show the [data ownership story](../data-ownership.md).
+3. Show the [data ownership story](../../docs/data-ownership.md).
 4. Show the snapshot export APIs:
 
    ```ts
@@ -38,8 +38,8 @@ Run command examples from `examples/nextjs`, where `flatbread.config.js` lives:
 
    See also:
 
-   - [Data ownership](../data-ownership.md)
-   - [Snapshot export docs](../json-export.md)
+   - [Data ownership](../../docs/data-ownership.md)
+   - [Snapshot export docs](../../docs/json-export.md)
 
 5. Explain the exit path:
    - raw files remain usable without Flatbread;

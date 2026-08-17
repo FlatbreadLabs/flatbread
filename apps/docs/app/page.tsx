@@ -1,27 +1,8 @@
 import Link from 'next/link';
 
 import { getDocs, getPackages, getSections } from '../lib/content';
+import { groupPackages } from '../lib/package-groups';
 import { Frame } from './components/ascii/Frame';
-
-const PACKAGE_GROUPS = [
-  {
-    name: 'Build',
-    ids: ['flatbread', 'core', 'config', 'codegen'],
-  },
-  {
-    name: 'Content',
-    ids: [
-      'source-filesystem',
-      'transformer-markdown',
-      'transformer-yaml',
-      'resolver-svimg',
-    ],
-  },
-  {
-    name: 'Tools',
-    ids: ['explorer', 'proof', 'utils'],
-  },
-] as const;
 
 export default async function Home() {
   const [sections, docs, packages] = await Promise.all([
@@ -50,12 +31,7 @@ export default async function Home() {
       note: 'Symlinks to the published package READMEs.',
     },
   ];
-  const packageGroups = PACKAGE_GROUPS.map((group) => ({
-    ...group,
-    packages: packages.filter((entry) =>
-      (group.ids as readonly string[]).includes(entry.id)
-    ),
-  })).filter((group) => group.packages.length > 0);
+  const packageGroups = groupPackages(packages);
 
   return (
     <div className="fb-home">

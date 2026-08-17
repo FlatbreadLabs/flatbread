@@ -35,6 +35,10 @@
 
 ### Runtime behavior
 
+- `@flatbread/transformer-markdown` retains sanitized `language-*` classes and
+  `data-title` attributes for syntax highlighters. Fence languages must stay
+  within `[A-Za-z0-9_-]`; punctuation-bearing labels such as `c++` and `c#`
+  intentionally lose their language class.
 - `@flatbread/source-filesystem` reads a content directory that does not exist
   as an empty collection instead of throwing `ENOENT`. Git cannot store an
   empty directory, and a Proof write creates only the directory it writes, so

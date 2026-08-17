@@ -21,6 +21,7 @@ const defaultRepoRoot = resolve(app, '../..');
 const defaultDocsDir = resolve(app, 'content/docs');
 const defaultNavDir = resolve(app, 'content/nav');
 const defaultReferenceDir = resolve(app, 'content/reference');
+const defaultNotesDir = resolve(app, 'content/notes');
 
 const REQUIRED = ['id', 'title', 'section', 'order', 'summary'];
 const REQUIRED_TEXT = new Set(['id', 'title', 'section', 'summary']);
@@ -31,6 +32,7 @@ export function collectProblems({
   docsDir = defaultDocsDir,
   navDir = defaultNavDir,
   referenceDir = defaultReferenceDir,
+  notesDir = defaultNotesDir,
 } = {}) {
   const problems = [];
 
@@ -110,7 +112,7 @@ export function collectProblems({
       );
     }
 
-    const related = front.related ?? [];
+    const related = 'related' in front ? front.related : [];
     if (!Array.isArray(related)) {
       problems.push(`${rel(path, repoRoot)}: \`related\` must be a list`);
     } else {
@@ -167,6 +169,12 @@ export function collectProblems({
     checkLinks(target, readFileSync(target, 'utf8'), site);
   }
 
+  for (const path of markdownFiles(notesDir)) {
+    checkLinks(path, readFileSync(path, 'utf8'), site, {
+      checkSiteRewrite: false,
+    });
+  }
+
   return problems;
 }
 
@@ -185,11 +193,18 @@ function main() {
   console.log(
     `Checked ${guides.length} guides and ${
       readdirSync(defaultReferenceDir).length
-    } package pages. Every link resolves.`
+    } package pages, plus ${
+      markdownFiles(defaultNotesDir).length
+    } notes. Every link resolves.`
   );
 }
 
-function checkLinks(path, text, { problems, repoRoot, docsDir }) {
+function checkLinks(
+  path,
+  text,
+  { problems, repoRoot, docsDir },
+  { checkSiteRewrite = true } = {}
+) {
   const base = dirname(path);
 
   for (const match of text.matchAll(LINK)) {
@@ -214,6 +229,8 @@ function checkLinks(path, text, { problems, repoRoot, docsDir }) {
       continue;
     }
 
+    if (!checkSiteRewrite) continue;
+
     // A link the rewriter cannot pin to one file stays relative on the site,
     // where it points at nothing, even though GitHub renders it correctly.
     const resolved = resolveRepoLink(url, { repoRoot, docsDir });
@@ -228,6 +245,15 @@ function checkLinks(path, text, { problems, repoRoot, docsDir }) {
       );
     }
   }
+}
+
+function markdownFiles(directory) {
+  if (!existsSync(directory)) return [];
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = resolve(directory, entry.name);
+    if (entry.isDirectory()) return markdownFiles(path);
+    return entry.isFile() && entry.name.endsWith('.md') ? [path] : [];
+  });
 }
 
 /** A deliberately small YAML reader: scalar values and flat lists. */

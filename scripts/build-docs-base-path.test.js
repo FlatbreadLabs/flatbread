@@ -56,6 +56,24 @@ test('uses the command shell only for Windows package scripts', (t) => {
   t.true(shell);
 });
 
+test('dispatches --root through the CLI runner', (t) => {
+  let childEnv;
+  const processState = {};
+  const status = runDocsBuild({
+    argv: ['node', 'build-docs-base-path.mjs', '--root'],
+    processState,
+    env: { NEXT_PUBLIC_BASE_PATH: '/wrong' },
+    spawn: (_command, _args, options) => {
+      childEnv = options.env;
+      return { status: 0 };
+    },
+  });
+
+  t.is(status, 0);
+  t.is(processState.exitCode, 0);
+  t.false(Object.hasOwn(childEnv, 'NEXT_PUBLIC_BASE_PATH'));
+});
+
 test('propagates a nonzero docs build status', (t) => {
   const processState = {};
   const status = runDocsBuild({

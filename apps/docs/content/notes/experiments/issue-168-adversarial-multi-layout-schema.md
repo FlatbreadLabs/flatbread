@@ -1,6 +1,6 @@
 # Experiment: Issue #168 — Adversarial Effort Graph schema across three harness layouts
 
-**Scope:** Execute [agent artifact opportunity §12.2](../../flatbread-agent-artifact-opportunity.md) — stress one **Effort Graph**–shaped model against **three** representative tool trees. Document which **entities and fields** stay stable, which need **tool-specific mapping**, and whether **one canonical schema + a mapping layer** remains a viable product bet.
+**Scope:** Execute [agent artifact opportunity §12.2](../../../../../flatbread-agent-artifact-opportunity.md) — stress one **Effort Graph**–shaped model against **three** representative tool trees. Document which **entities and fields** stay stable, which need **tool-specific mapping**, and whether **one canonical schema + a mapping layer** remains a viable product bet.
 
 **Product framing:** Flatbread is **Git-native relational content** for TypeScript apps, materialized from flat files. **GraphQL** is **one** query adapter alongside generated TypeScript and MCP; it does not define the whole product.
 
@@ -14,8 +14,8 @@
 
 | ID     | Layout                                            | Representative paths (this repo or synthetic)                                                                                          | Role in adversarial test                                                                             |
 | ------ | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| **L1** | **Claude Code–oriented** (skills / agent packets) | [`.agents/skills/*/SKILL.md`](../../.agents/skills/)                                                                                   | YAML frontmatter + narrative body; skills as discoverable units without a single DAG file per effort |
-| **L2** | **Cursor rules + skills**                         | [`.cursor/rules/*.mdc`](../../.cursor/rules/), [`.cursor/skills/proof/`](../../.cursor/skills/proof/)                                  | Split between **rules** (policy) and **skills** (workflows + JSON DAG examples)                      |
+| **L1** | **Claude Code–oriented** (skills / agent packets) | [`.agents/skills/*/SKILL.md`](../../../../../.agents/skills/)                                                                          | YAML frontmatter + narrative body; skills as discoverable units without a single DAG file per effort |
+| **L2** | **Cursor rules + skills**                         | [`.cursor/rules/*.mdc`](../../../../../.cursor/rules/), [`.agents/skills/proof/`](../../../../../.agents/skills/proof/)                | Split between **rules** (policy) and **skills** (workflows + JSON DAG examples)                      |
 | **L3** | **GCC-style branch context** (synthetic)          | [`fixtures/issue-168-three-layout-snippets/layout-gcc/`](./fixtures/issue-168-three-layout-snippets/layout-gcc/representative-tree.md) | Per-branch knowledge tree; identity and merge semantics are the stressor                             |
 
 The machine-readable **acceptance matrix** (checkbox test contract) lives in [`acceptance-test-matrix.md`](./fixtures/issue-168-three-layout-snippets/acceptance-test-matrix.md).
@@ -90,6 +90,6 @@ If the team cannot commit to **canonical slugs** and **validation**, the same sc
 
 ## References
 
-- [flatbread-agent-artifact-opportunity.md §12](../../flatbread-agent-artifact-opportunity.md)
+- [flatbread-agent-artifact-opportunity.md §12](../../../../../flatbread-agent-artifact-opportunity.md)
 - [issue-167-effort-graph-layout-mapping.md](./issue-167-effort-graph-layout-mapping.md)
-- [PMF decision rubric](../pmf-decision-rubric.md)
+- [PMF decision rubric](../../docs/pmf-decision-rubric.md)
