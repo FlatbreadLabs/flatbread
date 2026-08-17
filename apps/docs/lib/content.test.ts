@@ -222,6 +222,23 @@ describe('content readers', () => {
     await expect(getDoc('getting-started')).rejects.toThrow(/Doc.*section\.id/);
   });
 
+  it.each([
+    ['null', null],
+    ['blank', '   '],
+  ])('rejects a doc page with a %s section title', async (_case, title) => {
+    const payload = docPagePayload();
+    vi.mocked(query).mockResolvedValueOnce({
+      Doc: {
+        ...payload.Doc,
+        section: { ...payload.Doc.section, title },
+      },
+    } as never);
+
+    await expect(getDoc('getting-started')).rejects.toThrow(
+      /Doc.*section\.title/
+    );
+  });
+
   it('rejects when allDocs is empty', async () => {
     vi.mocked(query).mockResolvedValueOnce({ allDocs: [] } as never);
 
@@ -270,6 +287,38 @@ describe('content readers', () => {
     vi.mocked(query).mockResolvedValueOnce({ allDocs: [null] } as never);
 
     await expect(getDocs()).rejects.toThrow(/allDocs.*id/);
+  });
+
+  it('rejects an allDocs row without a section id', async () => {
+    const payload = docsPayload('Getting started');
+    vi.mocked(query).mockResolvedValueOnce({
+      allDocs: [
+        {
+          ...payload.allDocs[0],
+          section: { title: 'Start' },
+        },
+      ],
+    } as never);
+
+    await expect(getDocs()).rejects.toThrow(/allDocs.*section\.id/);
+  });
+
+  it.each([
+    ['null', null],
+    ['blank', '   '],
+  ])('rejects a search guide with a %s section title', async (_case, title) => {
+    const payload = searchPayload('Valid package content.');
+    vi.mocked(query).mockResolvedValueOnce({
+      ...payload,
+      allDocs: [
+        {
+          ...payload.allDocs[0],
+          section: { ...payload.allDocs[0]!.section, title },
+        },
+      ],
+    } as never);
+
+    await expect(getSearchEntries()).rejects.toThrow(/allDocs.*section\.title/);
   });
 
   it.each([

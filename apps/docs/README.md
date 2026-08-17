@@ -65,10 +65,26 @@ declare `id` in frontmatter, and the filename capture supplies the same value.
 The package pages have no frontmatter at all — a README cannot carry any
 without showing it on npm — so the symlink's own name is the id.
 
-A clone on Windows without symlink support gets plain text files that hold a
-path, and the package pages then render that path instead of the README. Enable
-Git symlinks (`git config core.symlinks true`) and clone again. On Windows that
-needs Developer Mode or an elevated shell.
+### Fix package pages that show a path on Windows
+
+Enable Windows Developer Mode, then run these commands in PowerShell:
+
+```powershell
+git config --global core.symlinks true
+git clone https://github.com/FlatbreadLabs/flatbread.git flatbread-with-symlinks
+cd flatbread-with-symlinks
+corepack enable
+corepack prepare pnpm@10.33.0 --activate
+pnpm install
+pnpm docs:dev
+```
+
+Allow 5–10 minutes for a cold clone, install, and build. Then open
+`http://localhost:3000/reference/flatbread/`. The page now shows the Flatbread
+package README instead of the path
+`../../../../packages/flatbread/README.md`. Use an elevated PowerShell window
+if your machine does not allow Developer Mode. Changing `core.symlinks` inside
+the old clone is not enough; Git must create real symlinks during a new clone.
 
 ## Adding a page
 
