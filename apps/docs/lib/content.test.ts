@@ -26,6 +26,34 @@ function docsPayload(title: string) {
   };
 }
 
+function docPagePayload() {
+  return {
+    Doc: {
+      id: 'getting-started',
+      title: 'Getting started',
+      summary: 'Start here',
+      section: { id: 'start', title: 'Start' },
+      related: [
+        {
+          id: 'next-steps',
+          title: 'Next steps',
+          summary: 'Keep going',
+        },
+      ],
+      _content: { html: '<p>Read me</p>', timeToRead: 3 },
+    },
+  };
+}
+
+function packagePagePayload() {
+  return {
+    Package: {
+      id: 'core',
+      _content: { html: '<p>Core reference</p>', timeToRead: 4 },
+    },
+  };
+}
+
 describe('content readers', () => {
   beforeEach(() => {
     vi.mocked(query).mockReset();
@@ -42,6 +70,72 @@ describe('content readers', () => {
     expect(query).toHaveBeenCalledTimes(2);
     expect(first[0]?.title).toBe('Old title');
     expect(second[0]?.title).toBe('New title');
+  });
+
+  it('returns a complete doc page with valid related entries', async () => {
+    vi.mocked(query).mockResolvedValueOnce(docPagePayload() as never);
+
+    await expect(getDoc('getting-started')).resolves.toEqual({
+      id: 'getting-started',
+      title: 'Getting started',
+      summary: 'Start here',
+      sectionId: 'start',
+      sectionTitle: 'Start',
+      related: [
+        {
+          id: 'next-steps',
+          title: 'Next steps',
+          summary: 'Keep going',
+        },
+      ],
+      html: '<p>Read me</p>',
+      timeToRead: 3,
+    });
+  });
+
+  it('returns a complete package page', async () => {
+    vi.mocked(query).mockResolvedValueOnce(packagePagePayload() as never);
+
+    await expect(getPackage('core')).resolves.toEqual({
+      id: 'core',
+      html: '<p>Core reference</p>',
+      timeToRead: 4,
+    });
+  });
+
+  it.each([
+    ['id', { title: 'Related doc' }],
+    ['title', { id: 'related-doc' }],
+  ])('rejects a related row without %s', async (field, related) => {
+    const payload = docPagePayload();
+    vi.mocked(query).mockResolvedValueOnce({
+      Doc: { ...payload.Doc, related: [related] },
+    } as never);
+
+    await expect(getDoc('getting-started')).rejects.toThrow(
+      new RegExp(`Doc\\.related.*${field}`)
+    );
+  });
+
+  it('returns undefined when a doc is missing', async () => {
+    vi.mocked(query).mockResolvedValueOnce({ Doc: null } as never);
+
+    await expect(getDoc('missing')).resolves.toBeUndefined();
+  });
+
+  it('returns undefined when a package is missing', async () => {
+    vi.mocked(query).mockResolvedValueOnce({ Package: null } as never);
+
+    await expect(getPackage('missing')).resolves.toBeUndefined();
+  });
+
+  it('rejects whitespace-only required text', async () => {
+    const payload = docPagePayload();
+    vi.mocked(query).mockResolvedValueOnce({
+      Doc: { ...payload.Doc, title: '   ' },
+    } as never);
+
+    await expect(getDoc('getting-started')).rejects.toThrow(/Doc.*title/);
   });
 
   it('rejects when allDocs is empty', async () => {

@@ -50,10 +50,16 @@ describe('query failures', () => {
     vi.resetModules();
   });
 
-  it('reports an HTTP failure with the status and endpoint', async () => {
+  it('reports a non-JSON HTTP failure with the status and endpoint', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({ ok: false, status: 503 })
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        json: async () => {
+          throw new SyntaxError('not JSON');
+        },
+      })
     );
 
     const { query } = await import('./graphql');
@@ -99,6 +105,21 @@ describe('query failures', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
+    );
+
+    const { query } = await import('./graphql');
+    await expect(query(ping)).rejects.toThrow('Flatbread returned no data.');
+  });
+
+  it('rejects a successful non-JSON response as missing data', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => {
+          throw new SyntaxError('not JSON');
+        },
+      })
     );
 
     const { query } = await import('./graphql');

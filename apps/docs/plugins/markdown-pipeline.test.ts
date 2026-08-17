@@ -31,6 +31,16 @@ describe('docs Markdown pipeline', () => {
     expect(html).toContain('--shiki-light');
   });
 
+  it('keeps data-title without allowing event handlers or unknown attributes', async () => {
+    const html = String(
+      await processor().process(
+        '<code data-title="safe.ts" onclick="alert(1)" unknown="unsafe">safe</code>'
+      )
+    );
+
+    expect(html).toBe('<p><code data-title="safe.ts">safe</code></p>');
+  });
+
   it('gives headings plain names and unique permalink labels', async () => {
     const html = String(await processor().process('## Quick start'));
 
@@ -105,5 +115,13 @@ describe('docs Markdown pipeline', () => {
     expect(html).not.toContain('<h1>');
     expect(html).toContain('class="table-scroll"');
     expect(html).toContain('aria-label="Scrollable table"');
+  });
+
+  it('removes a Markdown H1 with a closing ATX marker', async () => {
+    const html = String(
+      await processor().process('# Package name #\n\nPackage introduction.')
+    );
+
+    expect(html).toBe('<p>Package introduction.</p>');
   });
 });

@@ -34,7 +34,7 @@ Optional **`pnpm play`** from the repo root is a shortcut for **`cd examples/nex
 - Build all packages: `pnpm build`
 - **Workspace libraries (watch-only):** `pnpm dev` — runs package `dev` scripts (e.g. `tsup --watch`) for `packages/*`; it does **not** start the Next.js example.
 - **Next.js example:** prefer the flow under [Recommended onboarding](#recommended-onboarding-try-flatbread-in-the-nextjs-example); or `pnpm play` as a convenience alias.
-- **Documentation site:** from the repo root, `pnpm docs:dev` builds the packages (`predocs:dev` runs `pnpm build` first, so a fresh clone works), then starts Flatbread on **5057** and Next on **3000**. `pnpm docs:build` builds the packages and then the static site. `pnpm docs:check` checks frontmatter and links without building. The content model is in `apps/docs/README.md`.
+- **Documentation site:** from the repo root, `pnpm docs:dev` builds the packages (`predocs:dev` runs `pnpm build` first, so a fresh clone works), then starts Flatbread on **5057** and Next on **3000**. `pnpm docs:build` builds the packages and then the static site. `pnpm docs:check` builds the packages first, then checks frontmatter, links, graph parity, and generated queries. The content model is in `apps/docs/README.md`.
 - `pnpm play` and `pnpm docs:dev` both use ports **5057** and **3000**. Stop
   one before starting the other.
 - **Proof explorer:**
@@ -42,8 +42,9 @@ Optional **`pnpm play`** from the repo root is a shortcut for **`cd examples/nex
   2. When `flatbread.config.js` uses `proofContent()`, Flatbread serves `@flatbread/explorer` at `http://localhost:5057/`. The Apollo sandbox is at `/graphql`.
   3. For hot module replacement (HMR) on the single-page app (SPA) shell, run `pnpm exec flatbread start --watch` and `pnpm --filter @flatbread/explorer dev` in parallel. Vite on **5173** proxies API routes to **5057**.
 - Check local CI parity before opening a PR: `pnpm verify`. It builds and tests
-  the packages, builds the static docs site, validates every exported route,
-  asset, fragment, and id, and runs the critical production audit gate.
+  the packages, builds the static docs site at both `/` and `/flatbread`,
+  validates every exported route, asset, fragment, and id, and runs the
+  critical production audit gate.
 
 ## Working on a package
 

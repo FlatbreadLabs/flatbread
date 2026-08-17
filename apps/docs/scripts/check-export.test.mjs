@@ -91,6 +91,13 @@ describe('collectExportProblems', () => {
         'search-index.json': JSON.stringify({ entries: [] }),
       })
     ).toContain('search-index.json must contain an array of entries');
+
+    expect(
+      withExport({
+        'index.html': '<main></main>',
+        'search-index.json': '[]',
+      })
+    ).toContain('search-index.json must contain at least one entry');
   });
 
   it('validates search entry fields, uniqueness, and page targets', () => {

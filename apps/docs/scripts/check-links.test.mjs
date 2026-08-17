@@ -175,6 +175,33 @@ describe('collectProblems', () => {
     );
   });
 
+  it('reports a dangling reference symlink', () => {
+    const problems = withRepo({
+      'apps/docs/content/docs/gap.md': page({ id: 'gap' }),
+      'apps/docs/content/reference/missing.md': {
+        linkTo: 'packages/missing/README.md',
+      },
+    });
+
+    expect(problems).toContain(
+      'apps/docs/content/reference/missing.md: symlink points at a README that is not there'
+    );
+  });
+
+  it('rejects a reference symlink to the wrong in-repo package', () => {
+    const problems = withRepo({
+      'apps/docs/content/docs/gap.md': page({ id: 'gap' }),
+      'packages/core/README.md': '# core\n',
+      'apps/docs/content/reference/codegen.md': {
+        linkTo: 'packages/core/README.md',
+      },
+    });
+
+    expect(problems).toContain(
+      'apps/docs/content/reference/codegen.md: symlink must point to packages/codegen/README.md, not packages/core/README.md'
+    );
+  });
+
   it('rejects an existing relative link whose target leaves the repository', () => {
     const problems = withRepo({
       'apps/docs/content/docs/gap.md': page({

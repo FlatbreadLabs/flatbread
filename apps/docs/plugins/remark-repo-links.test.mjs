@@ -132,6 +132,20 @@ describe('remarkRepoLinks', () => {
     ).toBe('/docs/glossary/#cardinality');
   });
 
+  it('refuses an encoded parent-segment traversal in a blob URL', () => {
+    const url = `${BLOB}/apps/docs/content/docs/%2e%2e/%2e%2e/%2e%2e/%2e%2e/README.md`;
+
+    expect(apply(url)).toBe(url);
+    expect(resolveRepoLink(url, { repoRoot })).toBeUndefined();
+  });
+
+  it('refuses a blob URL with malformed percent encoding', () => {
+    const url = `${BLOB}/apps/docs/content/docs/%E0%A4%A`;
+
+    expect(apply(url)).toBe(url);
+    expect(resolveRepoLink(url, { repoRoot })).toBeUndefined();
+  });
+
   it('rewrites a blob URL naming a package README or the root README', () => {
     expect(apply(`${BLOB}/packages/core/README.md`)).toBe('/reference/core/');
     expect(apply(`${BLOB}/README.md`)).toBe('/reference/flatbread/');

@@ -148,17 +148,21 @@ export async function getDoc(id: string): Promise<DocPage | undefined> {
     summary: doc.summary ?? '',
     sectionId: requireText('Doc', id, 'section.id', doc.section?.id),
     sectionTitle: requireText('Doc', id, 'section.title', doc.section?.title),
-    related: (doc.related ?? []).flatMap((related) =>
-      related?.id && related.title
-        ? [
-            {
-              id: related.id,
-              title: related.title,
-              summary: related.summary ?? '',
-            },
-          ]
-        : []
-    ),
+    related: (doc.related ?? []).map((related, index) => ({
+      id: requireText(
+        'Doc.related',
+        `${id}.related[${index}]`,
+        'id',
+        related?.id
+      ),
+      title: requireText(
+        'Doc.related',
+        `${id}.related[${index}]`,
+        'title',
+        related?.title
+      ),
+      summary: related?.summary ?? '',
+    })),
     html: requireText('Doc', id, '_content.html', doc._content?.html),
     timeToRead: doc._content?.timeToRead ?? 0,
   };

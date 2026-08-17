@@ -1,3 +1,7 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { collectParityProblems, compareIds } from './check-content-parity.mjs';
@@ -41,6 +45,33 @@ describe('compareIds', () => {
 });
 
 describe('collectParityProblems', () => {
+  it('matches GraphQL ids against files in a real directory', async () => {
+    await withDiskCollection(['start', 'glossary'], async (collections) => {
+      const fetchImpl = graphResponse({
+        allDocs: [{ id: 'glossary' }, { id: 'start' }],
+      });
+
+      await expect(
+        collectParityProblems({ fetchImpl, collections })
+      ).resolves.toEqual([]);
+    });
+  });
+
+  it('reports graph ids missing from and extra to a real directory', async () => {
+    await withDiskCollection(['start', 'glossary'], async (collections) => {
+      const fetchImpl = graphResponse({
+        allDocs: [{ id: 'start' }, { id: 'extra' }],
+      });
+
+      await expect(
+        collectParityProblems({ fetchImpl, collections })
+      ).resolves.toEqual([
+        'allDocs missed files: glossary',
+        'allDocs returned ids with no file: extra',
+      ]);
+    });
+  });
+
   it('keeps GraphQL errors from a non-OK response', async () => {
     const fetchImpl = async () => ({
       ok: false,
@@ -74,3 +105,26 @@ describe('collectParityProblems', () => {
     ).rejects.toThrow('Flatbread answered 503 during parity check.');
   });
 });
+
+function graphResponse(data) {
+  return async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({ data }),
+  });
+}
+
+async function withDiskCollection(ids, run) {
+  const root = mkdtempSync(join(tmpdir(), 'docs-parity-'));
+  const directory = join(root, 'docs');
+  mkdirSync(directory, { recursive: true });
+
+  try {
+    for (const id of ids) {
+      writeFileSync(join(directory, `${id}.md`), `# ${id}\n`);
+    }
+    return await run([['allDocs', directory, '.md']]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}

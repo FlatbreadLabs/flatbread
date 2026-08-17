@@ -126,6 +126,7 @@ function resolveBlobUrl(url, { repoRoot, docsDir, blobBase, basePath }) {
   } catch {
     return undefined;
   }
+  if (decoded.split(/[\\/]/).includes('..')) return undefined;
 
   const absolute = resolve(repoRoot, decoded);
   const target = repoPath(repoRoot, absolute);
