@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/FlatbreadLabs/flatbread/main/assets/flatbread%20logo%20v2%20x4%401-1728x1080%20centered%20header.png"/>
+<img src="https://raw.githubusercontent.com/FlatbreadLabs/flatbread/main/assets/flatbread%20logo%20v2%20x4%401-1728x1080%20centered%20header.png" alt="Flatbread logo" />
 </p>
 
 <h1 align="center">Flatbread 🥪</h1>
@@ -15,6 +15,41 @@
     <img src="https://img.shields.io/npm/v/flatbread?color=%23ed225d" alt="NPM version">
   </a>
 </p>
+
+## Start the bundled example
+
+Prerequisites: Node 20.19+ on the Node 20 line, or Node 22.12+, and Git.
+
+Allow 5–10 minutes for a cold clone, install, and build on a typical laptop;
+network speed can add time. A warm start takes about 30 seconds when
+dependencies are installed and packages are already built.
+
+1. Clone the repository and build the packages:
+
+   ```bash
+   git clone https://github.com/FlatbreadLabs/flatbread.git
+   cd flatbread
+   corepack enable
+   corepack prepare pnpm@10.33.0 --activate
+   pnpm install
+   pnpm build
+   ```
+
+2. Start the bundled Next.js example:
+
+   ```bash
+   pnpm play
+   ```
+
+3. Open `http://localhost:3000`. Flatbread serves GraphQL at
+   `http://localhost:5057/graphql` while the example runs.
+
+Try one reversible edit:
+
+1. Open `examples/content/markdown/posts/example-post.md`.
+2. Change the frontmatter title to `title: 'Flatbread watch test'` and save.
+3. Refresh the page. Expected: the post card says **Flatbread watch test**.
+4. Restore the original line: `title: 'The Art of Measuring Cats in Fruit Units'`.
 
 Flatbread turns files in Git into a typed relational graph. Files are the
 records. `refs` in `flatbread.config.js` link them. You read the graph through
@@ -77,8 +112,8 @@ introspection, and generated TypeScript remain available when you move away
 from Flatbread. See
 [data ownership](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/data-ownership.md).
 
-Every published package requires Node 20.19 or newer. To work on this monorepo,
-use Node 20.19+ with pnpm 10.33.x.
+Supported Node versions for this monorepo are Node 20.19+ on the Node 20 line,
+or Node 22.12+. Use pnpm 10.33.x.
 
 ## Quickstart (posts, authors, and tags)
 
@@ -159,7 +194,8 @@ Add **`tags`** (and any other fields) to your **`.graphql`** documents and rerun
 
 ### 3 · Run it from the repo root
 
-Prerequisites: **Node 20.19+** and **pnpm 10.33.x**. See
+Prerequisites: **Node 20.19+ on the Node 20 line, or Node 22.12+**, and
+**pnpm 10.33.x**. See
 [CONTRIBUTING.md](https://github.com/FlatbreadLabs/flatbread/blob/main/CONTRIBUTING.md).
 
 ```bash
@@ -340,45 +376,37 @@ result = [
 
 #### Supported `filter` operations
 
-- `eq` - equal
-  - This is like `filterValue === resultValue` in JavaScript
-- `ne` - not equal
-  - This is like `filterValue !== resultValue` in JavaScript
-- `in`
-  - This is like `filterValue.includes(resultValue)` in JavaScript
-  - Can only be passed an array of values which pass strict comparison
-- `nin`
-  - This is like `!filterValue.includes(resultValue)` in JavaScript
-  - Can only be passed an array of values which pass strict comparison
-- `includes`
-  - This is like `resultValue.includes(filterValue)` in JavaScript
-  - Can only be passed a single value which passes strict comparison
-- `excludes`
-  - This is like `!resultValue.includes(filterValue)` in JavaScript
-  - Can only be passed a single value which passes strict comparison
-- `lt`, `lte`, `gt`, `gte`
-  - This is like `<`, `<=`, `>`, `>=` respectively
-  - Can only be used with numbers, strings, and booleans
-- `exists`
-  - This is like `filterValue ? resultValue != undefined : resultValue == undefined`
-  - Accepts `true` or `false` as a value to compare against (`filterValue`)
-  - For checking against a property that could be both `null` or `undefined`
-- `strictlyExists`
-  - This is like `filterValue ? resultValue !== undefined : resultValue === undefined`
-  - Accepts `true` or `false` as a value to compare against (`filterValue`)
-  - Checking against a property for `undefined`
-- `regex`
-  - This is like new RegExp(filterValue).test(resultValue) in JavaScript
-- `wildcard`
-  - This is an abstraction on top of `regex` for loose string matching
-  - Case insensitive
-  - Uses [matcher](https://github.com/sindresorhus/matcher) and matcher's [API](https://github.com/sindresorhus/matcher#usage)
+**Equality and membership**
 
-Caveats:
+- `eq` and `ne` use JavaScript strict equality and inequality.
+- `in` and `nin` test whether a filter array contains the result value. Both
+  use strict comparison.
+- `includes` and `excludes` test whether the result array contains one filter
+  value. Both use strict comparison.
 
-- Currently cannot infer date strings and then compare `Date` types in filters
-  - should work if you dynamically pass in a `Date` object from your client, though not extensively tested
-  - to fix this, add argument `typeof` checks and the matching comparator functions in [`packages/core/src/utils/sift.ts`](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/core/src/utils/sift.ts), then open a pull request
+The root `id` field is the exception: `eq`, `ne`, `in`, and `nin` normalize
+trimmed, non-empty strings and finite numbers to strings before comparing. An
+ID stored as `123` therefore matches a filter value of `"123"`. Other fields
+keep the strict comparison behavior above.
+
+**Ordering and presence**
+
+- `lt`, `lte`, `gt`, and `gte` use `<`, `<=`, `>`, and `>=`. They support
+  numbers, strings, and booleans.
+- `exists` checks for both `null` and `undefined`. Pass `true` to require a
+  value or `false` to require no value.
+- `strictlyExists` checks only for `undefined`. Pass `true` to require a value
+  or `false` to require `undefined`.
+
+**Text matching**
+
+- `wildcard` provides case-insensitive loose matching through
+  [matcher](https://github.com/sindresorhus/matcher) and its
+  [API](https://github.com/sindresorhus/matcher#usage).
+- `regex` is unavailable through GraphQL today. The internal comparator
+  requires a JavaScript `RegExp`, which JSON GraphQL input cannot represent.
+  Supporting a pattern string requires a Flatbread code change; use `wildcard`
+  for current GraphQL requests.
 
 #### Combining multiple filters
 
@@ -481,7 +509,7 @@ Accepts a function which takes in field names and transforms them for the GraphQ
 }
 ```
 
-# ☀️ Contributing
+## ☀️ Contributing
 
 See [CONTRIBUTING.md](https://github.com/FlatbreadLabs/flatbread/blob/main/CONTRIBUTING.md)
 for release steps, including version bumps and publishing.

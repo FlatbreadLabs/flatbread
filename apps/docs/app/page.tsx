@@ -1,11 +1,27 @@
 import Link from 'next/link';
 
 import { getDocs, getPackages, getSections } from '../lib/content';
-import { Cursor } from './components/ascii/Cursor';
 import { Frame } from './components/ascii/Frame';
-import { Decode } from './components/motion/Decode';
-import { Reveal } from './components/motion/Reveal';
-import { SplitText } from './components/motion/SplitText';
+
+const PACKAGE_GROUPS = [
+  {
+    name: 'Build',
+    ids: ['flatbread', 'core', 'config', 'codegen'],
+  },
+  {
+    name: 'Content',
+    ids: [
+      'source-filesystem',
+      'transformer-markdown',
+      'transformer-yaml',
+      'resolver-svimg',
+    ],
+  },
+  {
+    name: 'Tools',
+    ids: ['explorer', 'proof', 'utils'],
+  },
+] as const;
 
 export default async function Home() {
   const [sections, docs, packages] = await Promise.all([
@@ -34,6 +50,12 @@ export default async function Home() {
       note: 'Symlinks to the published package READMEs.',
     },
   ];
+  const packageGroups = PACKAGE_GROUPS.map((group) => ({
+    ...group,
+    packages: packages.filter((entry) =>
+      (group.ids as readonly string[]).includes(entry.id)
+    ),
+  })).filter((group) => group.packages.length > 0);
 
   return (
     <div className="fb-home">
@@ -41,43 +63,43 @@ export default async function Home() {
         <p className="fb-hero__eyebrow">flatbread // documentation</p>
 
         <h1 className="fb-hero__title">
-          <Decode text="Relational content" />
-          <br />
-          <span className="fb-hero__title-soft">
-            <Decode text="from files in Git" duration={1.1} />
-          </span>
-          <Cursor />
+          Build a typed content graph in about 5 minutes
         </h1>
 
         <p className="fb-hero__lede">
-          <SplitText
-            by="word"
-            stagger={0.02}
-            delay={0.5}
-            text="Flatbread reads flat files and hands your app a typed graph. Collections hold records, refs link them, and GraphQL is one way to read the result — not the whole product."
-          />
+          Flatbread turns files in Git into a typed relational graph. Start with
+          app content, or use the same engine to keep coding-agent memory in
+          your repository.
         </p>
 
         <div className="fb-hero__actions">
-          <Link href="/docs/positioning/" className="fb-cta">
-            [read: what Flatbread is]
+          <Link
+            href="/reference/flatbread/#quickstart-posts-authors-and-tags"
+            className="fb-cta"
+          >
+            [start: 5-minute content graph]
           </Link>
-          <Link href="/reference/flatbread/" className="fb-cta fb-cta--quiet">
-            [reference: flatbread]
+          <Link href="/reference/proof/" className="fb-cta fb-cta--quiet">
+            [start: agent memory]
           </Link>
         </div>
       </section>
 
-      <Reveal>
-        <Frame
-          label="this site, read by flatbread"
-          note={`${docs.length + packages.length + sections.length} records`}
-        >
-          <p className="fb-note">
-            Nothing here is a copy. The pages are the repository&rsquo;s own
-            Markdown, loaded through the same config any project would write.
-          </p>
+      <Frame
+        label="this site"
+        note={`${docs.length + packages.length + sections.length} records`}
+      >
+        <p className="fb-note">
+          These pages are the repository&rsquo;s own Markdown, loaded through
+          the same config any project would write.
+        </p>
 
+        <div
+          className="fb-table-scroll"
+          role="region"
+          aria-label="Content collections"
+          tabIndex={0}
+        >
           <table className="fb-table">
             <thead>
               <tr>
@@ -99,47 +121,49 @@ export default async function Home() {
               ))}
             </tbody>
           </table>
-        </Frame>
-      </Reveal>
+        </div>
+      </Frame>
 
       <div className="fb-cards">
-        {sections.map((section, index) => (
-          <Reveal key={section.id} delay={index * 0.05}>
-            <Frame label={section.title} className="fb-card">
-              <p className="fb-note">{section.blurb}</p>
-              <ul className="fb-card__links">
-                {docs
-                  .filter((doc) => doc.sectionId === section.id)
-                  .map((doc) => (
-                    <li key={doc.id}>
-                      <Link href={`/docs/${doc.id}/`}>
-                        <span aria-hidden>→ </span>
-                        {doc.title}
-                      </Link>
-                      <p>{doc.summary}</p>
-                    </li>
-                  ))}
-              </ul>
-            </Frame>
-          </Reveal>
+        {sections.map((section) => (
+          <Frame key={section.id} label={section.title} className="fb-card">
+            <p className="fb-note">{section.blurb}</p>
+            <ul className="fb-card__links">
+              {docs
+                .filter((doc) => doc.sectionId === section.id)
+                .map((doc) => (
+                  <li key={doc.id}>
+                    <Link href={`/docs/${doc.id}/`}>
+                      <span aria-hidden>→ </span>
+                      {doc.title}
+                    </Link>
+                    <p>{doc.summary}</p>
+                  </li>
+                ))}
+            </ul>
+          </Frame>
         ))}
       </div>
 
-      <Reveal>
-        <Frame label="packages" note={`${packages.length}`}>
-          <p className="fb-note">
-            Each page below is a package README. Publish a change to the README
-            and the page changes with it.
-          </p>
-          <ul className="fb-chips">
-            {packages.map((entry) => (
-              <li key={entry.id}>
-                <Link href={`/reference/${entry.id}/`}>{entry.id}</Link>
-              </li>
-            ))}
-          </ul>
-        </Frame>
-      </Reveal>
+      <Frame label="packages" note={`${packages.length}`}>
+        <p className="fb-note">
+          Pick one group. Each page is the package README itself.
+        </p>
+        <div className="fb-package-groups">
+          {packageGroups.map((group) => (
+            <section key={group.name}>
+              <h3>{group.name}</h3>
+              <ul className="fb-chips">
+                {group.packages.map((entry) => (
+                  <li key={entry.id}>
+                    <Link href={`/reference/${entry.id}/`}>{entry.id}</Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      </Frame>
     </div>
   );
 }

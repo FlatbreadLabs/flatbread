@@ -5,6 +5,7 @@ shared:
     - author = tonyketcham
     - check-success = build (20.x, ubuntu-latest)
     - check-success = build (22.x, ubuntu-latest)
+    - check-success = docs-site (22.x)
     - check-success = integration-nextjs (20.x, macos-latest)
     - check-success = integration-nextjs (20.x, ubuntu-latest)
     - check-success = integration-nextjs (20.x, windows-latest)

@@ -49,19 +49,30 @@ export async function query<TData, TVariables>(
     cache,
   });
 
+  let result: GraphQLResponse<TData> | undefined;
+  try {
+    result = (await response.json()) as GraphQLResponse<TData>;
+  } catch {
+    // Some transport failures have an empty or non-JSON body. Keep the useful
+    // status and endpoint in that case instead of replacing them with a JSON
+    // parse error.
+  }
+
+  if (result?.errors?.length) {
+    const details = result.errors.map((error) => error.message).join('\n');
+    const status = response.ok
+      ? ''
+      : `Flatbread answered ${response.status} for a query:\n`;
+    throw new Error(`${status}${details}`);
+  }
+
   if (!response.ok) {
     throw new Error(
       `Flatbread answered ${response.status} for a query. Is \`flatbread start\` running on ${graphqlOrigin}?`
     );
   }
 
-  const result = (await response.json()) as GraphQLResponse<TData>;
-
-  if (result.errors?.length) {
-    throw new Error(result.errors.map((error) => error.message).join('\n'));
-  }
-
-  if (!result.data) {
+  if (!result?.data) {
     throw new Error('Flatbread returned no data.');
   }
 

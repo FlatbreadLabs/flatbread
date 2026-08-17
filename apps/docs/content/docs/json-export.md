@@ -10,22 +10,53 @@ related:
 
 # Snapshot export
 
-Snapshot exports are part of Flatbread's data ownership story: they turn the
-same repo-backed content graph into portable review artifacts. See
-[data ownership and exit story](./data-ownership.md) for how raw files, Git
-history, JSON/CSV exports, GraphQL introspection, and generated types fit
-together.
+**Next action (1 minute): choose the output that matches the job.**
 
-`@flatbread/core` exposes `exportCollectionsAsJson(configResult, options)` for
-stable collection snapshots and `exportCollectionsAsCsv(configResult, options)`
-for flat collection views. They are currently API surfaces rather than CLI
-commands.
+- Choose [JSON](#create-a-json-snapshot) for nested, reviewable collection
+  snapshots.
+- Choose [CSV](#csv-flat-views) for scalar fields and relation IDs in a
+  spreadsheet.
 
-## What stays the same
+These are API calls, not CLI commands. See the
+[data ownership and exit story](./data-ownership.md) for the other exit paths.
+
+## Create a JSON snapshot
+
+Allow about 10 minutes if your Flatbread config already loads.
+
+1. Create `scripts/export-content.mjs` in your project.
+2. Paste this code and change the collection names:
+
+   ```js
+   import { exportCollectionsAsJson } from '@flatbread/core';
+   import { loadConfig } from '@flatbread/config';
+
+   const configResult = await loadConfig({ cwd: process.cwd() });
+   const snapshot = await exportCollectionsAsJson(configResult, {
+     collections: ['Post', 'Author'],
+     pathRoot: process.cwd(),
+   });
+
+   console.log(JSON.stringify(snapshot, null, 2));
+   ```
+
+3. Write the snapshot to a file:
+
+   ```bash
+   node scripts/export-content.mjs > flatbread-snapshot.json
+   ```
+
+Success: `flatbread-snapshot.json` contains one JSON object whose keys are the
+selected collection names.
+
+## Stable ordering
 
 - Selected collection names are sorted by Unicode codepoint order.
 - Records are sorted by normalized record ID.
 - Object keys are sorted recursively by Unicode codepoint order.
+
+## Stable IDs and source details
+
 - Record IDs and configured relation fields use Flatbread's normalized ID
   semantics.
 - `_path` is emitted relative to `options.pathRoot` (default:
@@ -34,42 +65,29 @@ commands.
 - ID and reference validation runs before export output is returned, so broken
   refs and duplicate IDs fail the same way they fail schema generation.
 
-## Example
-
-```ts
-import { exportCollectionsAsJson } from '@flatbread/core';
-import { loadConfig } from '@flatbread/config';
-
-const configResult = await loadConfig({ cwd: process.cwd() });
-const snapshot = await exportCollectionsAsJson(configResult, {
-  collections: ['Post', 'Author'],
-  pathRoot: process.cwd(),
-});
-
-console.log(JSON.stringify(snapshot, null, 2));
-```
-
 ## Current scope
 
 - JSON export is read-only; it does not mutate source files.
 - Relation values are exported as normalized IDs, not expanded nested records.
 - Source metadata is included today so snapshots are actionable during review.
-  A future option may strip `_path` / `_filename` for content-only diffs.
 
 ## CSV flat views
 
 CSV export is intentionally a flat view over the same validated JSON snapshot:
 
-- scalar fields become columns;
-- scalar arrays and relation-id arrays are joined with `;` by default;
-- relation fields remain normalized reference IDs rather than expanded records;
-- nested objects such as `_content` are omitted because they do not yet have a
+- Scalar fields become columns.
+- Scalar arrays and relation-ID arrays are joined with `;` by default.
+- Relation fields stay as normalized IDs instead of expanded records.
+- Nested objects such as `_content` are omitted because they do not yet have a
   stable flat representation.
-- the delimiter defaults to `,`; `;` and tab are also supported;
-- joined array/relation values default to `;`, configurable with
+
+Delimiter controls:
+
+- The delimiter defaults to `,`; `;` and tab are also supported.
+- Joined array and relation values default to `;`, configurable with
   `relationSeparator`.
 
-```ts
+```js
 import { exportCollectionsAsCsv } from '@flatbread/core';
 
 const csv = await exportCollectionsAsCsv(configResult, {
@@ -87,3 +105,5 @@ Example output:
 id,_filename,_path,_slug,author,authors,tags,title
 known-post,known-post.md,content/posts/known-post.md,known-post,known-author,known-author,known-tag,Post With Resolved Refs
 ```
+
+Next: create `scripts/export-content.mjs`; that takes under 2 minutes.

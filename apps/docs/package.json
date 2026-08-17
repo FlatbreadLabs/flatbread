@@ -7,20 +7,24 @@
   "scripts": {
     "dev": "flatbread start --watch -- next dev --turbopack",
     "build": "flatbread start -- next build",
-    "prebuild": "node scripts/check-links.mjs",
+    "prebuild": "pnpm check",
+    "postbuild": "node scripts/check-export.mjs",
     "codegen": "flatbread codegen",
     "codegen:watch": "flatbread codegen --watch",
+    "check:codegen": "flatbread codegen && git diff --exit-code HEAD -- generated/graphql.ts",
     "check:links": "node scripts/check-links.mjs",
+    "check:content": "flatbread start -- node scripts/check-content-parity.mjs",
+    "check": "pnpm check:links && pnpm check:content && pnpm check:codegen",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "serve": "npx --yes serve out"
   },
   "dependencies": {
     "@graphql-typed-document-node/core": "^3.2.0",
     "graphql": "^16.11.0",
-    "motion": "^13.1.0",
-    "next": "15.4.4",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "next": "15.5.23",
+    "react": "19.1.9",
+    "react-dom": "19.1.9"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.11",

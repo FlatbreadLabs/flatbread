@@ -10,10 +10,11 @@ related:
 
 # Data ownership and exit story
 
-Flatbread's portability story starts with a simple constraint: **your flat files
-remain the source of truth**. Markdown, YAML, and any other source files live in
-your repository, move through normal Git workflows, and can be reviewed without
-a hosted dashboard.
+**Next action (2 minutes): choose an exit path from the two tables below.**
+
+Your flat files remain the source of truth. Markdown, YAML, and other source
+files stay in the repository, move through normal Git workflows, and remain
+readable without a hosted dashboard.
 
 ## What you own
 
@@ -28,20 +29,26 @@ a hosted dashboard.
   read helpers are Flatbread runtime helpers; operation types and snapshots are
   the more portable exit artifacts.
 
-## Exit paths
+## Take the content elsewhere
 
-| Surface               | What it gives you                                                                | Exit use                                                                         |
-| --------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Raw files             | Original Markdown/YAML content and frontmatter                                   | Move to another static/content pipeline without export first                     |
-| Git history           | Reviewable content lineage                                                       | Audit, revert, or migrate by commit range                                        |
-| JSON snapshots        | Stable collection records with normalized IDs/refs                               | Feed another app, script, archive, or migration                                  |
-| CSV flat views        | Spreadsheet-friendly scalar fields and reference IDs; nested objects are omitted | Review simple collections, hand off to non-developers, seed tabular tools        |
-| GraphQL introspection | The generated read schema                                                        | Discover API shape or generate external clients while Flatbread serves the graph |
-| Generated TypeScript  | Operation types and model helper types                                           | Preserve typed query/result contracts while changing framework integration       |
+| Surface        | What it gives you                                                                | Exit use                                                                  |
+| -------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Raw files      | Original Markdown/YAML content and frontmatter                                   | Move to another static/content pipeline without export first              |
+| Git history    | Reviewable content lineage                                                       | Audit, revert, or migrate by commit range                                 |
+| JSON snapshots | Stable collection records with normalized IDs/refs                               | Feed another app, script, archive, or migration                           |
+| CSV flat views | Spreadsheet-friendly scalar fields and reference IDs; nested objects are omitted | Review simple collections, hand off to non-developers, seed tabular tools |
+
+## Preserve read contracts
+
+| Surface               | What it gives you                      | Exit use                                                                         |
+| --------------------- | -------------------------------------- | -------------------------------------------------------------------------------- |
+| GraphQL introspection | The generated read schema              | Discover API shape or generate external clients while Flatbread serves the graph |
+| Generated TypeScript  | Operation types and model helper types | Preserve typed query/result contracts while changing framework integration       |
 
 ## JSON and CSV exports
 
-`@flatbread/core` currently exposes export APIs:
+If your config already loads, adding an export call takes about 10 minutes.
+`@flatbread/core` exposes these APIs:
 
 ```ts
 import {
@@ -62,8 +69,7 @@ const csv = await exportCollectionsAsCsv(configResult, {
 ```
 
 Both exports validate the content graph before returning output. Broken refs or
-duplicate IDs fail before snapshots are produced, which keeps the export story
-aligned with Flatbread's relational integrity work.
+duplicate IDs stop the export before it creates a snapshot.
 
 See [snapshot export docs](./json-export.md) for sort order, path behavior,
 relation handling, and CSV flattening details.
@@ -76,10 +82,9 @@ Flatbread server is running, standard GraphQL tooling can introspect
 GraphQL documents and generated TypeScript operation types are useful migration
 artifacts because they show the read shapes your app depended on.
 
-If you leave Flatbread, the prototype generated read API should be treated as a
-convenience wrapper to replace or reimplement; the raw files, JSON/CSV
-snapshots, GraphQL operation documents, and operation result types are the more
-durable exit surfaces.
+If you leave Flatbread, replace or reimplement the prototype generated read
+API. The durable exit surfaces are the raw files, JSON/CSV snapshots, GraphQL
+operation documents, and operation result types.
 
 ## What Flatbread does not lock in
 
@@ -97,5 +102,7 @@ durable exit surfaces.
   exported as reference IDs rather than expanded records.
 - Generated TypeScript read helpers execute through the GraphQL layer today.
 - Live content/config reload is available through `flatbread start --watch`;
-  package-code changes still require their own rebuild or restart. See
-  [local dev loop boundaries](./local-dev-loop.md).
+  package-code changes still require their own rebuild or restart.
+
+Next: open the [local dev loop boundaries](./local-dev-loop.md) and check which
+changes need a restart.

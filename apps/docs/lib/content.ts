@@ -7,6 +7,7 @@ import {
   SearchCorpusDocument,
 } from '../generated/graphql';
 import { query } from './graphql';
+import { normalizeSearchText } from './search';
 
 /**
  * Every field Flatbread generates is nullable, because a field only exists in
@@ -101,51 +102,52 @@ function expectRecords<T>(
   return records;
 }
 
+function requireText(
+  collection: string,
+  row: number | string,
+  field: string,
+  value: unknown
+): string {
+  if (typeof value === 'string' && value.trim().length > 0) return value;
+  throw new Error(
+    `Flatbread returned an invalid \`${collection}\` record (${row}): \`${field}\` is missing. Fix the source file or collection query before building the docs site.`
+  );
+}
+
 export const getSections = once(async (): Promise<Section[]> => {
   const data = await query(AllSectionsDocument);
-  return expectRecords('allSections', data.allSections ?? []).flatMap(
-    (section) =>
-      section?.id && section.title
-        ? [
-            {
-              id: section.id,
-              title: section.title,
-              order: section.order ?? 0,
-              blurb: section.blurb ?? '',
-            },
-          ]
-        : []
-  );
+  const sections = expectRecords('allSections', data.allSections ?? []);
+  return sections.map((section, index) => ({
+    id: requireText('allSections', index, 'id', section?.id),
+    title: requireText('allSections', index, 'title', section?.title),
+    order: section?.order ?? 0,
+    blurb: section?.blurb ?? '',
+  }));
 });
 
 export const getDocs = once(async (): Promise<DocSummary[]> => {
   const data = await query(AllDocsDocument);
-  return expectRecords('allDocs', data.allDocs ?? []).flatMap((doc) =>
-    doc?.id && doc.title
-      ? [
-          {
-            id: doc.id,
-            title: doc.title,
-            summary: doc.summary ?? '',
-            order: doc.order ?? 0,
-            sectionId: doc.section?.id ?? '',
-          },
-        ]
-      : []
-  );
+  const docs = expectRecords('allDocs', data.allDocs ?? []);
+  return docs.map((doc, index) => ({
+    id: requireText('allDocs', index, 'id', doc?.id),
+    title: requireText('allDocs', index, 'title', doc?.title),
+    summary: doc?.summary ?? '',
+    order: doc?.order ?? 0,
+    sectionId: requireText('allDocs', index, 'section.id', doc?.section?.id),
+  }));
 });
 
 export async function getDoc(id: string): Promise<DocPage | undefined> {
   const data = await query(DocByIdDocument, { id });
   const doc = data.Doc;
-  if (!doc?.id || !doc.title) return undefined;
+  if (!doc) return undefined;
 
   return {
-    id: doc.id,
-    title: doc.title,
+    id: requireText('Doc', id, 'id', doc.id),
+    title: requireText('Doc', id, 'title', doc.title),
     summary: doc.summary ?? '',
-    sectionId: doc.section?.id ?? '',
-    sectionTitle: doc.section?.title ?? '',
+    sectionId: requireText('Doc', id, 'section.id', doc.section?.id),
+    sectionTitle: requireText('Doc', id, 'section.title', doc.section?.title),
     related: (doc.related ?? []).flatMap((related) =>
       related?.id && related.title
         ? [
@@ -157,34 +159,29 @@ export async function getDoc(id: string): Promise<DocPage | undefined> {
           ]
         : []
     ),
-    html: doc._content?.html ?? '',
+    html: requireText('Doc', id, '_content.html', doc._content?.html),
     timeToRead: doc._content?.timeToRead ?? 0,
   };
 }
 
 export const getPackages = once(async (): Promise<PackageSummary[]> => {
   const data = await query(AllPackagesDocument);
-  return expectRecords('allPackages', data.allPackages ?? []).flatMap((entry) =>
-    entry?.id
-      ? [
-          {
-            id: entry.id,
-            excerpt: entry._content?.excerpt ?? '',
-            timeToRead: entry._content?.timeToRead ?? 0,
-          },
-        ]
-      : []
-  );
+  const packages = expectRecords('allPackages', data.allPackages ?? []);
+  return packages.map((entry, index) => ({
+    id: requireText('allPackages', index, 'id', entry?.id),
+    excerpt: entry?._content?.excerpt ?? '',
+    timeToRead: entry?._content?.timeToRead ?? 0,
+  }));
 });
 
 export async function getPackage(id: string): Promise<PackagePage | undefined> {
   const data = await query(PackageByIdDocument, { id });
   const entry = data.Package;
-  if (!entry?.id) return undefined;
+  if (!entry) return undefined;
 
   return {
-    id: entry.id,
-    html: entry._content?.html ?? '',
+    id: requireText('Package', id, 'id', entry.id),
+    html: requireText('Package', id, '_content.html', entry._content?.html),
     timeToRead: entry._content?.timeToRead ?? 0,
   };
 }
@@ -196,55 +193,82 @@ export async function getPackage(id: string): Promise<PackagePage | undefined> {
 export const getSearchEntries = once(async (): Promise<SearchEntry[]> => {
   const data = await query(SearchCorpusDocument);
 
-  const guides = expectRecords('allDocs', data.allDocs ?? []).flatMap((doc) =>
-    doc?.id && doc.title
-      ? [
-          {
-            id: doc.id,
-            title: doc.title,
-            href: `/docs/${doc.id}/`,
-            kind: 'guide' as const,
-            group: doc.section?.title ?? 'Guides',
-            summary: doc.summary ?? '',
-            body: condense(doc._content?.raw ?? ''),
-          },
-        ]
-      : []
+  const guides = expectRecords('allDocs', data.allDocs ?? []).map(
+    (doc, index) => {
+      const id = requireText('allDocs', index, 'id', doc?.id);
+      const raw = requireText(
+        'allDocs',
+        index,
+        '_content.raw',
+        doc?._content?.raw
+      );
+      return {
+        id,
+        title: requireText('allDocs', index, 'title', doc?.title),
+        href: `/docs/${id}/`,
+        kind: 'guide' as const,
+        group: requireText(
+          'allDocs',
+          index,
+          'section.title',
+          doc?.section?.title
+        ),
+        summary: doc?.summary ?? '',
+        body: condense(raw),
+      };
+    }
   );
 
-  const packages = expectRecords('allPackages', data.allPackages ?? []).flatMap(
-    (entry) =>
-      entry?.id
-        ? [
-            {
-              id: entry.id,
-              title: entry.id,
-              href: `/reference/${entry.id}/`,
-              kind: 'package' as const,
-              group: 'Reference',
-              summary: firstSentence(entry._content?.raw ?? ''),
-              body: condense(entry._content?.raw ?? ''),
-            },
-          ]
-        : []
+  const packages = expectRecords('allPackages', data.allPackages ?? []).map(
+    (entry, index) => {
+      const id = requireText('allPackages', index, 'id', entry?.id);
+      const raw = requireText(
+        'allPackages',
+        index,
+        '_content.raw',
+        entry?._content?.raw
+      );
+      return {
+        id,
+        title: id,
+        href: `/reference/${id}/`,
+        kind: 'package' as const,
+        group: 'Reference',
+        summary: firstSentence(raw),
+        body: condense(raw),
+      };
+    }
   );
 
   return [...guides, ...packages];
 });
 
-/** Strip markdown noise and clamp the body so the index stays small. */
+/** Strip markdown noise before the browser scores the complete page. */
 function condense(raw: string): string {
+  return normalizeSearchText(stripMarkup(raw));
+}
+
+function stripMarkup(raw: string): string {
   return raw
-    .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/[#>*_`|\-]+/g, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/```[^\r\n]*\r?\n([\s\S]*?)```/g, ' $1 ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/&(?:#\d+|#x[\dA-Fa-f]+|[A-Za-z][A-Za-z0-9]+);/g, ' ')
+    .replace(/[#>*`|]+/g, ' ')
     .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 4000);
+    .trim();
 }
 
 function firstSentence(raw: string): string {
-  const text = condense(raw);
-  const stop = text.indexOf('. ');
-  return stop === -1 ? text.slice(0, 160) : text.slice(0, stop + 1);
+  const text = stripMarkup(raw);
+  const stop = /[.!?](?:\s|$)/.exec(text);
+  const sentence = stop ? text.slice(0, stop.index + 1) : text;
+  return truncate(sentence, 160);
+}
+
+function truncate(value: string, limit: number): string {
+  if (value.length <= limit) return value;
+  return `${value.slice(0, limit - 1).trimEnd()}…`;
 }

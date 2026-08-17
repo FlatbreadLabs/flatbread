@@ -33,7 +33,7 @@ export function Frame({ label, note, className, children }: FrameProps) {
         ┘
       </span>
 
-      {label ? <p className="fb-frame__label">{label}</p> : null}
+      {label ? <h2 className="fb-frame__label">{label}</h2> : null}
       {note ? <p className="fb-frame__note">{note}</p> : null}
 
       <div className="fb-frame__body">{children}</div>

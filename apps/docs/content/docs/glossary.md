@@ -10,73 +10,121 @@ related:
 
 # Flatbread glossary — relational content primitives
 
-This page defines words used by Flatbread. Flatbread turns files in your
-repository into related data that your TypeScript app can read. It is **not** a
-hosted CMS, a full writing product, or a general-purpose database.
+**Next action (2 minutes): read [Collection](#collection), [Record](#record),
+and [Relation](#relation) first.**
 
-**[GraphQL](https://graphql.org/)** is often the default way to query the data,
-but it is only one option.
+Flatbread turns repository files into related data that a TypeScript app can
+read. It is not a hosted CMS, a writing interface, or a general-purpose
+database. [GraphQL](https://graphql.org/) is one read interface, not the
+definition of Flatbread.
 
-See also: [Flatbread positioning](./positioning.md) and
-[Comparing Flatbread with other tools](./pmf-decision-rubric.md).
-
----
-
-### Cardinality
-
-How many related items a field connects—whether a relation resolves to **one** related entry or **many** (for example, a single author versus a list of tag strings on a post). Cardinality shapes how the graph is exposed to your app (including generated GraphQL fields); it does **not** imply a SQL-style database engine.
-
-Flatbread supports these relation shapes:
-
-- **One-to-one:** a `refs` field whose content value is a single ID (`author: 2a3e`) resolves to one related record.
-- **One-to-many:** a `refs` field whose content value is a list of IDs (`authors: [2a3e, 40s3]`) resolves to a list of related records.
-- **Many-to-many:** model each side as one-to-many lists when both collections need to point at each other; Flatbread does not infer a hidden join table or reciprocal edge.
-- **Unsupported / invalid:** booleans, objects, nested arrays, and other non-ID shapes in a `refs` field fail validation before schema use instead of silently resolving to `null`.
-
-### Tag (facet) vs `Tag` collection
-
-A **facet** is metadata stored on a record (often a **YAML list of strings** such as `tags: [a, b]` on a post). It becomes a **scalar list** in the read interface and is **not** the same as **`refs`** resolving to another collection. A **`Tag` collection** means one file per tag (or equivalent) and **`refs`** from **`Post`** → **`Tag`** so tag entries are **normalized records** in the graph—use that when tags need shared descriptions, stable ids, or relational edges of their own.
+## Core model
 
 ### Collection
 
-A **named group** of content of the same kind, declared in your Flatbread config and usually mapped to a folder of source files (for example, all posts under `content/posts`). A collection is a **modeling unit** over files in Git, not a database table or a hosted content bucket.
-
-### ID
-
-An identifier Flatbread uses to **point at one item within a collection** so relations can resolve. Today, Flatbread expects loaded entries to expose an `id`-shaped value that query arguments and `refs` can compare against; future ID work should keep that rule explicit across files, generated types, and query interfaces. IDs wire the graph together **in the repository**; they are not a centralized “primary key service” like a server database would provide.
-
-Current normalization rule: IDs may be **non-empty strings** or **finite numbers**. Flatbread compares record lookup arguments through a normalized string form, so a record with `id: 123`, a GraphQL argument `id: "123"`, and a GraphQL `ID` integer literal `id: 123` refer to the same record. Top-level equality and membership filters on a collection record’s `id` use the same normalized comparison; ordered filters (`lt`, `gt`, etc.) continue to use normal scalar comparison and should not be treated as stable ID semantics. String IDs are trimmed before comparison, so `id: " 123 "` normalizes to `"123"`. Empty strings, `null`, `undefined`, booleans, objects, `NaN`, and infinite numbers are rejected as invalid record IDs; if more than one record is invalid, Flatbread reports the invalid IDs together. Duplicate IDs after normalization (for example `123` and `"123"` in the same collection) are invalid because they would otherwise resolve inconsistently.
-
-### Query interface
-
-The way your application reads Flatbread data. In many projects today, that is
-**GraphQL**: a schema and operations, often with codegen. GraphQL is one way to
-read the data, not the definition of Flatbread.
-
-### Generated schema and operation types (GraphQL)
-
-When GraphQL is your **query interface**, the **generated GraphQL schema** describes how **collections** and fields are exposed at read time: list fields such as `allPosts` / `allAuthors` correspond to **collections**; nested selections follow **`refs`** (**relations**) and resolve to related **records**; scalar list fields that come from frontmatter (for example **`tags`** on a post) align with **Tag (facet)** in this glossary—not a **`Tag` collection** unless you add one.
-
-**Generated TypeScript** from GraphQL document codegen (for example, an
-operation result type such as `GetPostsAuthorsAndTagsQuery`) types that way of
-reading data only. Records and relations still come from repository files and
-config. Any future generated TypeScript reader without GraphQL would be
-documented separately.
+A **collection** is a named group of content of the same kind. The Flatbread
+config usually maps it to a folder, such as `content/posts`. A collection is a
+model over files in Git, not a database table or hosted content bucket.
 
 ### Record
 
-**One loaded item** in a collection: the structured result of reading a file (metadata, body, derived fields) that your app treats as a single unit. “Record” here means **a document-shaped object in memory**, not a row in a remote database.
+A **record** is one loaded item in a collection. It is the document-shaped
+result of reading a file: metadata, body, and derived fields. It is not a row
+in a remote database.
 
-### Reading records
+### ID
 
-Flatbread reads source files into records and adds source details such as
-`_path` and `_filename`. It then checks records and decides which configured
-content path owns each file.
+An **ID** points to one record in a collection so relations can resolve. IDs
+connect the graph inside the repository; they are not a remote primary-key
+service.
+
+Current rules:
+
+- Valid IDs are non-empty strings or finite numbers.
+- String IDs are trimmed; `id: " 123 "` normalizes to `"123"`.
+- Record lookups, `refs`, equality filters, and membership filters compare the
+  normalized string form. A record ID `123` matches GraphQL ID `"123"` or
+  integer literal `123`. Ordered filters such as `lt` and `gt` keep normal
+  scalar comparison.
+- Empty strings, `null`, `undefined`, booleans, objects, `NaN`, and infinite
+  numbers are invalid IDs.
+- Flatbread reports multiple invalid IDs together and rejects duplicates after
+  normalization, such as `123` and `"123"` in one collection.
 
 ### Relation
 
-A **configured link** from entries in one collection to another (for example, `refs` in config mapping a post field to an `Author` collection). Relations express **associations between flat-file content**, not foreign keys managed by a separate database server.
+A **relation** is a configured link from one collection to another. For
+example, `refs` can map a post's `author` field to the `Author` collection.
+Relations connect flat-file records; a database server does not manage them.
+
+### Cardinality
+
+**Cardinality** says whether a relation resolves to one record or many. It
+changes the generated read shape but does not imply a SQL database.
+
+- **One-to-one:** one ID, such as `author: 2a3e`, resolves to one record.
+- **One-to-many:** an ID list, such as `authors: [2a3e, 40s3]`, resolves to a
+  record list.
+- **Many-to-many:** each collection stores its own ID list; Flatbread does not
+  infer a hidden join table or reciprocal edge.
+- **Invalid:** booleans, objects, nested arrays, and other non-ID shapes fail
+  validation before schema use instead of resolving to `null`.
+
+## Files into records
+
+### Source
+
+A **source** plugin finds and loads input files. The configured content paths
+tell it which files belong to each collection.
+
+### Transformer
+
+A **transformer** plugin parses a loaded file into fields that Flatbread can
+store on a record. Markdown and YAML transformers turn file content into the
+same collection model.
+
+### Reading records
+
+Flatbread reads source files into records and adds details such as `_path` and
+`_filename`. It validates the records and decides which configured content path
+owns each file.
+
+### Tag (facet) vs `Tag` collection
+
+A **facet** is metadata on a record. For example, `tags: [a, b]` becomes a
+scalar list in the read interface.
+
+A **`Tag` collection** stores one record per tag. Use `refs` from `Post` to
+`Tag` when tags need shared descriptions, stable IDs, or relations of their
+own.
+
+## Read interfaces and checks
+
+### Query interface
+
+A **query interface** is how the app reads Flatbread data. Many projects use a
+GraphQL schema and operations with codegen. GraphQL reads the model; it does
+not define the model.
+
+### Generated schema and operation types (GraphQL)
+
+The generated GraphQL schema exposes collections as fields such as `allPosts`
+and `allAuthors`. Nested selections follow `refs` and return related records.
+Frontmatter lists such as `tags` stay scalar lists unless you model a separate
+`Tag` collection.
+
+GraphQL document codegen can produce TypeScript operation results such as
+`GetPostsAuthorsAndTagsQuery`. Those types describe one read interface. The
+records and relations still come from repository files and config.
 
 ### Validation
 
-Checks that your **Flatbread configuration, plugin wiring, and loaded content graph** are consistent enough to read safely. Near-term validation work should make broken references, duplicate IDs, and unsupported relation shapes clear before they become query-time surprises. This is still scoped to Flatbread’s content graph; it is not a promise of every database constraint or every editorial rule a CMS might enforce.
+**Validation** checks that the Flatbread config, plugin wiring, IDs, refs, and
+loaded graph are consistent enough to read. It reports broken references,
+duplicate IDs, and unsupported relation shapes before schema use. It does not
+promise every database constraint or editorial rule that a CMS could enforce.
+
+For a tool comparison, read [Compared with other tools](./pmf-decision-rubric.md).
+
+Next: open [Flatbread positioning](./positioning.md) and read “What Flatbread
+is.”

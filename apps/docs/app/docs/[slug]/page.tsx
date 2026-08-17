@@ -5,7 +5,6 @@ import { notFound } from 'next/navigation';
 import { getDoc, getDocs } from '../../../lib/content';
 import { tableOfContents } from '../../../lib/toc';
 import { Frame } from '../../components/ascii/Frame';
-import { SplitText } from '../../components/motion/SplitText';
 import { Toc } from '../../components/nav/Toc';
 import { CodeCopy } from '../../components/prose/CodeCopy';
 
@@ -53,9 +52,7 @@ export default async function DocPage({
             </span>
           </p>
 
-          <h1 className="fb-page__title">
-            <SplitText text={doc.title} by="char" />
-          </h1>
+          <h1 className="fb-page__title">{doc.title}</h1>
 
           {doc.summary ? (
             <p className="fb-page__summary">{doc.summary}</p>

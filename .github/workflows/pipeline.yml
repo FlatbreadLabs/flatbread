@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   FLATBREAD_CI: true
@@ -49,6 +49,9 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Audit production dependencies
+        run: pnpm audit:prod
 
       - name: Check canonical skill projection
         run: pnpm skills:check
@@ -191,6 +194,9 @@ jobs:
       matrix:
         node-version: [22.x]
 
+    env:
+      NEXT_PUBLIC_BASE_PATH: /flatbread
+
     steps:
       - uses: actions/checkout@v4
 
@@ -210,5 +216,42 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/pnpm-install
 
+      - name: Build packages
+        run: pnpm build
+
+      - name: Typecheck the docs site
+        run: pnpm docs:typecheck
+
       - name: Build the docs site
-        run: pnpm build && pnpm --dir apps/docs build
+        run: pnpm --dir apps/docs build
+
+      - name: Upload the static site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: apps/docs/out
+
+  deploy-docs:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - build
+      - lint
+      - test
+      - integration-sveltekit
+      - integration-nextjs
+      - docs-site
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Verify the Pages configuration
+        uses: actions/configure-pages@v5
+
+      - name: Deploy the docs site
+        id: deployment
+        uses: actions/deploy-pages@v4

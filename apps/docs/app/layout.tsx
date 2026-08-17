@@ -2,15 +2,9 @@ import type { Metadata } from 'next';
 import { Geist_Mono } from 'next/font/google';
 import Link from 'next/link';
 
-import {
-  getDocs,
-  getPackages,
-  getSearchEntries,
-  getSections,
-} from '../lib/content';
+import { getDocs, getPackages, getSections } from '../lib/content';
 import { Rule } from './components/ascii/Rule';
 import { ThemeToggle, themeScript } from './components/chrome/ThemeToggle';
-import { PageTransition } from './components/motion/PageTransition';
 import { NavDisclosure } from './components/nav/NavDisclosure';
 import { Sidebar } from './components/nav/Sidebar';
 import { SearchDialog } from './components/search/SearchDialog';
@@ -34,11 +28,10 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [sections, docs, packages, searchEntries] = await Promise.all([
+  const [sections, docs, packages] = await Promise.all([
     getSections(),
     getDocs(),
     getPackages(),
-    getSearchEntries(),
   ]);
 
   return (
@@ -47,7 +40,7 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={mono.variable}>
-        <a href="#content" className="fb-skip">
+        <a href="#main-content" className="fb-skip">
           Skip to content
         </a>
 
@@ -62,7 +55,7 @@ export default async function RootLayout({
             </Link>
 
             <div className="fb-header__actions">
-              <SearchDialog entries={searchEntries} />
+              <SearchDialog />
               <ThemeToggle />
               <a
                 className="fb-button"
@@ -84,8 +77,8 @@ export default async function RootLayout({
             </NavDisclosure>
           </aside>
 
-          <main id="content" className="fb-main">
-            <PageTransition>{children}</PageTransition>
+          <main id="main-content" className="fb-main" tabIndex={-1}>
+            {children}
           </main>
         </div>
 

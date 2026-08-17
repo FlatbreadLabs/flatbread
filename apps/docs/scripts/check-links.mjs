@@ -23,6 +23,7 @@ const defaultNavDir = resolve(app, 'content/nav');
 const defaultReferenceDir = resolve(app, 'content/reference');
 
 const REQUIRED = ['id', 'title', 'section', 'order', 'summary'];
+const REQUIRED_TEXT = new Set(['id', 'title', 'section', 'summary']);
 const LINK = /\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 
 export function collectProblems({
@@ -60,10 +61,36 @@ export function collectProblems({
         problems.push(
           `${rel(path, repoRoot)}: frontmatter is missing \`${key}\``
         );
+        continue;
+      }
+
+      const value = front[key];
+      if (
+        REQUIRED_TEXT.has(key) &&
+        (typeof value !== 'string' || value.trim().length === 0)
+      ) {
+        problems.push(
+          `${rel(
+            path,
+            repoRoot
+          )}: frontmatter \`${key}\` must be a non-empty string`
+        );
+      }
+      if (
+        key === 'order' &&
+        (typeof value !== 'number' || !Number.isFinite(value))
+      ) {
+        problems.push(
+          `${rel(path, repoRoot)}: frontmatter \`order\` must be a number`
+        );
       }
     }
 
-    if (front.id && front.id !== id) {
+    if (
+      typeof front.id === 'string' &&
+      front.id.trim().length > 0 &&
+      front.id !== id
+    ) {
       problems.push(
         `${rel(path, repoRoot)}: frontmatter id \`${
           front.id
@@ -71,7 +98,11 @@ export function collectProblems({
       );
     }
 
-    if (front.section && !sections.has(front.section)) {
+    if (
+      typeof front.section === 'string' &&
+      front.section.trim().length > 0 &&
+      !sections.has(front.section)
+    ) {
       problems.push(
         `${rel(path, repoRoot)}: section \`${
           front.section
@@ -105,7 +136,26 @@ export function collectProblems({
       );
       continue;
     }
-    checkLinks(realpathSync(link), readFileSync(link, 'utf8'), site);
+    const target = realpathSync(link);
+    const targetPath = containedRepoPath(repoRoot, target);
+    const id = name.replace(/\.md$/, '');
+    const expected = `packages/${id}/README.md`;
+    if (!targetPath) {
+      problems.push(
+        `${rel(link, repoRoot)}: symlink target leaves the repository`
+      );
+      continue;
+    }
+    if (targetPath.toLowerCase() !== expected.toLowerCase()) {
+      problems.push(
+        `${rel(
+          link,
+          repoRoot
+        )}: symlink must point to ${expected}, not ${targetPath}`
+      );
+      continue;
+    }
+    checkLinks(target, readFileSync(target, 'utf8'), site);
   }
 
   return problems;
@@ -141,10 +191,18 @@ function checkLinks(path, text, { problems, repoRoot, docsDir }) {
     const [target] = url.split('#');
     if (!target) continue;
 
-    if (!existsSync(resolve(base, target))) {
+    const absolute = resolve(base, target);
+    if (!existsSync(absolute)) {
       problems.push(
         `${rel(path, repoRoot)}: link \`${url}\` points at nothing`
       );
+      continue;
+    }
+    if (!containedRepoPath(repoRoot, absolute)) {
+      problems.push(
+        `${rel(path, repoRoot)}: link \`${url}\` leaves the repository`
+      );
+      continue;
     }
 
     // A link the rewriter cannot pin to one file stays relative on the site,
@@ -188,8 +246,7 @@ export function frontmatter(text) {
     }
 
     listKey = undefined;
-    const value = unquote(pair[2]);
-    data[pair[1]] = /^-?\d+$/.test(value) ? Number(value) : value;
+    data[pair[1]] = scalar(pair[2]);
   }
 
   return data;
@@ -199,8 +256,40 @@ function unquote(value) {
   return value.trim().replace(/^["'](.*)["']$/, '$1');
 }
 
+function scalar(value) {
+  const trimmed = value.trim();
+  const quoted = /^(["'])(.*)\1$/.exec(trimmed);
+  if (quoted) return quoted[2];
+  if (/^(?:null|~)$/i.test(trimmed)) return null;
+  if (/^(?:true|false)$/i.test(trimmed)) return /^true$/i.test(trimmed);
+  if (trimmed === '[]') return [];
+  if (trimmed === '{}') return {};
+  return /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(trimmed)
+    ? Number(trimmed)
+    : trimmed;
+}
+
 function rel(path, repoRoot) {
   return path.startsWith(repoRoot) ? path.slice(repoRoot.length + 1) : path;
+}
+
+function containedRepoPath(repoRoot, path) {
+  try {
+    const root = realpathSync(repoRoot);
+    const target = realpathSync(path);
+    const name = relative(root, target);
+    if (
+      !name ||
+      name === '..' ||
+      name.startsWith(`..${sep}`) ||
+      resolve(root, name) !== target
+    ) {
+      return undefined;
+    }
+    return name.split(sep).join('/');
+  } catch {
+    return undefined;
+  }
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

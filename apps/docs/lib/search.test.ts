@@ -144,4 +144,17 @@ describe('search', () => {
     expect(search(entries, 'graphql')).toHaveLength(1);
     expect(search(entries, 'GRAPHQL')).toHaveLength(1);
   });
+
+  it('normalizes punctuation in queries the same way as the corpus', () => {
+    const entries = [
+      entry({
+        id: 'g',
+        title: 'Runtime flags',
+        body: 'Inspect content or start Next with turbopack.',
+      }),
+    ];
+
+    expect(search(entries, '_content')).toHaveLength(1);
+    expect(search(entries, '--turbopack')).toHaveLength(1);
+  });
 });

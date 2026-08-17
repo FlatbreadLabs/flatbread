@@ -12,6 +12,7 @@ export default defineConfig({
     include: [
       'lib/**/*.test.ts',
       'plugins/**/*.test.mjs',
+      'plugins/**/*.test.ts',
       'scripts/**/*.test.mjs',
     ],
   },

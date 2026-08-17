@@ -3,6 +3,15 @@
 ## Unreleased
 
 - The DAG runner is now `@flatbread/oven` (`pnpm exec oven`); the memory package is now `@flatbread/proof` with the `flatbread proof` CLI.
+- Workspace installs use patched `sharp@0.35.3` below `svimg` and Next.js. The
+  older `sharp` ranges can fall back to a source build that does not recognize
+  Visual Studio 18 after a native download fails. Remove the `svimg` override
+  when Flatbread moves to a release that uses `sharp` 0.35 or newer.
+- The docs site and Next.js example use Next.js 15.5.23 and React 19.1.9. This
+  clears the known critical and high advisories on the versions they replaced.
+- The root development toolchain supports Node 20 from 20.19 onward and Node
+  22 from 22.12 onward. Node 21 and early Node 22 releases are excluded because
+  the locked Vite test toolchain does not support them.
 - `@flatbread/source-filesystem` reads a content directory that does not exist
   as an empty collection instead of throwing `ENOENT`. Git cannot store an
   empty directory, and a Proof write creates only the directory it writes, so

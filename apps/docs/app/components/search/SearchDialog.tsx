@@ -1,34 +1,62 @@
 'use client';
 
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { SearchEntry } from '../../../lib/content';
 import { search } from '../../../lib/search';
-import { Cursor } from '../ascii/Cursor';
 
 /**
  * Find a page by typing. Opens with the slash key, or with ⌘K / Ctrl+K.
  *
- * Every page and README is scored in the browser against the list the build
- * baked in, so there is no request and no index file to keep in step.
+ * Every page and README is scored in the browser against the static index the
+ * build emits. The index is fetched only when search first opens.
  */
-export function SearchDialog({ entries }: { entries: SearchEntry[] }) {
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+
+export function SearchDialog() {
   const router = useRouter();
-  const reduced = useReducedMotion();
+  const [entries, setEntries] = useState<SearchEntry[]>();
+  const [loadError, setLoadError] = useState('');
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [cursor, setCursor] = useState(0);
   const field = useRef<HTMLInputElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const opener = useRef<HTMLButtonElement>(null);
+  const activeHit = useRef<HTMLButtonElement>(null);
+  const previousFocus = useRef<HTMLElement>(null);
+  const requested = useRef(false);
 
-  const hits = useMemo(() => search(entries, input), [entries, input]);
+  const hits = useMemo(() => search(entries ?? [], input), [entries, input]);
 
-  const close = useCallback(() => {
+  const reset = useCallback(() => {
     setOpen(false);
     setInput('');
     setCursor(0);
   }, []);
+
+  const openDialog = useCallback(() => {
+    if (!open) {
+      const focused = document.activeElement;
+      previousFocus.current =
+        focused instanceof HTMLElement && focused !== document.body
+          ? focused
+          : opener.current;
+    }
+    setOpen(true);
+  }, [open]);
+
+  const close = useCallback(() => {
+    if (dialog.current?.open) dialog.current.close();
+    reset();
+    const target = previousFocus.current;
+    previousFocus.current = null;
+    requestAnimationFrame(() => {
+      if (target?.isConnected) target.focus();
+      else opener.current?.focus();
+    });
+  }, [reset]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -41,20 +69,61 @@ export function SearchDialog({ entries }: { entries: SearchEntry[] }) {
         (event.key === '/' && !typing)
       ) {
         event.preventDefault();
-        setOpen(true);
+        openDialog();
         return;
       }
-
-      if (event.key === 'Escape') close();
     };
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [close]);
+  }, [openDialog]);
 
   useEffect(() => {
-    if (open) field.current?.focus();
+    const node = dialog.current;
+    if (!open || !node) return;
+    if (!node.open) node.showModal();
+    field.current?.focus();
+
+    return () => {
+      if (node.open) node.close();
+    };
   }, [open]);
+
+  useEffect(() => {
+    if (!open || entries !== undefined || requested.current) return;
+    requested.current = true;
+    setLoadError('');
+    const controller = new AbortController();
+
+    fetch(`${basePath}/search-index.json`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok)
+          throw new Error(`Search index returned ${response.status}`);
+        return response.json() as Promise<SearchEntry[]>;
+      })
+      .then((nextEntries) => {
+        setLoadError('');
+        setEntries(nextEntries);
+      })
+      .catch((error: unknown) => {
+        requested.current = false;
+        if (error instanceof DOMException && error.name === 'AbortError')
+          return;
+        setLoadError(
+          'Search index failed to load. Reload the page and try again.'
+        );
+      });
+
+    return () => {
+      requested.current = false;
+      controller.abort();
+    };
+  }, [entries, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    activeHit.current?.scrollIntoView({ block: 'nearest' });
+  }, [cursor, hits, open]);
 
   const go = (href: string) => {
     close();
@@ -62,6 +131,7 @@ export function SearchDialog({ entries }: { entries: SearchEntry[] }) {
   };
 
   const onFieldKey = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (hits.length === 0) return;
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       setCursor((index) => Math.min(index + 1, hits.length - 1));
@@ -78,82 +148,110 @@ export function SearchDialog({ entries }: { entries: SearchEntry[] }) {
 
   return (
     <>
-      <button type="button" className="fb-button" onClick={() => setOpen(true)}>
+      <button
+        ref={opener}
+        type="button"
+        className="fb-button"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={openDialog}
+      >
         [search<span className="fb-button__hint"> /</span>]
       </button>
 
-      <AnimatePresence>
-        {open ? (
-          <motion.div
-            className="fb-overlay"
-            initial={reduced ? undefined : { opacity: 0 }}
-            animate={reduced ? undefined : { opacity: 1 }}
-            exit={reduced ? undefined : { opacity: 0 }}
-            transition={{ duration: 0.12 }}
-            onMouseDown={close}
-          >
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              aria-label="Search the documentation"
-              className="fb-search"
-              initial={reduced ? undefined : { opacity: 0, y: -8 }}
-              animate={reduced ? undefined : { opacity: 1, y: 0 }}
-              exit={reduced ? undefined : { opacity: 0, y: -8 }}
-              transition={{ duration: 0.16, ease: [0.2, 0.7, 0.2, 1] }}
-              onMouseDown={(event) => event.stopPropagation()}
+      <dialog
+        ref={dialog}
+        className="fb-overlay"
+        aria-labelledby="docs-search-title"
+        onCancel={(event) => {
+          event.preventDefault();
+          close();
+        }}
+        onClose={reset}
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) close();
+        }}
+      >
+        <div className="fb-search">
+          <div className="fb-search__header">
+            <label className="fb-search__prompt">
+              <span id="docs-search-title" className="fb-sr-only">
+                Search the documentation
+              </span>
+              <span aria-hidden>{'>'}</span>
+              <input
+                ref={field}
+                role="combobox"
+                aria-autocomplete="list"
+                aria-controls="docs-search-results"
+                aria-expanded="true"
+                aria-activedescendant={
+                  hits[cursor] ? `docs-search-hit-${cursor}` : undefined
+                }
+                value={input}
+                onChange={(event) => {
+                  setInput(event.target.value);
+                  setCursor(0);
+                }}
+                onKeyDown={onFieldKey}
+                placeholder="find a page"
+                className="fb-search__field"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </label>
+
+            <button
+              type="button"
+              className="fb-button fb-search__close"
+              onClick={close}
+              aria-label="Close search"
             >
-              <label className="fb-search__prompt">
-                <span aria-hidden>{'>'}</span>
-                <input
-                  ref={field}
-                  value={input}
-                  onChange={(event) => {
-                    setInput(event.target.value);
-                    setCursor(0);
-                  }}
-                  onKeyDown={onFieldKey}
-                  placeholder="find a page"
-                  className="fb-search__field"
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-                {input.length === 0 ? <Cursor /> : null}
-              </label>
+              [close]
+            </button>
+          </div>
 
-              <ul className="fb-search__results">
-                {hits.map((hit, index) => (
-                  <li key={hit.entry.href}>
-                    <button
-                      type="button"
-                      data-active={index === cursor ? '' : undefined}
-                      onMouseEnter={() => setCursor(index)}
-                      onClick={() => go(hit.entry.href)}
-                      className="fb-search__hit"
-                    >
-                      <span className="fb-search__hit-title">
-                        {hit.entry.title}
-                        <span className="fb-search__hit-group">
-                          {hit.entry.group}
-                        </span>
-                      </span>
-                      <span className="fb-search__hit-snippet">
-                        {hit.snippet}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+          <ul
+            id="docs-search-results"
+            className="fb-search__results"
+            role="listbox"
+            aria-label="Search results"
+          >
+            {hits.map((hit, index) => (
+              <li key={hit.entry.href} role="none">
+                <button
+                  ref={index === cursor ? activeHit : undefined}
+                  id={`docs-search-hit-${index}`}
+                  type="button"
+                  role="option"
+                  aria-selected={index === cursor}
+                  data-active={index === cursor ? '' : undefined}
+                  onMouseEnter={() => setCursor(index)}
+                  onClick={() => go(hit.entry.href)}
+                  className="fb-search__hit"
+                >
+                  <span className="fb-search__hit-title">
+                    {hit.entry.title}
+                    <span className="fb-search__hit-group">
+                      {hit.entry.group}
+                    </span>
+                  </span>
+                  <span className="fb-search__hit-snippet">{hit.snippet}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
 
-              <p className="fb-search__footer">
-                {input.length === 0
-                  ? `${entries.length} pages · ↑↓ to move · ↵ to open · esc to close`
-                  : `${hits.length} match${hits.length === 1 ? '' : 'es'}`}
-              </p>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+          <p className="fb-search__footer" role="status" aria-live="polite">
+            {loadError ||
+              (entries === undefined
+                ? 'Loading pages…'
+                : input.length === 0
+                ? `${entries.length} pages · ↑↓ to move · ↵ to open · esc to close`
+                : `${hits.length} match${hits.length === 1 ? '' : 'es'}`)}
+          </p>
+        </div>
+      </dialog>
     </>
   );
 }

@@ -1,4 +1,6 @@
-import { walk } from './walk.mjs';
+import { textOf, walk } from './walk.mjs';
+
+const PAGE_IDS = ['doc-prose', 'main-content'];
 
 /**
  * Give every heading below H1 a stable `id` and a link to itself.
@@ -8,17 +10,20 @@ import { walk } from './walk.mjs';
  */
 export function rehypeHeadingAnchors(options = {}) {
   const depths = options.depths ?? ['h2', 'h3', 'h4'];
+  const reservedIds = [...PAGE_IDS, ...(options.reservedIds ?? [])];
 
   return (tree) => {
-    const used = new Map();
+    const used = new Set(reservedIds.map(String));
 
     walk(tree, (node) => {
       if (node.type !== 'element' || !depths.includes(node.tagName)) return;
 
       node.properties = node.properties ?? {};
-      const id = node.properties.id ?? unique(slug(textOf(node)), used);
+      const text = textOf(node).trim();
+      const id = unique(String(node.properties.id ?? slug(text)), used);
       if (!id) return;
       node.properties.id = id;
+      node.properties['aria-label'] = text;
 
       node.children = [
         {
@@ -27,22 +32,28 @@ export function rehypeHeadingAnchors(options = {}) {
           properties: {
             href: `#${id}`,
             className: ['heading-anchor'],
-            'aria-label': 'Link to this section',
+            'aria-label': `Link to ${text}`,
           },
           children: [{ type: 'text', value: '#' }],
+        },
+        {
+          type: 'element',
+          tagName: 'span',
+          properties: {
+            className: ['heading-marker'],
+            ariaHidden: 'true',
+          },
+          children: [
+            {
+              type: 'text',
+              value: '#'.repeat(Number(node.tagName.slice(1))),
+            },
+          ],
         },
         ...node.children,
       ];
     });
   };
-}
-
-function textOf(node) {
-  let text = '';
-  walk(node, (child) => {
-    if (child.type === 'text') text += child.value ?? '';
-  });
-  return text;
 }
 
 /** Turn heading text into the `id` that `lib/toc.ts` later reads from the HTML. */
@@ -58,9 +69,11 @@ function slug(value) {
 
 function unique(base, used) {
   if (!base) return '';
-  const seen = used.get(base) ?? 0;
-  used.set(base, seen + 1);
-  return seen === 0 ? base : `${base}-${seen}`;
+  let candidate = base;
+  let suffix = 1;
+  while (used.has(candidate)) candidate = `${base}-${suffix++}`;
+  used.add(candidate);
+  return candidate;
 }
 
 export default rehypeHeadingAnchors;

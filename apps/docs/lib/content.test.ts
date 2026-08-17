@@ -1,6 +1,13 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { query } from './graphql';
-import { getDocs, getSections } from './content';
+import {
+  getDoc,
+  getDocs,
+  getPackage,
+  getPackages,
+  getSearchEntries,
+  getSections,
+} from './content';
 
 vi.mock('./graphql', () => ({ query: vi.fn() }));
 
@@ -13,6 +20,7 @@ function docsPayload(title: string) {
         summary: 'Start here',
         order: 1,
         section: { id: 'start', title: 'Start' },
+        _content: { raw: 'Getting started content.' },
       },
     ],
   };
@@ -48,7 +56,89 @@ describe('content readers', () => {
     await expect(getSections()).rejects.toThrow(/allSections/);
   });
 
-  it('drops a doc that is missing a required field', async () => {
+  it('rejects when allPackages is empty', async () => {
+    vi.mocked(query).mockResolvedValueOnce({ allPackages: [] } as never);
+
+    await expect(getPackages()).rejects.toThrow(/allPackages/);
+  });
+
+  it('rejects when every doc is missing a required field', async () => {
+    vi.mocked(query).mockResolvedValueOnce({
+      allDocs: [{ id: null, title: null }, { id: 'missing-title' }],
+    } as never);
+
+    await expect(getDocs()).rejects.toThrow(/allDocs/);
+  });
+
+  it('rejects a search corpus with no valid package rows', async () => {
+    vi.mocked(query).mockResolvedValueOnce({
+      allDocs: docsPayload('Getting started').allDocs,
+      allPackages: [{ id: null }],
+    } as never);
+
+    await expect(getSearchEntries()).rejects.toThrow(/allPackages/);
+  });
+
+  it('rejects a search corpus with an empty package collection', async () => {
+    vi.mocked(query).mockResolvedValueOnce({
+      allDocs: docsPayload('Getting started').allDocs,
+      allPackages: [],
+    } as never);
+
+    await expect(getSearchEntries()).rejects.toThrow(/allPackages/);
+  });
+
+  it('keeps searchable text from the end of a long README', async () => {
+    vi.mocked(query).mockResolvedValueOnce({
+      allDocs: docsPayload('Getting started').allDocs,
+      allPackages: [
+        {
+          id: 'flatbread',
+          _content: {
+            raw: `${'early words '.repeat(
+              500
+            )}fieldNameTransform\n\n\`\`\`sh\nnext dev --turbopack\n\`\`\``,
+          },
+        },
+      ],
+    } as never);
+
+    const entries = await getSearchEntries();
+    expect(entries.find((entry) => entry.id === 'flatbread')?.body).toContain(
+      'fieldNameTransform'
+    );
+    expect(entries.find((entry) => entry.id === 'flatbread')?.body).toContain(
+      'turbopack'
+    );
+  });
+
+  it('removes raw HTML noise and caps package summaries', async () => {
+    vi.mocked(query).mockResolvedValueOnce({
+      allDocs: docsPayload('Getting started').allDocs,
+      allPackages: [
+        {
+          id: 'flatbread',
+          _content: {
+            raw: `${'<p><img src="https://example.test/badge.svg"></p>'.repeat(
+              20
+            )}\n\nFlatbread builds a typed content graph. ${'More detail '.repeat(
+              30
+            )}`,
+          },
+        },
+      ],
+    } as never);
+
+    const entries = await getSearchEntries();
+    const flatbread = entries.find((entry) => entry.id === 'flatbread');
+
+    expect(flatbread?.summary).toBe('Flatbread builds a typed content graph.');
+    expect(flatbread?.summary.length).toBeLessThanOrEqual(160);
+    expect(flatbread?.body).not.toContain('<img');
+    expect(flatbread?.body).not.toContain('example.test');
+  });
+
+  it('rejects a mixed collection when one doc is missing a required field', async () => {
     vi.mocked(query).mockResolvedValueOnce({
       allDocs: [
         {
@@ -62,15 +152,28 @@ describe('content readers', () => {
       ],
     } as never);
 
-    await expect(getDocs()).resolves.toEqual([
-      {
+    await expect(getDocs()).rejects.toThrow(/allDocs.*id/);
+  });
+
+  it('rejects a doc page without rendered content', async () => {
+    vi.mocked(query).mockResolvedValueOnce({
+      Doc: {
         id: 'getting-started',
         title: 'Getting started',
-        summary: 'Start here',
-        order: 1,
-        sectionId: 'start',
+        section: { id: 'start', title: 'Start' },
+        _content: { html: null },
       },
-    ]);
+    } as never);
+
+    await expect(getDoc('getting-started')).rejects.toThrow(/_content\.html/);
+  });
+
+  it('rejects a package page without rendered content', async () => {
+    vi.mocked(query).mockResolvedValueOnce({
+      Package: { id: 'core', _content: { html: '' } },
+    } as never);
+
+    await expect(getPackage('core')).rejects.toThrow(/_content\.html/);
   });
 });
 

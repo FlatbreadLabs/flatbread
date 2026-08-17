@@ -43,3 +43,65 @@ describe('query cache key', () => {
     );
   });
 });
+
+describe('query failures', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.resetModules();
+  });
+
+  it('reports an HTTP failure with the status and endpoint', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 503 })
+    );
+
+    const { query } = await import('./graphql');
+    await expect(query(ping)).rejects.toThrow(
+      /Flatbread answered 503.*localhost:5057\/graphql/
+    );
+  });
+
+  it('reports every GraphQL error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          errors: [{ message: 'Bad field' }, { message: 'Bad variable' }],
+        }),
+      })
+    );
+
+    const { query } = await import('./graphql');
+    await expect(query(ping)).rejects.toThrow('Bad field\nBad variable');
+  });
+
+  it('keeps GraphQL errors from a non-OK response', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: async () => ({
+          errors: [{ message: 'Unknown field' }, { message: 'Invalid query' }],
+        }),
+      })
+    );
+
+    const { query } = await import('./graphql');
+    await expect(query(ping)).rejects.toThrow(
+      'Flatbread answered 400 for a query:\nUnknown field\nInvalid query'
+    );
+  });
+
+  it('rejects a successful response with no data', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
+    );
+
+    const { query } = await import('./graphql');
+    await expect(query(ping)).rejects.toThrow('Flatbread returned no data.');
+  });
+});

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
 const WIDE = '(min-width: 901px)';
@@ -23,7 +24,9 @@ export function NavDisclosure({
   label: string;
   children: ReactNode;
 }) {
-  const [wide, setWide] = useState(true);
+  const pathname = usePathname();
+  const previousPath = useRef(pathname);
+  const [wide, setWide] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -33,6 +36,16 @@ export function NavDisclosure({
     query.addEventListener('change', sync);
     return () => query.removeEventListener('change', sync);
   }, []);
+
+  useEffect(() => {
+    if (previousPath.current !== pathname && !wide) {
+      setOpen(false);
+      requestAnimationFrame(() =>
+        document.getElementById('main-content')?.focus({ preventScroll: false })
+      );
+    }
+    previousPath.current = pathname;
+  }, [pathname, wide]);
 
   return (
     <details

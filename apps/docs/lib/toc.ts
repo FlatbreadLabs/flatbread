@@ -6,6 +6,22 @@ export interface TocEntry {
 
 const HEADING = /<h([23])(\s[^>]*)?>([\s\S]*?)<\/h\1>/g;
 const ID = /\bid="([^"]*)"/;
+const ELEMENT_WITH_BODY = /<(a|span)\b([^>]*)>[\s\S]*?<\/\1>/gi;
+const CLASS = /\bclass\s*=\s*(?:"([^"]*)"|'([^']*)')/i;
+const ARIA_HIDDEN = /\baria-hidden\s*=\s*(?:"true"|'true'|true)(?:\s|$)/i;
+const ENTITY = /&(#(?:x[\da-f]+|\d+)|[a-z][a-z\d]+);/gi;
+
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: '&',
+  apos: "'",
+  gt: '>',
+  hellip: '…',
+  lt: '<',
+  mdash: '—',
+  nbsp: '\u00a0',
+  ndash: '–',
+  quot: '"',
+};
 
 /**
  * Read the contents list out of rendered HTML.
@@ -32,12 +48,37 @@ export function tableOfContents(html: string): TocEntry[] {
 }
 
 function stripTags(value: string): string {
-  return value
-    .replace(/<a\s[^>]*class="heading-anchor"[^>]*>[\s\S]*?<\/a>/g, '')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+  const text = value
+    .replace(ELEMENT_WITH_BODY, (element, _tag, attributes: string) => {
+      const classes = CLASS.exec(attributes)
+        ?.slice(1)
+        .find(Boolean)
+        ?.split(/\s+/);
+      const marker = classes?.some((name) =>
+        ['heading-anchor', 'heading-marker'].includes(name)
+      );
+      return marker || ARIA_HIDDEN.test(attributes) ? '' : element;
+    })
+    .replace(/<[^>]+>/g, '');
+
+  return decodeEntities(text);
+}
+
+function decodeEntities(value: string): string {
+  return value.replace(ENTITY, (entity, body: string) => {
+    if (!body.startsWith('#')) {
+      return NAMED_ENTITIES[body.toLowerCase()] ?? entity;
+    }
+
+    const hexadecimal = body[1]?.toLowerCase() === 'x';
+    const digits = body.slice(hexadecimal ? 2 : 1);
+    const codePoint = Number.parseInt(digits, hexadecimal ? 16 : 10);
+    const valid =
+      Number.isInteger(codePoint) &&
+      codePoint > 0 &&
+      codePoint <= 0x10ffff &&
+      !(codePoint >= 0xd800 && codePoint <= 0xdfff);
+
+    return valid ? String.fromCodePoint(codePoint) : '\ufffd';
+  });
 }

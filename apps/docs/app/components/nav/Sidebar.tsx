@@ -1,6 +1,5 @@
 'use client';
 
-import { motion, useReducedMotion } from 'motion/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -18,6 +17,20 @@ interface Branch {
   items: Array<{ href: string; label: string }>;
 }
 
+const PACKAGE_GROUPS = [
+  ['Build', ['flatbread', 'core', 'config', 'codegen']],
+  [
+    'Content',
+    [
+      'source-filesystem',
+      'transformer-markdown',
+      'transformer-yaml',
+      'resolver-svimg',
+    ],
+  ],
+  ['Tools', ['explorer', 'proof', 'utils']],
+] as const;
+
 /**
  * The navigation, drawn as a directory tree.
  *
@@ -28,7 +41,32 @@ interface Branch {
  */
 export function Sidebar({ sections, docs, packages }: SidebarProps) {
   const pathname = usePathname();
-  const reduced = useReducedMotion();
+  const groupedPackageIds = new Set<string>(
+    PACKAGE_GROUPS.flatMap(([, ids]) => [...ids])
+  );
+  const referenceBranches: Branch[] = PACKAGE_GROUPS.map(([title, ids]) => ({
+    id: `reference-${title.toLowerCase()}`,
+    title: `Reference · ${title}`,
+    items: packages
+      .filter((entry) => (ids as readonly string[]).includes(entry.id))
+      .map((entry) => ({
+        href: `/reference/${entry.id}/`,
+        label: entry.id,
+      })),
+  }));
+  const otherPackages = packages.filter(
+    (entry) => !groupedPackageIds.has(entry.id)
+  );
+  if (otherPackages.length > 0) {
+    referenceBranches.push({
+      id: 'reference-other',
+      title: 'Reference · Other',
+      items: otherPackages.map((entry) => ({
+        href: `/reference/${entry.id}/`,
+        label: entry.id,
+      })),
+    });
+  }
 
   const branches: Branch[] = [
     ...sections.map((section) => ({
@@ -38,14 +76,7 @@ export function Sidebar({ sections, docs, packages }: SidebarProps) {
         .filter((doc) => doc.sectionId === section.id)
         .map((doc) => ({ href: `/docs/${doc.id}/`, label: doc.title })),
     })),
-    {
-      id: 'reference',
-      title: 'Reference',
-      items: packages.map((entry) => ({
-        href: `/reference/${entry.id}/`,
-        label: entry.id,
-      })),
-    },
+    ...referenceBranches,
   ].filter((branch) => branch.items.length > 0);
 
   return (
@@ -82,18 +113,9 @@ export function Sidebar({ sections, docs, packages }: SidebarProps) {
                         data-active={active ? '' : undefined}
                       >
                         {active ? (
-                          <motion.span
-                            aria-hidden
-                            className="fb-tree__marker"
-                            layoutId={reduced ? undefined : 'nav-marker'}
-                            transition={{
-                              type: 'spring',
-                              stiffness: 520,
-                              damping: 40,
-                            }}
-                          >
+                          <span aria-hidden className="fb-tree__marker">
                             ›
-                          </motion.span>
+                          </span>
                         ) : null}
                         {item.label}
                       </Link>

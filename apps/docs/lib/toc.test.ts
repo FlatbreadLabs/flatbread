@@ -55,12 +55,30 @@ describe('tableOfContents', () => {
     ]);
   });
 
+  it('excludes heading markers and hidden text from a label', () => {
+    const html =
+      '<h2 id="one"><span class="extra heading-marker" aria-hidden="true">##</span><a class="heading-anchor extra" href="#one">#</a>Visible <span aria-hidden=true>detail</span> title</h2>';
+
+    expect(tableOfContents(html)).toEqual([
+      { id: 'one', text: 'Visible  title', depth: 2 },
+    ]);
+  });
+
   it('decodes HTML entities in the heading text', () => {
     const html =
       '<h2 id="ents">A &amp; B &lt;C&gt; &quot;D&quot; &#39;E&#39;</h2>';
 
     expect(tableOfContents(html)).toEqual([
       { id: 'ents', text: 'A & B <C> "D" \'E\'', depth: 2 },
+    ]);
+  });
+
+  it('decodes named, decimal, and hexadecimal entities without throwing', () => {
+    const html =
+      '<h2 id="ents">Go&#32;now&nbsp;&#x1f680; &unknown; &#x110000;</h2>';
+
+    expect(tableOfContents(html)).toEqual([
+      { id: 'ents', text: 'Go now\u00a0🚀 &unknown; �', depth: 2 },
     ]);
   });
 

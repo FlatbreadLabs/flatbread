@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { TocEntry } from '../../../lib/toc';
 
@@ -12,6 +12,9 @@ import type { TocEntry } from '../../../lib/toc';
  */
 export function Toc({ entries }: { entries: TocEntry[] }) {
   const [active, setActive] = useState<string | undefined>(entries[0]?.id);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const mobileNav = useRef<HTMLElement>(null);
+  const desktopNav = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (entries.length === 0) return;
@@ -35,24 +38,53 @@ export function Toc({ entries }: { entries: TocEntry[] }) {
     return () => observer.disconnect();
   }, [entries]);
 
+  useEffect(() => {
+    for (const nav of [mobileNav.current, desktopNav.current]) {
+      if (!nav || nav.getClientRects().length === 0) continue;
+      nav
+        .querySelector<HTMLAnchorElement>('[aria-current="location"]')
+        ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+  }, [active, mobileOpen]);
+
   if (entries.length === 0) return null;
 
+  const links = (
+    <ul>
+      {entries.map((entry) => (
+        <li key={entry.id} data-depth={entry.depth}>
+          <a
+            href={`#${entry.id}`}
+            className="fb-toc__link"
+            data-active={active === entry.id ? '' : undefined}
+            aria-current={active === entry.id ? 'location' : undefined}
+          >
+            {entry.text}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
-    <nav className="fb-toc" aria-label="On this page">
-      <p className="fb-toc__title">On this page</p>
-      <ul>
-        {entries.map((entry) => (
-          <li key={entry.id} data-depth={entry.depth}>
-            <a
-              href={`#${entry.id}`}
-              className="fb-toc__link"
-              data-active={active === entry.id ? '' : undefined}
-            >
-              {entry.text}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
+    <>
+      <details
+        className="fb-toc-disclosure"
+        onToggle={(event) => setMobileOpen(event.currentTarget.open)}
+      >
+        <summary>On this page ({entries.length})</summary>
+        <nav ref={mobileNav} className="fb-toc" aria-label="On this page">
+          {links}
+        </nav>
+      </details>
+      <nav
+        ref={desktopNav}
+        className="fb-toc fb-toc--desktop"
+        aria-label="On this page"
+      >
+        <p className="fb-toc__title">On this page</p>
+        {links}
+      </nav>
+    </>
   );
 }

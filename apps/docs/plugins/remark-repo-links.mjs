@@ -1,5 +1,5 @@
-import { existsSync, readdirSync } from 'node:fs';
-import { posix, resolve, relative, sep } from 'node:path';
+import { existsSync, readdirSync, realpathSync } from 'node:fs';
+import { isAbsolute, posix, resolve, relative, sep } from 'node:path';
 
 import { walk } from './walk.mjs';
 
@@ -52,6 +52,9 @@ export function resolveRepoLink(url, options = {}) {
   const packagesDir = options.packagesDir ?? 'packages';
   const blobBase =
     options.blobBase ?? 'https://github.com/FlatbreadLabs/flatbread/blob/main';
+  const basePath = normalizeBasePath(options.basePath ?? '');
+  const siteRoute = resolveSiteRoute(url, basePath);
+  if (siteRoute) return siteRoute;
 
   if (isRelative(url)) {
     const [path, hash] = splitHash(url);
@@ -64,11 +67,27 @@ export function resolveRepoLink(url, options = {}) {
 
     const target = targets[0];
     const route = routeFor(target, docsDir);
-    const href = route ? route + hash : `${blobBase}/${target}${hash}`;
+    const href = route
+      ? basePath + route + hash
+      : `${blobBase}/${target}${hash}`;
     return { targets, target, route, href };
   }
 
-  return resolveBlobUrl(url, { repoRoot, docsDir, blobBase });
+  return resolveBlobUrl(url, { repoRoot, docsDir, blobBase, basePath });
+}
+
+function resolveSiteRoute(url, basePath) {
+  const [address, hash] = splitHash(url);
+  const route =
+    basePath && address.startsWith(`${basePath}/`)
+      ? address.slice(basePath.length)
+      : address;
+  if (!/^\/(?:docs|reference)(?:\/|$)/.test(route)) return undefined;
+  return {
+    targets: [],
+    route,
+    href: `${basePath}${route}${hash}`,
+  };
 }
 
 function listPackageDirs(repoRoot, packagesDir) {
@@ -92,7 +111,7 @@ function splitHash(url) {
   return [url.slice(0, index), url.slice(index)];
 }
 
-function resolveBlobUrl(url, { repoRoot, docsDir, blobBase }) {
+function resolveBlobUrl(url, { repoRoot, docsDir, blobBase, basePath }) {
   const [withoutHash, hash] = splitHash(url);
   const prefix = `${blobBase}/`;
   if (!withoutHash.startsWith(prefix)) return undefined;
@@ -109,24 +128,53 @@ function resolveBlobUrl(url, { repoRoot, docsDir, blobBase }) {
   }
 
   const absolute = resolve(repoRoot, decoded);
-  const target = relative(repoRoot, absolute).split(sep).join('/');
-  if (!target || target.startsWith('..')) return undefined;
+  const target = repoPath(repoRoot, absolute);
+  if (!target) return undefined;
   if (!existsSync(absolute)) return undefined;
+  if (!hasContainedRealpath(repoRoot, absolute)) return undefined;
 
   const route = routeFor(target, docsDir);
   if (!route) return undefined;
 
-  return { targets: [target], target, route, href: route + hash };
+  return { targets: [target], target, route, href: basePath + route + hash };
 }
 
 function findTargets(path, { repoRoot, bases }) {
   const seen = new Set();
   for (const base of bases) {
     const absolute = resolve(repoRoot, base, path);
+    const target = repoPath(repoRoot, absolute);
+    if (!target) continue;
     if (!existsSync(absolute)) continue;
-    seen.add(relative(repoRoot, absolute).split(sep).join('/'));
+    if (!hasContainedRealpath(repoRoot, absolute)) continue;
+    seen.add(target);
   }
   return [...seen].sort();
+}
+
+/** Refuse symlinks whose real target leaves the repository. */
+function hasContainedRealpath(repoRoot, absolute) {
+  try {
+    return (
+      repoPath(realpathSync(repoRoot), realpathSync(absolute)) !== undefined
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Return a slash-separated repository path, or nothing when it escapes. */
+function repoPath(repoRoot, absolute) {
+  const target = relative(repoRoot, absolute);
+  if (
+    !target ||
+    target === '..' ||
+    target.startsWith(`..${sep}`) ||
+    isAbsolute(target)
+  ) {
+    return undefined;
+  }
+  return target.split(sep).join('/');
 }
 
 /** Map a repo-relative file to the route the site serves it at, if any. */
@@ -146,6 +194,11 @@ function routeFor(target, docsDir) {
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function normalizeBasePath(value) {
+  if (!value || value === '/') return '';
+  return `/${value.replace(/^\/+|\/+$/g, '')}`;
 }
 
 export default remarkRepoLinks;

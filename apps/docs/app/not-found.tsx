@@ -6,7 +6,8 @@ export default function NotFound() {
   return (
     <div className="fb-page">
       <div className="fb-page__body">
-        <Frame label="404">
+        <h1 className="fb-page__title">Page not found</h1>
+        <Frame label="404" className="fb-not-found">
           <p className="fb-note">
             No page answers to that address. Every page on this site comes from
             a Markdown file in the repository, so either the file moved or the

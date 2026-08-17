@@ -10,30 +10,44 @@ related:
 
 # Edit file → see query update demo
 
-This is a single-process demo harness, not the long-running `flatbread start`
-server. Production live-editing uses the unified watch path described in
-[local-dev-loop.md](./local-dev-loop.md).
+**Next action: start the demo with the five steps below.**
 
-This demo is the current reproducible path for issue #158. It shows the
-edit/query loop for posts, authors, and tags without requiring a manual
-restart.
-
-One-shot `flatbread start` builds its schema at startup; use
-`flatbread start --watch` for live content/config updates (see
-[local dev loop boundaries](./local-dev-loop.md)). This demo therefore
-uses a tiny watcher script that rebuilds the Flatbread schema per file event
-and executes the same posts/authors/tags query shape the generated TypeScript
-read API uses in the Next.js example.
+Allow 5–10 minutes from a clean checkout. If dependencies and packages are
+already built, allow about 1 minute.
 
 ## Run it from a clean checkout
 
-```bash
-pnpm install
-pnpm build
-cd examples/nextjs
-pnpm exec flatbread codegen --verbose
-pnpm run demo:watch-query
-```
+1. From the repository root, install dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+2. Build the workspace packages:
+
+   ```bash
+   pnpm build
+   ```
+
+3. Enter the example app:
+
+   ```bash
+   cd examples/nextjs
+   ```
+
+4. Generate the initial TypeScript artifacts:
+
+   ```bash
+   pnpm exec flatbread codegen --verbose
+   ```
+
+5. Start the demo watcher:
+
+   ```bash
+   pnpm run demo:watch-query
+   ```
+
+Success: the terminal prints one JSON result and waits for file changes.
 
 The script watches both Markdown and YAML relation data:
 
@@ -42,7 +56,7 @@ examples/content/markdown/posts/example-post.md
 examples/content/yaml/authors/dr-caffeine.yml
 ```
 
-It prints JSON like:
+The first result looks like this:
 
 ```json
 {
@@ -71,20 +85,40 @@ It prints JSON like:
 
 ## Try the edit
 
-In another terminal, edit the watched Markdown post title plus a YAML author
-name and `friend` relation:
+Open another terminal at the repository root. These four steps take about 1
+minute.
 
-```bash
-pnpm --filter nextjs run demo:edit
-```
+1. Apply the sample edit:
 
-The watcher prints fresh query results with the edited Markdown title, edited
-YAML author name, and changed YAML `friend` relation. Restore the files after
-the demo:
+   ```bash
+   pnpm --filter nextjs run demo:edit
+   ```
 
-```bash
-pnpm --filter nextjs run demo:restore
-```
+2. Check the watcher terminal for a new post title, YAML author name, and YAML
+   `friend` relation.
+
+3. Restore the sample files:
+
+   ```bash
+   pnpm --filter nextjs run demo:restore
+   ```
+
+4. Verify that both watched files match the checkout:
+
+   ```bash
+   git diff --exit-code -- examples/content/markdown/posts/example-post.md examples/content/yaml/authors/dr-caffeine.yml
+   ```
+
+   No output means the files are restored. A diff means the demo edit or an
+   earlier local change remains.
+
+If no second result appears, the watcher is not running. Return to step 5 and
+start it before applying the edit again.
+
+This single-process harness rebuilds the Flatbread schema for each watched file
+event. It then runs the posts, authors, and tags query shape used by the
+generated TypeScript read API. Production live editing uses the unified watch
+path in the [local dev loop guide](./local-dev-loop.md).
 
 ## What this does and does not prove
 
@@ -95,3 +129,5 @@ pnpm --filter nextjs run demo:restore
 - ✅ The demo is reproducible from the monorepo root with pnpm commands.
 - ⚠️ The demo watcher is a focused harness, not a replacement for the unified
   `flatbread start --watch` path.
+
+Next: run the verification command in step 4 before you leave the checkout.

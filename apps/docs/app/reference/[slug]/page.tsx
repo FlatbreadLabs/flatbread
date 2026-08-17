@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation';
 
 import { getPackage, getPackages } from '../../../lib/content';
 import { tableOfContents } from '../../../lib/toc';
-import { SplitText } from '../../components/motion/SplitText';
 import { Toc } from '../../components/nav/Toc';
 import { CodeCopy } from '../../components/prose/CodeCopy';
 
@@ -48,13 +47,12 @@ export default async function PackagePage({
             </span>
           </p>
 
-          <h1 className="fb-page__title">
-            <SplitText text={packageName(entry.id)} by="char" />
-          </h1>
+          <h1 className="fb-page__title">{packageName(entry.id)}</h1>
 
           <p className="fb-page__summary">
-            This page is the package README itself. The site reads the published
-            file, so the two can never disagree.
+            This page renders the package README from the repository revision
+            that built this site. It can be newer than the README in the current
+            npm release.
           </p>
         </header>
 

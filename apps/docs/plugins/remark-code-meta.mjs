@@ -16,7 +16,7 @@ export function remarkCodeMeta() {
       node.data = node.data ?? {};
       node.data.hProperties = {
         ...(node.data.hProperties ?? {}),
-        'data-title': stripQuotes(meta),
+        dataTitle: stripQuotes(meta),
       };
     });
   };

@@ -11,7 +11,7 @@ export function walk(tree, visit) {
     visit(node, index, parent);
     const children = node.children;
     if (!Array.isArray(children)) return;
-    for (let i = children.length - 1; i >= 0; i -= 1) {
+    for (let i = 0; i < children.length; i += 1) {
       step(children[i], i, node);
     }
   };

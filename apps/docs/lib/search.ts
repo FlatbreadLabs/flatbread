@@ -6,6 +6,15 @@ export interface SearchHit {
   snippet: string;
 }
 
+/** Normalize both the built corpus and typed queries with the same rules. */
+export function normalizeSearchText(value: string): string {
+  return value
+    .replace(/[_-]+/g, ' ')
+    .replace(/[^\p{Letter}\p{Number}\s]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 /**
  * Rank pages against a typed query.
  *
@@ -19,7 +28,7 @@ export function search(
   input: string,
   limit = 8
 ): SearchHit[] {
-  const terms = input
+  const terms = normalizeSearchText(input)
     .toLowerCase()
     .split(/\s+/)
     .filter((term) => term.length > 1);
@@ -29,9 +38,9 @@ export function search(
   const hits: SearchHit[] = [];
 
   for (const entry of entries) {
-    const title = entry.title.toLowerCase();
-    const summary = entry.summary.toLowerCase();
-    const body = entry.body.toLowerCase();
+    const title = normalizeSearchText(entry.title).toLowerCase();
+    const summary = normalizeSearchText(entry.summary).toLowerCase();
+    const body = normalizeSearchText(entry.body).toLowerCase();
 
     let score = 0;
     let matchedEvery = true;

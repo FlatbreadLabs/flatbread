@@ -64,19 +64,25 @@ pnpm exec flatbread codegen --clear-cache
 Use **GraphQL operations** when you want explicit documents, custom selections, GraphQL clients, persisted operations, or direct access to the GraphQL endpoint:
 
 ```ts
-import type { Post, GetPostsQuery } from './generated/graphql';
+import type { GetPostsQuery } from './generated/graphql';
 import { request } from 'graphql-request';
 
-// Use the generated types
-const posts: Post[] = await request<GetPostsQuery>(`
-  query GetPosts {
-    posts {
-      id
-      title
-      content
+const data = await request<GetPostsQuery>(
+  'http://localhost:5057/graphql',
+  `
+    query GetPosts {
+      allPosts {
+        id
+        title
+        _content {
+          html
+        }
+      }
     }
-  }
-`);
+  `
+);
+
+const posts = data.allPosts;
 ```
 
 Use the prototype **generated TypeScript read API** when you want collection-shaped helpers for common reads from the configured content model. In the canonical Next.js example, `createFlatbreadReadApi()` reads posts, authors, and tags with a generated default selection while executing through the GraphQL layer:
@@ -326,7 +332,7 @@ function Posts() {
 
   return (
     <div>
-      {data?.posts.map((post) => (
+      {data?.allPosts.map((post) => (
         <article key={post.id}>
           <h2>{post.title}</h2>
           <p>{post.content}</p>
@@ -351,7 +357,7 @@ export async function getStaticProps() {
 
   return {
     props: {
-      posts: data.posts,
+      posts: data.allPosts,
     },
   };
 }
@@ -370,7 +376,7 @@ export async function load() {
   );
 
   return {
-    posts: data.posts,
+    posts: data.allPosts,
   };
 }
 ```

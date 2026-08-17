@@ -53,7 +53,7 @@ Refer to your source plugin's documentation for the relevant `content` Flatbread
 
 ## 🧰 Options
 
-Please excuse what I'm about to do as I `CTRL` + `C`, `CTRL` + `V` my types file and hand it off to you as the official API docs for this plugin. If anyone wants to pretty this up, please bust open a PR 💜
+Configure the Markdown transformer with the following options:
 
 ```ts
 /**

@@ -23,10 +23,10 @@ Or from this directory, once the packages are built:
 
 ```bash
 pnpm dev          # flatbread start --watch -- next dev --turbopack
-pnpm build        # flatbread start -- next build, writing ./out
+pnpm build        # build ./out, then validate exported routes/assets/fragments
 pnpm serve        # serve the built files
-pnpm check:links  # check frontmatter and links without building
-pnpm test         # vitest run: link rewriter, contents list, search ranking, page checker
+pnpm check        # check frontmatter, links, and graph-to-disk parity
+pnpm test         # vitest run: content, search, Markdown, link, and export checks
 ```
 
 `flatbread start` runs the GraphQL server for as long as the command after
@@ -74,7 +74,7 @@ links to a file that moved fails the build rather than shipping.
 ## Markdown pipeline
 
 Flatbread's Markdown transformer takes remark and rehype plugins, and the site
-supplies five of its own in `plugins/`:
+supplies six of its own in `plugins/`:
 
 | Plugin                       | What it does                                                                                              |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------- |
@@ -83,6 +83,7 @@ supplies five of its own in `plugins/`:
 | `remark-repo-links`          | Rewrites `./glossary.md` and `../../packages/core/README.md` into site routes.                            |
 | `rehype-heading-anchors`     | Adds an `id` and a self link to every heading below H1.                                                   |
 | `rehype-shiki`               | Colours code with Shiki, writing both themes as CSS variables.                                            |
+| `rehype-table-scroll`        | Wraps wide Markdown tables in a labelled, keyboard-focusable scroll region.                               |
 
 They are written against plain syntax trees and pull in no unified packages of
 their own. Flatbread's transformer depends on unified 10, while most published
@@ -93,8 +94,9 @@ plugins now target unified 11, so a plugin from npm may or may not fit.
 - **No MDX.** MDX would parse the Markdown outside Flatbread, which is the
   opposite of what this site is meant to demonstrate. Interactive behaviour is
   added to the rendered HTML afterwards instead — see `CodeCopy`.
-- **No Motion+.** Motion's `splitText` needs a paid membership and a private
-  registry token, which CI on a public repository cannot have. The site splits
-  text itself in `app/components/motion/SplitText.tsx`.
-- **No search service.** Flatbread can filter but not rank. The build flattens
-  every page into a list and the browser scores it.
+- **No animation library.** The docs avoid decorative text and page motion, so
+  reduced-motion users do not depend on a JavaScript fallback and readers keep
+  a stable page while navigating.
+- **No search service.** Flatbread can filter but not rank. The build emits a
+  static index for every page; the browser fetches it when search first opens
+  and scores it locally.

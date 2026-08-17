@@ -6,7 +6,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { collectProblems, frontmatter } from './check-links.mjs';
@@ -33,6 +33,37 @@ describe('collectProblems', () => {
       'apps/docs/content/docs/gap.md: frontmatter is missing `title`',
       'apps/docs/content/docs/gap.md: frontmatter is missing `summary`',
     ]);
+  });
+
+  it('rejects blank and wrong-type required frontmatter fields', () => {
+    const problems = withRepo({
+      'apps/docs/content/docs/gap.md': [
+        '---',
+        'id: 42',
+        'title:',
+        'section: 7',
+        'order: first',
+        'summary: ""',
+        '---',
+        '',
+        '# Gap',
+      ].join('\n'),
+    });
+
+    expect(problems).toEqual([
+      'apps/docs/content/docs/gap.md: frontmatter `id` must be a non-empty string',
+      'apps/docs/content/docs/gap.md: frontmatter `title` must be a non-empty string',
+      'apps/docs/content/docs/gap.md: frontmatter `section` must be a non-empty string',
+      'apps/docs/content/docs/gap.md: frontmatter `order` must be a number',
+      'apps/docs/content/docs/gap.md: frontmatter `summary` must be a non-empty string',
+    ]);
+  });
+
+  it('keeps quoted numbers as strings', () => {
+    expect(frontmatter('---\nid: "42"\norder: 42\n---')).toEqual({
+      id: '42',
+      order: 42,
+    });
   });
 
   it('reports a frontmatter id that disagrees with the filename', () => {
@@ -132,6 +163,30 @@ describe('collectProblems', () => {
     );
     expect(ambiguous[0]).toContain('site path');
   });
+
+  it('rejects a reference symlink whose target leaves the repository', () => {
+    const problems = withRepo({
+      'apps/docs/content/docs/gap.md': page({ id: 'gap' }),
+      'apps/docs/content/reference/evil.md': { linkOutside: true },
+    });
+
+    expect(problems).toContain(
+      'apps/docs/content/reference/evil.md: symlink target leaves the repository'
+    );
+  });
+
+  it('rejects an existing relative link whose target leaves the repository', () => {
+    const problems = withRepo({
+      'apps/docs/content/docs/gap.md': page({
+        id: 'gap',
+        body: '# Gap\n\nSee [outside](__OUTSIDE_LINK__).\n',
+      }),
+    });
+
+    expect(
+      problems.some((problem) => problem.includes('leaves the repository'))
+    ).toBe(true);
+  });
 });
 
 function page({
@@ -163,6 +218,7 @@ function page({
 
 function withRepo(files) {
   const root = mkdtempSync(join(tmpdir(), 'docs-links-'));
+  const outside = join(dirname(root), `${basename(root)}-outside.md`);
   mkdirSync(join(root, 'apps/docs/content/docs'), { recursive: true });
   mkdirSync(join(root, 'apps/docs/content/nav'), { recursive: true });
   mkdirSync(join(root, 'apps/docs/content/reference'), { recursive: true });
@@ -170,6 +226,7 @@ function withRepo(files) {
     join(root, 'apps/docs/content/nav/start.yaml'),
     'id: start\ntitle: Start\n'
   );
+  writeFileSync(outside, '# Outside\n');
 
   try {
     for (const [rel, value] of Object.entries(files)) {
@@ -177,8 +234,16 @@ function withRepo(files) {
       mkdirSync(dirname(path), { recursive: true });
       if (value && typeof value === 'object' && value.linkTo) {
         symlinkSync(join(root, value.linkTo), path);
+      } else if (value && typeof value === 'object' && value.linkOutside) {
+        symlinkSync(outside, path);
       } else {
-        writeFileSync(path, value);
+        writeFileSync(
+          path,
+          value.replace(
+            '__OUTSIDE_LINK__',
+            relative(dirname(path), outside).split(sep).join('/')
+          )
+        );
       }
     }
     return collectProblems({
@@ -189,5 +254,6 @@ function withRepo(files) {
     });
   } finally {
     rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { force: true });
   }
 }

@@ -60,7 +60,8 @@ export function rehypeShiki(options = {}) {
 
       pre.properties = pre.properties ?? {};
       if (lang) pre.properties['data-language'] = lang;
-      const title = code.properties?.['data-title'];
+      const title =
+        code.properties?.['data-title'] ?? code.properties?.dataTitle;
       if (title) pre.properties['data-title'] = title;
 
       parent.children[index] = pre;

@@ -9,44 +9,43 @@ related:
   - pmf-decision-rubric
 ---
 
-# Flatbread positioning
+# What Flatbread is
 
-For installation and usage, see the [main README](../../../../README.md). For
-definitions used in the docs and config, see the [glossary](./glossary.md).
-To compare Flatbread with databases, CMSs, and other file-based tools, see
-[Comparing Flatbread with other tools](./pmf-decision-rubric.md). For keeping
-and moving your data, see [data ownership](./data-ownership.md).
+**Next action (1 minute): choose the path that matches your goal.**
 
-Flatbread turns files in Git into a typed relational graph. A project has
-collections, records, and `refs` that link records. Generated types and
-[GraphQL](https://graphql.org/) operations are common ways for an app to read
-that graph; they do not define what Flatbread is.
+- For coding-agent memory, open the [Proof guide](../../../../packages/proof/README.md).
+- For relational content, open the [Quickstart](../../../../packages/flatbread/README.md#quickstart-posts-authors-and-tags).
 
-**Flatbread** reads content from your repository and file system. Plugins
-control how it reads files and turns them into data.
+Flatbread turns files in Git into a typed relational graph. Collections group
+records, and `refs` link one record to another. Flatbread reads those files
+through source and transformer plugins.
+
+Generated TypeScript and [GraphQL](https://graphql.org/) operations are ways
+for an app to read the graph. They are not the product itself.
 
 ## The lead use case: memory for coding agents
 
-The [Proof](../../../../packages/proof/README.md) is a Flatbread content
-model for what a coding agent works out along the way. An agent records an
-Effort and then writes Issues, Findings, Decisions, Constraints, Risks,
-Citations, and Blobs against it. Each record is a markdown file under
-`.flatbread-proof/`, so it is committed, diffed, reviewed, and reverted like
-source. Writes go through `flatbread proof write`; reads come back as bounded
-digests from `flatbread proof list`, `flatbread proof records`,
-`flatbread proof relations`, `flatbread proof blocking-decisions`, and
-`flatbread proof get`.
+Proof records what a coding agent learns while it works:
 
-That solves a plain problem: an agent that closes its session forgets why it
-chose what it chose. Putting the reasoning in the repository keeps it next to
-the code it explains, and keeps it readable by a person.
+- Work and conclusions: Efforts, Issues, Findings, and Decisions.
+- Guardrails and evidence: Constraints, Risks, Citations, and Blobs.
+
+Each record is a Markdown file under `.flatbread-proof/`. You can commit,
+diff, review, and revert it like source code. The next session can read why the
+last session made a choice.
+
+Writes use `flatbread proof write '<json>'`. Reads stay bounded:
+
+- Browse with `flatbread proof list`, `flatbread proof records <effort-id>`, or
+  `flatbread proof relations <effort-id> <record-id> --relations <name>`.
+- Focus with `flatbread proof blocking-decisions <effort-id>` or
+  `flatbread proof get <record-id>`.
 
 ## The general case: relational content
 
-Everything above is one content model on a general engine. The same
-collections, `refs`, filters, and generated types back sites, docs, and
-internal tools. Posts point at authors; authors point at each other. Model your
-own collections and you get the same typed graph.
+Proof is one model on a general engine. The same collections, `refs`, filters,
+and generated types support sites, docs, and internal tools. Posts can point at
+authors, and authors can point at each other.
 
 **Who it is for:** People building coding agents that need memory a human can
 review in Git, and teams building TypeScript sites, internal tools, and starter
@@ -63,20 +62,30 @@ without setting up a CMS database.
   config changes, but a change to a Flatbread package needs a rebuild and a
   restart.
 
-**GraphQL:** GraphQL is one read interface over the graph. In the default setup
-it reads data that Flatbread has already loaded, following
-`schema → operations → codegen`. Start with files and configuration, then
-choose how your app reads the data. The
-[Quickstart](../../../../packages/flatbread/README.md#quickstart-posts-authors-and-tags)
-shows posts, authors, and tags from files through generated types.
+## Choose a read interface
 
-**Keeping your data:** Raw files stay in Git, so you can branch, review,
+Start with files and configuration. Then choose how the app reads the graph.
+In the default GraphQL setup, the path is
+`schema → operations → codegen`.
+
+If you already use GraphQL, read about
+[`refs` and relations](./glossary.md#relation), then run the codegen command in
+your app's Flatbread docs.
+
+## Keep your data
+
+Raw files stay in Git, so you can branch, review,
 revert, and move content without asking a hosted CMS for an export. JSON and
 CSV exports make reviewable snapshots. GraphQL documents and generated
 operation types show the read shapes your app used. The generated read API is a
 convenience layer; files, snapshots, documents, and operation types are easier
 to take to another tool.
 
-**If you already use GraphQL:** Read about [`refs` and relations](./glossary.md#relation),
-then use your app's `flatbread codegen` documentation. The files and
-configuration come before the queries you write.
+## More detail
+
+- Install and use Flatbread: [main README](../../../../README.md).
+- Compare it with databases and CMSs: [Compared with other tools](./pmf-decision-rubric.md).
+- Plan an exit or export: [Data ownership](./data-ownership.md).
+
+Next: spend 2 minutes on the [glossary](./glossary.md), starting with
+Collection, Record, and Relation.

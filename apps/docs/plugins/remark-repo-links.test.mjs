@@ -1,6 +1,12 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join, relative, sep } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import remarkRepoLinks, {
@@ -11,19 +17,24 @@ import remarkRepoLinks, {
 const BLOB = 'https://github.com/FlatbreadLabs/flatbread/blob/main';
 
 let repoRoot;
+let outsidePath;
 
 beforeAll(() => {
   repoRoot = mkdtempSync(join(tmpdir(), 'docs-links-'));
+  outsidePath = join(dirname(repoRoot), `${basename(repoRoot)}-outside.md`);
+  writeFileSync(outsidePath, '# Outside\n');
   write('README.md', '# Flatbread\n');
   write('CONTRIBUTING.md', '# Contributing\n');
   write('apps/docs/content/docs/glossary.md', '# Glossary\n');
   write('apps/docs/content/docs/json-export.md', '# Snapshot export\n');
   write('packages/codegen/README.md', '# codegen\n');
   write('packages/core/README.md', '# core\n');
+  symlinkSync(outsidePath, join(repoRoot, 'packages/core/outside.md'));
 });
 
 afterAll(() => {
   rmSync(repoRoot, { recursive: true, force: true });
+  rmSync(outsidePath, { force: true });
 });
 
 describe('remarkRepoLinks', () => {
@@ -62,6 +73,27 @@ describe('remarkRepoLinks', () => {
     expect(apply('#anchor')).toBe('#anchor');
   });
 
+  it('prefixes site routes for a subpath deployment', () => {
+    expect(
+      resolveRepoLink('./glossary.md#terms', {
+        repoRoot,
+        basePath: '/flatbread/',
+      }).href
+    ).toBe('/flatbread/docs/glossary/#terms');
+    expect(
+      resolveRepoLink('/docs/glossary/#terms', {
+        repoRoot,
+        basePath: '/flatbread/',
+      }).href
+    ).toBe('/flatbread/docs/glossary/#terms');
+    expect(
+      resolveRepoLink('/flatbread/docs/glossary/#terms', {
+        repoRoot,
+        basePath: '/flatbread/',
+      }).href
+    ).toBe('/flatbread/docs/glossary/#terms');
+  });
+
   it('rewrites a file with no site route to the GitHub blob URL', () => {
     expect(apply('../../CONTRIBUTING.md')).toBe(`${BLOB}/CONTRIBUTING.md`);
   });
@@ -70,6 +102,19 @@ describe('remarkRepoLinks', () => {
     expect(apply('https://example.com/x')).toBe('https://example.com/x');
     expect(apply('mailto:hi@example.com')).toBe('mailto:hi@example.com');
     expect(apply('/docs/x/')).toBe('/docs/x/');
+  });
+
+  it('refuses a relative link that leaves the repository', () => {
+    const fromGuides = join(repoRoot, 'apps/docs/content/docs');
+    const escaped = relative(fromGuides, outsidePath).split(sep).join('/');
+
+    expect(apply(escaped)).toBe(escaped);
+    expect(resolveRepoLink(escaped, { repoRoot })).toBeUndefined();
+  });
+
+  it('refuses a repository path whose symlink target leaves the repository', () => {
+    expect(apply('./outside.md')).toBe('./outside.md');
+    expect(resolveRepoLink('./outside.md', { repoRoot })).toBeUndefined();
   });
 
   it('rewrites a blob URL naming a guide to the guide route', () => {

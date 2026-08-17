@@ -13,6 +13,7 @@ import { remarkRepoLinks } from './plugins/remark-repo-links.mjs';
 import { remarkCodeMeta } from './plugins/remark-code-meta.mjs';
 import { rehypeHeadingAnchors } from './plugins/rehype-heading-anchors.mjs';
 import { rehypeShiki } from './plugins/rehype-shiki.mjs';
+import { rehypeTableScroll } from './plugins/rehype-table-scroll.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../..');
@@ -32,9 +33,19 @@ export default defineConfig({
         remarkPlugins: [
           remarkStripFirstHeading,
           remarkCodeMeta,
-          [remarkRepoLinks, { repoRoot }],
+          [
+            remarkRepoLinks,
+            {
+              repoRoot,
+              basePath: process.env.NEXT_PUBLIC_BASE_PATH ?? '',
+            },
+          ],
         ],
-        rehypePlugins: [rehypeHeadingAnchors, rehypeShiki],
+        rehypePlugins: [
+          [rehypeHeadingAnchors, { reservedIds: ['main-content'] }],
+          rehypeShiki,
+          rehypeTableScroll,
+        ],
       },
     }),
     transformerYaml(),
