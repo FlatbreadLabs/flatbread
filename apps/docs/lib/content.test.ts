@@ -65,6 +65,12 @@ function packagesPayload(excerpt: string) {
   };
 }
 
+function sectionsPayload(title: string) {
+  return {
+    allSections: [{ id: 'start', title, order: 1, blurb: 'Start here' }],
+  };
+}
+
 function searchPayload(packageBody: string) {
   return {
     allDocs: docsPayload('Getting started').allDocs,
@@ -165,6 +171,17 @@ describe('content readers', () => {
     const payload = docPagePayload();
     vi.mocked(query).mockResolvedValueOnce({
       Doc: { ...payload.Doc, related: [] },
+    } as never);
+
+    await expect(getDoc('getting-started')).resolves.toMatchObject({
+      related: [],
+    });
+  });
+
+  it('treats a null related collection as empty', async () => {
+    const payload = docPagePayload();
+    vi.mocked(query).mockResolvedValueOnce({
+      Doc: { ...payload.Doc, related: null },
     } as never);
 
     await expect(getDoc('getting-started')).resolves.toMatchObject({
@@ -368,6 +385,26 @@ describe('memoized readers in production', () => {
     expect(prodQuery).toHaveBeenCalledTimes(1);
     expect(first[0]?.excerpt).toBe('Frozen excerpt');
     expect(second[0]?.excerpt).toBe('Frozen excerpt');
+  });
+
+  it('memoizes getSections across calls', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.resetModules();
+
+    const { query: prodQuery } = await import('./graphql');
+    const { getSections: getSectionsProd } = await import('./content');
+
+    vi.mocked(prodQuery).mockReset();
+    vi.mocked(prodQuery)
+      .mockResolvedValueOnce(sectionsPayload('Frozen section') as never)
+      .mockResolvedValueOnce(sectionsPayload('Changed section') as never);
+
+    const first = await getSectionsProd();
+    const second = await getSectionsProd();
+
+    expect(prodQuery).toHaveBeenCalledTimes(1);
+    expect(first[0]?.title).toBe('Frozen section');
+    expect(second[0]?.title).toBe('Frozen section');
   });
 
   it('memoizes getSearchEntries across calls', async () => {

@@ -11,10 +11,10 @@ investment?
 Representative artifact set:
 
 - `flatbread-agent-artifact-opportunity.md`
-- `docs/experiments/issue-167-effort-graph-layout-mapping.md`
-- `docs/experiments/issue-168-adversarial-multi-layout-schema.md`
+- `apps/docs/content/notes/experiments/issue-167-effort-graph-layout-mapping.md`
+- `apps/docs/content/notes/experiments/issue-168-adversarial-multi-layout-schema.md`
 - Effort Graph fixture rows under
-  `docs/experiments/fixtures/cursor-proof-skill-effort-graph/`
+  `apps/docs/content/notes/experiments/fixtures/cursor-proof-skill-effort-graph/`
 
 Task prompt:
 

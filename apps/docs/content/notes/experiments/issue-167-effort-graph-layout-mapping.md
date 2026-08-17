@@ -51,21 +51,21 @@ export default defineConfig({
   transformer: transformerMarkdown({ markdown: { gfm: true } }),
   content: [
     {
-      path: 'docs/experiments/fixtures/cursor-proof-skill-effort-graph/efforts',
+      path: 'apps/docs/content/notes/experiments/fixtures/cursor-proof-skill-effort-graph/efforts',
       collection: 'Effort',
     },
     {
-      path: 'docs/experiments/fixtures/cursor-proof-skill-effort-graph/plans',
+      path: 'apps/docs/content/notes/experiments/fixtures/cursor-proof-skill-effort-graph/plans',
       collection: 'Plan',
       refs: { effort: 'Effort' },
     },
     {
-      path: 'docs/experiments/fixtures/cursor-proof-skill-effort-graph/sessions',
+      path: 'apps/docs/content/notes/experiments/fixtures/cursor-proof-skill-effort-graph/sessions',
       collection: 'Session',
       refs: { effort: 'Effort' },
     },
     {
-      path: 'docs/experiments/fixtures/cursor-proof-skill-effort-graph/decisions',
+      path: 'apps/docs/content/notes/experiments/fixtures/cursor-proof-skill-effort-graph/decisions',
       collection: 'Decision',
       refs: { effort: 'Effort', plan: 'Plan', session: 'Session' },
     },

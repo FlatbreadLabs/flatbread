@@ -9,6 +9,7 @@ const ping = parse('query { __typename }') as TypedDocumentNode<
 
 describe('query cache key', () => {
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
     vi.resetModules();
@@ -47,6 +48,7 @@ describe('query cache key', () => {
   });
 
   it('uses one URL stamp within a module load and a new stamp after reload', async () => {
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1_000);
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ data: { __typename: 'Query' } }),
@@ -63,7 +65,7 @@ describe('query cache key', () => {
     expect(first).toBe(second);
     expect(new URL(first).searchParams.get('build')).toMatch(/^[0-9a-z]+$/);
 
-    await new Promise((resolve) => setTimeout(resolve, 2));
+    now.mockReturnValue(2_000);
     vi.resetModules();
 
     const { query: queryAgain } = await import('./graphql');

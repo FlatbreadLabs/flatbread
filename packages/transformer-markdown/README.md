@@ -53,13 +53,15 @@ Refer to your source plugin's documentation for the relevant `content` Flatbread
 
 ## Code metadata and sanitizing
 
-Before changing fenced-code metadata, run
-`pnpm exec ava packages/transformer-markdown/src/processors/markdown.test.ts`.
+Fenced code keeps the metadata syntax highlighters need:
 
 - The sanitizer keeps `language-*` classes whose language id uses only letters,
   numbers, `_`, or `-`.
-- It keeps `data-title` on `<code>` for syntax highlighters. Other code classes
-  and attributes are stripped.
+- It keeps `data-title` on `<code>`. Unsupported classes and event handlers are
+  stripped; attributes allowed by the standard `rehype-sanitize` schema remain.
+
+Repository maintainers can verify the contract from the repository root with
+`pnpm exec ava packages/transformer-markdown/src/processors/markdown.test.ts`.
 
 ## 🧰 Options
 
