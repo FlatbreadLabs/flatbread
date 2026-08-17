@@ -228,6 +228,24 @@ describe('content readers', () => {
     await expect(getPackages()).rejects.toThrow(/allPackages/);
   });
 
+  it.each([
+    ['allSections', getSections, 'apps/docs/content/nav'],
+    ['allDocs', getDocs, 'apps/docs/content/docs'],
+    ['allPackages', getPackages, 'apps/docs/content/reference'],
+  ])(
+    'rejects null and empty %s with the same actionable error',
+    async (collection, read, directory) => {
+      const message = `Flatbread returned no \`${collection}\` records. Check that \`flatbread start\` is reading this repository, that \`apps/docs/flatbread.config.js\` is valid, and that ${directory} holds files.`;
+
+      for (const records of [[], null]) {
+        vi.mocked(query).mockResolvedValueOnce({
+          [collection]: records,
+        } as never);
+        await expect(read()).rejects.toThrow(message);
+      }
+    }
+  );
+
   it('rejects when every doc is missing a required field', async () => {
     vi.mocked(query).mockResolvedValueOnce({
       allDocs: [{ id: null, title: null }, { id: 'missing-title' }],
@@ -253,6 +271,21 @@ describe('content readers', () => {
 
     await expect(getSearchEntries()).rejects.toThrow(/allPackages/);
   });
+
+  it.each([
+    ['null', null],
+    ['empty', []],
+  ])(
+    'rejects a search corpus with %s allDocs and valid packages',
+    async (_case, allDocs) => {
+      const payload = searchPayload('Valid package content.');
+      vi.mocked(query).mockResolvedValueOnce({ ...payload, allDocs } as never);
+
+      await expect(getSearchEntries()).rejects.toThrow(
+        'Flatbread returned no `allDocs` records. Check that `flatbread start` is reading this repository, that `apps/docs/flatbread.config.js` is valid, and that apps/docs/content/docs holds files.'
+      );
+    }
+  );
 
   it('keeps searchable text from the end of a long README', async () => {
     vi.mocked(query).mockResolvedValueOnce({
@@ -435,5 +468,23 @@ describe('memoized readers in production', () => {
     expect(second.find((entry) => entry.id === 'core')?.summary).toBe(
       'Frozen package.'
     );
+  });
+
+  it('keeps a rejected promise sticky across calls', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.resetModules();
+
+    const { query: prodQuery } = await import('./graphql');
+    const { getDocs: getDocsProd } = await import('./content');
+    const failure = new Error('Content graph unavailable');
+
+    vi.mocked(prodQuery).mockReset();
+    vi.mocked(prodQuery)
+      .mockRejectedValueOnce(failure)
+      .mockResolvedValueOnce(docsPayload('Recovered') as never);
+
+    await expect(getDocsProd()).rejects.toBe(failure);
+    await expect(getDocsProd()).rejects.toBe(failure);
+    expect(prodQuery).toHaveBeenCalledTimes(1);
   });
 });

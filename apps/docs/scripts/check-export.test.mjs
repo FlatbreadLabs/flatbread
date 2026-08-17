@@ -228,6 +228,40 @@ describe('collectExportProblems', () => {
     ]);
   });
 
+  it('rejects missing and non-HTML search targets', () => {
+    const problems = withExport({
+      'index.html': '<main></main>',
+      'asset.json': '{}',
+      'search-index.json': JSON.stringify([
+        {
+          id: 'missing',
+          title: 'Missing',
+          href: '/docs/missing/',
+          kind: 'guide',
+          group: 'Start',
+          summary: 'Missing page',
+          body: 'Missing page',
+        },
+        {
+          id: 'asset',
+          title: 'Asset',
+          href: '/asset.json',
+          kind: 'guide',
+          group: 'Start',
+          summary: 'JSON asset',
+          body: 'JSON asset',
+        },
+      ]),
+    });
+
+    expect(problems).toContain(
+      'search-index.json entry 0 `href` points at missing docs/missing/index.html'
+    );
+    expect(problems).toContain(
+      'search-index.json entry 1 `href` must target an exported HTML page'
+    );
+  });
+
   it('validates search entry fragments', () => {
     const problems = withExport({
       'index.html': '<main></main>',

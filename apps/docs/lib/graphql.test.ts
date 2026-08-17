@@ -26,6 +26,27 @@ describe('query cache key', () => {
     await expect(query(ping)).resolves.toEqual(data);
   });
 
+  it('fetches from the configured GraphQL endpoint', async () => {
+    vi.stubEnv(
+      'FLATBREAD_GRAPHQL_ENDPOINT',
+      'https://content.example.test/custom/graphql'
+    );
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { __typename: 'Query' } }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { query } = await import('./graphql');
+    await query(ping);
+
+    const url = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    expect(`${url.origin}${url.pathname}`).toBe(
+      'https://content.example.test/custom/graphql'
+    );
+    expect(url.searchParams.get('build')).toMatch(/^[0-9a-z]+$/);
+  });
+
   it.each([
     ['production', 'force-cache'],
     ['development', 'no-store'],
@@ -101,6 +122,28 @@ describe('query failures', () => {
     const { query } = await import('./graphql');
     await expect(query(ping)).rejects.toThrow(
       /Flatbread answered 503.*localhost:5057\/graphql/
+    );
+  });
+
+  it('uses the configured endpoint in a 503 startup hint', async () => {
+    vi.stubEnv(
+      'FLATBREAD_GRAPHQL_ENDPOINT',
+      'https://content.example.test/custom/graphql'
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        json: async () => {
+          throw new SyntaxError('not JSON');
+        },
+      })
+    );
+
+    const { query } = await import('./graphql');
+    await expect(query(ping)).rejects.toThrow(
+      'Flatbread answered 503 for a query. Is `flatbread start` running on https://content.example.test/custom/graphql?'
     );
   });
 

@@ -15,19 +15,19 @@ export default async function Home() {
     {
       name: 'Doc',
       count: docs.length,
-      path: 'content/docs/[id].md',
+      path: 'apps/docs/content/docs/[id].md',
       note: 'The guides, straight from the repository.',
     },
     {
       name: 'Section',
       count: sections.length,
-      path: 'content/nav/[id].yaml',
+      path: 'apps/docs/content/nav/[id].yaml',
       note: 'Navigation groups, written as YAML.',
     },
     {
       name: 'Package',
       count: packages.length,
-      path: 'content/reference/[id].md',
+      path: 'apps/docs/content/reference/[id].md',
       note: 'Symlinks to the published package READMEs.',
     },
   ];

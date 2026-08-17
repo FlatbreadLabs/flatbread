@@ -192,7 +192,7 @@ jobs:
     # Windows and macOS for the same `flatbread start -- next build` path.
     strategy:
       matrix:
-        node-version: [22.x]
+        node-version: [20.x, 22.x]
 
     steps:
       - uses: actions/checkout@v4
@@ -226,6 +226,7 @@ jobs:
         run: pnpm docs:build:base-path
 
       - name: Upload the static site
+        if: matrix.node-version == '22.x'
         uses: actions/upload-pages-artifact@v4
         with:
           path: apps/docs/out

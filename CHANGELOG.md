@@ -7,8 +7,9 @@
 - The DAG runner is now `@flatbread/oven` (`pnpm exec oven`); the memory package is now `@flatbread/proof` with the `flatbread proof` CLI.
 - Workspace installs use patched `sharp@0.35.3` below `svimg` and Next.js. The
   older `sharp` ranges can fall back to a source build that does not recognize
-  Visual Studio 18 after a native download fails. Remove the `svimg` override
-  when Flatbread moves to a release that uses `sharp` 0.35 or newer.
+  Visual Studio 18 after a native download fails. Remove each `sharp` override
+  after its parent resolves `sharp` 0.35 or newer without the override and the
+  image/docs builds pass.
 - The docs site and Next.js example use Next.js 15.5.23 and React 19.1.9. This
   clears the known critical and high advisories on the versions they replaced.
 - The root development toolchain supports Node 20 from 20.19 onward and Node

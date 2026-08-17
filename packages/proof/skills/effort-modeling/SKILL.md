@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Use this discipline while a plan or design is being shaped. Store planning
 records in the Proof. Keep project terms in a glossary such as
-`CONTEXT.md` or `docs/glossary.md`.
+`CONTEXT.md` or `apps/docs/content/docs/glossary.md`.
 
 ## Resume before asking
 

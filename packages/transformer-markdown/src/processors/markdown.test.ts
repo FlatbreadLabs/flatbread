@@ -47,6 +47,15 @@ test('strips event handlers and unrelated code classes', async (t) => {
   t.false(html.includes('onclick'));
 });
 
+test('keeps default sanitizer attributes on non-code elements', async (t) => {
+  const html = await render(
+    '<a href="/guide" title="Read the guide">Guide</a>'
+  );
+
+  t.true(html.includes('href="/guide"'));
+  t.true(html.includes('title="Read the guide"'));
+});
+
 test('strips fence languages outside the public character boundary', async (t) => {
   const cpp = await render('```c++\nint main() {}\n```');
   const csharp = await render('```c#\npublic class Program {}\n```');
