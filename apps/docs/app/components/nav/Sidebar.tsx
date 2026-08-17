@@ -23,8 +23,8 @@ interface Branch {
  *
  * A vertical list is the one place where box-drawing characters are completely
  * safe: `├─` and `└─` never have to stretch, so they line up whatever the
- * window is doing. The caret marking the current page is a single element that
- * Motion slides from row to row.
+ * window is doing. The current page gets a plain text marker inside its link;
+ * it does not need an animation library or a shared moving element.
  */
 export function Sidebar({ sections, docs, packages }: SidebarProps) {
   const pathname = usePathname();
