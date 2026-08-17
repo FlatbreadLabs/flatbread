@@ -23,6 +23,31 @@ describe('collectExportProblems', () => {
     expect(problems).toEqual([]);
   });
 
+  it('accepts routes, assets, and fragments at the site root', () => {
+    const problems = withExport(
+      {
+        'index.html':
+          '<main id="main-content"><a href="/docs/guide/#part">Guide</a><script src="/app.js"></script></main>',
+        'docs/guide/index.html': '<h2 id="part">Part</h2>',
+        'app.js': 'console.log("ok")',
+      },
+      { basePath: '' }
+    );
+
+    expect(problems).toEqual([]);
+  });
+
+  it('reports a missing local file when the site is hosted at root', () => {
+    const problems = withExport(
+      { 'index.html': '<a href="/nope/">Missing</a>' },
+      { basePath: '' }
+    );
+
+    expect(problems).toContain(
+      'index.html: `/nope/` points at missing nope/index.html'
+    );
+  });
+
   it('reports missing fragment targets and duplicate ids', () => {
     const problems = withExport({
       'index.html':
@@ -172,7 +197,10 @@ describe('collectExportProblems', () => {
   });
 });
 
-function withExport(files, { includeIndex = true } = {}) {
+function withExport(
+  files,
+  { includeIndex = true, basePath = '/flatbread' } = {}
+) {
   const outDir = mkdtempSync(join(tmpdir(), 'docs-export-'));
   const outsideDir = mkdtempSync(join(tmpdir(), 'docs-export-outside-'));
   try {
@@ -205,7 +233,7 @@ function withExport(files, { includeIndex = true } = {}) {
         writeFileSync(path, contents);
       }
     }
-    return collectExportProblems({ outDir, basePath: '/flatbread' });
+    return collectExportProblems({ outDir, basePath });
   } finally {
     rmSync(outDir, { recursive: true, force: true });
     rmSync(outsideDir, { recursive: true, force: true });

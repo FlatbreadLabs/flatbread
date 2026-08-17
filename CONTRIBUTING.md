@@ -34,7 +34,7 @@ Optional **`pnpm play`** from the repo root is a shortcut for **`cd examples/nex
 - Build all packages: `pnpm build`
 - **Workspace libraries (watch-only):** `pnpm dev` — runs package `dev` scripts (e.g. `tsup --watch`) for `packages/*`; it does **not** start the Next.js example.
 - **Next.js example:** prefer the flow under [Recommended onboarding](#recommended-onboarding-try-flatbread-in-the-nextjs-example); or `pnpm play` as a convenience alias.
-- **Documentation site:** from the repo root, `pnpm docs:dev` builds the packages (`predocs:dev` runs `pnpm build` first, so a fresh clone works), then starts Flatbread on **5057** and Next on **3000**. `pnpm docs:build` builds the packages and then the static site. `pnpm docs:check` builds the packages first, then checks frontmatter, links, graph parity, and generated queries. The content model is in `apps/docs/README.md`.
+- **Documentation site:** from the repo root, `pnpm docs:dev` builds the packages (`predocs:dev` runs `pnpm build` first, so a fresh clone works), then starts Flatbread on **5057** and Next on **3000**. `pnpm docs:build` builds the packages, then validates both `/` and `/flatbread` exports. `pnpm docs:check` builds the packages first, then checks frontmatter, links, graph parity, and generated queries. The content model is in `apps/docs/README.md`.
 - `pnpm play` and `pnpm docs:dev` both use ports **5057** and **3000**. Stop
   one before starting the other.
 - **Proof explorer:**
@@ -89,9 +89,22 @@ pnpm build
   - Single package: `pnpm -F <package-name> test`
 - Watch (where supported): `pnpm -F <package-name> test:watch`
 
-The workspace pins patched `sharp@0.35.3` for `svimg` and Next.js. Older
-versions can try an unsupported Windows source build when a binary download
-fails. Remove the `svimg` override after it moves to `sharp` 0.35 or newer.
+## Dependency overrides
+
+Before removing an override, delete only that selector, refresh the lockfile,
+then run `pnpm why <package>`, `pnpm audit --prod`, and `pnpm verify`.
+
+| Selector                                   | Risk it addresses                                                                                         | Remove only when                                                                                                      |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `@graphql-codegen/cli>shell-quote` `1.9.0` | Newline command injection and quadratic parser denial of service in `shell-quote` through `1.8.4`.        | Codegen resolves a release outside all current `shell-quote` advisories without the override, and codegen/audit pass. |
+| `next>postcss` `8.5.18`                    | Next's `8.4.31` pin is inside the XSS and attacker-controlled source-map file disclosure advisory ranges. | Next resolves a PostCSS release outside all current advisories without the override, and both docs builds pass.       |
+| `sanitize-html>postcss` `8.5.18`           | Older allowed PostCSS releases share the source-map file disclosure and path-traversal risks.             | `sanitize-html` resolves a PostCSS release outside all current advisories without the override, and docs/audit pass.  |
+| `postcss>nanoid` `3.3.18`                  | Custom and non-secure generators can loop forever for zero or negative sizes before `3.3.18`.             | PostCSS resolves a Nano ID release outside all current advisories without the override, and docs/audit pass.          |
+
+The workspace also pins `sharp@0.35.3` for `svimg` and Next.js. Older versions
+can try an unsupported Windows source build when a binary download fails.
+Remove each `sharp` override after its parent resolves `sharp` 0.35 or newer
+without the override and the image/docs builds pass.
 
 Oven (the DAG task runner for Cursor agents) now lives at
 https://github.com/FlatbreadLabs/oven.

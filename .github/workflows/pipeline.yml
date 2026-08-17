@@ -194,9 +194,6 @@ jobs:
       matrix:
         node-version: [22.x]
 
-    env:
-      NEXT_PUBLIC_BASE_PATH: /flatbread
-
     steps:
       - uses: actions/checkout@v4
 
@@ -222,8 +219,11 @@ jobs:
       - name: Typecheck the docs site
         run: pnpm docs:typecheck
 
-      - name: Build the docs site
-        run: pnpm --dir apps/docs build
+      - name: Build the docs site at the root path
+        run: pnpm docs:build:root
+
+      - name: Build the docs site for GitHub Pages
+        run: pnpm docs:build:base-path
 
       - name: Upload the static site
         uses: actions/upload-pages-artifact@v4

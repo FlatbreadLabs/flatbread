@@ -13,7 +13,16 @@ From the repository root:
 
 ```bash
 pnpm docs:dev     # build the packages, then Flatbread on :5057 and Next on :3000
+pnpm docs:build   # build packages, then validate root and /flatbread exports
 ```
+
+`pnpm docs:build` is the release build contract. It works from a fresh clone:
+first it builds the workspace packages, then it builds and validates the docs
+at `/`, and finally it rebuilds and validates them with the GitHub Pages base
+path `/flatbread`.
+
+When diagnosing one target, run `pnpm docs:build:root` or
+`pnpm docs:build:base-path` after the workspace packages have been built.
 
 `pnpm play` (the Next.js example) and `pnpm docs:dev` both use Flatbread on **5057**
 and Next on **3000**. Running the two at once fails; stop one before you start
@@ -23,7 +32,7 @@ Or from this directory, once the packages are built:
 
 ```bash
 pnpm dev          # flatbread start --watch -- next dev --turbopack
-pnpm build        # build ./out, then validate exported routes/assets/fragments
+pnpm build        # build the root-path ./out, then validate the export
 pnpm serve        # serve the built files
 pnpm check        # check frontmatter, links, and graph-to-disk parity
 pnpm test         # vitest run: content, search, Markdown, link, and export checks

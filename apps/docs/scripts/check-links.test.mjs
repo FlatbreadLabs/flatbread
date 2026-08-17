@@ -125,6 +125,32 @@ describe('collectProblems', () => {
     );
   });
 
+  it('rejects non-string and blank related entries', () => {
+    const problems = withRepo({
+      'apps/docs/content/docs/gap.md': [
+        '---',
+        'id: gap',
+        'title: Gap',
+        'section: start',
+        'order: 1',
+        'summary: A summary.',
+        'related:',
+        '  - 42',
+        '  - ""',
+        '  - glossary',
+        '---',
+        '',
+        '# Gap',
+      ].join('\n'),
+      'apps/docs/content/docs/glossary.md': page({ id: 'glossary' }),
+    });
+
+    expect(problems).toEqual([
+      'apps/docs/content/docs/gap.md: `related` entry 0 must be a non-empty string',
+      'apps/docs/content/docs/gap.md: `related` entry 1 must be a non-empty string',
+    ]);
+  });
+
   it('reports a link that points at nothing', () => {
     const problems = withRepo({
       'apps/docs/content/docs/gap.md': page({

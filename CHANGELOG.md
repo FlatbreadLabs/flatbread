@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+### Toolchain and dependencies
+
 - The DAG runner is now `@flatbread/oven` (`pnpm exec oven`); the memory package is now `@flatbread/proof` with the `flatbread proof` CLI.
 - Workspace installs use patched `sharp@0.35.3` below `svimg` and Next.js. The
   older `sharp` ranges can fall back to a source build that does not recognize
@@ -12,6 +14,27 @@
 - The root development toolchain supports Node 20 from 20.19 onward and Node
   22 from 22.12 onward. Node 21 and early Node 22 releases are excluded because
   the locked Vite test toolchain does not support them.
+- Scoped overrides pin `shell-quote@1.9.0`, `postcss@8.5.18`, and
+  `nanoid@3.3.18` below dependencies that still accept vulnerable versions.
+  They address command injection/parser denial of service, source-map file
+  disclosure, and generator infinite loops. Use the
+  [removal checklist](./CONTRIBUTING.md#dependency-overrides) before changing
+  them.
+
+### Documentation
+
+- A new `apps/docs` site statically exports guides and package reference pages
+  from Flatbread's own content graph. It adds full-page search, accessible
+  navigation, and syntax-highlighted code without requiring a runtime server.
+- Passing pushes to `main` deploy the static site to GitHub Pages under
+  `/flatbread`. CI validates both the root export and the `/flatbread` base-path
+  export before deployment.
+- Canonical guides moved from `docs/*.md` to `apps/docs/content/docs`; the old
+  paths now forward existing links. Research and experiment notes moved to
+  `apps/docs/content/notes`.
+
+### Runtime behavior
+
 - `@flatbread/source-filesystem` reads a content directory that does not exist
   as an empty collection instead of throwing `ENOENT`. Git cannot store an
   empty directory, and a Proof write creates only the directory it writes, so

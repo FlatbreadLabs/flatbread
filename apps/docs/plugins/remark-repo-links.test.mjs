@@ -139,6 +139,13 @@ describe('remarkRepoLinks', () => {
     expect(resolveRepoLink(url, { repoRoot })).toBeUndefined();
   });
 
+  it('refuses a literal parent-segment traversal in a blob URL', () => {
+    const url = `${BLOB}/apps/docs/content/docs/../../../../README.md`;
+
+    expect(apply(url)).toBe(url);
+    expect(resolveRepoLink(url, { repoRoot })).toBeUndefined();
+  });
+
   it('refuses a blob URL with malformed percent encoding', () => {
     const url = `${BLOB}/apps/docs/content/docs/%E0%A4%A`;
 

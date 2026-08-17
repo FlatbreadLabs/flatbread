@@ -117,6 +117,38 @@ describe('content readers', () => {
     );
   });
 
+  it('rejects a related row with a whitespace-only id', async () => {
+    const payload = docPagePayload();
+    vi.mocked(query).mockResolvedValueOnce({
+      Doc: {
+        ...payload.Doc,
+        related: [{ id: '   ', title: 'Related doc' }],
+      },
+    } as never);
+
+    await expect(getDoc('getting-started')).rejects.toThrow(/Doc\.related.*id/);
+  });
+
+  it('rejects a null related row', async () => {
+    const payload = docPagePayload();
+    vi.mocked(query).mockResolvedValueOnce({
+      Doc: { ...payload.Doc, related: [null] },
+    } as never);
+
+    await expect(getDoc('getting-started')).rejects.toThrow(/Doc\.related.*id/);
+  });
+
+  it('preserves an empty related array', async () => {
+    const payload = docPagePayload();
+    vi.mocked(query).mockResolvedValueOnce({
+      Doc: { ...payload.Doc, related: [] },
+    } as never);
+
+    await expect(getDoc('getting-started')).resolves.toMatchObject({
+      related: [],
+    });
+  });
+
   it('returns undefined when a doc is missing', async () => {
     vi.mocked(query).mockResolvedValueOnce({ Doc: null } as never);
 

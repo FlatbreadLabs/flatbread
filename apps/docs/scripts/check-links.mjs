@@ -114,7 +114,16 @@ export function collectProblems({
     if (!Array.isArray(related)) {
       problems.push(`${rel(path, repoRoot)}: \`related\` must be a list`);
     } else {
-      for (const entry of related) {
+      for (const [index, entry] of related.entries()) {
+        if (typeof entry !== 'string' || entry.trim().length === 0) {
+          problems.push(
+            `${rel(
+              path,
+              repoRoot
+            )}: \`related\` entry ${index} must be a non-empty string`
+          );
+          continue;
+        }
         if (!guideIds.has(entry)) {
           problems.push(
             `${rel(path, repoRoot)}: related page \`${entry}\` does not exist`
@@ -221,7 +230,7 @@ function checkLinks(path, text, { problems, repoRoot, docsDir }) {
   }
 }
 
-/** A deliberately small YAML reader: strings, numbers, and lists of strings. */
+/** A deliberately small YAML reader: scalar values and flat lists. */
 export function frontmatter(text) {
   const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
   if (!match) return {};
@@ -232,7 +241,7 @@ export function frontmatter(text) {
   for (const line of match[1].split(/\r?\n/)) {
     const item = /^\s+-\s+(.*)$/.exec(line);
     if (item && listKey) {
-      data[listKey].push(unquote(item[1]));
+      data[listKey].push(scalar(item[1]));
       continue;
     }
 
@@ -250,10 +259,6 @@ export function frontmatter(text) {
   }
 
   return data;
-}
-
-function unquote(value) {
-  return value.trim().replace(/^["'](.*)["']$/, '$1');
 }
 
 function scalar(value) {

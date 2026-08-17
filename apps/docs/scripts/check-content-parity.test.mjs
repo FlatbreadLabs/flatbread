@@ -104,6 +104,22 @@ describe('collectParityProblems', () => {
       collectParityProblems({ fetchImpl, collections: [] })
     ).rejects.toThrow('Flatbread answered 503 during parity check.');
   });
+
+  it.each([
+    [
+      'non-JSON response',
+      async () => {
+        throw new SyntaxError('not JSON');
+      },
+    ],
+    ['null data', async () => ({ data: null })],
+  ])('rejects a successful %s', async (_label, json) => {
+    const fetchImpl = async () => ({ ok: true, status: 200, json });
+
+    await expect(
+      collectParityProblems({ fetchImpl, collections: [] })
+    ).rejects.toThrow('Flatbread returned no parity data.');
+  });
 });
 
 function graphResponse(data) {
