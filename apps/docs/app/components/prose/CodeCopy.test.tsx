@@ -132,6 +132,37 @@ describe('CodeCopy', () => {
     expect(firstButton.textContent).toBe('[copy]');
     expect(secondButton.textContent).toBe('[copied]');
   });
+
+  it('keeps overlapping reset timers independent across code blocks', async () => {
+    const writeText = installClipboard(vi.fn().mockResolvedValue(undefined));
+    const first = appendCode('pnpm build');
+    const second = appendCode('pnpm test');
+    await renderCopy();
+    const firstButton = first.querySelector<HTMLButtonElement>('.fb-copy')!;
+    const secondButton = second.querySelector<HTMLButtonElement>('.fb-copy')!;
+
+    await click(firstButton);
+    await act(async () => vi.advanceTimersByTime(800));
+    await click(secondButton);
+    await act(async () => vi.advanceTimersByTime(400));
+    await click(firstButton);
+
+    await act(async () => vi.advanceTimersByTime(400));
+    expect(firstButton.textContent).toBe('[copied]');
+    expect(secondButton.textContent).toBe('[copied]');
+
+    await act(async () => vi.advanceTimersByTime(800));
+    expect(firstButton.textContent).toBe('[copied]');
+    expect(secondButton.textContent).toBe('[copy]');
+
+    await act(async () => vi.advanceTimersByTime(400));
+    expect(firstButton.textContent).toBe('[copy]');
+    expect(writeText.mock.calls).toEqual([
+      ['pnpm build'],
+      ['pnpm test'],
+      ['pnpm build'],
+    ]);
+  });
 });
 
 async function renderCode(code: string) {

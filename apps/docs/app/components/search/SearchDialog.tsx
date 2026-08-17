@@ -267,12 +267,16 @@ function isSearchEntry(value: unknown): value is SearchEntry {
   if (typeof value !== 'object' || value === null) return false;
   const entry = value as Record<string, unknown>;
   return (
-    typeof entry.id === 'string' &&
-    typeof entry.title === 'string' &&
-    typeof entry.href === 'string' &&
+    isNonBlankString(entry.id) &&
+    isNonBlankString(entry.title) &&
+    isNonBlankString(entry.href) &&
     (entry.kind === 'guide' || entry.kind === 'package') &&
-    typeof entry.group === 'string' &&
+    isNonBlankString(entry.group) &&
     typeof entry.summary === 'string' &&
     typeof entry.body === 'string'
   );
+}
+
+function isNonBlankString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
 }

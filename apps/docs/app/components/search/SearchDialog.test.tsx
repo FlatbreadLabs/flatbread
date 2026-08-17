@@ -205,6 +205,51 @@ describe('SearchDialog', () => {
     }
   );
 
+  it.each(['id', 'title', 'href', 'kind', 'group'] as const)(
+    'shows an error for a mixed array with a blank %s and succeeds when reopened',
+    async (field) => {
+      const blankEntry = { ...entries[1], [field]: '   ' };
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [entries[0], blankEntry],
+        })
+        .mockResolvedValueOnce({ ok: true, json: async () => entries });
+      vi.stubGlobal('fetch', fetchMock);
+
+      await renderDialog();
+      await click(buttonNamed('search'));
+
+      expect(status().textContent).toBe(
+        'Search index failed to load. Reload the page and try again.'
+      );
+
+      await click(buttonNamed('Close search'));
+      await click(buttonNamed('search'));
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(status().textContent).toContain('2 pages');
+      expect(status().textContent).not.toContain('failed to load');
+    }
+  );
+
+  it('accepts blank optional summary and body strings', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [{ ...entries[0], summary: '', body: '' }],
+      })
+    );
+
+    await renderDialog();
+    await click(buttonNamed('search'));
+
+    expect(status().textContent).toMatch(/^1 page/);
+    expect(status().textContent).not.toContain('failed to load');
+  });
+
   it('aborts an in-flight index request when search closes', async () => {
     let signal: AbortSignal | undefined;
     const fetchMock = vi.fn(

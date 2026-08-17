@@ -16,12 +16,15 @@ const entries: TocEntry[] = [
 let container: HTMLDivElement;
 let headings: HTMLElement[];
 let root: Root;
+let rootMounted: boolean;
 let observerCallback: IntersectionObserverCallback;
+const observerCreated = vi.fn();
 const observe = vi.fn();
 const disconnect = vi.fn();
 
 class IntersectionObserverMock {
   constructor(callback: IntersectionObserverCallback) {
+    observerCreated();
     observerCallback = callback;
   }
 
@@ -36,6 +39,7 @@ class IntersectionObserverMock {
 
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  observerCreated.mockReset();
   observe.mockReset();
   disconnect.mockReset();
 
@@ -49,10 +53,11 @@ beforeEach(() => {
   });
   document.body.append(container, ...headings);
   root = createRoot(container);
+  rootMounted = true;
 });
 
 afterEach(async () => {
-  await act(async () => root.unmount());
+  if (rootMounted) await act(async () => root.unmount());
   container.remove();
   headings.forEach((heading) => heading.remove());
   vi.restoreAllMocks();
@@ -61,9 +66,7 @@ afterEach(async () => {
 
 describe('Toc', () => {
   it('marks the top visible heading as the current location', async () => {
-    await act(async () => {
-      root.render(createElement(Toc, { entries }));
-    });
+    await renderToc();
 
     expect(currentLinks()).toEqual(['#first', '#first']);
     expect(observe).toHaveBeenCalledTimes(2);
@@ -79,7 +82,63 @@ describe('Toc', () => {
 
     expect(currentLinks()).toEqual(['#second', '#second']);
   });
+
+  it('renders nothing and does not create an observer for empty entries', async () => {
+    await renderToc([]);
+
+    expect(container.innerHTML).toBe('');
+    expect(observerCreated).not.toHaveBeenCalled();
+    expect(observe).not.toHaveBeenCalled();
+  });
+
+  it('observes only headings that exist in the document', async () => {
+    headings[1].remove();
+
+    await renderToc();
+
+    expect(observe).toHaveBeenCalledOnce();
+    expect(observe).toHaveBeenCalledWith(headings[0]);
+  });
+
+  it('keeps the current location when no observed heading intersects', async () => {
+    await renderToc();
+    await act(async () => {
+      observerCallback(
+        [intersection(headings[1], 80)],
+        {} as IntersectionObserver
+      );
+    });
+    expect(currentLinks()).toEqual(['#second', '#second']);
+
+    await act(async () => {
+      observerCallback(
+        [
+          intersection(headings[0], 40, false),
+          intersection(headings[1], 80, false),
+        ],
+        {} as IntersectionObserver
+      );
+    });
+
+    expect(currentLinks()).toEqual(['#second', '#second']);
+  });
+
+  it('disconnects the heading observer on unmount', async () => {
+    await renderToc();
+    expect(disconnect).not.toHaveBeenCalled();
+
+    await act(async () => root.unmount());
+    rootMounted = false;
+
+    expect(disconnect).toHaveBeenCalledOnce();
+  });
 });
+
+async function renderToc(nextEntries: TocEntry[] = entries) {
+  await act(async () => {
+    root.render(createElement(Toc, { entries: nextEntries }));
+  });
+}
 
 function currentLinks() {
   return [...container.querySelectorAll('[aria-current="location"]')].map(
@@ -89,11 +148,12 @@ function currentLinks() {
 
 function intersection(
   target: HTMLElement,
-  top: number
+  top: number,
+  isIntersecting = true
 ): IntersectionObserverEntry {
   return {
     target,
-    isIntersecting: true,
+    isIntersecting,
     boundingClientRect: { top },
   } as unknown as IntersectionObserverEntry;
 }
