@@ -91,3 +91,25 @@ test('strips fence languages outside the public character boundary', async (t) =
   t.true(cpp.includes('int main() {}'));
   t.true(csharp.includes('public class Program {}'));
 });
+
+test('strips dotted fenced language classes through sanitizing', async (t) => {
+  const html = await render('```objective.c\nint main() {}\n```');
+
+  t.is(html, '<pre><code class="">int main() {}\n</code></pre>');
+});
+
+test('strips a bare language class through sanitizing', async (t) => {
+  const html = await render(
+    '<pre><code class="language-">empty suffix</code></pre>'
+  );
+
+  t.is(html, '<pre><code class="">empty suffix</code></pre>');
+});
+
+test('strips unsupported raw HTML language classes through sanitizing', async (t) => {
+  const html = await render(
+    '<pre><code class="language-c++">int main() {}</code></pre>'
+  );
+
+  t.is(html, '<pre><code class="">int main() {}</code></pre>');
+});

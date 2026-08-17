@@ -82,6 +82,7 @@ afterEach(async () => {
   await act(async () => root.unmount());
   container.remove();
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   restoreProperty(
     HTMLElement.prototype,
@@ -110,6 +111,11 @@ describe('SearchDialog', () => {
     expect(status().textContent).toBe(
       'Search index failed to load. Reload the page and try again.'
     );
+
+    await click(buttonNamed('Close search'));
+    await click(buttonNamed('search'));
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('aborts an in-flight index request when search closes', async () => {
@@ -135,6 +141,30 @@ describe('SearchDialog', () => {
 
     expect(signal?.aborted).toBe(true);
     expect(status().textContent).not.toContain('failed to load');
+
+    await click(buttonNamed('search'));
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(signal?.aborted).toBe(false);
+  });
+
+  it('loads the search index from the configured base path', async () => {
+    vi.stubEnv('NEXT_PUBLIC_BASE_PATH', '/flatbread');
+    vi.resetModules();
+    const { SearchDialog: SearchDialogWithBasePath } = await import(
+      './SearchDialog'
+    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => entries });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await renderDialog(SearchDialogWithBasePath);
+    await click(buttonNamed('search'));
+
+    expect(fetchMock).toHaveBeenCalledWith('/flatbread/search-index.json', {
+      signal: expect.any(AbortSignal),
+    });
   });
 
   it('moves through hits with arrows and opens the active hit with Enter', async () => {
@@ -173,9 +203,9 @@ describe('SearchDialog', () => {
   });
 });
 
-async function renderDialog() {
+async function renderDialog(Dialog: typeof SearchDialog = SearchDialog) {
   await act(async () => {
-    root.render(createElement(SearchDialog));
+    root.render(createElement(Dialog));
   });
 }
 

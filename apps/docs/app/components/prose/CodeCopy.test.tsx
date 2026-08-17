@@ -1,0 +1,125 @@
+// @vitest-environment jsdom
+
+import { act, createElement } from 'react';
+import { createRoot } from 'react-dom/client';
+import type { Root } from 'react-dom/client';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { CodeCopy } from './CodeCopy';
+
+const clipboardDescriptor = Object.getOwnPropertyDescriptor(
+  navigator,
+  'clipboard'
+);
+
+let mount: HTMLDivElement;
+let prose: HTMLDivElement;
+let root: Root;
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+
+  mount = document.createElement('div');
+  prose = document.createElement('div');
+  prose.id = 'code-copy-fixture';
+  document.body.append(mount, prose);
+  root = createRoot(mount);
+});
+
+afterEach(async () => {
+  await act(async () => root.unmount());
+  mount.remove();
+  prose.remove();
+  restoreProperty(navigator, 'clipboard', clipboardDescriptor);
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
+describe('CodeCopy', () => {
+  it('copies code and resets its success state after 1.6 seconds', async () => {
+    const writeText = installClipboard(vi.fn().mockResolvedValue(undefined));
+    await renderCode('const answer = 42;');
+
+    const button = copyButton();
+    await click(button);
+
+    expect(writeText).toHaveBeenCalledWith('const answer = 42;');
+    expect(button.textContent).toBe('[copied]');
+    expect(button.dataset.done).toBe('');
+
+    await act(async () => vi.advanceTimersByTime(1599));
+    expect(button.textContent).toBe('[copied]');
+
+    await act(async () => vi.advanceTimersByTime(1));
+    expect(button.textContent).toBe('[copy]');
+    expect(button.dataset.done).toBeUndefined();
+  });
+
+  it('shows the keyboard fallback when clipboard access is rejected', async () => {
+    installClipboard(vi.fn().mockRejectedValue(new Error('Not allowed')));
+    await renderCode('pnpm test');
+
+    const button = copyButton();
+    await click(button);
+
+    expect(button.textContent).toBe('[press ⌘C]');
+    expect(button.dataset.done).toBeUndefined();
+
+    await act(async () => vi.advanceTimersByTime(1600));
+    expect(button.textContent).toBe('[copy]');
+  });
+
+  it('copies an empty string from an empty code element', async () => {
+    const writeText = installClipboard(vi.fn().mockResolvedValue(undefined));
+    await renderCode('');
+
+    await click(copyButton());
+
+    expect(writeText).toHaveBeenCalledWith('');
+    expect(copyButton().textContent).toBe('[copied]');
+  });
+});
+
+async function renderCode(code: string) {
+  const block = document.createElement('pre');
+  const content = document.createElement('code');
+  content.textContent = code;
+  block.append(content);
+  prose.append(block);
+
+  await act(async () => {
+    root.render(createElement(CodeCopy, { scope: '#code-copy-fixture' }));
+  });
+}
+
+async function click(button: HTMLButtonElement) {
+  await act(async () => {
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await Promise.resolve();
+  });
+}
+
+function copyButton(): HTMLButtonElement {
+  const button = prose.querySelector<HTMLButtonElement>('.fb-copy');
+  if (!button) throw new Error('Copy button was not rendered.');
+  return button;
+}
+
+function installClipboard(writeText: ReturnType<typeof vi.fn>) {
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText },
+  });
+  return writeText;
+}
+
+function restoreProperty(
+  target: object,
+  key: PropertyKey,
+  descriptor: PropertyDescriptor | undefined
+) {
+  if (descriptor) Object.defineProperty(target, key, descriptor);
+  else Reflect.deleteProperty(target, key);
+}
