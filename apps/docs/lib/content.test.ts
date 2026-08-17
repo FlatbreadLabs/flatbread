@@ -210,6 +210,18 @@ describe('content readers', () => {
     await expect(getDoc('getting-started')).rejects.toThrow(/Doc.*title/);
   });
 
+  it.each([
+    ['null', null],
+    ['missing', undefined],
+  ])('rejects a doc page with a %s section', async (_case, section) => {
+    const payload = docPagePayload();
+    vi.mocked(query).mockResolvedValueOnce({
+      Doc: { ...payload.Doc, section },
+    } as never);
+
+    await expect(getDoc('getting-started')).rejects.toThrow(/Doc.*section\.id/);
+  });
+
   it('rejects when allDocs is empty', async () => {
     vi.mocked(query).mockResolvedValueOnce({ allDocs: [] } as never);
 
@@ -253,6 +265,32 @@ describe('content readers', () => {
 
     await expect(getDocs()).rejects.toThrow(/allDocs/);
   });
+
+  it('rejects a null row in allDocs', async () => {
+    vi.mocked(query).mockResolvedValueOnce({ allDocs: [null] } as never);
+
+    await expect(getDocs()).rejects.toThrow(/allDocs.*id/);
+  });
+
+  it.each([
+    ['guide', null],
+    ['guide', '   '],
+    ['package', null],
+    ['package', '   '],
+  ])(
+    'rejects a search %s with null or blank raw content',
+    async (kind, raw) => {
+      const payload = searchPayload('Valid package content.');
+      if (kind === 'guide') {
+        payload.allDocs[0]!._content.raw = raw as never;
+      } else {
+        payload.allPackages[0]!._content.raw = raw as never;
+      }
+      vi.mocked(query).mockResolvedValueOnce(payload as never);
+
+      await expect(getSearchEntries()).rejects.toThrow(/_content\.raw/);
+    }
+  );
 
   it('rejects a search corpus with no valid package rows', async () => {
     vi.mocked(query).mockResolvedValueOnce({

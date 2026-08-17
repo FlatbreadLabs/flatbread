@@ -31,6 +31,26 @@ describe('docs Markdown pipeline', () => {
     expect(html).toContain('--shiki-light');
   });
 
+  it('falls back to plain highlighting for an unknown fenced language', async () => {
+    const html = String(
+      await processor().process(
+        '```definitely-not-a-shiki-language\nunknown syntax here\n```'
+      )
+    );
+
+    expect(html).toContain('data-language="definitely-not-a-shiki-language"');
+    expect(html).toContain('unknown syntax here');
+    expect(html).toContain('--shiki-light');
+  });
+
+  it('leaves an empty fence unhighlighted', async () => {
+    const html = String(await processor().process('```ts\n\n```'));
+
+    expect(html).toBe('<pre><code class="language-ts"></code></pre>');
+    expect(html).not.toContain('data-language');
+    expect(html).not.toContain('--shiki-light');
+  });
+
   it('keeps data-title without allowing event handlers or unknown attributes', async () => {
     const html = String(
       await processor().process(

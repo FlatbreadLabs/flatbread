@@ -56,6 +56,30 @@ test('keeps default sanitizer attributes on non-code elements', async (t) => {
   t.true(html.includes('title="Read the guide"'));
 });
 
+test('strips dangerous link protocols and event handlers', async (t) => {
+  const html = await render(
+    [
+      '<a href="javascript:alert(1)" onclick="alert(2)" data-track="secret">unsafe link</a>',
+      '<img src="/safe.png" alt="Safe" onerror="alert(3)" data-extra="secret">',
+    ].join('\n\n')
+  );
+
+  t.is(html, '<p><a>unsafe link</a></p>\n<img src="/safe.png" alt="Safe">');
+});
+
+test('drops scripts and unrelated data attributes from code', async (t) => {
+  const script = await render('<script>alert("bad")</script>');
+  const code = await render(
+    '<pre><code class="language-ts" data-title="demo.ts" data-secret="hidden">const answer = 42;</code></pre>'
+  );
+
+  t.is(script, '');
+  t.is(
+    code,
+    '<pre><code class="language-ts" data-title="demo.ts">const answer = 42;</code></pre>'
+  );
+});
+
 test('strips fence languages outside the public character boundary', async (t) => {
   const cpp = await render('```c++\nint main() {}\n```');
   const csharp = await render('```c#\npublic class Program {}\n```');
