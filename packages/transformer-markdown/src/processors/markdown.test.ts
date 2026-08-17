@@ -15,6 +15,17 @@ test('keeps syntax-highlighter code metadata through sanitizing', async (t) => {
   t.true(html.includes('data-title="demo.ts"'));
 });
 
+test('keeps safe default and code attributes without widening them', async (t) => {
+  const html = await render(
+    '<pre><code id="example" title="TypeScript example" class="language-ts utility" data-title="demo.ts" data-secret="hidden" onclick="alert(1)">const answer = 42;</code></pre>'
+  );
+
+  t.is(
+    html,
+    '<pre><code id="user-content-example" title="TypeScript example" class="language-ts" data-title="demo.ts">const answer = 42;</code></pre>'
+  );
+});
+
 test('keeps supported fenced language classes through sanitizing', async (t) => {
   const html = await render(
     [

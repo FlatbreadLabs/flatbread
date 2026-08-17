@@ -97,6 +97,31 @@ describe('collectParityProblems', () => {
     );
   });
 
+  it('rejects GraphQL errors from a successful HTTP response', async () => {
+    const fetchImpl = async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        data: { allDocs: [{ id: 'start' }] },
+        errors: [{ message: 'Docs resolver failed' }],
+      }),
+    });
+
+    await expect(
+      collectParityProblems({ fetchImpl, collections: [] })
+    ).rejects.toThrow('Docs resolver failed');
+  });
+
+  it('reports disk ids when the GraphQL collection key is absent', async () => {
+    await withDiskCollection(['start', 'glossary'], async (collections) => {
+      const fetchImpl = graphResponse({});
+
+      await expect(
+        collectParityProblems({ fetchImpl, collections })
+      ).resolves.toEqual(['allDocs missed files: glossary, start']);
+    });
+  });
+
   it('reports a non-JSON HTTP failure by status', async () => {
     const fetchImpl = async () => ({
       ok: false,

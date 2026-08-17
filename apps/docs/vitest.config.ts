@@ -12,6 +12,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: [
+      'app/components/nav/**/*.test.tsx',
       'app/components/prose/**/*.test.tsx',
       'app/components/search/**/*.test.tsx',
       'lib/**/*.test.ts',

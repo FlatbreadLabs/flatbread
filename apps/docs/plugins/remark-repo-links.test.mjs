@@ -94,6 +94,21 @@ describe('remarkRepoLinks', () => {
     ).toBe('/flatbread/docs/glossary/#terms');
   });
 
+  it('treats a slash-only base path as the site root', () => {
+    expect(
+      resolveRepoLink('./glossary.md#terms', {
+        repoRoot,
+        basePath: '//',
+      }).href
+    ).toBe('/docs/glossary/#terms');
+    expect(
+      resolveRepoLink('/docs/glossary/#terms', {
+        repoRoot,
+        basePath: '//',
+      }).href
+    ).toBe('/docs/glossary/#terms');
+  });
+
   it('rewrites a file with no site route to the GitHub blob URL', () => {
     expect(apply('../../CONTRIBUTING.md')).toBe(`${BLOB}/CONTRIBUTING.md`);
   });

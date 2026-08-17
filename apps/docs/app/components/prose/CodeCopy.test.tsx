@@ -71,6 +71,19 @@ describe('CodeCopy', () => {
     expect(button.textContent).toBe('[copy]');
   });
 
+  it('shows the keyboard fallback when the clipboard API is unavailable', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: undefined,
+    });
+    await renderCode('pnpm test');
+
+    await click(copyButton());
+
+    expect(copyButton().textContent).toBe('[press ⌘C]');
+    expect(copyButton().dataset.done).toBeUndefined();
+  });
+
   it('copies an empty string from an empty code element', async () => {
     const writeText = installClipboard(vi.fn().mockResolvedValue(undefined));
     await renderCode('');
@@ -79,6 +92,25 @@ describe('CodeCopy', () => {
 
     expect(writeText).toHaveBeenCalledWith('');
     expect(copyButton().textContent).toBe('[copied]');
+  });
+
+  it('keeps one copy button across rerender and remount', async () => {
+    await renderCode('pnpm test');
+    const firstButton = copyButton();
+
+    await renderCopy();
+
+    expect(prose.querySelectorAll('.fb-copy')).toHaveLength(1);
+    expect(copyButton()).toBe(firstButton);
+
+    await act(async () => root.unmount());
+    expect(prose.querySelectorAll('.fb-copy')).toHaveLength(0);
+
+    root = createRoot(mount);
+    await renderCopy();
+
+    expect(prose.querySelectorAll('.fb-copy')).toHaveLength(1);
+    expect(copyButton()).not.toBe(firstButton);
   });
 });
 
@@ -89,6 +121,10 @@ async function renderCode(code: string) {
   block.append(content);
   prose.append(block);
 
+  await renderCopy();
+}
+
+async function renderCopy() {
   await act(async () => {
     root.render(createElement(CodeCopy, { scope: '#code-copy-fixture' }));
   });

@@ -46,21 +46,22 @@ export default defineConfig({
 
 ### 2. Add `.flatbread-codegen-cache.json` to your `.gitignore`.
 
-### 3. Generate types:
+### 3. Generate types and start one watcher:
 
 ```bash
 # Generate types once
 pnpm exec flatbread codegen
 
-# Watch for changes and regenerate
-pnpm exec flatbread codegen --watch
+# Run Flatbread, codegen, and your app together (replace `next dev` as needed)
+pnpm exec flatbread start --watch -- next dev
 
 # Force regeneration (clear cache)
 pnpm exec flatbread codegen --clear-cache
 ```
 
-Use `flatbread start --watch -- <app command>` for one process that runs your
-app and regenerates code; follow the
+Use standalone `pnpm exec flatbread codegen --watch` only when no
+`flatbread start --watch` process is running. Do not run both watchers. Follow
+the
 [unified local development loop](https://flatbreadlabs.github.io/flatbread/docs/local-dev-loop/).
 
 ### 4. Use the generated output in your application:

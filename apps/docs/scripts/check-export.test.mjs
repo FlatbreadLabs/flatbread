@@ -37,6 +37,18 @@ describe('collectExportProblems', () => {
     expect(problems).toEqual([]);
   });
 
+  it('treats a slash-only base path as the site root', () => {
+    const problems = withExport(
+      {
+        'index.html': '<a href="/docs/guide/">Guide</a>',
+        'docs/guide/index.html': '<main>Guide</main>',
+      },
+      { basePath: '//' }
+    );
+
+    expect(problems).toEqual([]);
+  });
+
   it('reports a missing local file when the site is hosted at root', () => {
     const problems = withExport(
       { 'index.html': '<a href="/nope/">Missing</a>' },

@@ -99,11 +99,13 @@ export function SearchDialog() {
       .then((response) => {
         if (!response.ok)
           throw new Error(`Search index returned ${response.status}`);
-        return response.json() as Promise<SearchEntry[]>;
+        return response.json() as Promise<unknown>;
       })
       .then((nextEntries) => {
+        if (!Array.isArray(nextEntries))
+          throw new Error('Search index did not return an array');
         setLoadError('');
-        setEntries(nextEntries);
+        setEntries(nextEntries as SearchEntry[]);
       })
       .catch((error: unknown) => {
         requested.current = false;

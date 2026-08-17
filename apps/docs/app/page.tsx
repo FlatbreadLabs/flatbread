@@ -39,24 +39,24 @@ export default async function Home() {
         <p className="fb-hero__eyebrow">flatbread // documentation</p>
 
         <h1 className="fb-hero__title">
-          Build a typed content graph in about 5 minutes
+          Give coding agents memory you can review in Git
         </h1>
 
         <p className="fb-hero__lede">
-          Flatbread turns files in Git into a typed relational graph. Start with
-          app content, or use the same engine to keep coding-agent memory in
-          your repository.
+          Proof records agent work, decisions, and evidence as linked Markdown
+          in your repository. Flatbread is the typed content graph underneath,
+          and the same engine also powers app content.
         </p>
 
         <div className="fb-hero__actions">
+          <Link href="/reference/proof/" className="fb-cta">
+            [start: agent memory]
+          </Link>
           <Link
             href="/reference/flatbread/#quickstart-posts-authors-and-tags"
-            className="fb-cta"
+            className="fb-cta fb-cta--quiet"
           >
-            [start: 5-minute content graph]
-          </Link>
-          <Link href="/reference/proof/" className="fb-cta fb-cta--quiet">
-            [start: agent memory]
+            [start: content graph]
           </Link>
         </div>
       </section>

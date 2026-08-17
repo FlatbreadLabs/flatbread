@@ -38,6 +38,44 @@ describe('search', () => {
     expect(search(entries, 'alpha beta')).toEqual([]);
   });
 
+  it('returns only entries matching every term in score order', () => {
+    const strong = entry({
+      id: 'strong',
+      title: 'Alpha beta guide',
+      summary: 'other',
+      body: 'other',
+    });
+    const weaker = entry({
+      id: 'weaker',
+      title: 'Alpha guide',
+      summary: 'beta details',
+      body: 'other',
+    });
+    const alphaOnly = entry({
+      id: 'alpha-only',
+      title: 'Alpha only',
+      body: 'other',
+    });
+    const betaOnly = entry({
+      id: 'beta-only',
+      title: 'Beta only',
+      body: 'other',
+    });
+
+    const hits = search([alphaOnly, weaker, betaOnly, strong], 'alpha beta');
+
+    expect(hits.map((hit) => hit.entry.id)).toEqual(['strong', 'weaker']);
+    expect(hits[0].score).toBeGreaterThan(hits[1].score);
+  });
+
+  it('drops one-letter tokens while matching the remaining term', () => {
+    const entries = [
+      entry({ id: 'alpha', title: 'Alpha guide', body: 'other' }),
+    ];
+
+    expect(search(entries, 'a alpha')).toEqual(search(entries, 'alpha'));
+  });
+
   it('ranks title-prefix above title, summary, and body', () => {
     const prefix = entry({
       id: 'prefix',

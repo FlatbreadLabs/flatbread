@@ -143,6 +143,31 @@ describe('SearchDialog', () => {
     expect(status().textContent).not.toContain('failed to load');
   });
 
+  it('shows an error for non-array JSON and succeeds when reopened', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ entries }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => entries });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await renderDialog();
+    await click(buttonNamed('search'));
+
+    expect(status().textContent).toBe(
+      'Search index failed to load. Reload the page and try again.'
+    );
+
+    await click(buttonNamed('Close search'));
+    await click(buttonNamed('search'));
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(status().textContent).toContain('2 pages');
+    expect(status().textContent).not.toContain('failed to load');
+  });
+
   it('aborts an in-flight index request when search closes', async () => {
     let signal: AbortSignal | undefined;
     const fetchMock = vi.fn(
@@ -191,6 +216,34 @@ describe('SearchDialog', () => {
       signal: expect.any(AbortSignal),
     });
   });
+
+  it.each([
+    ['slash', { key: '/' }],
+    ['Command-K', { key: 'k', metaKey: true }],
+    ['Control-K', { key: 'k', ctrlKey: true }],
+  ])(
+    'opens with %s and returns focus to its opener',
+    async (_case, keyInit) => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({ ok: true, json: async () => entries })
+      );
+      await renderDialog();
+      const opener = buttonNamed('search');
+      opener.focus();
+
+      await windowKey(keyInit);
+
+      expect(container.querySelector('dialog')?.open).toBe(true);
+      expect(document.activeElement).toBe(
+        container.querySelector('[role="combobox"]')
+      );
+
+      await click(buttonNamed('Close search'));
+
+      expect(document.activeElement).toBe(opener);
+    }
+  );
 
   it('moves through hits with arrows and opens the active hit with Enter', async () => {
     vi.stubGlobal(
@@ -264,6 +317,19 @@ async function key(field: HTMLInputElement, value: string) {
         cancelable: true,
       })
     );
+  });
+}
+
+async function windowKey(init: KeyboardEventInit) {
+  await act(async () => {
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        ...init,
+      })
+    );
+    await settle();
   });
 }
 

@@ -11,6 +11,8 @@ import {
 } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { normalizeBasePath } from '../lib/base-path.mjs';
+
 const here = dirname(fileURLToPath(import.meta.url));
 const defaultOutDir = resolve(here, '../out');
 const ATTRIBUTE = /\b(?:href|src)=["']([^"']+)["']/gi;
@@ -350,11 +352,6 @@ function isExternal(url) {
     /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url) ||
     url.startsWith('data:')
   );
-}
-
-function normalizeBasePath(value) {
-  if (!value || value === '/') return '';
-  return `/${value.replace(/^\/+|\/+$/g, '')}`;
 }
 
 function nameOf(path, root) {

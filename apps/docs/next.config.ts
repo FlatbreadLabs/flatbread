@@ -1,9 +1,6 @@
 import type { NextConfig } from 'next';
 
-function normalizeBasePath(value: string | undefined) {
-  const path = value?.replace(/^\/+|\/+$/g, '') ?? '';
-  return path ? `/${path}` : '';
-}
+import { normalizeBasePath } from './lib/base-path.mjs';
 
 const basePath = normalizeBasePath(process.env.NEXT_PUBLIC_BASE_PATH);
 

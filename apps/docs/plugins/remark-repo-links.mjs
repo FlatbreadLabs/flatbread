@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, realpathSync } from 'node:fs';
 import { isAbsolute, posix, resolve, relative, sep } from 'node:path';
 
+import { normalizeBasePath } from '../lib/base-path.mjs';
 import { walk } from './walk.mjs';
 
 /**
@@ -195,11 +196,6 @@ function routeFor(target, docsDir) {
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function normalizeBasePath(value) {
-  if (!value || value === '/') return '';
-  return `/${value.replace(/^\/+|\/+$/g, '')}`;
 }
 
 export default remarkRepoLinks;
