@@ -168,6 +168,43 @@ describe('SearchDialog', () => {
     expect(status().textContent).not.toContain('failed to load');
   });
 
+  it.each([
+    ['id', null],
+    ['title', 42],
+    ['href', undefined],
+    ['kind', 'article'],
+    ['group', false],
+    ['summary', {}],
+    ['body', []],
+  ])(
+    'shows an error for an entry with an invalid %s and succeeds when reopened',
+    async (field, invalidValue) => {
+      const invalidEntry = { ...entries[0], [field]: invalidValue };
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [invalidEntry],
+        })
+        .mockResolvedValueOnce({ ok: true, json: async () => entries });
+      vi.stubGlobal('fetch', fetchMock);
+
+      await renderDialog();
+      await click(buttonNamed('search'));
+
+      expect(status().textContent).toBe(
+        'Search index failed to load. Reload the page and try again.'
+      );
+
+      await click(buttonNamed('Close search'));
+      await click(buttonNamed('search'));
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(status().textContent).toContain('2 pages');
+      expect(status().textContent).not.toContain('failed to load');
+    }
+  );
+
   it('aborts an in-flight index request when search closes', async () => {
     let signal: AbortSignal | undefined;
     const fetchMock = vi.fn(
@@ -198,24 +235,30 @@ describe('SearchDialog', () => {
     expect(signal?.aborted).toBe(false);
   });
 
-  it('loads the search index from the configured base path', async () => {
-    vi.stubEnv('NEXT_PUBLIC_BASE_PATH', '/flatbread');
-    vi.resetModules();
-    const { SearchDialog: SearchDialogWithBasePath } = await import(
-      './SearchDialog'
-    );
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue({ ok: true, json: async () => entries });
-    vi.stubGlobal('fetch', fetchMock);
+  it.each([
+    ['slash-only root', '/', '/search-index.json'],
+    ['trailing-slash prefix', '/flatbread/', '/flatbread/search-index.json'],
+  ])(
+    'loads the search index with a normalized %s base path',
+    async (_case, envValue, expectedUrl) => {
+      vi.stubEnv('NEXT_PUBLIC_BASE_PATH', envValue);
+      vi.resetModules();
+      const { SearchDialog: SearchDialogWithBasePath } = await import(
+        './SearchDialog'
+      );
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue({ ok: true, json: async () => entries });
+      vi.stubGlobal('fetch', fetchMock);
 
-    await renderDialog(SearchDialogWithBasePath);
-    await click(buttonNamed('search'));
+      await renderDialog(SearchDialogWithBasePath);
+      await click(buttonNamed('search'));
 
-    expect(fetchMock).toHaveBeenCalledWith('/flatbread/search-index.json', {
-      signal: expect.any(AbortSignal),
-    });
-  });
+      expect(fetchMock).toHaveBeenCalledWith(expectedUrl, {
+        signal: expect.any(AbortSignal),
+      });
+    }
+  );
 
   it.each([
     ['slash', { key: '/' }],
@@ -242,6 +285,28 @@ describe('SearchDialog', () => {
       await click(buttonNamed('Close search'));
 
       expect(document.activeElement).toBe(opener);
+    }
+  );
+
+  it.each(['input', 'textarea'] as const)(
+    'keeps search closed when slash is typed in another %s',
+    async (tagName) => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+      await renderDialog();
+      const typingTarget = document.createElement(tagName);
+      document.body.append(typingTarget);
+
+      try {
+        typingTarget.focus();
+        await key(typingTarget, '/');
+
+        expect(container.querySelector('dialog')?.open).toBe(false);
+        expect(document.activeElement).toBe(typingTarget);
+        expect(fetchMock).not.toHaveBeenCalled();
+      } finally {
+        typingTarget.remove();
+      }
     }
   );
 
@@ -308,7 +373,7 @@ async function type(field: HTMLInputElement, value: string) {
   });
 }
 
-async function key(field: HTMLInputElement, value: string) {
+async function key(field: HTMLElement, value: string) {
   await act(async () => {
     field.dispatchEvent(
       new KeyboardEvent('keydown', {

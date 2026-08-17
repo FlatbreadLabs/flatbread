@@ -112,16 +112,40 @@ describe('CodeCopy', () => {
     expect(prose.querySelectorAll('.fb-copy')).toHaveLength(1);
     expect(copyButton()).not.toBe(firstButton);
   });
+
+  it('adds one independent copy button to each code block', async () => {
+    const writeText = installClipboard(vi.fn().mockResolvedValue(undefined));
+    const first = appendCode('pnpm build');
+    const second = appendCode('pnpm test');
+
+    await renderCopy();
+
+    expect(first.querySelectorAll('.fb-copy')).toHaveLength(1);
+    expect(second.querySelectorAll('.fb-copy')).toHaveLength(1);
+
+    const firstButton = first.querySelector<HTMLButtonElement>('.fb-copy')!;
+    const secondButton = second.querySelector<HTMLButtonElement>('.fb-copy')!;
+    await click(secondButton);
+
+    expect(writeText).toHaveBeenCalledOnce();
+    expect(writeText).toHaveBeenCalledWith('pnpm test');
+    expect(firstButton.textContent).toBe('[copy]');
+    expect(secondButton.textContent).toBe('[copied]');
+  });
 });
 
 async function renderCode(code: string) {
+  appendCode(code);
+  await renderCopy();
+}
+
+function appendCode(code: string) {
   const block = document.createElement('pre');
   const content = document.createElement('code');
   content.textContent = code;
   block.append(content);
   prose.append(block);
-
-  await renderCopy();
+  return block;
 }
 
 async function renderCopy() {

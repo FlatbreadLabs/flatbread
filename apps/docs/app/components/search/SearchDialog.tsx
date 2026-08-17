@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { normalizeBasePath } from '../../../lib/base-path.mjs';
 import type { SearchEntry } from '../../../lib/content';
 import { search } from '../../../lib/search';
 
@@ -12,7 +13,7 @@ import { search } from '../../../lib/search';
  * Every page and README is scored in the browser against the static index the
  * build emits. The index is fetched only when search first opens.
  */
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+const basePath = normalizeBasePath(process.env.NEXT_PUBLIC_BASE_PATH);
 
 export function SearchDialog() {
   const router = useRouter();
@@ -102,10 +103,10 @@ export function SearchDialog() {
         return response.json() as Promise<unknown>;
       })
       .then((nextEntries) => {
-        if (!Array.isArray(nextEntries))
-          throw new Error('Search index did not return an array');
+        if (!isSearchEntries(nextEntries))
+          throw new Error('Search index returned invalid entries');
         setLoadError('');
-        setEntries(nextEntries as SearchEntry[]);
+        setEntries(nextEntries);
       })
       .catch((error: unknown) => {
         requested.current = false;
@@ -255,5 +256,23 @@ export function SearchDialog() {
         </div>
       </dialog>
     </>
+  );
+}
+
+function isSearchEntries(value: unknown): value is SearchEntry[] {
+  return Array.isArray(value) && value.every(isSearchEntry);
+}
+
+function isSearchEntry(value: unknown): value is SearchEntry {
+  if (typeof value !== 'object' || value === null) return false;
+  const entry = value as Record<string, unknown>;
+  return (
+    typeof entry.id === 'string' &&
+    typeof entry.title === 'string' &&
+    typeof entry.href === 'string' &&
+    (entry.kind === 'guide' || entry.kind === 'package') &&
+    typeof entry.group === 'string' &&
+    typeof entry.summary === 'string' &&
+    typeof entry.body === 'string'
   );
 }

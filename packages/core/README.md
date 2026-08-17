@@ -36,5 +36,5 @@ import {
 } from '@flatbread/core';
 ```
 
-See [the snapshot export guide](https://github.com/FlatbreadLabs/flatbread/blob/main/apps/docs/content/docs/json-export.md)
+See [the snapshot export guide](https://flatbreadlabs.github.io/flatbread/docs/json-export/)
 for the full export contract and examples.

@@ -44,8 +44,9 @@ export default async function Home() {
 
         <p className="fb-hero__lede">
           Proof records agent work, decisions, and evidence as linked Markdown
-          in your repository. Flatbread is the typed content graph underneath,
-          and the same engine also powers app content.
+          in your repository. Flatbread is the typed relational graph
+          underneath. GraphQL is one read interface; the same engine also powers
+          app content.
         </p>
 
         <div className="fb-hero__actions">
