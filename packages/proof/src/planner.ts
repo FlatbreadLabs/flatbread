@@ -14,6 +14,9 @@ import type { ProofSnapshot } from './snapshot.js';
 import type { PlannedWrite, PrimitiveKind } from './types.js';
 import type { ProofMutation } from './schemas.js';
 
+type SnapshotRecord = NonNullable<ReturnType<ProofSnapshot['getRecord']>>;
+type GetRecord = (id: string) => SnapshotRecord;
+
 const kinds: Record<string, PrimitiveKind> = {
   WriteIssue: 'issue',
   WriteFinding: 'finding',
@@ -53,7 +56,7 @@ function assertNoCitationBlobEdges(
 }
 
 function assertCites(
-  get: (id: string) => NonNullable<ReturnType<ProofSnapshot['getRecord']>>,
+  get: GetRecord,
   effortId: string,
   cites: string[] | undefined
 ): void {
@@ -63,11 +66,26 @@ function assertCites(
       throw new ProofValidationError(
         `cites must target a Citation, got ${target.kind} (${citeId})`
       );
-    if (target.frontmatter.effort !== effortId)
-      throw new ProofValidationError(
-        `cites target ${citeId} belongs to a different effort`
-      );
+    assertTargetEffort('cites', effortId, target);
   }
+}
+
+function owningEffort(record: SnapshotRecord): string | undefined {
+  if (record.kind === 'effort') return record.id;
+  return typeof record.frontmatter.effort === 'string'
+    ? record.frontmatter.effort
+    : undefined;
+}
+
+function assertTargetEffort(
+  relation: string,
+  effortId: string,
+  target: SnapshotRecord
+): void {
+  if (owningEffort(target) !== effortId)
+    throw new ProofValidationError(
+      `${relation} target ${target.id} belongs to a different effort`
+    );
 }
 
 /**
@@ -77,10 +95,12 @@ function assertCites(
  * record that points at nothing from ever reaching the journal.
  */
 function assertDerivesFrom(
-  get: (id: string) => NonNullable<ReturnType<ProofSnapshot['getRecord']>>,
+  get: GetRecord,
+  effortId: string,
   derivesFrom: string[] | undefined
 ): void {
-  for (const targetId of derivesFrom ?? []) get(targetId);
+  for (const targetId of derivesFrom ?? [])
+    assertTargetEffort('derives_from', effortId, get(targetId));
 }
 
 export function planMutation(
@@ -197,7 +217,7 @@ export function planMutation(
     }
     if (EPISTEMIC_CREATE.has(kind)) {
       assertCites(get, raw.effort, raw.cites);
-      assertDerivesFrom(get, raw.derives_from);
+      assertDerivesFrom(get, raw.effort, raw.derives_from);
     }
     const fm: Record<string, unknown> = {
       ...raw,
@@ -216,6 +236,10 @@ export function planMutation(
       delete fm.invalidates;
     }
     add(id, kind, fm, raw.body, 'create');
+    const reverseUpdates = new Map<
+      string,
+      { target: SnapshotRecord; frontmatter: Record<string, unknown> }
+    >();
     for (const edge of ['supersedes', 'invalidates'] as const)
       for (const targetId of (fm[edge] as string[] | undefined) ?? []) {
         const target = get(targetId);
@@ -235,21 +259,24 @@ export function planMutation(
           throw new ProofValidationError(
             'Invalidation target must be a Finding or Decision'
           );
+        assertTargetEffort(edge, raw.effort, target);
         const reverse =
           edge === 'supersedes' ? 'superseded_by' : 'invalidated_by';
-        add(
-          target.id,
-          target.kind,
-          {
-            ...target.frontmatter,
+        const current =
+          reverseUpdates.get(target.id)?.frontmatter ?? target.frontmatter;
+        reverseUpdates.set(target.id, {
+          target,
+          frontmatter: {
+            ...current,
             [reverse]: [
-              ...((target.frontmatter[reverse] as string[] | undefined) ?? []),
+              ...((current[reverse] as string[] | undefined) ?? []),
               id,
             ],
           },
-          target.body
-        );
+        });
       }
+    for (const { target, frontmatter } of reverseUpdates.values())
+      add(target.id, target.kind, frontmatter, target.body);
     return [...writes.values()];
   }
   if (input.type === 'Supersede' || input.type === 'Invalidate') {
@@ -260,10 +287,14 @@ export function planMutation(
     const edge = input.type === 'Supersede' ? 'supersedes' : 'invalidates';
     const back =
       input.type === 'Supersede' ? 'superseded_by' : 'invalidated_by';
+    const sourceEffort = owningEffort(a);
+    const targetEffort = owningEffort(b);
     if (
       a.id === b.id ||
       (input.type === 'Supersede' && a.kind !== b.kind) ||
-      (a.frontmatter.effort !== b.frontmatter.effort && a.kind !== 'effort')
+      sourceEffort === undefined ||
+      targetEffort === undefined ||
+      sourceEffort !== targetEffort
     )
       throw new ProofValidationError('Invalid edge');
     if (input.type === 'Invalidate') {

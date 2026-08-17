@@ -122,6 +122,54 @@ export class ProofDanglingRelationError extends Error {
   }
 }
 
+export interface CrossEffortRelationEdge {
+  relation: string;
+  to_id: string;
+  target_effort_id: string | null;
+}
+
+/**
+ * Raised when an effort-scoped read finds a stored edge whose target belongs
+ * to another effort. Old or hand-edited records fail closed instead of
+ * turning a foreign edge into a successful empty page.
+ */
+export class ProofCrossEffortRelationError extends Error {
+  readonly shape: {
+    error: {
+      code: 'PROOF_CROSS_EFFORT_RELATION';
+      message: string;
+      effort_id: string;
+      from_id: string;
+      edges: CrossEffortRelationEdge[];
+    };
+  };
+  constructor(
+    effortId: string,
+    fromId: string,
+    edges: CrossEffortRelationEdge[]
+  ) {
+    const message = `Record ${fromId} in effort ${effortId} stores relation targets outside that effort: ${edges
+      .map(
+        (edge) =>
+          `${edge.relation} -> ${edge.to_id} (effort ${
+            edge.target_effort_id ?? 'unknown'
+          })`
+      )
+      .join(', ')}`;
+    super(message);
+    this.name = 'ProofCrossEffortRelationError';
+    this.shape = {
+      error: {
+        code: 'PROOF_CROSS_EFFORT_RELATION',
+        message,
+        effort_id: effortId,
+        from_id: fromId,
+        edges,
+      },
+    };
+  }
+}
+
 export class ProofConsistencyError extends Error {
   readonly shape: ConsistencyErrorShape;
   constructor(shape: ConsistencyErrorShape) {
