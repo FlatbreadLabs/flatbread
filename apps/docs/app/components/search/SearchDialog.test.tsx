@@ -118,6 +118,31 @@ describe('SearchDialog', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('shows an error for non-JSON responses and succeeds when reopened', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockRejectedValue(new SyntaxError('Invalid JSON')),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => entries });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await renderDialog();
+    await click(buttonNamed('search'));
+
+    expect(status().textContent).toBe(
+      'Search index failed to load. Reload the page and try again.'
+    );
+
+    await click(buttonNamed('Close search'));
+    await click(buttonNamed('search'));
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(status().textContent).toContain('2 pages');
+    expect(status().textContent).not.toContain('failed to load');
+  });
+
   it('aborts an in-flight index request when search closes', async () => {
     let signal: AbortSignal | undefined;
     const fetchMock = vi.fn(

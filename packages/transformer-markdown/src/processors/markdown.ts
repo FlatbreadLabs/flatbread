@@ -24,11 +24,7 @@ const sanitizeSchema: SanitizeOptions = {
   ...defaultSchema,
   attributes: {
     ...defaultSchema.attributes,
-    code: [
-      ...(defaultSchema.attributes?.code ?? []),
-      ['className', /^language-[A-Za-z0-9_-]+$/],
-      'dataTitle',
-    ],
+    code: [['className', /^language-[A-Za-z0-9_-]+$/], 'dataTitle'],
   },
 };
 

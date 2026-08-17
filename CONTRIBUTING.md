@@ -35,7 +35,12 @@ Optional **`pnpm play`** from the repo root is a shortcut for **`cd examples/nex
 - **Workspace libraries (watch-only):** `pnpm dev` — runs package `dev` scripts (e.g. `tsup --watch`) for `packages/*`; it does **not** start the Next.js example.
 - **Next.js example:** prefer the flow under [Recommended onboarding](#recommended-onboarding-try-flatbread-in-the-nextjs-example); or `pnpm play` as a convenience alias.
 - **Documentation site:** from the repo root, `pnpm docs:dev` builds the packages (`predocs:dev` runs `pnpm build` first, so a fresh clone works), then starts Flatbread on **5057** and Next on **3000**. `pnpm docs:build` builds the packages, then validates both `/` and `/flatbread` exports. `pnpm docs:check` builds the packages first, then checks frontmatter, links, graph parity, and generated queries. The content model is in `apps/docs/README.md`.
-- **Published docs:** GitHub Pages serves the release build at <https://flatbreadlabs.github.io/flatbread/> after Pages is enabled for the repository.
+- **Published docs (one-time admin setup):**
+  1. Open the repository's **Settings → Pages**.
+  2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
+  3. After the next `main` deployment passes, open
+     <https://flatbreadlabs.github.io/flatbread/>. Expected: the docs home page
+     loads instead of a 404 page.
 - `pnpm play` and `pnpm docs:dev` both use ports **5057** and **3000**. Stop
   one before starting the other.
 - **Proof explorer:**

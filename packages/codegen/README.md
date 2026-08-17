@@ -59,6 +59,10 @@ pnpm exec flatbread codegen --watch
 pnpm exec flatbread codegen --clear-cache
 ```
 
+Use `flatbread start --watch -- <app command>` for one process that runs your
+app and regenerates code; follow the
+[unified local development loop](https://flatbreadlabs.github.io/flatbread/docs/local-dev-loop/).
+
 ### 4. Use the generated output in your application:
 
 Use **GraphQL operations** when you want explicit documents, custom selections, GraphQL clients, persisted operations, or direct access to the GraphQL endpoint:

@@ -178,7 +178,7 @@ describe('content readers', () => {
     });
   });
 
-  it('treats a null related collection as empty', async () => {
+  it('treats omitted optional related frontmatter as empty', async () => {
     const payload = docPagePayload();
     vi.mocked(query).mockResolvedValueOnce({
       Doc: { ...payload.Doc, related: null },
@@ -301,6 +301,35 @@ describe('content readers', () => {
     } as never);
 
     await expect(getDocs()).rejects.toThrow(/allDocs.*section\.id/);
+  });
+
+  it('returns complete guide and package search entry shapes', async () => {
+    vi.mocked(query).mockResolvedValueOnce(
+      searchPayload(
+        'Core turns files into typed content. Read the reference.'
+      ) as never
+    );
+
+    await expect(getSearchEntries()).resolves.toEqual([
+      {
+        id: 'getting-started',
+        title: 'Getting started',
+        href: '/docs/getting-started/',
+        kind: 'guide',
+        group: 'Start',
+        summary: 'Start here',
+        body: 'Getting started content',
+      },
+      {
+        id: 'core',
+        title: 'core',
+        href: '/reference/core/',
+        kind: 'package',
+        group: 'Reference',
+        summary: 'Core turns files into typed content.',
+        body: 'Core turns files into typed content Read the reference',
+      },
+    ]);
   });
 
   it.each([

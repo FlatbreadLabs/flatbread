@@ -148,6 +148,8 @@ export async function getDoc(id: string): Promise<DocPage | undefined> {
     summary: doc.summary ?? '',
     sectionId: requireText('Doc', id, 'section.id', doc.section?.id),
     sectionTitle: requireText('Doc', id, 'section.title', doc.section?.title),
+    // Omitted optional `related` frontmatter resolves to null. The link checker
+    // validates every listed id before build, so only omission becomes empty.
     related: (doc.related ?? []).map((related, index) => ({
       id: requireText(
         'Doc.related',

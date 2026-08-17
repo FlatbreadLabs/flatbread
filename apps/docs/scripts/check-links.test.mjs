@@ -35,6 +35,20 @@ describe('collectProblems', () => {
     ]);
   });
 
+  it('reports every required frontmatter key for a guide without fences', () => {
+    const problems = withRepo({
+      'apps/docs/content/docs/bare.md': '# Bare\n',
+    });
+
+    expect(problems).toEqual([
+      'apps/docs/content/docs/bare.md: frontmatter is missing `id`',
+      'apps/docs/content/docs/bare.md: frontmatter is missing `title`',
+      'apps/docs/content/docs/bare.md: frontmatter is missing `section`',
+      'apps/docs/content/docs/bare.md: frontmatter is missing `order`',
+      'apps/docs/content/docs/bare.md: frontmatter is missing `summary`',
+    ]);
+  });
+
   it('rejects blank and wrong-type required frontmatter fields', () => {
     const problems = withRepo({
       'apps/docs/content/docs/gap.md': [
