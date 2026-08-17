@@ -32,4 +32,22 @@ describe('groupPackages', () => {
 
     expect(groups.map((group) => group.name)).toEqual(['Build', 'Tools']);
   });
+
+  it('keeps configured content packages in the Content group', () => {
+    const groups = groupPackages([
+      { id: 'transformer-markdown' },
+      { id: 'source-filesystem' },
+    ]);
+
+    expect(groups).toEqual([
+      {
+        name: 'Content',
+        packages: [{ id: 'transformer-markdown' }, { id: 'source-filesystem' }],
+      },
+    ]);
+  });
+
+  it('returns no groups for an empty package list', () => {
+    expect(groupPackages([])).toEqual([]);
+  });
 });

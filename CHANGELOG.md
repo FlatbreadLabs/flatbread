@@ -14,6 +14,8 @@
 - The root development toolchain supports Node 20 from 20.19 onward and Node
   22 from 22.12 onward. Node 21 and early Node 22 releases are excluded because
   the locked Vite test toolchain does not support them.
+- `@flatbread/transformer-yaml` now depends on `js-yaml@^4.3.1`, up from
+  `^4.1.0`, for YAML content parsing.
 - Scoped overrides pin `shell-quote@1.9.0`, `postcss@8.5.18`, and
   `nanoid@3.3.18` below dependencies that still accept vulnerable versions.
   They address command injection/parser denial of service, source-map file

@@ -51,6 +51,16 @@ export default defineConfig({
 
 Refer to your source plugin's documentation for the relevant `content` Flatbread config option.
 
+## Code metadata and sanitizing
+
+Before changing fenced-code metadata, run
+`pnpm exec ava packages/transformer-markdown/src/processors/markdown.test.ts`.
+
+- The sanitizer keeps `language-*` classes whose language id uses only letters,
+  numbers, `_`, or `-`.
+- It keeps `data-title` on `<code>` for syntax highlighters. Other code classes
+  and attributes are stripped.
+
 ## 🧰 Options
 
 Configure the Markdown transformer with the following options:

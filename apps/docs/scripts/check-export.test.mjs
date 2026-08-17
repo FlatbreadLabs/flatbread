@@ -160,16 +160,16 @@ describe('collectExportProblems', () => {
     );
   });
 
-  it('rejects blank search titles and hrefs with focused errors', () => {
+  it('rejects blank required search fields with focused errors', () => {
     const problems = withExport({
       'index.html': '<main></main>',
       'search-index.json': JSON.stringify([
         {
-          id: 'guide',
+          id: ' ',
           title: '   ',
           href: '\t',
-          kind: 'guide',
-          group: 'Start',
+          kind: ' ',
+          group: '\n',
           summary: 'Guide',
           body: 'Guide body',
         },
@@ -177,11 +177,55 @@ describe('collectExportProblems', () => {
     });
 
     expect(problems).toContain(
+      'search-index.json entry 0 `id` must not be blank'
+    );
+    expect(problems).toContain(
       'search-index.json entry 0 `title` must not be blank'
     );
     expect(problems).toContain(
       'search-index.json entry 0 `href` must not be blank'
     );
+    expect(problems).toContain(
+      'search-index.json entry 0 `kind` must not be blank'
+    );
+    expect(problems).toContain(
+      'search-index.json entry 0 `group` must not be blank'
+    );
+  });
+
+  it('rejects search hrefs that are not root-relative site paths', () => {
+    const problems = withExport({
+      'index.html': '<main></main>',
+      'search-index.json': JSON.stringify([
+        {
+          id: 'relative',
+          title: 'Relative',
+          href: 'docs/x/',
+          kind: 'guide',
+          group: 'Start',
+          summary: 'Relative path',
+          body: 'Relative path',
+        },
+        {
+          id: 'protocol-relative',
+          title: 'Protocol relative',
+          href: '//evil',
+          kind: 'guide',
+          group: 'Start',
+          summary: 'Protocol-relative path',
+          body: 'Protocol-relative path',
+        },
+      ]),
+    });
+
+    expect(
+      problems.filter((problem) =>
+        problem.endsWith('`href` must be a root-relative site path')
+      )
+    ).toEqual([
+      'search-index.json entry 0 `href` must be a root-relative site path',
+      'search-index.json entry 1 `href` must be a root-relative site path',
+    ]);
   });
 
   it('validates search entry fragments', () => {

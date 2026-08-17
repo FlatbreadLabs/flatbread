@@ -14,6 +14,17 @@ describe('query cache key', () => {
     vi.resetModules();
   });
 
+  it('returns data from a successful response', async () => {
+    const data = { __typename: 'Query' };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data }) })
+    );
+
+    const { query } = await import('./graphql');
+    await expect(query(ping)).resolves.toEqual(data);
+  });
+
   it.each([
     ['production', 'force-cache'],
     ['development', 'no-store'],

@@ -192,6 +192,30 @@ describe('collectProblems', () => {
     );
   });
 
+  it('accepts a clean relative link in a nested note', () => {
+    const problems = withRepo({
+      'apps/docs/content/docs/gap.md': page({ id: 'gap' }),
+      'apps/docs/content/notes/research/shared.md': '# Shared\n',
+      'apps/docs/content/notes/research/nested/note.md':
+        '# Note\n\nSee [shared](../shared.md).\n',
+    });
+
+    expect(problems).toEqual([]);
+  });
+
+  it('does not apply site rewrite ambiguity checks to notes', () => {
+    const problems = withRepo({
+      'apps/docs/content/docs/gap.md': page({ id: 'gap' }),
+      'apps/docs/content/notes/research/README.md': '# Research\n',
+      'apps/docs/content/notes/research/note.md':
+        '# Note\n\nSee [local readme](./README.md).\n',
+      'packages/codegen/README.md': '# codegen\n',
+      'packages/core/README.md': '# core\n',
+    });
+
+    expect(problems).toEqual([]);
+  });
+
   it('reports an ambiguous link with its candidate targets', () => {
     const problems = withRepo({
       'apps/docs/content/docs/gap.md': page({ id: 'gap' }),

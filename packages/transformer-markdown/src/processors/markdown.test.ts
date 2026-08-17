@@ -15,6 +15,28 @@ test('keeps syntax-highlighter code metadata through sanitizing', async (t) => {
   t.true(html.includes('data-title="demo.ts"'));
 });
 
+test('keeps supported fenced language classes through sanitizing', async (t) => {
+  const html = await render(
+    [
+      '```ts',
+      'const answer: number = 42;',
+      '```',
+      '',
+      '```tsx',
+      'const title = <h1>Flatbread</h1>;',
+      '```',
+      '',
+      '```shell-session',
+      '$ pnpm build',
+      '```',
+    ].join('\n')
+  );
+
+  t.true(html.includes('class="language-ts"'));
+  t.true(html.includes('class="language-tsx"'));
+  t.true(html.includes('class="language-shell-session"'));
+});
+
 test('strips event handlers and unrelated code classes', async (t) => {
   const html = await render(
     '<pre><code class="language-ts utility" onclick="alert(1)">const answer = 42;</code></pre>'

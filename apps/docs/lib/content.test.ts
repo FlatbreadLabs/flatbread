@@ -54,6 +54,29 @@ function packagePagePayload() {
   };
 }
 
+function packagesPayload(excerpt: string) {
+  return {
+    allPackages: [
+      {
+        id: 'core',
+        _content: { excerpt, timeToRead: 4 },
+      },
+    ],
+  };
+}
+
+function searchPayload(packageBody: string) {
+  return {
+    allDocs: docsPayload('Getting started').allDocs,
+    allPackages: [
+      {
+        id: 'core',
+        _content: { raw: packageBody },
+      },
+    ],
+  };
+}
+
 describe('content readers', () => {
   beforeEach(() => {
     vi.mocked(query).mockReset();
@@ -303,7 +326,7 @@ describe('content readers', () => {
   });
 });
 
-describe('getDocs in production', () => {
+describe('memoized readers in production', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.resetModules();
@@ -325,5 +348,55 @@ describe('getDocs in production', () => {
     expect(prodQuery).toHaveBeenCalledTimes(1);
     expect(first[0]?.title).toBe('Frozen');
     expect(second[0]?.title).toBe('Frozen');
+  });
+
+  it('memoizes getPackages across calls', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.resetModules();
+
+    const { query: prodQuery } = await import('./graphql');
+    const { getPackages: getPackagesProd } = await import('./content');
+
+    vi.mocked(prodQuery).mockReset();
+    vi.mocked(prodQuery)
+      .mockResolvedValueOnce(packagesPayload('Frozen excerpt') as never)
+      .mockResolvedValueOnce(packagesPayload('Changed excerpt') as never);
+
+    const first = await getPackagesProd();
+    const second = await getPackagesProd();
+
+    expect(prodQuery).toHaveBeenCalledTimes(1);
+    expect(first[0]?.excerpt).toBe('Frozen excerpt');
+    expect(second[0]?.excerpt).toBe('Frozen excerpt');
+  });
+
+  it('memoizes getSearchEntries across calls', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.resetModules();
+
+    const { query: prodQuery } = await import('./graphql');
+    const { getSearchEntries: getSearchEntriesProd } = await import(
+      './content'
+    );
+
+    vi.mocked(prodQuery).mockReset();
+    vi.mocked(prodQuery)
+      .mockResolvedValueOnce(
+        searchPayload('Frozen package. First build.') as never
+      )
+      .mockResolvedValueOnce(
+        searchPayload('Changed package. Second build.') as never
+      );
+
+    const first = await getSearchEntriesProd();
+    const second = await getSearchEntriesProd();
+
+    expect(prodQuery).toHaveBeenCalledTimes(1);
+    expect(first.find((entry) => entry.id === 'core')?.summary).toBe(
+      'Frozen package.'
+    );
+    expect(second.find((entry) => entry.id === 'core')?.summary).toBe(
+      'Frozen package.'
+    );
   });
 });
