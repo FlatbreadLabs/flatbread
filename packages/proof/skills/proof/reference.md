@@ -17,7 +17,9 @@ Common optional fields on all creates: `id`, `created_at` (ISO with offset),
 `produced_in`, `created_by` (opaque provenance strings). Forward edge fields
 on all creates except `CreateEffort`, `WriteCitation`, and `WriteBlob`:
 `derives_from[]`, `supersedes[]`, `invalidates[]` (arrays of existing ids;
-targets are validated).
+targets are validated and must stay in the new record's Effort). An Effort
+record counts as belonging to itself, so a record may `derive_from` its own
+governing Effort.
 
 Optional `cites[]` on Issue, Finding, Decision, Constraint, and Risk creates:
 existing **Citation** ids in the **same Effort**. Create Citations first, then
@@ -57,8 +59,9 @@ provided, `blob` must be the id of a Blob in the same Effort as the Citation.
 {"type":"Invalidate","findingId":"<fnd-id>","targetId":"<finding-or-decision-id>"}
 ```
 
-`Supersede` is same-primitive only and rejects an already-superseded target.
-`Invalidate` asserts the target was wrong (stronger than superseded).
+`Supersede` is same-primitive and same-Effort only, and rejects an
+already-superseded target. `Invalidate` is same-Effort only and asserts the
+target was wrong (stronger than superseded).
 
 ### Lifecycle transitions
 
@@ -154,7 +157,8 @@ flatbread proof cache prune
   never produce a partial success. For `derives_from`, `invalidates`,
   `invalidated_by`, `resolved_by`, and `evidence`, the CLI returns
   `PROOF_DANGLING_RELATION`. Flatbread's core reference check rejects missing
-  targets for the other relations.
+  targets for the other relations. A stored target from another Effort returns
+  `PROOF_CROSS_EFFORT_RELATION`; it never becomes a successful empty page.
 - `--resolve head`: follow `superseded_by` to the current tip; ancestors
   render as checkpoint lines (max 5, then a count).
 - `blocking-decisions` membership (frozen): Decision in the effort with
@@ -169,8 +173,9 @@ flatbread proof cache prune
   generation, or fail. `--timeout-ms <ms>` bounds the wait (default 3000).
 - Errors (stderr JSON, exit 1): `PROOF_GENERATION_WAIT_TIMEOUT`,
   `PROOF_INVALID_CURSOR` (cursor reused across a different query or
-  generation), and `PROOF_DANGLING_RELATION` (a stored relation target is
-  missing).
+  generation), `PROOF_DANGLING_RELATION` (a stored relation target is missing),
+  and `PROOF_CROSS_EFFORT_RELATION` (a stored relation target belongs to another
+  Effort).
 
 ## Configuration surface
 

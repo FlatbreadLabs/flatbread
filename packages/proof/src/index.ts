@@ -16,6 +16,7 @@ export * from './digest.js';
 export {
   READ_RELATIONS,
   ProofConsistencyError,
+  ProofCrossEffortRelationError,
   ProofDanglingRelationError,
   ProofInvalidCursorError,
   ProofReadValidationError,
@@ -26,6 +27,7 @@ export {
 } from './read.js';
 export type {
   ConsistencyErrorShape,
+  CrossEffortRelationEdge,
   EffortStatus,
   ReadOptions,
   ReadQuery,
