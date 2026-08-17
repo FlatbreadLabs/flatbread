@@ -2,9 +2,11 @@ import test from 'ava';
 import { parseDocument, serializeDocument } from '../frontmatter.js';
 import { createProofSnapshot } from '../snapshot.js';
 import { planMutation } from '../planner.js';
+import type { ProofMutation } from '../schemas.js';
 import type { PrimitiveKind } from '../types.js';
 
 const E = 'eff-one--0123456789abcdef';
+const E2 = 'eff-two--0123456789abcdef';
 const ids = {
   issue: 'iss-one--0123456789abcdef',
   finding: 'fnd-one--0123456789abcdef',
@@ -818,4 +820,137 @@ test('derives_from accepts an existing record', (t) => {
     created_at: now.toISOString(),
     state: 'proposed',
   });
+});
+
+test('derives_from accepts the record governing Effort', (t) => {
+  const w = planMutation(
+    {
+      type: 'WriteDecision',
+      id: ids.decision,
+      effort: E,
+      title: 'D',
+      body: '',
+      derives_from: [E],
+    },
+    snap(),
+    '/root',
+    now
+  );
+  one(t, w, ids.decision, `decisions/${ids.decision}.md`, 'create', {
+    id: ids.decision,
+    effort: E,
+    title: 'D',
+    derives_from: [E],
+    created_at: now.toISOString(),
+    state: 'proposed',
+  });
+});
+
+test('create relations reject targets from another Effort', (t) => {
+  const otherEffort = record(E2, 'effort', {
+    id: E2,
+    title: 'E2',
+    created_at: '2025-01-01T00:00:00.000Z',
+    status: 'active',
+  });
+  const foreignFindingId = 'fnd-foreign--0123456789abcdef';
+  const foreignFinding = record(foreignFindingId, 'finding', {
+    id: foreignFindingId,
+    effort: E2,
+    title: 'Foreign',
+    kind: 'measurement',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const s = snap([otherEffort, foreignFinding]);
+  const attempts: { relation: string; input: ProofMutation }[] = [
+    {
+      relation: 'derives_from',
+      input: {
+        type: 'WriteDecision',
+        id: ids.decision,
+        effort: E,
+        title: 'Cross derive',
+        body: '',
+        derives_from: [foreignFindingId],
+      },
+    },
+    {
+      relation: 'supersedes',
+      input: {
+        type: 'WriteFinding',
+        id: 'fnd-superseder--0123456789abcdef',
+        effort: E,
+        title: 'Cross supersede',
+        body: '',
+        kind: 'measurement',
+        supersedes: [foreignFindingId],
+      },
+    },
+    {
+      relation: 'invalidates',
+      input: {
+        type: 'WriteDecision',
+        id: ids.decision,
+        effort: E,
+        title: 'Cross invalidate',
+        body: '',
+        invalidates: [foreignFindingId],
+      },
+    },
+  ];
+
+  for (const attempt of attempts)
+    t.throws(() => planMutation(attempt.input, s, '/root', now), {
+      message: `${attempt.relation} target ${foreignFindingId} belongs to a different effort`,
+    });
+});
+
+test('later relation mutations reject targets from another Effort', (t) => {
+  const otherEffort = record(E2, 'effort', {
+    id: E2,
+    title: 'E2',
+    created_at: '2025-01-01T00:00:00.000Z',
+    status: 'active',
+  });
+  const localFinding = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'Local finding',
+    kind: 'measurement',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const foreignFindingId = 'fnd-foreign--0123456789abcdef';
+  const foreignFinding = record(foreignFindingId, 'finding', {
+    id: foreignFindingId,
+    effort: E2,
+    title: 'Foreign finding',
+    kind: 'measurement',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const foreignDecisionId = 'dec-foreign--0123456789abcdef';
+  const foreignDecision = record(foreignDecisionId, 'decision', {
+    id: foreignDecisionId,
+    effort: E2,
+    title: 'Foreign decision',
+    state: 'proposed',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const s = snap([otherEffort, localFinding, foreignFinding, foreignDecision]);
+
+  for (const input of [
+    {
+      type: 'Supersede',
+      supersederId: ids.finding,
+      targetId: foreignFindingId,
+    },
+    {
+      type: 'Invalidate',
+      findingId: ids.finding,
+      targetId: foreignDecisionId,
+    },
+    { type: 'Supersede', supersederId: E, targetId: E2 },
+  ] as ProofMutation[])
+    t.throws(() => planMutation(input, s, '/root', now), {
+      message: 'Invalid edge',
+    });
 });

@@ -102,6 +102,131 @@ test('WriteDecision with supersedes materializes superseded_by on the target fil
   t.deepEqual(newer.frontmatter.supersedes, [older]);
 });
 
+test('one create preserves both reverse projections to the same target', async (t) => {
+  const { root, writer } = await makeWriter();
+  const effort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'Dual edge', body: '' })
+  );
+  const target = soleId(
+    await writer.mutate({
+      type: 'WriteFinding',
+      effort,
+      title: 'Target',
+      body: '',
+      kind: 'measurement',
+    })
+  );
+  const result = await writer.mutate({
+    type: 'WriteFinding',
+    effort,
+    title: 'Replacement and correction',
+    body: '',
+    kind: 'measurement',
+    supersedes: [target],
+    invalidates: [target],
+  });
+  const source = result.artifacts.find(
+    (artifact) => artifact.operation === 'created'
+  )?.id;
+  t.truthy(source);
+
+  const sourceRecord = await readFrontmatter(
+    root,
+    `findings/${source as string}.md`
+  );
+  t.deepEqual(sourceRecord.data.supersedes, [target]);
+  t.deepEqual(sourceRecord.data.invalidates, [target]);
+
+  const targetRecord = await readFrontmatter(root, `findings/${target}.md`);
+  t.deepEqual(targetRecord.data.superseded_by, [source]);
+  t.deepEqual(targetRecord.data.invalidated_by, [source]);
+});
+
+test('cross-Effort create relations reject without changing files or generation', async (t) => {
+  const { root, writer } = await makeWriter();
+  const effort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'Local', body: '' })
+  );
+  const otherEffort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'Foreign', body: '' })
+  );
+  const target = soleId(
+    await writer.mutate({
+      type: 'WriteFinding',
+      effort: otherEffort,
+      title: 'Foreign target',
+      body: '',
+      kind: 'measurement',
+    })
+  );
+  const targetPath = `findings/${target}.md`;
+  const targetBefore = await readFile(join(root, targetPath));
+  const generationPath = join(root, '.journal', 'generation.json');
+  const generationBefore = await readFile(generationPath, 'utf8');
+  const attempts: {
+    relation: string;
+    path: string;
+    input: ProofMutation;
+  }[] = [
+    {
+      relation: 'derives_from',
+      path: 'decisions/dec-cross-derive--0000000000000001.md',
+      input: {
+        type: 'WriteDecision',
+        id: 'dec-cross-derive--0000000000000001',
+        effort,
+        title: 'Cross derive',
+        body: '',
+        derives_from: [target],
+      },
+    },
+    {
+      relation: 'supersedes',
+      path: 'findings/fnd-cross-supersede--0000000000000002.md',
+      input: {
+        type: 'WriteFinding',
+        id: 'fnd-cross-supersede--0000000000000002',
+        effort,
+        title: 'Cross supersede',
+        body: '',
+        kind: 'measurement',
+        supersedes: [target],
+      },
+    },
+    {
+      relation: 'invalidates',
+      path: 'decisions/dec-cross-invalidate--0000000000000003.md',
+      input: {
+        type: 'WriteDecision',
+        id: 'dec-cross-invalidate--0000000000000003',
+        effort,
+        title: 'Cross invalidate',
+        body: '',
+        invalidates: [target],
+      },
+    },
+  ];
+
+  for (const attempt of attempts) {
+    await t.throwsAsync(writer.mutate(attempt.input), {
+      instanceOf: ProofValidationError,
+      message: `${attempt.relation} target ${target} belongs to a different effort`,
+    });
+    t.false(
+      await readFile(join(root, attempt.path)).then(
+        () => true,
+        () => false
+      )
+    );
+  }
+
+  t.is(await readFile(generationPath, 'utf8'), generationBefore);
+  t.deepEqual(await readFile(join(root, targetPath)), targetBefore);
+  const targetAfter = await readFrontmatter(root, targetPath);
+  t.is(targetAfter.data.superseded_by, undefined);
+  t.is(targetAfter.data.invalidated_by, undefined);
+});
+
 test('Supersede sets a Decision target state to superseded, exactly 2 files', async (t) => {
   const { root, writer } = await makeWriter();
   const effort = soleId(

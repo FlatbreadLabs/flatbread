@@ -55,6 +55,14 @@
   incomplete provenance as complete. The error names the record, the relation,
   and the missing id. Records written before this release keep any dangling
   edge until you repair the file.
+- **Breaking for writes:** Proof now rejects create-time `derives_from`,
+  `supersedes`, and `invalidates` targets from another Effort. The later
+  `Supersede` and `Invalidate` forms already rejected these edges. Rejected
+  creates write no record or reverse projection and leave the generation
+  unchanged.
+  `flatbread proof relations` now reports stored legacy or hand-edited foreign
+  edges as `PROOF_CROSS_EFFORT_RELATION` instead of dropping them into a
+  successful empty page.
 
 Notes for the Flatbread release train. Some packages also keep their own
 changelog; this file covers the repository as a whole.

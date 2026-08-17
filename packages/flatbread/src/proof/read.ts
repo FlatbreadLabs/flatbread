@@ -2,6 +2,7 @@ import { FlatbreadProvider, type LoadedFlatbreadConfig } from '@flatbread/core';
 import {
   canonicalizeReadQuery,
   ProofConsistencyError,
+  ProofCrossEffortRelationError,
   ProofDanglingRelationError,
   ProofInvalidCursorError,
   ProofReadValidationError,
@@ -183,6 +184,13 @@ function sortRecords(records: ReadRecord[]): ReadRecord[] {
       `${String(b.frontmatter.created_at ?? '')}\0${b.id}`
     )
   );
+}
+
+function owningEffort(record: ReadRecord): string | undefined {
+  if (record.kind === 'effort') return record.id;
+  return typeof record.frontmatter.effort === 'string'
+    ? record.frontmatter.effort
+    : undefined;
 }
 
 function encodeCursor(value: Record<string, unknown>): string {
@@ -657,14 +665,16 @@ export async function relations(
   const source = collection
     ? await projection.one(collection, fromId)
     : undefined;
-  const sourceInEffort =
-    source?.kind === 'effort' && fromId === effortId
-      ? true
-      : source?.frontmatter.effort === effortId;
+  const sourceInEffort = source ? owningEffort(source) === effortId : false;
   if (!source || !sourceInEffort)
     throw new Error(`Record ${fromId} does not exist in effort ${effortId}`);
   const selected = new Map<string, ReadRecord>();
   const dangling: { relation: ReadRelation; to_id: string }[] = [];
+  const foreign: {
+    relation: ReadRelation;
+    to_id: string;
+    target_effort_id: string | null;
+  }[] = [];
   for (const relation of relationNames) {
     for (const targetId of source.relations[relation] ?? []) {
       const targetCollection = collectionForId(targetId);
@@ -677,13 +687,21 @@ export async function relations(
         dangling.push({ relation, to_id: targetId });
         continue;
       }
-      // Keep the existing effort-scoped read behavior for legacy or
-      // hand-authored cross-effort links.
-      if (target.frontmatter.effort === effortId)
-        selected.set(target.id, target);
+      const targetEffort = owningEffort(target);
+      if (targetEffort !== effortId) {
+        foreign.push({
+          relation,
+          to_id: target.id,
+          target_effort_id: targetEffort ?? null,
+        });
+        continue;
+      }
+      selected.set(target.id, target);
     }
   }
   if (dangling.length) throw new ProofDanglingRelationError(fromId, dangling);
+  if (foreign.length)
+    throw new ProofCrossEffortRelationError(effortId, fromId, foreign);
   const records = sortRecords([...selected.values()]);
   const edges = records.flatMap((record) =>
     relationNames
