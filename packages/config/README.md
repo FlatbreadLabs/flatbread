@@ -10,14 +10,12 @@ Use `pnpm`, `npm`, or `yarn`:
 pnpm i @flatbread/config
 ```
 
-Valid config filenames:
+Flatbread loads JavaScript or TypeScript config files:
 
-- `flatbread.config.js`
-- `flatbread.config.mjs`
-- `flatbread.config.cjs`
-- `flatbread.config.ts`
-- `flatbread.config.mts`
-- `flatbread.config.cts`
+- JavaScript: `flatbread.config.js`, `flatbread.config.mjs`, or
+  `flatbread.config.cjs`
+- TypeScript: `flatbread.config.ts`, `flatbread.config.mts`, or
+  `flatbread.config.cts`
 
 ## 👩‍🍳 Typical Usage
 
@@ -34,9 +32,10 @@ export default defineConfig({
 });
 ```
 
-## 😳 Advanced Usage
+## 😳 Programmatic Usage
 
-If you're building something custom, piecemealed from these modules, you can make use of schema validation & config auto-loading.
+Use the exported `loadConfig` helper when custom tooling needs Flatbread's
+loaded and initialized config.
 
 ### `async loadConfig(...)`
 
@@ -48,11 +47,3 @@ Pulls the user config from an optionally specified filepath. By default, this wi
 - Default: `{}`
 
 Options for loading the config file, defaults to `{}`. Can pass in `cwd` as a path `string` to override the current working directory.
-
-### `validateConfigHasExports(config)`
-
-Validate that the user config has a default export that is an object.
-
-### `validateConfigStructure(config)`
-
-Validate that the user config has `source` and `content` properties.

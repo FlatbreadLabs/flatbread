@@ -1,0 +1,1156 @@
+@import 'tailwindcss';
+
+/*
+ * The page is a terminal document. Everything sits on a character grid: widths
+ * are counted in `ch`, and every vertical step is a multiple of one line. That
+ * is what keeps the box-drawing characters lined up with the text beside them.
+ *
+ * Colour is two tones and one accent. The accent is the magenta from the
+ * Flatbread mark, and it only ever marks the live thing: the caret in the
+ * sidebar, the block cursor, a focus ring, a link under the pointer.
+ */
+
+:root {
+  --line: 1.5rem;
+  --measure: 72ch;
+  --gutter: 2ch;
+
+  --paper: #faf9f6;
+  --paper-sunk: #f2f0ea;
+  --ink: #12110f;
+  --ink-soft: #56534b;
+  --ink-faint: #68645d;
+  --rule: #ded9cd;
+  --accent: #d4006e;
+  --accent-soft: #ff228e;
+  --highlight: #ffd709;
+
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --paper: #0b0b0c;
+  --paper-sunk: #131315;
+  --ink: #e9e6e0;
+  --ink-soft: #a5a19a;
+  --ink-faint: #8e8982;
+  --rule: #2a2a2d;
+  --accent: #ff4da3;
+  --accent-soft: #ff228e;
+  --highlight: #ffd709;
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --paper: #0b0b0c;
+    --paper-sunk: #131315;
+    --ink: #e9e6e0;
+    --ink-soft: #a5a19a;
+    --ink-faint: #8e8982;
+    --rule: #2a2a2d;
+    --accent: #ff4da3;
+
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-sunk: var(--paper-sunk);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-accent: var(--accent);
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
+* {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--line) * 4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.875rem;
+  line-height: var(--line);
+  font-variant-ligatures: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--highlight);
+  color: #12110f;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--paper-sunk);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border: 2px solid var(--paper-sunk);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-faint);
+}
+
+/* ------------------------------------------------------------------ *
+ * Prose: the HTML Flatbread renders from a Markdown file.
+ * ------------------------------------------------------------------ */
+
+.prose {
+  max-width: var(--measure);
+  overflow-wrap: anywhere;
+}
+
+.prose > * + * {
+  margin-top: var(--line);
+}
+
+.prose p,
+.prose li {
+  color: var(--ink-soft);
+}
+
+.prose strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.prose h2,
+.prose h3,
+.prose h4 {
+  position: relative;
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  scroll-margin-top: calc(var(--line) * 4);
+}
+
+.prose h2 {
+  margin-top: calc(var(--line) * 2);
+  padding-top: calc(var(--line) / 2);
+  border-top: 1px solid var(--rule);
+  font-size: 1rem;
+}
+
+.prose h3 {
+  margin-top: calc(var(--line) * 1.5);
+  font-size: 0.9375rem;
+}
+
+.prose h4 {
+  margin-top: var(--line);
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+.heading-marker {
+  color: var(--ink-faint);
+  margin-right: 1ch;
+  font-weight: 400;
+}
+
+.heading-anchor {
+  position: absolute;
+  left: -3ch;
+  width: 3ch;
+  color: var(--ink-faint);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.prose h2:hover .heading-anchor,
+.prose h3:hover .heading-anchor,
+.prose h4:hover .heading-anchor,
+.heading-anchor:focus-visible {
+  opacity: 1;
+}
+
+.heading-anchor:hover {
+  color: var(--accent);
+}
+
+.prose a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+  transition: color 120ms ease, text-decoration-color 120ms ease;
+}
+
+.prose a:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 3ch;
+}
+
+.prose ul {
+  list-style: none;
+}
+
+.prose ul > li::before {
+  content: '-';
+  position: absolute;
+  margin-left: -2ch;
+  color: var(--ink-faint);
+}
+
+.prose ul > li {
+  position: relative;
+}
+
+.prose ol {
+  list-style: decimal;
+}
+
+.prose li + li {
+  margin-top: calc(var(--line) / 4);
+}
+
+.prose blockquote {
+  padding-left: 2ch;
+  border-left: 1px solid var(--accent);
+  color: var(--ink-soft);
+  font-style: normal;
+}
+
+.prose hr {
+  border: 0;
+  border-top: 1px dashed var(--rule);
+}
+
+.prose :not(pre) > code {
+  padding: 0 0.5ch;
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  font-size: 0.9375em;
+  white-space: nowrap;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.table-scroll,
+.fb-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.table-scroll:focus-visible,
+.fb-table-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.table-scroll table {
+  min-width: max-content;
+}
+
+.prose th,
+.prose td {
+  padding: calc(var(--line) / 4) 1ch;
+  border: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+  color: var(--ink-soft);
+}
+
+.prose th {
+  background: var(--paper-sunk);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.prose img {
+  max-width: 100%;
+  border: 1px solid var(--rule);
+}
+
+/* ------------------------------------------------------------------ *
+ * Code blocks. Shiki writes both themes as CSS variables, so switching
+ * the site's theme needs no rebuild.
+ * ------------------------------------------------------------------ */
+
+.prose pre {
+  position: relative;
+  overflow-x: auto;
+  padding: var(--line) 2ch;
+  background: var(--paper-sunk) !important;
+  border: 1px solid var(--rule);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  tab-size: 2;
+}
+
+.prose pre code {
+  display: block;
+  min-width: max-content;
+}
+
+.prose pre span {
+  color: color-mix(in srgb, var(--ink) 70%, var(--shiki-light, var(--ink)));
+}
+
+:root[data-theme='dark'] .prose pre span {
+  color: color-mix(in srgb, var(--ink) 70%, var(--shiki-dark, var(--ink)));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .prose pre span {
+    color: color-mix(in srgb, var(--ink) 70%, var(--shiki-dark, var(--ink)));
+  }
+}
+
+.prose pre[data-title]::before,
+.prose pre[data-language]::before {
+  content: attr(data-language);
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 0 1ch;
+  background: var(--rule);
+  color: var(--ink-soft);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.prose pre[data-title]::before {
+  content: attr(data-title);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * Chrome: the frame around the prose.
+ * ------------------------------------------------------------------ */
+
+.fb-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: calc(var(--line) / 3) 2ch;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.fb-skip:focus {
+  left: 1ch;
+  top: 1ch;
+}
+
+.fb-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.fb-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2ch;
+  max-width: 132ch;
+  margin: 0 auto;
+  padding: calc(var(--line) / 2) var(--gutter);
+}
+
+.fb-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 1ch;
+}
+
+.fb-brand {
+  color: var(--ink);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+
+.fb-brand__name {
+  font-weight: 600;
+}
+
+.fb-brand__slash,
+.fb-brand__section {
+  color: var(--ink-faint);
+}
+
+.fb-rule {
+  overflow: hidden;
+  height: var(--line);
+  color: var(--rule);
+  white-space: nowrap;
+  user-select: none;
+  line-height: var(--line);
+}
+
+.fb-button {
+  padding: 0 0.5ch;
+  background: none;
+  border: 0;
+  color: var(--ink-soft);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+
+.fb-button:hover {
+  color: var(--accent);
+}
+
+.fb-button__hint {
+  color: var(--ink-faint);
+}
+
+/* Layout ----------------------------------------------------------- */
+
+.fb-shell {
+  display: grid;
+  grid-template-columns: 30ch minmax(0, 1fr);
+  gap: 4ch;
+  max-width: 132ch;
+  margin: 0 auto;
+  padding: var(--line) var(--gutter) calc(var(--line) * 4);
+}
+
+.fb-sidebar {
+  position: sticky;
+  top: calc(var(--line) * 3);
+  align-self: start;
+  max-height: calc(100vh - var(--line) * 5);
+  overflow-y: auto;
+  padding-right: 1ch;
+}
+
+.fb-main {
+  min-width: 0;
+}
+
+.fb-footer {
+  max-width: 132ch;
+  margin: 0 auto;
+  padding: 0 var(--gutter) var(--line);
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .fb-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fb-sidebar {
+    position: static;
+    max-height: none;
+    padding-bottom: var(--line);
+    border-bottom: 1px solid var(--rule);
+  }
+}
+
+/* Tree ------------------------------------------------------------- */
+
+.fb-tree {
+  font-size: 0.8125rem;
+}
+
+.fb-tree__branch + .fb-tree__branch {
+  margin-top: calc(var(--line) / 2);
+}
+
+.fb-tree__title {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.fb-tree__connector {
+  color: var(--ink-faint);
+  user-select: none;
+  white-space: pre;
+}
+
+.fb-tree__leaf {
+  display: flex;
+  align-items: baseline;
+}
+
+.fb-tree__link {
+  position: relative;
+  display: block;
+  padding-left: 1ch;
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.fb-tree__link:hover {
+  color: var(--ink);
+}
+
+.fb-tree__link[data-active] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.fb-tree__marker {
+  position: absolute;
+  left: -0.4ch;
+  color: var(--accent);
+}
+
+/* Table of contents ------------------------------------------------ */
+
+.fb-toc {
+  position: sticky;
+  top: calc(var(--line) * 3);
+  max-height: calc(100vh - var(--line) * 5);
+  overflow-y: auto;
+  font-size: 0.75rem;
+}
+
+.fb-toc-disclosure {
+  display: none;
+}
+
+.fb-toc__title {
+  margin-bottom: calc(var(--line) / 3);
+  color: var(--ink-faint);
+  text-transform: lowercase;
+}
+
+.fb-toc li[data-depth='3'] {
+  padding-left: 2ch;
+}
+
+.fb-toc__link {
+  display: block;
+  padding: 1px 0 1px 1ch;
+  border-left: 1px solid var(--rule);
+  color: var(--ink-faint);
+  text-decoration: none;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.fb-toc__link:hover {
+  color: var(--ink-soft);
+}
+
+.fb-toc__link[data-active] {
+  border-left-color: var(--accent);
+  color: var(--ink);
+}
+
+/* Frame ------------------------------------------------------------ */
+
+.fb-frame {
+  position: relative;
+  padding: var(--line) 2ch;
+  border: 1px solid var(--rule);
+}
+
+.fb-frame__corner {
+  position: absolute;
+  width: 1ch;
+  height: var(--line);
+  background: var(--paper);
+  color: var(--rule);
+  line-height: 1;
+  user-select: none;
+}
+
+.fb-frame__corner--tl {
+  top: -0.5em;
+  left: -0.5ch;
+}
+
+.fb-frame__corner--tr {
+  top: -0.5em;
+  right: -0.5ch;
+}
+
+.fb-frame__corner--bl {
+  bottom: -0.5em;
+  left: -0.5ch;
+}
+
+.fb-frame__corner--br {
+  bottom: -0.5em;
+  right: -0.5ch;
+}
+
+.fb-frame__label,
+.fb-frame__note {
+  position: absolute;
+  top: 0;
+  transform: translateY(-50%);
+  padding: 0 1ch;
+  background: var(--paper);
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.fb-frame__label {
+  left: 2ch;
+  color: var(--ink);
+  margin: 0;
+  font-weight: 600;
+}
+
+.fb-frame__note {
+  right: 2ch;
+}
+
+.fb-frame__body > * + * {
+  margin-top: var(--line);
+}
+
+/* Pages ------------------------------------------------------------ */
+
+.fb-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24ch;
+  gap: 4ch;
+}
+
+.fb-page__body {
+  min-width: 0;
+}
+
+.fb-page__header {
+  margin-bottom: calc(var(--line) * 1.5);
+}
+
+.fb-page__eyebrow {
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+}
+
+.fb-page__source {
+  color: var(--ink-faint);
+}
+
+.fb-page__title {
+  margin-top: calc(var(--line) / 3);
+  color: var(--ink);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: calc(var(--line) * 1.2);
+  overflow-wrap: anywhere;
+}
+
+.fb-page__summary {
+  margin-top: calc(var(--line) / 2);
+  max-width: var(--measure);
+  color: var(--ink-soft);
+}
+
+.fb-reference__command {
+  padding: 0 0.5ch;
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  font-size: 0.9375em;
+  overflow-wrap: anywhere;
+}
+
+.fb-reference__detail {
+  margin-top: calc(var(--line) / 3);
+  max-width: var(--measure);
+  color: var(--ink-soft);
+}
+
+.fb-page__rail {
+  min-width: 0;
+}
+
+@media (max-width: 1180px) {
+  .fb-page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fb-page__rail {
+    order: -1;
+    margin-bottom: var(--line);
+  }
+
+  .fb-toc--desktop {
+    display: none;
+  }
+
+  .fb-toc-disclosure {
+    display: block;
+    padding: calc(var(--line) / 3) 1ch;
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+  }
+
+  .fb-toc-disclosure > summary {
+    cursor: pointer;
+  }
+
+  .fb-toc-disclosure .fb-toc {
+    position: static;
+    max-height: min(50vh, calc(var(--line) * 12));
+    margin-top: calc(var(--line) / 2);
+  }
+}
+
+.fb-related {
+  margin-top: calc(var(--line) * 2);
+}
+
+.fb-related ul > li + li {
+  margin-top: calc(var(--line) / 2);
+}
+
+.fb-related a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.fb-related a:hover {
+  color: var(--accent);
+}
+
+.fb-related__arrow {
+  color: var(--ink-faint);
+  margin-right: 1ch;
+}
+
+.fb-related p {
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+  padding-left: 3ch;
+}
+
+/* Home ------------------------------------------------------------- */
+
+.fb-home > * + * {
+  margin-top: calc(var(--line) * 2);
+}
+
+.fb-hero {
+  padding: calc(var(--line) * 2) 0;
+}
+
+.fb-hero__eyebrow {
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+.fb-hero__title {
+  margin-top: var(--line);
+  font-size: clamp(1.5rem, 4.5vw, 2.5rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+}
+
+.fb-hero__title-soft {
+  color: var(--ink-faint);
+}
+
+.fb-hero__lede {
+  margin-top: var(--line);
+  max-width: var(--measure);
+  color: var(--ink-soft);
+}
+
+.fb-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2ch;
+  margin-top: calc(var(--line) * 1.5);
+}
+
+.fb-cta {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent);
+  transition: color 120ms ease;
+}
+
+.fb-cta:hover {
+  color: var(--accent);
+}
+
+.fb-cta--quiet {
+  color: var(--ink-faint);
+  border-bottom-color: var(--rule);
+}
+
+.fb-note {
+  max-width: var(--measure);
+  color: var(--ink-soft);
+}
+
+.fb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.fb-table-scroll {
+  margin-top: var(--line);
+}
+
+.fb-table th,
+.fb-table td {
+  padding: calc(var(--line) / 4) 1ch;
+  border-top: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+.fb-table th {
+  color: var(--ink-faint);
+  font-weight: 400;
+  text-transform: lowercase;
+}
+
+.fb-table td {
+  color: var(--ink);
+}
+
+.fb-table__note {
+  display: block;
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+}
+
+.fb-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(38ch, 100%), 1fr));
+  gap: calc(var(--line) * 1.5) 3ch;
+}
+
+.fb-card {
+  height: 100%;
+}
+
+.fb-card__links > li + li {
+  margin-top: calc(var(--line) / 2);
+}
+
+.fb-card__links a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.fb-card__links a:hover {
+  color: var(--accent);
+}
+
+.fb-card__links p {
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+  padding-left: 2ch;
+}
+
+.fb-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1ch;
+}
+
+.fb-chips a {
+  display: inline-block;
+  padding: 0 1ch;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: 0.8125rem;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+
+.fb-chips a:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.fb-package-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(24ch, 100%), 1fr));
+  gap: var(--line) 3ch;
+}
+
+.fb-package-groups h3 {
+  margin-bottom: calc(var(--line) / 3);
+  color: var(--ink);
+  font-size: 0.8125rem;
+}
+
+/* Code copy -------------------------------------------------------- */
+
+.fb-copy {
+  position: absolute;
+  top: calc(var(--line) / 4);
+  right: 1ch;
+  padding: 0 0.5ch;
+  background: var(--paper-sunk);
+  border: 0;
+  color: var(--ink-faint);
+  font: inherit;
+  font-size: 0.6875rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease, color 120ms ease;
+}
+
+.prose pre:hover .fb-copy,
+.fb-copy:focus-visible {
+  opacity: 1;
+}
+
+.fb-copy:hover {
+  color: var(--ink);
+}
+
+.fb-copy[data-done] {
+  opacity: 1;
+  color: var(--accent);
+}
+
+/* Search ----------------------------------------------------------- */
+
+.fb-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
+  max-height: none;
+  margin: 0;
+  justify-content: center;
+  padding: calc(var(--line) * 4) var(--gutter);
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+}
+
+.fb-overlay[open] {
+  display: flex;
+}
+
+.fb-overlay::backdrop {
+  background: color-mix(in srgb, var(--paper) 70%, transparent);
+  backdrop-filter: blur(3px);
+}
+
+.fb-search {
+  width: min(72ch, 100%);
+  height: fit-content;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+
+.fb-search__header {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--rule);
+}
+
+.fb-search__prompt {
+  display: flex;
+  align-items: center;
+  gap: 1ch;
+  padding: calc(var(--line) / 2) 2ch;
+  flex: 1;
+  color: var(--accent);
+}
+
+.fb-search__field {
+  flex: 1;
+  background: none;
+  border: 0;
+  color: var(--ink);
+  font: inherit;
+  outline: none;
+}
+
+.fb-search__field:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.fb-search__close {
+  margin-right: 1ch;
+}
+
+.fb-search__field::placeholder {
+  color: var(--ink-faint);
+}
+
+.fb-search__results {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.fb-search__hit {
+  display: block;
+  width: 100%;
+  padding: calc(var(--line) / 3) 2ch;
+  background: none;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fb-search__hit[data-active] {
+  background: var(--paper-sunk);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.fb-search__hit-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 2ch;
+  color: var(--ink);
+}
+
+.fb-search__hit-group {
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+}
+
+.fb-search__hit-snippet {
+  display: block;
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fb-search__footer {
+  padding: calc(var(--line) / 4) 2ch;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-faint);
+  font-size: 0.6875rem;
+}
+
+/* Navigation disclosure ------------------------------------------- */
+
+.fb-nav__summary {
+  display: none;
+}
+
+@media (min-width: 901px) {
+  .fb-nav:not([open]) > :not(summary) {
+    display: block;
+  }
+}
+
+.fb-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.fb-not-found {
+  margin-top: var(--line);
+}
+
+@media (max-width: 600px) {
+  .prose :not(pre) > code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .fb-frame__note {
+    display: none;
+  }
+
+  .fb-overlay {
+    padding-top: var(--line);
+  }
+
+  .fb-search__hit-group {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .fb-nav__summary {
+    display: block;
+    padding: calc(var(--line) / 4) 0;
+    color: var(--ink-soft);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .fb-nav__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .fb-nav__summary:hover {
+    color: var(--ink);
+  }
+
+  .fb-nav[open] .fb-nav__summary {
+    margin-bottom: calc(var(--line) / 2);
+  }
+
+  .fb-header__inner {
+    flex-wrap: wrap;
+    row-gap: calc(var(--line) / 4);
+  }
+
+  .fb-button__hint {
+    display: none;
+  }
+}

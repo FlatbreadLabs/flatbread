@@ -3,15 +3,15 @@
 Thanks for your interest in contributing! This guide covers local development and the release process (bumping versions and publishing packages).
 
 **Flatbread** turns related content files in Git into typed data for TypeScript
-apps. **GraphQL is one way to read that data** (see `docs/glossary.md`); it is
-not the whole product.
+apps. **GraphQL is one way to read that data** (see
+`apps/docs/content/docs/glossary.md`); it is not the whole product.
 
 For a first project with posts, authors, and tags, see the
 [Flatbread package README quickstart](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/flatbread/README.md#quickstart-posts-authors-and-tags).
 
 ## Prerequisites
 
-- Node 20.19+
+- Node 20.19+ on the Node 20 line, or Node 22.12+
 - pnpm 10.33.x via Corepack (`corepack enable && corepack prepare pnpm@10.33.0 --activate`)
 - Clean git working tree (commit/stash your work first)
 
@@ -34,11 +34,23 @@ Optional **`pnpm play`** from the repo root is a shortcut for **`cd examples/nex
 - Build all packages: `pnpm build`
 - **Workspace libraries (watch-only):** `pnpm dev` — runs package `dev` scripts (e.g. `tsup --watch`) for `packages/*`; it does **not** start the Next.js example.
 - **Next.js example:** prefer the flow under [Recommended onboarding](#recommended-onboarding-try-flatbread-in-the-nextjs-example); or `pnpm play` as a convenience alias.
+- **Documentation site:** from the repo root, `pnpm docs:dev` builds the packages (`predocs:dev` runs `pnpm build` first, so a fresh clone works), then starts Flatbread on **5057** and Next on **3000**. `pnpm docs:build` builds the packages, then validates both `/` and `/flatbread` exports. `pnpm docs:check` builds the packages first, then checks frontmatter, links, graph parity, and generated queries. The content model is in `apps/docs/README.md`.
+- **Published docs (one-time admin setup):**
+  1. Open the repository's **Settings → Pages**.
+  2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
+  3. After the next `main` deployment passes, open
+     <https://flatbreadlabs.github.io/flatbread/>. Expected: the docs home page
+     loads instead of a 404 page.
+- `pnpm play` and `pnpm docs:dev` both use ports **5057** and **3000**. Stop
+  one before starting the other.
 - **Proof explorer:**
   1. Run `pnpm play:efforts` (builds `@flatbread/explorer` via `preplay:efforts`, then `flatbread start --watch --open`).
   2. When `flatbread.config.js` uses `proofContent()`, Flatbread serves `@flatbread/explorer` at `http://localhost:5057/`. The Apollo sandbox is at `/graphql`.
   3. For hot module replacement (HMR) on the single-page app (SPA) shell, run `pnpm exec flatbread start --watch` and `pnpm --filter @flatbread/explorer dev` in parallel. Vite on **5173** proxies API routes to **5057**.
-- Check local CI parity before opening a PR: `pnpm verify`
+- Check local CI parity before opening a PR: `pnpm verify`. It builds and tests
+  the packages, builds the static docs site at both `/` and `/flatbread`,
+  validates every exported route, asset, fragment, and id, and runs the
+  critical production audit gate.
 
 ## Working on a package
 
@@ -81,7 +93,24 @@ pnpm build
   - Root test suite: `pnpm test`
   - Package-local test scripts where present: `pnpm -r --if-present test`
   - Single package: `pnpm -F <package-name> test`
-  - Watch (where supported): `pnpm -F <package-name> test:watch`
+- Watch (where supported): `pnpm -F <package-name> test:watch`
+
+## Dependency overrides
+
+Before removing an override, delete only that selector, refresh the lockfile,
+then run `pnpm why <package>`, `pnpm audit --prod`, and `pnpm verify`.
+
+| Selector                                   | Risk it addresses                                                                                         | Remove only when                                                                                                      |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `@graphql-codegen/cli>shell-quote` `1.9.0` | Newline command injection and quadratic parser denial of service in `shell-quote` through `1.8.4`.        | Codegen resolves a release outside all current `shell-quote` advisories without the override, and codegen/audit pass. |
+| `next>postcss` `8.5.18`                    | Next's `8.4.31` pin is inside the XSS and attacker-controlled source-map file disclosure advisory ranges. | Next resolves a PostCSS release outside all current advisories without the override, and both docs builds pass.       |
+| `sanitize-html>postcss` `8.5.18`           | Older allowed PostCSS releases share the source-map file disclosure and path-traversal risks.             | `sanitize-html` resolves a PostCSS release outside all current advisories without the override, and docs/audit pass.  |
+| `postcss>nanoid` `3.3.18`                  | Custom and non-secure generators can loop forever for zero or negative sizes before `3.3.18`.             | PostCSS resolves a Nano ID release outside all current advisories without the override, and docs/audit pass.          |
+
+The workspace also pins `sharp@0.35.3` for `svimg` and Next.js. Older versions
+can try an unsupported Windows source build when a binary download fails.
+Remove each `sharp` override after its parent resolves `sharp` 0.35 or newer
+without the override and the image/docs builds pass.
 
 Oven (the DAG task runner for Cursor agents) now lives at
 https://github.com/FlatbreadLabs/oven.

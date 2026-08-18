@@ -50,8 +50,7 @@ An array of content types - each of which will appear in GraphQL.
 
 #### collection
 
-- Type: `string`
-- Default: `'FileNode'`
+- Type: `string` _required_
 
 The name for this content type that will appear in GraphQL.
 

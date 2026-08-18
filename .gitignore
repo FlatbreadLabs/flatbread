@@ -2,6 +2,13 @@
 **/node_modules
 **/dist/**
 
+# docs site build output
+apps/docs/.next/
+apps/docs/out/
+apps/docs/tsconfig.tsbuildinfo
+apps/docs/generated/.flatbread-codegen-cache.json
+apps/docs/public/search-index.json
+
 # temp files
 **.swp
 .vscode
@@ -18,3 +25,5 @@ yarn-error.log
 **/.flatbread/proof/read-cache/
 # Local Oven DAG artifacts (external Oven tool may write here)
 .oven/artifacts/
+# Local HarnessFlow review artifacts
+.harnessflow/

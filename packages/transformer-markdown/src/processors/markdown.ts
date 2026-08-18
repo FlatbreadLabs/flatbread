@@ -4,7 +4,10 @@ import remarkParse from 'remark-parse';
 import rehypeRaw from 'rehype-raw';
 import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
-import rehypeSanitize from 'rehype-sanitize';
+import rehypeSanitize, {
+  defaultSchema,
+  type Options as SanitizeOptions,
+} from 'rehype-sanitize';
 import external from 'remark-external-links';
 import gfm from 'remark-gfm';
 
@@ -15,6 +18,15 @@ import type {
   Plugin,
 } from '../types';
 import type { Options as ExternalLinksOptions } from 'remark-external-links';
+
+/** Keep harmless fenced-code metadata for syntax highlighters after sanitize. */
+const sanitizeSchema: SanitizeOptions = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    code: [['className', /^language-[A-Za-z0-9_-]+$/], 'dataTitle'],
+  },
+};
 
 /**
  * Add plugins with optional config to the processor via mutation.
@@ -65,7 +77,7 @@ export function createMarkdownProcessor(
   const toHAST = toMDAST
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
-    .use(rehypeSanitize);
+    .use(rehypeSanitize, sanitizeSchema);
 
   if (options.rehypePlugins) {
     applyPlugins(options.rehypePlugins, toHAST);

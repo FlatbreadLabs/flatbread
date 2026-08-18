@@ -5,3 +5,9 @@
 **/node_modules/**
 **/pnpm-lock.yaml
 examples/**
+apps/docs/.next/**
+apps/docs/out/**
+apps/docs/generated/**
+apps/docs/public/search-index.json
+.harnessflow/
+**/.flatbread/proof/read-cache/

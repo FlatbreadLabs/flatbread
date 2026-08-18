@@ -14,9 +14,9 @@
   },
   "dependencies": {
     "@graphql-typed-document-node/core": "^3.2.0",
-    "next": "15.4.4",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "next": "15.5.23",
+    "react": "19.1.9",
+    "react-dom": "19.1.9"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -25,7 +25,7 @@
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",
     "eslint": "^9.33.0",
-    "eslint-config-next": "15.4.4",
+    "eslint-config-next": "15.5.23",
     "flatbread": "workspace:*",
     "tailwindcss": "^4.1.11",
     "typescript": "^5.9.2"

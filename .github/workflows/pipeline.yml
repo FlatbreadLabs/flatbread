@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   FLATBREAD_CI: true
@@ -41,13 +41,17 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: 'pnpm'
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        uses: ./.github/actions/pnpm-install
 
       - name: Typecheck
         run: pnpm typecheck
 
       - name: Build
         run: pnpm build
+
+      - name: Audit production dependencies
+        run: pnpm audit:prod
 
       - name: Check canonical skill projection
         run: pnpm skills:check
@@ -80,7 +84,8 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: 'pnpm'
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        uses: ./.github/actions/pnpm-install
 
       - name: Lint
         run: pnpm lint
@@ -110,7 +115,8 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: 'pnpm'
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        uses: ./.github/actions/pnpm-install
 
       - name: Test
         run: pnpm test
@@ -140,7 +146,8 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: 'pnpm'
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        uses: ./.github/actions/pnpm-install
 
       - name: Build SvelteKit Integration
         run: pnpm build && pnpm --dir examples/sveltekit build
@@ -170,7 +177,82 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: 'pnpm'
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        uses: ./.github/actions/pnpm-install
 
       - name: Build Next.js integration
         run: pnpm build && pnpm --dir examples/nextjs build
+
+  docs-site:
+    runs-on: ubuntu-latest
+
+    # The docs site reads the repository's own Markdown through Flatbread, so
+    # this job proves both the content model and the published guides. One
+    # operating system is enough: the two example jobs above already cover
+    # Windows and macOS for the same `flatbread start -- next build` path.
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+          run_install: false
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: https://registry.npmjs.org/
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        uses: ./.github/actions/pnpm-install
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Typecheck the docs site
+        run: pnpm docs:typecheck
+
+      - name: Build the docs site at the root path
+        run: pnpm docs:build:root
+
+      - name: Build the docs site for GitHub Pages
+        run: pnpm docs:build:base-path
+
+      - name: Upload the static site
+        if: matrix.node-version == '22.x'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: apps/docs/out
+
+  deploy-docs:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - build
+      - lint
+      - test
+      - integration-sveltekit
+      - integration-nextjs
+      - docs-site
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Verify the Pages configuration
+        uses: actions/configure-pages@v5
+
+      - name: Deploy the docs site
+        id: deployment
+        uses: actions/deploy-pages@v4

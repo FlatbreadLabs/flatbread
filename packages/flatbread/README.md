@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/FlatbreadLabs/flatbread/main/assets/flatbread%20logo%20v2%20x4%401-1728x1080%20centered%20header.png"/>
+<img src="https://raw.githubusercontent.com/FlatbreadLabs/flatbread/main/assets/flatbread%20logo%20v2%20x4%401-1728x1080%20centered%20header.png" alt="Flatbread logo" />
 </p>
 
 <h1 align="center">Flatbread 🥪</h1>
@@ -15,6 +15,41 @@
     <img src="https://img.shields.io/npm/v/flatbread?color=%23ed225d" alt="NPM version">
   </a>
 </p>
+
+## Start the bundled example
+
+Prerequisites: Node 20.19+ on the Node 20 line, or Node 22.12+, and Git.
+
+Allow 5–10 minutes for a cold clone, install, and build on a typical laptop;
+network speed can add time. A warm start takes about 30 seconds when
+dependencies are installed and packages are already built.
+
+1. Clone the repository and build the packages:
+
+   ```bash
+   git clone https://github.com/FlatbreadLabs/flatbread.git
+   cd flatbread
+   corepack enable
+   corepack prepare pnpm@10.33.0 --activate
+   pnpm install
+   pnpm build
+   ```
+
+2. Start the bundled Next.js example:
+
+   ```bash
+   pnpm play
+   ```
+
+3. Open `http://localhost:3000`. Flatbread serves GraphQL at
+   `http://localhost:5057/graphql` while the example runs.
+
+Try one reversible edit:
+
+1. Open `examples/content/markdown/posts/example-post.md`.
+2. Change the frontmatter title to `title: 'Flatbread watch test'` and save.
+3. Refresh the page. Expected: the post card says **Flatbread watch test**.
+4. Restore the original line: `title: 'The Art of Measuring Cats in Fruit Units'`.
 
 Flatbread turns files in Git into a typed relational graph. Files are the
 records. `refs` in `flatbread.config.js` link them. You read the graph through
@@ -56,29 +91,29 @@ projects that want versioned content with links between entries.
 - It does not reload its own packages. `flatbread start --watch` picks up valid
   content and config changes while you work, but a change to a Flatbread
   package needs a rebuild and a restart. See the
-  [local development loop](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/local-dev-loop.md).
+  [local development loop](https://flatbreadlabs.github.io/flatbread/docs/local-dev-loop/).
 
 **GraphQL:** GraphQL is one read interface over the graph. For more detail, see
-[Flatbread positioning](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/positioning.md).
+[Flatbread positioning](https://flatbreadlabs.github.io/flatbread/docs/positioning/).
 
 **Glossary:** Definitions for collections, relations, IDs, validation, and the
 generated GraphQL types are in the
-[glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md).
+[glossary](https://flatbreadlabs.github.io/flatbread/docs/glossary/).
 
 **Local development:** Learn what updates automatically and what needs a
 restart in the
-[local development loop](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/local-dev-loop.md).
+[local development loop](https://flatbreadlabs.github.io/flatbread/docs/local-dev-loop/).
 
 **Export:** The core API can create stable JSON snapshots. See
-[JSON export](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/json-export.md).
+[JSON export](https://flatbreadlabs.github.io/flatbread/docs/json-export/).
 
 **Keeping your data:** Your files, Git history, JSON/CSV exports, GraphQL
 introspection, and generated TypeScript remain available when you move away
 from Flatbread. See
-[data ownership](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/data-ownership.md).
+[data ownership](https://flatbreadlabs.github.io/flatbread/docs/data-ownership/).
 
-Every published package requires Node 20.19 or newer. To work on this monorepo,
-use Node 20.19+ with pnpm 10.33.x.
+Supported Node versions for this monorepo are Node 20.19+ on the Node 20 line,
+or Node 22.12+. Use pnpm 10.33.x.
 
 ## Quickstart (posts, authors, and tags)
 
@@ -88,7 +123,7 @@ below use that layout.
 
 ### 1 · What you are modeling
 
-- **Collections** (`Post`, `Author`) map to folders of files; see the [glossary](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md).
+- **Collections** (`Post`, `Author`) map to folders of files; see the [glossary](https://flatbreadlabs.github.io/flatbread/docs/glossary/).
 - **Relations:** posts declare `authors:` in frontmatter as a list of **author ids**; Flatbread resolves them through **`refs`** in config (same idea as joins, over files—**not** a remote database).
 - **Tags:** in the bundled example, each post exposes **`tags`** as a **YAML string list** in frontmatter. That becomes a **`[String]`** field on **`Post`** in the generated schema. That is **facet-style metadata** repeated per post—not the same machinery as **`refs`** to another collection. If you need normalized tag **records** shared across posts, model a **`Tag`** collection and wire **`refs`** yourself (advanced).
 
@@ -121,21 +156,21 @@ The Next example points `flatbread.config.js` at `content/markdown/...` **relati
 
 **Backing files for posts, authors, and tags (this example):**
 
-| What        | Where it lives                                                                                                                           | Glossary terms                                                                                                                                                                         |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Posts**   | `examples/content/markdown/posts/*.md` — one **record** per file                                                                         | [Collection](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#collection), [Record](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#record) |
-| **Authors** | `examples/content/markdown/authors/*.md` — one **record** per file                                                                       | Same; **IDs** in frontmatter wire **relations**                                                                                                                                        |
-| **Tags**    | The `tags:` YAML list **in each post’s frontmatter** (facet metadata on that **Post**). There is **no** `markdown/tags/` directory here. | [Tag (facet) vs `Tag` collection](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#tag-facet-vs-tag-collection)                                                   |
+| What        | Where it lives                                                                                                                           | Glossary terms                                                                                                                                               |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Posts**   | `examples/content/markdown/posts/*.md` — one **record** per file                                                                         | [Collection](https://flatbreadlabs.github.io/flatbread/docs/glossary/#collection), [Record](https://flatbreadlabs.github.io/flatbread/docs/glossary/#record) |
+| **Authors** | `examples/content/markdown/authors/*.md` — one **record** per file                                                                       | Same; **IDs** in frontmatter wire **relations**                                                                                                              |
+| **Tags**    | The `tags:` YAML list **in each post’s frontmatter** (facet metadata on that **Post**). There is **no** `markdown/tags/` directory here. | [Tag (facet) vs `Tag` collection](https://flatbreadlabs.github.io/flatbread/docs/glossary/#tag-facet-vs-tag-collection)                                      |
 
 ### Traceability: same relation model (files, config, query interface)
 
-The table below follows one relation from files to config to the generated GraphQL schema. Files and config are the source of truth; GraphQL is one [query interface](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#query-interface) over them.
+The table below follows one relation from files to config to the generated GraphQL schema. Files and config are the source of truth; GraphQL is one [query interface](https://flatbreadlabs.github.io/flatbread/docs/glossary/#query-interface) over them.
 
-| Layer                                     | You see…                                                                                                                         | Glossary                                                                                                                                                                                                                                                                                                         |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Files**                                 | `authors:` ids in a post file match `id:` in author files; `tags:` is a string list on the post                                  | [Relation](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#relation), [ID](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#id), [Tag (facet) vs `Tag` collection](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#tag-facet-vs-tag-collection) |
-| **`flatbread.config.js`**                 | `content` entries with `collection: 'Post' \| 'Author'` and `refs: { authors: 'Author' }`                                        | [Collection](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#collection), [Relation](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#relation)                                                                                                                       |
-| **Generated GraphQL schema + codegen TS** | `allPosts { tags authors { id name } }` — **refs** resolve to **`Author`** objects; **`tags`** stays a scalar list on **`Post`** | [Generated schema and operation types (GraphQL)](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#generated-schema-and-operation-types-graphql), [Cardinality](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/glossary.md#cardinality)                                           |
+| Layer                                     | You see…                                                                                                                         | Glossary                                                                                                                                                                                                                                                                  |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Files**                                 | `authors:` ids in a post file match `id:` in author files; `tags:` is a string list on the post                                  | [Relation](https://flatbreadlabs.github.io/flatbread/docs/glossary/#relation), [ID](https://flatbreadlabs.github.io/flatbread/docs/glossary/#id), [Tag (facet) vs `Tag` collection](https://flatbreadlabs.github.io/flatbread/docs/glossary/#tag-facet-vs-tag-collection) |
+| **`flatbread.config.js`**                 | `content` entries with `collection: 'Post' \| 'Author'` and `refs: { authors: 'Author' }`                                        | [Collection](https://flatbreadlabs.github.io/flatbread/docs/glossary/#collection), [Relation](https://flatbreadlabs.github.io/flatbread/docs/glossary/#relation)                                                                                                          |
+| **Generated GraphQL schema + codegen TS** | `allPosts { tags authors { id name } }` — **refs** resolve to **`Author`** objects; **`tags`** stays a scalar list on **`Post`** | [Generated schema and operation types (GraphQL)](https://flatbreadlabs.github.io/flatbread/docs/glossary/#generated-schema-and-operation-types-graphql), [Cardinality](https://flatbreadlabs.github.io/flatbread/docs/glossary/#cardinality)                              |
 
 **Illustrative query result** (same **relation model** as [`examples/content/markdown/posts/example-post.md`](https://github.com/FlatbreadLabs/flatbread/blob/main/examples/content/markdown/posts/example-post.md): authors `2a3e` / `40s3`, **tags** from frontmatter). Values are from that file and its resolved **authors**; the shape matches the **`GetPostsAuthorsAndTags`** operation in **§3** after you include **`tags`** and **`authors`** in your **`.graphql`** document (see also `queries/posts.graphql`, which you can extend the same way):
 
@@ -159,7 +194,8 @@ Add **`tags`** (and any other fields) to your **`.graphql`** documents and rerun
 
 ### 3 · Run it from the repo root
 
-Prerequisites: **Node 20.19+** and **pnpm 10.33.x**. See
+Prerequisites: **Node 20.19+ on the Node 20 line, or Node 22.12+**, and
+**pnpm 10.33.x**. See
 [CONTRIBUTING.md](https://github.com/FlatbreadLabs/flatbread/blob/main/CONTRIBUTING.md).
 
 ```bash
@@ -266,7 +302,7 @@ Apollo Studio with the generated schema. You can then save queries in
 
 With `--watch`, valid content and config changes update the running GraphQL
 server. See the
-[local development loop](https://github.com/FlatbreadLabs/flatbread/blob/main/docs/local-dev-loop.md)
+[local development loop](https://flatbreadlabs.github.io/flatbread/docs/local-dev-loop/)
 for the cases that still need a rebuild or restart.
 
 ## Install Flatbread in your own repo
@@ -340,45 +376,37 @@ result = [
 
 #### Supported `filter` operations
 
-- `eq` - equal
-  - This is like `filterValue === resultValue` in JavaScript
-- `ne` - not equal
-  - This is like `filterValue !== resultValue` in JavaScript
-- `in`
-  - This is like `filterValue.includes(resultValue)` in JavaScript
-  - Can only be passed an array of values which pass strict comparison
-- `nin`
-  - This is like `!filterValue.includes(resultValue)` in JavaScript
-  - Can only be passed an array of values which pass strict comparison
-- `includes`
-  - This is like `resultValue.includes(filterValue)` in JavaScript
-  - Can only be passed a single value which passes strict comparison
-- `excludes`
-  - This is like `!resultValue.includes(filterValue)` in JavaScript
-  - Can only be passed a single value which passes strict comparison
-- `lt`, `lte`, `gt`, `gte`
-  - This is like `<`, `<=`, `>`, `>=` respectively
-  - Can only be used with numbers, strings, and booleans
-- `exists`
-  - This is like `filterValue ? resultValue != undefined : resultValue == undefined`
-  - Accepts `true` or `false` as a value to compare against (`filterValue`)
-  - For checking against a property that could be both `null` or `undefined`
-- `strictlyExists`
-  - This is like `filterValue ? resultValue !== undefined : resultValue === undefined`
-  - Accepts `true` or `false` as a value to compare against (`filterValue`)
-  - Checking against a property for `undefined`
-- `regex`
-  - This is like new RegExp(filterValue).test(resultValue) in JavaScript
-- `wildcard`
-  - This is an abstraction on top of `regex` for loose string matching
-  - Case insensitive
-  - Uses [matcher](https://github.com/sindresorhus/matcher) and matcher's [API](https://github.com/sindresorhus/matcher#usage)
+**Equality and membership**
 
-Caveats:
+- `eq` and `ne` use JavaScript strict equality and inequality.
+- `in` and `nin` test whether a filter array contains the result value. Both
+  use strict comparison.
+- `includes` and `excludes` test whether the result array contains one filter
+  value. Both use strict comparison.
 
-- Currently cannot infer date strings and then compare `Date` types in filters
-  - should work if you dynamically pass in a `Date` object from your client, though not extensively tested
-  - to fix this, add argument `typeof` checks and the matching comparator functions in [`packages/core/src/utils/sift.ts`](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/core/src/utils/sift.ts), then open a pull request
+The root `id` field is the exception: `eq`, `ne`, `in`, and `nin` normalize
+trimmed, non-empty strings and finite numbers to strings before comparing. An
+ID stored as `123` therefore matches a filter value of `"123"`. Other fields
+keep the strict comparison behavior above.
+
+**Ordering and presence**
+
+- `lt`, `lte`, `gt`, and `gte` use `<`, `<=`, `>`, and `>=`. They support
+  numbers, strings, and booleans.
+- `exists` checks for both `null` and `undefined`. Pass `true` to require a
+  value or `false` to require no value.
+- `strictlyExists` checks only for `undefined`. Pass `true` to require a value
+  or `false` to require `undefined`.
+
+**Text matching**
+
+- `wildcard` provides case-insensitive loose matching through
+  [matcher](https://github.com/sindresorhus/matcher) and its
+  [API](https://github.com/sindresorhus/matcher#usage).
+- `regex` is unavailable through GraphQL today. The internal comparator
+  requires a JavaScript `RegExp`, which JSON GraphQL input cannot represent.
+  Supporting a pattern string requires a Flatbread code change; use `wildcard`
+  for current GraphQL requests.
 
 #### Combining multiple filters
 
@@ -481,7 +509,7 @@ Accepts a function which takes in field names and transforms them for the GraphQ
 }
 ```
 
-# ☀️ Contributing
+## ☀️ Contributing
 
 See [CONTRIBUTING.md](https://github.com/FlatbreadLabs/flatbread/blob/main/CONTRIBUTING.md)
 for release steps, including version bumps and publishing.

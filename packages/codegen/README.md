@@ -6,7 +6,14 @@ Flatbread treats repo files as **relational, Git-tracked content** for TypeScrip
 
 ## 💾 Install
 
-Use `pnpm`, `npm`, or `yarn`:
+Install `flatbread` for the config and CLI workflow below. It includes the
+codegen package and the `flatbread codegen` command:
+
+```bash
+pnpm add flatbread
+```
+
+Install `@flatbread/codegen` directly only when you use its programmatic API:
 
 ```bash
 pnpm add @flatbread/codegen
@@ -46,37 +53,39 @@ export default defineConfig({
 
 ### 2. Add `.flatbread-codegen-cache.json` to your `.gitignore`.
 
-### 3. Generate types:
+### 3. Generate types once:
 
 ```bash
-# Generate types once
 pnpm exec flatbread codegen
-
-# Watch for changes and regenerate
-pnpm exec flatbread codegen --watch
-
-# Force regeneration (clear cache)
-pnpm exec flatbread codegen --clear-cache
 ```
+
+Expected: the configured output file exists and the command exits without an
+error.
 
 ### 4. Use the generated output in your application:
 
 Use **GraphQL operations** when you want explicit documents, custom selections, GraphQL clients, persisted operations, or direct access to the GraphQL endpoint:
 
 ```ts
-import type { Post, GetPostsQuery } from './generated/graphql';
+import type { GetPostsQuery } from './generated/graphql';
 import { request } from 'graphql-request';
 
-// Use the generated types
-const posts: Post[] = await request<GetPostsQuery>(`
-  query GetPosts {
-    posts {
-      id
-      title
-      content
+const data = await request<GetPostsQuery>(
+  'http://localhost:5057/graphql',
+  `
+    query GetPosts {
+      allPosts {
+        id
+        title
+        _content {
+          html
+        }
+      }
     }
-  }
-`);
+  `
+);
+
+const posts = data.allPosts;
 ```
 
 Use the prototype **generated TypeScript read API** when you want collection-shaped helpers for common reads from the configured content model. In the canonical Next.js example, `createFlatbreadReadApi()` reads posts, authors, and tags with a generated default selection while executing through the GraphQL layer:
@@ -93,6 +102,42 @@ const posts = await read.Post.all();
 const authorNames = posts[0]?.authors?.map((author) => author.name);
 const tags = posts[0]?.tags;
 ```
+
+## Keep generated types current
+
+Choose one workflow.
+
+Allow about 30 seconds for either watcher to reach its first ready state after
+dependencies are installed.
+
+1. Run Flatbread, codegen, and your app together during normal development:
+
+   ```bash
+   pnpm exec flatbread start --watch -- next dev
+   ```
+
+   Expected: one Flatbread process watches content and refreshes generated
+   types while the app runs.
+
+2. Run the standalone watcher only when no `flatbread start --watch` process is
+   running:
+
+   ```bash
+   pnpm exec flatbread codegen --watch
+   ```
+
+   Expected: codegen reports that it is watching for changes.
+
+If generated output stays stale, clear the cache once:
+
+```bash
+pnpm exec flatbread codegen --clear-cache
+```
+
+Expected: codegen rebuilds the configured output instead of reporting a cache
+hit. Follow the
+[unified local development loop](https://flatbreadlabs.github.io/flatbread/docs/local-dev-loop/)
+when the app, content server, and codegen need to run together.
 
 ## 👀 Watch Mode (watch-only)
 
@@ -326,7 +371,7 @@ function Posts() {
 
   return (
     <div>
-      {data?.posts.map((post) => (
+      {data?.allPosts.map((post) => (
         <article key={post.id}>
           <h2>{post.title}</h2>
           <p>{post.content}</p>
@@ -351,7 +396,7 @@ export async function getStaticProps() {
 
   return {
     props: {
-      posts: data.posts,
+      posts: data.allPosts,
     },
   };
 }
@@ -370,7 +415,7 @@ export async function load() {
   );
 
   return {
-    posts: data.posts,
+    posts: data.allPosts,
   };
 }
 ```

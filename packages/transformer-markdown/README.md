@@ -51,9 +51,21 @@ export default defineConfig({
 
 Refer to your source plugin's documentation for the relevant `content` Flatbread config option.
 
+## Code metadata and sanitizing
+
+Fenced code keeps the metadata syntax highlighters need:
+
+- The sanitizer keeps `language-*` classes whose language id uses only letters,
+  numbers, `_`, or `-`.
+- It keeps `data-title` on `<code>`. Unsupported classes and event handlers are
+  stripped; attributes allowed by the standard `rehype-sanitize` schema remain.
+
+Repository maintainers can verify the contract from the repository root with
+`pnpm exec ava packages/transformer-markdown/src/processors/markdown.test.ts`.
+
 ## 🧰 Options
 
-Please excuse what I'm about to do as I `CTRL` + `C`, `CTRL` + `V` my types file and hand it off to you as the official API docs for this plugin. If anyone wants to pretty this up, please bust open a PR 💜
+Configure the Markdown transformer with the following options:
 
 ```ts
 /**

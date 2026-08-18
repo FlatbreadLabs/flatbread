@@ -2,9 +2,10 @@
 
 The internal GraphQL schema generator for Flatbread. This runs the plugins declared in the user's config, pulling in content and transforming it prior to generating the GraphQL schema.
 
-As a general user of Flatbread, you likely want to use the full [Flatbread module](https://www.npmjs.com/package/flatbread)
+Most applications should use the full [Flatbread package](https://www.npmjs.com/package/flatbread).
 
-However, you can utilize this package directly to build your own custom GraphQL server via installing:
+Install `@flatbread/core` directly when you are building a custom GraphQL
+server or another low-level integration:
 
 ```bash
 pnpm i @flatbread/core@latest
@@ -20,14 +21,20 @@ content graph:
 - `exportCollectionsAsCsv(configResult, options)` returns flat CSV views over
   that same validated data.
 
-Prefer importing these helpers from `flatbread` in app code, since the main
-package re-exports `@flatbread/core` and is the primary consumer-facing surface.
-Import from `@flatbread/core` directly when you intentionally want the lower
-level package:
+In application code, import the re-exported helpers from `flatbread`:
 
 ```ts
 import { exportCollectionsAsJson, exportCollectionsAsCsv } from 'flatbread';
 ```
 
-See [`docs/json-export.md`](../../docs/json-export.md) for the full export
-contract and examples.
+For a low-level integration, import from the package installed above:
+
+```ts
+import {
+  exportCollectionsAsJson,
+  exportCollectionsAsCsv,
+} from '@flatbread/core';
+```
+
+See [the snapshot export guide](https://flatbreadlabs.github.io/flatbread/docs/json-export/)
+for the full export contract and examples.

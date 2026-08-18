@@ -2,7 +2,7 @@
 
 A weighing of opportunities, hypotheses of outcome, and an ideal end state for the Flatbread + Proof axis as a search-and-memory substrate.
 
-> Companion to [`flatbread-agent-artifact-opportunity.md`](flatbread-agent-artifact-opportunity.md) and [`flatbread-flow-pmf-audit.md`](flatbread-flow-pmf-audit.md). Authored via a `/proof` DAG; intermediate dossier names are listed in [`docs/research/performant-context-search/README.md`](docs/research/performant-context-search/README.md). Evidence for claims is in repo paths cited inline and in **§13 — References** (no ephemeral `file://` paths).
+> Companion to [`flatbread-agent-artifact-opportunity.md`](flatbread-agent-artifact-opportunity.md) and [`flatbread-flow-pmf-audit.md`](flatbread-flow-pmf-audit.md). Authored via a `/proof` DAG; intermediate dossier names are listed in [`apps/docs/content/notes/research/performant-context-search/README.md`](apps/docs/content/notes/research/performant-context-search/README.md). Evidence for claims is in repo paths cited inline and in **§13 — References** (no ephemeral `file://` paths).
 
 ---
 
@@ -26,7 +26,7 @@ Flatbread's relational filter DSL is excellent on **declared frontmatter columns
 
 ### 2.1 Frontmatter-only retrieval is structurally insufficient
 
-The internal Flatbread codebase audit (methodology: [`docs/research/performant-context-search/README.md`](docs/research/performant-context-search/README.md); sections cited here match the audit dossier §2.4–2.5, §3.1, §5) is unambiguous about today's retrieval surface in [`packages/core`](packages/core):
+The internal Flatbread codebase audit (methodology: [`apps/docs/content/notes/research/performant-context-search/README.md`](apps/docs/content/notes/research/performant-context-search/README.md); sections cited here match the audit dossier §2.4–2.5, §3.1, §5) is unambiguous about today's retrieval surface in [`packages/core`](packages/core):
 
 - The `filter` JSON DSL (`packages/core/src/utils/sift.ts`) is a Mongo-style comparator engine: `eq`, `ne`, `lt/lte/gt/gte`, `in/nin`, `includes/excludes`, `regex`, `wildcard`, `exists`, `strictlyExists`. It runs over an **in-memory `EntryNode` JSON graph**, with `resolveFilter` (`packages/core/src/resolvers/arguments.ts`) executing an internal GraphQL subquery to fetch only the leaf paths a filter mentions, then `sift()`-ing the result.
 - Boolean composition is **implicit AND** across flattened leaf conditions (`reduceBooleans('and')` in `packages/core/src/utils/sift.ts`); `$or` and `$nor` are unimplemented in the default sift path even though `reduceBooleans` supports `or` internally. `findMany(ids)` lacks the `filter` argument that `all*` has. `sortBy` only resolves top-level keys (`packages/core/src/resolvers/arguments.ts:162-176`).

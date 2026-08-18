@@ -6,18 +6,18 @@
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "engines": {
-    "node": ">=20.19"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
+    "preinstall": "node scripts/require-pnpm.mjs",
     "browser:install": "pnpm exec agent-browser install",
     "browser:doctor": "pnpm exec agent-browser doctor",
     "wipe": "npkill",
     "wipe:dist": "pnpm -r exec rm -rf ./dist",
-    "build": "pnpm -r --filter !{examples/*} build",
+    "build": "pnpm -r --filter !{examples/*} --filter !{apps/*} build",
     "build:examples": "pnpm -r --filter {examples/*} build",
-    "build:types": "pnpm -r --filter !{examples/*} exec -- tsup --dts-only",
-    "dev": "pnpm -r --parallel --filter !{examples/*} dev",
+    "build:types": "pnpm -r --filter !{examples/*} --filter !{apps/*} exec -- tsup --dts-only",
+    "dev": "pnpm -r --parallel --filter !{examples/*} --filter !{apps/*} dev",
     "skills:sync": "pnpm --filter @flatbread/proof skills:sync",
     "skills:check": "pnpm --filter @flatbread/proof skills:check",
     "skills:pack-check": "pnpm --filter @flatbread/proof skills:pack-check",
@@ -29,6 +29,15 @@
     "lint:fix:prettier": "pretty-quick --staged",
     "typecheck": "pnpm --filter @flatbread/explorer typecheck",
     "play": "cd examples/nextjs && pnpm dev",
+    "predocs:dev": "pnpm build",
+    "docs:dev": "pnpm --filter @flatbread/docs dev",
+    "docs:build": "pnpm build && pnpm docs:build:root && pnpm docs:build:base-path",
+    "docs:build:root": "node scripts/build-docs-base-path.mjs --root",
+    "docs:build:base-path": "node scripts/build-docs-base-path.mjs",
+    "predocs:check": "pnpm build",
+    "docs:check": "pnpm --filter @flatbread/docs check",
+    "docs:typecheck": "pnpm --filter @flatbread/docs typecheck",
+    "audit:prod": "pnpm audit --prod --audit-level critical",
     "preplay:efforts": "pnpm --filter @flatbread/explorer build",
     "play:efforts": "pnpm exec flatbread start --watch --open",
     "play:build": "pnpm build && cd examples/nextjs && pnpm build",
@@ -36,10 +45,10 @@
     "publish:ci": "esno scripts/publish.ts",
     "bump": "esno scripts/bumpVersions.ts",
     "test:ava": "ava",
-    "test:vitest": "pnpm --filter @flatbread/codegen --filter @flatbread/utils test",
+    "test:vitest": "pnpm --filter @flatbread/codegen --filter @flatbread/utils --filter @flatbread/docs test",
     "test:explorer": "pnpm --filter @flatbread/explorer test",
     "test": "pnpm build && pnpm test:ava && pnpm test:vitest && pnpm test:explorer",
-    "verify": "pnpm skills:check && pnpm skills:pack-check && pnpm lint && pnpm typecheck && pnpm build && pnpm test",
+    "verify": "pnpm skills:check && pnpm skills:pack-check && pnpm lint && pnpm typecheck && pnpm build && pnpm test && pnpm docs:typecheck && pnpm docs:build:root && pnpm docs:build:base-path && pnpm audit:prod",
     "cursor:fetch-cloud-agent": "node scripts/fetch-cloud-agent-conversation.mjs",
     "dev:test": "ava --watch --verbose",
     "prepare": "husky install"
@@ -88,6 +97,14 @@
     "typescript": "4.7.4"
   },
   "pnpm": {
+    "overrides": {
+      "@graphql-codegen/cli>shell-quote": "1.9.0",
+      "next>postcss": "8.5.18",
+      "next>sharp": "0.35.3",
+      "postcss>nanoid": "3.3.18",
+      "sanitize-html>postcss": "8.5.18",
+      "svimg>sharp": "0.35.3"
+    },
     "peerDependencyRules": {
       "allowedVersions": {
         "graphql": "^16.0.1"
