@@ -689,6 +689,21 @@ body {
   color: var(--ink-soft);
 }
 
+.fb-reference__command {
+  padding: 0 0.5ch;
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  font-size: 0.9375em;
+  overflow-wrap: anywhere;
+}
+
+.fb-reference__detail {
+  margin-top: calc(var(--line) / 3);
+  max-width: var(--measure);
+  color: var(--ink-soft);
+}
+
 .fb-page__rail {
   min-width: 0;
 }

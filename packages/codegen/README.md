@@ -6,7 +6,14 @@ Flatbread treats repo files as **relational, Git-tracked content** for TypeScrip
 
 ## 💾 Install
 
-Use `pnpm`, `npm`, or `yarn`:
+Install `flatbread` for the config and CLI workflow below. It includes the
+codegen package and the `flatbread codegen` command:
+
+```bash
+pnpm add flatbread
+```
+
+Install `@flatbread/codegen` directly only when you use its programmatic API:
 
 ```bash
 pnpm add @flatbread/codegen
@@ -46,23 +53,14 @@ export default defineConfig({
 
 ### 2. Add `.flatbread-codegen-cache.json` to your `.gitignore`.
 
-### 3. Generate types and start one watcher:
+### 3. Generate types once:
 
 ```bash
-# Generate types once
 pnpm exec flatbread codegen
-
-# Run Flatbread, codegen, and your app together (replace `next dev` as needed)
-pnpm exec flatbread start --watch -- next dev
-
-# Force regeneration (clear cache)
-pnpm exec flatbread codegen --clear-cache
 ```
 
-Use standalone `pnpm exec flatbread codegen --watch` only when no
-`flatbread start --watch` process is running. Do not run both watchers. Follow
-the
-[unified local development loop](https://flatbreadlabs.github.io/flatbread/docs/local-dev-loop/).
+Expected: the configured output file exists and the command exits without an
+error.
 
 ### 4. Use the generated output in your application:
 
@@ -104,6 +102,42 @@ const posts = await read.Post.all();
 const authorNames = posts[0]?.authors?.map((author) => author.name);
 const tags = posts[0]?.tags;
 ```
+
+## Keep generated types current
+
+Choose one workflow.
+
+Allow about 30 seconds for either watcher to reach its first ready state after
+dependencies are installed.
+
+1. Run Flatbread, codegen, and your app together during normal development:
+
+   ```bash
+   pnpm exec flatbread start --watch -- next dev
+   ```
+
+   Expected: one Flatbread process watches content and refreshes generated
+   types while the app runs.
+
+2. Run the standalone watcher only when no `flatbread start --watch` process is
+   running:
+
+   ```bash
+   pnpm exec flatbread codegen --watch
+   ```
+
+   Expected: codegen reports that it is watching for changes.
+
+If generated output stays stale, clear the cache once:
+
+```bash
+pnpm exec flatbread codegen --clear-cache
+```
+
+Expected: codegen rebuilds the configured output instead of reporting a cache
+hit. Follow the
+[unified local development loop](https://flatbreadlabs.github.io/flatbread/docs/local-dev-loop/)
+when the app, content server, and codegen need to run together.
 
 ## 👀 Watch Mode (watch-only)
 

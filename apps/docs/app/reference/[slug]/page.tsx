@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { getPackage, getPackages } from '../../../lib/content';
+import { getReferenceAction } from '../../../lib/reference-actions';
 import { tableOfContents } from '../../../lib/toc';
+import { Frame } from '../../components/ascii/Frame';
 import { Toc } from '../../components/nav/Toc';
 import { CodeCopy } from '../../components/prose/CodeCopy';
 
@@ -32,6 +34,7 @@ export default async function PackagePage({
   if (!entry) notFound();
 
   const contents = tableOfContents(entry.html);
+  const action = getReferenceAction(entry.id);
 
   return (
     <article className="fb-page">
@@ -50,9 +53,20 @@ export default async function PackagePage({
           <h1 className="fb-page__title">{packageName(entry.id)}</h1>
 
           <p className="fb-page__summary">
-            This page renders the package README from the repository revision
-            that built this site. It can be newer than the README in the current
-            npm release.
+            <strong>
+              {action.firstAction.label} ({action.firstAction.minutes} min):
+            </strong>{' '}
+            <code className="fb-reference__command">
+              {action.firstAction.command}
+            </code>
+          </p>
+
+          <p className="fb-reference__detail">
+            <strong>Before:</strong> {action.prerequisites}
+          </p>
+
+          <p className="fb-reference__detail">
+            <strong>Success:</strong> {action.firstAction.success}
           </p>
         </header>
 
@@ -62,6 +76,21 @@ export default async function PackagePage({
           dangerouslySetInnerHTML={{ __html: entry.html }}
         />
         <CodeCopy scope="#doc-prose" />
+
+        <Frame
+          label="next action"
+          note={`${action.nextAction.minutes} min`}
+          className="fb-related"
+        >
+          <p>
+            <a href={action.nextAction.href}>
+              <span aria-hidden className="fb-related__arrow">
+                →
+              </span>
+              {action.nextAction.label}
+            </a>
+          </p>
+        </Frame>
       </div>
 
       <div className="fb-page__rail">
