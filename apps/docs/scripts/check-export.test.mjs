@@ -73,6 +73,20 @@ describe('collectExportProblems', () => {
     );
   });
 
+  it('reports a missing same-page next-action fragment', () => {
+    const problems = withExport({
+      'reference/codegen/index.html':
+        '<h2 id="basic-usage">Basic usage</h2><a href="#basic-usage">Present</a><a href="#missing-section">Next action</a>',
+    });
+
+    expect(problems).not.toContain(
+      'reference/codegen/index.html: `#basic-usage` has no `#basic-usage` target in reference/codegen/index.html'
+    );
+    expect(problems).toContain(
+      'reference/codegen/index.html: `#missing-section` has no `#missing-section` target in reference/codegen/index.html'
+    );
+  });
+
   it('reports a missing base prefix and a missing local file', () => {
     const problems = withExport({
       'index.html':

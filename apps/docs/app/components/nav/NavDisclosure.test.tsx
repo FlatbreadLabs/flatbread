@@ -112,6 +112,27 @@ describe('NavDisclosure', () => {
     expect(focus).toHaveBeenCalledWith({ preventScroll: false });
     expect(document.activeElement).toBe(main);
   });
+
+  it('stays open without focusing main content after a wide-screen pathname change', async () => {
+    mediaMatches = true;
+    const focus = vi.spyOn(main, 'focus');
+    await renderDisclosure();
+
+    navigation.pathname = '/docs/second/';
+    await renderDisclosure();
+
+    expect(disclosure().open).toBe(true);
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it('does not throw when main content is missing after a narrow-screen pathname change', async () => {
+    await renderDisclosure();
+    main.remove();
+
+    navigation.pathname = '/docs/second/';
+
+    await expect(renderDisclosure()).resolves.toBeUndefined();
+  });
 });
 
 async function renderDisclosure() {
