@@ -393,7 +393,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
     cap_reasons: completeness.capReasons,
     page: {
       returned: visible.length,
-      has_more: Boolean(input.hasMore || records.length > CAP_RECORDS),
+      has_more: Boolean(input.hasMore),
       next_cursor: input.hasMore ? input.nextCursor ?? null : null,
     },
     hints: (

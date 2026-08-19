@@ -126,11 +126,20 @@ than expecting more. If a `get` body alone exceeds the 64 KiB digest byte
 cap, the digest fails closed with a byte-cap banner (it does **not** fake a
 full body via the 600/12 excerpt).
 
-Every read envelope carries `complete` and `cap_reasons`. A page with more
-records has `complete: false`, an empty `cap_reasons`, and
-`page.has_more: true`. Hard caps use the stable reasons `primary_records`,
-`displayed_edges`, and `bytes`. Programs must read these fields from the JSON
-envelope; do not parse the digest or `summary` as a data feed.
+Every read envelope carries `complete` and `cap_reasons`. Read it in this
+order:
+
+1. If `complete` is true, the artifact is complete.
+2. If `page.has_more` is true, fetch `page.next_cursor`. A null cursor is an
+   error; do not retry the same page.
+3. If `cap_reasons` is not empty, narrow the query or fail closed. It can hold
+   several sorted, duplicate-free values from `primary_records`,
+   `displayed_edges`, and `bytes`.
+4. A hard cap alone leaves `page.has_more: false` and `next_cursor: null`.
+   Paging and hard caps can occur together, but caps never create a cursor.
+
+Programs must read these fields from the JSON envelope; do not parse the
+digest or `summary` as a data feed.
 
 ### Commands
 
@@ -192,8 +201,9 @@ flatbread proof cache prune
 
 - Do not hand-edit record frontmatter or `.journal/`; bodies are freely
   editable (the reindexer validates and repairs projections).
-- Do not parse digest files as data feeds for other programs — they are
-  evidence for you to Read/grep; the envelope is the machine surface.
+- Do not parse digest files or `summary` as data feeds for other programs —
+  the digest is evidence for you to read or search; the envelope is the
+  machine surface.
 - Do not build polling loops around generations; strict reads wait
   server-side.
 - Do not model sessions/plans/agents as records — put provenance in

@@ -334,7 +334,7 @@ export default {
 );
 
 test.serial(
-  'spawned CLI exposes complete, paged, and byte-capped reads',
+  'spawned CLI exposes complete, paged, byte-, and edge-capped reads',
   async (t) => {
     const cwd = await createTempProject('flatbread-effort-completeness-', t);
     await writeFile(
@@ -366,6 +366,47 @@ export default {
       }),
       { cwd }
     );
+    const effortId = firstEffort.artifacts[0].id;
+    const citationIds = Array.from(
+      { length: 51 },
+      (_, index) =>
+        `cit-edge-${String(index).padStart(2, '0')}--0123456789abcdef`
+    );
+    const findingId = 'fnd-edge-source--0123456789abcdef';
+    await mkdir(join(cwd, '.flatbread-proof', 'citations'), {
+      recursive: true,
+    });
+    await mkdir(join(cwd, '.flatbread-proof', 'findings'), {
+      recursive: true,
+    });
+    await Promise.all(
+      citationIds.map((id, index) =>
+        writeFile(
+          join(cwd, '.flatbread-proof', 'citations', `${id}.md`),
+          serializeDocument(`https://example.com/${index}`, {
+            id,
+            effort: effortId,
+            title: `Edge ${index}`,
+            created_at: `2025-01-01T00:00:${String(index).padStart(
+              2,
+              '0'
+            )}.000Z`,
+            role: 'evidence',
+          })
+        )
+      )
+    );
+    await writeFile(
+      join(cwd, '.flatbread-proof', 'findings', `${findingId}.md`),
+      serializeDocument('', {
+        id: findingId,
+        effort: effortId,
+        title: 'Edge source',
+        created_at: '2025-01-01T00:01:00.000Z',
+        kind: 'measurement',
+        cites: citationIds,
+      })
+    );
 
     const completeResult = await runCli(
       cwd,
@@ -396,6 +437,22 @@ export default {
     t.false(capped.complete);
     t.deepEqual(capped.cap_reasons, ['bytes']);
     t.false(capped.page.has_more);
+
+    const edgeResult = await runCli(
+      cwd,
+      'proof',
+      'relations',
+      effortId,
+      findingId,
+      '--relations',
+      'cites'
+    );
+    t.is(edgeResult.code, 0);
+    const edgeCapped = JSON.parse(edgeResult.stdout);
+    t.false(edgeCapped.complete);
+    t.deepEqual(edgeCapped.cap_reasons, ['displayed_edges']);
+    t.true(edgeCapped.page.has_more);
+    t.truthy(edgeCapped.page.next_cursor);
   }
 );
 

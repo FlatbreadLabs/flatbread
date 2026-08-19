@@ -194,9 +194,19 @@ test('primary-record caps are machine readable', async (t) => {
     })),
     edges: [],
   });
+  const digest = await readFile(result.artifact_path, 'utf8');
   t.false(result.complete);
   t.deepEqual(result.cap_reasons, ['primary_records']);
-  t.true(result.page.has_more);
+  t.false(result.page.has_more);
+  t.is(result.page.next_cursor, null);
+  t.true(
+    digest.includes(
+      'primary: {"returned":25,"total_known":26,"has_more":false}'
+    )
+  );
+  t.true(digest.includes('complete: false'));
+  t.true(digest.includes('cap_reasons: ["primary_records"]'));
+  t.true(result.summary.includes('incomplete: primary_records'));
 });
 
 test('displayed-edge caps are machine readable', async (t) => {
@@ -223,9 +233,41 @@ test('displayed-edge caps are machine readable', async (t) => {
       to_id: `fnd-edge-${index}--0123456789abcdef`,
     })),
   });
+  const digest = await readFile(result.artifact_path, 'utf8');
   t.false(result.complete);
   t.deepEqual(result.cap_reasons, ['displayed_edges']);
-  t.is(new Set(result.cap_reasons).size, result.cap_reasons.length);
+  t.false(result.page.has_more);
+  t.is(result.page.next_cursor, null);
+  t.true(digest.includes('complete: false'));
+  t.true(digest.includes('cap_reasons: ["displayed_edges"]'));
+  t.true(result.summary.includes('incomplete: displayed_edges'));
+});
+
+test('stacked byte and record caps survive the byte rebuild', async (t) => {
+  const cacheRoot = await mkdtemp(join(tmpdir(), 'eg-digest-stacked-caps-'));
+  const result = await renderDigest({
+    query: { type: 'listRecords', effort: 'eff-one--0123456789abcdef' },
+    queryHash: 'stacked-caps',
+    generation: '4',
+    consistency: { mode: 'eventual' as const, min_generation: null },
+    cacheRoot,
+    records: Array.from({ length: 26 }, (_, index) => ({
+      id: `fnd-large-${index}--0123456789abcdef`,
+      kind: 'finding' as const,
+      path: `findings/large-${index}.md`,
+      frontmatter: { title: `Large ${index} ${'x'.repeat(3000)}` },
+      body_excerpt: '',
+      relations: {},
+    })),
+    edges: [],
+  });
+  const digest = await readFile(result.artifact_path, 'utf8');
+  t.false(result.complete);
+  t.deepEqual(result.cap_reasons, ['bytes', 'primary_records']);
+  t.false(result.page.has_more);
+  t.is(result.page.next_cursor, null);
+  t.true(digest.includes('cap_reasons: ["bytes","primary_records"]'));
+  t.true(result.summary.includes('incomplete: bytes, primary_records'));
 });
 
 test('renderDigest omits Blob bodies from bounded digests', async (t) => {
