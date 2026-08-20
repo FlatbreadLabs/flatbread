@@ -159,7 +159,7 @@ export function SearchDialog() {
         aria-expanded={open}
         onClick={openDialog}
       >
-        [search<span className="fb-button__hint"> /</span>]
+        Search <kbd className="fb-button__hint">/</kbd>
       </button>
 
       <dialog
@@ -210,7 +210,7 @@ export function SearchDialog() {
               onClick={close}
               aria-label="Close search"
             >
-              [close]
+              Close
             </button>
           </div>
 

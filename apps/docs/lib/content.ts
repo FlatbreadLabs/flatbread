@@ -34,8 +34,10 @@ export interface DocPage {
   id: string;
   title: string;
   summary: string;
+  order: number;
   sectionId: string;
   sectionTitle: string;
+  sectionOrder: number;
   related: Array<Pick<DocSummary, 'id' | 'title' | 'summary'>>;
   html: string;
   timeToRead: number;
@@ -114,6 +116,18 @@ function requireText(
   );
 }
 
+function requireNumber(
+  collection: string,
+  row: number | string,
+  field: string,
+  value: unknown
+): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  throw new Error(
+    `Flatbread returned an invalid \`${collection}\` record (${row}): \`${field}\` is missing. Fix the source file or collection query before building the docs site.`
+  );
+}
+
 export const getSections = once(async (): Promise<Section[]> => {
   const data = await query(AllSectionsDocument);
   const sections = expectRecords('allSections', data.allSections ?? []);
@@ -146,8 +160,10 @@ export async function getDoc(id: string): Promise<DocPage | undefined> {
     id: requireText('Doc', id, 'id', doc.id),
     title: requireText('Doc', id, 'title', doc.title),
     summary: doc.summary ?? '',
+    order: requireNumber('Doc', id, 'order', doc.order),
     sectionId: requireText('Doc', id, 'section.id', doc.section?.id),
     sectionTitle: requireText('Doc', id, 'section.title', doc.section?.title),
+    sectionOrder: requireNumber('Doc', id, 'section.order', doc.section?.order),
     // Omitted optional `related` frontmatter resolves to null. The link checker
     // validates every listed id before build, so only omission becomes empty.
     related: (doc.related ?? []).map((related, index) => ({

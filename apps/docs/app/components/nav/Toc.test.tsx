@@ -68,6 +68,12 @@ describe('Toc', () => {
   it('marks the top visible heading as the current location', async () => {
     await renderToc();
 
+    expect(container.textContent).toContain('Contents / this plate');
+    expect(
+      [...container.querySelectorAll('nav')].map((nav) =>
+        nav.getAttribute('aria-label')
+      )
+    ).toEqual(['Contents / this plate', 'Contents / this plate']);
     expect(currentLinks()).toEqual(['#first', '#first']);
     expect(observe).toHaveBeenCalledTimes(2);
     expect(observe).toHaveBeenNthCalledWith(1, headings[0]);

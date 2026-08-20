@@ -37,22 +37,45 @@ export default async function DocPage({
   if (!doc) notFound();
 
   const contents = tableOfContents(doc.html);
+  const sectionCoordinate = formatCoordinate(doc.sectionOrder);
+  const documentCoordinate = `${sectionCoordinate}.${formatCoordinate(
+    doc.order
+  )}`;
 
   return (
     <article className="fb-page">
       <div className="fb-page__body">
-        <header className="fb-page__header">
-          <p className="fb-page__eyebrow">
-            {doc.sectionTitle}
-            <span aria-hidden> · </span>
-            {doc.timeToRead} min
-            <span aria-hidden> · </span>
-            <span className="fb-page__source">
-              apps/docs/content/docs/{doc.id}.md
-            </span>
+        <header className="fb-page__header fb-plate">
+          <p className="fb-plate__eyebrow">
+            <span>Section {sectionCoordinate}</span>
+            <span aria-hidden> / </span>
+            <span>{doc.sectionTitle}</span>
           </p>
 
           <h1 className="fb-page__title">{doc.title}</h1>
+
+          <dl className="fb-plate__metadata">
+            <div>
+              <dt>Document</dt>
+              <dd>Guide</dd>
+            </div>
+            <div>
+              <dt>Coordinate</dt>
+              <dd>
+                {documentCoordinate} / {doc.id}
+              </dd>
+            </div>
+            <div>
+              <dt>Read time</dt>
+              <dd>{doc.timeToRead} min</dd>
+            </div>
+            <div className="fb-plate__source">
+              <dt>Source</dt>
+              <dd>apps/docs/content/docs/{doc.id}.md</dd>
+            </div>
+          </dl>
+
+          <p className="fb-plate__figure">Plate {documentCoordinate}</p>
 
           {doc.summary ? (
             <p className="fb-page__summary">{doc.summary}</p>
@@ -67,16 +90,23 @@ export default async function DocPage({
         <CodeCopy scope="#doc-prose" />
 
         {doc.related.length > 0 ? (
-          <Frame label="read next" className="fb-related">
+          <Frame
+            label="related references"
+            note={`section ${sectionCoordinate}`}
+            className="fb-related fb-manual-references"
+          >
             <ul>
-              {doc.related.map((related) => (
+              {doc.related.map((related, index) => (
                 <li key={related.id}>
                   <Link href={`/docs/${related.id}/`}>
-                    <span aria-hidden className="fb-related__arrow">
-                      →
+                    <span aria-hidden className="fb-manual-reference__number">
+                      {formatReference(index + 1)}
                     </span>
                     {related.title}
                   </Link>
+                  <p className="fb-manual-reference__source">
+                    Document / {related.id}
+                  </p>
                   {related.summary ? <p>{related.summary}</p> : null}
                 </li>
               ))}
@@ -90,4 +120,12 @@ export default async function DocPage({
       </div>
     </article>
   );
+}
+
+function formatCoordinate(order: number): string {
+  return String(order).padStart(2, '0');
+}
+
+function formatReference(order: number): string {
+  return `REF. ${String(order).padStart(2, '0')}`;
 }

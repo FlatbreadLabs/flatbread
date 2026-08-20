@@ -23,7 +23,7 @@ export function CodeCopy({ scope }: { scope: string }) {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'fb-copy';
-      button.textContent = '[copy]';
+      button.textContent = 'Copy';
       button.setAttribute('aria-label', 'Copy this code');
 
       let reset: ReturnType<typeof setTimeout> | undefined;
@@ -32,14 +32,14 @@ export function CodeCopy({ scope }: { scope: string }) {
         const code = block.querySelector('code')?.textContent ?? '';
         try {
           await navigator.clipboard.writeText(code);
-          button.textContent = '[copied]';
+          button.textContent = 'Copied';
           button.dataset.done = '';
         } catch {
-          button.textContent = '[press ⌘C]';
+          button.textContent = 'Press ⌘C';
         }
         clearTimeout(reset);
         reset = setTimeout(() => {
-          button.textContent = '[copy]';
+          button.textContent = 'Copy';
           delete button.dataset.done;
         }, 1600);
       };

@@ -49,6 +49,8 @@ export function Toc({ entries }: { entries: TocEntry[] }) {
 
   if (entries.length === 0) return null;
 
+  const label = 'Contents / this plate';
+
   const links = (
     <ul>
       {entries.map((entry) => (
@@ -72,17 +74,19 @@ export function Toc({ entries }: { entries: TocEntry[] }) {
         className="fb-toc-disclosure"
         onToggle={(event) => setMobileOpen(event.currentTarget.open)}
       >
-        <summary>On this page ({entries.length})</summary>
-        <nav ref={mobileNav} className="fb-toc" aria-label="On this page">
+        <summary>
+          {label} · {entries.length}
+        </summary>
+        <nav ref={mobileNav} className="fb-toc" aria-label={label}>
           {links}
         </nav>
       </details>
       <nav
         ref={desktopNav}
         className="fb-toc fb-toc--desktop"
-        aria-label="On this page"
+        aria-label={label}
       >
-        <p className="fb-toc__title">On this page</p>
+        <p className="fb-toc__title">{label}</p>
         {links}
       </nav>
     </>

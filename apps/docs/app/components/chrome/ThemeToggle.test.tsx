@@ -34,7 +34,7 @@ describe('ThemeToggle', () => {
     document.documentElement.dataset.theme = 'light';
     await renderToggle();
 
-    expect(toggleButton().textContent).toBe('[◑ light]');
+    expect(toggleButton().textContent).toBe('Theme: light');
     expect(toggleButton().getAttribute('aria-label')).toBe(
       'Switch to the dark theme'
     );
@@ -43,7 +43,7 @@ describe('ThemeToggle', () => {
 
     expect(document.documentElement.dataset.theme).toBe('dark');
     expect(localStorage.getItem(THEME_KEY)).toBe('dark');
-    expect(toggleButton().textContent).toBe('[◐ dark]');
+    expect(toggleButton().textContent).toBe('Theme: dark');
     expect(toggleButton().getAttribute('aria-label')).toBe(
       'Switch to the light theme'
     );
@@ -52,7 +52,7 @@ describe('ThemeToggle', () => {
 
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(localStorage.getItem(THEME_KEY)).toBe('light');
-    expect(toggleButton().textContent).toBe('[◑ light]');
+    expect(toggleButton().textContent).toBe('Theme: light');
   });
 
   it('still updates the document and control when storage rejects the write', async () => {
@@ -68,7 +68,7 @@ describe('ThemeToggle', () => {
 
     expect(setItem).toHaveBeenCalledWith(THEME_KEY, 'dark');
     expect(document.documentElement.dataset.theme).toBe('dark');
-    expect(toggleButton().textContent).toBe('[◐ dark]');
+    expect(toggleButton().textContent).toBe('Theme: dark');
   });
 });
 

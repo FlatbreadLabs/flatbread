@@ -13,6 +13,7 @@ export default defineConfig({
     environment: 'node',
     include: [
       'app/components/chrome/**/*.test.tsx',
+      'app/components/manual/**/*.test.ts',
       'app/components/nav/**/*.test.tsx',
       'app/components/prose/**/*.test.tsx',
       'app/components/search/**/*.test.tsx',
