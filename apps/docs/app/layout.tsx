@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono } from 'next/font/google';
 import Link from 'next/link';
 
 import { getDocs, getPackages, getSections } from '../lib/content';
@@ -9,6 +9,12 @@ import { NavDisclosure } from './components/nav/NavDisclosure';
 import { Sidebar } from './components/nav/Sidebar';
 import { SearchDialog } from './components/search/SearchDialog';
 import './globals.css';
+
+const sans = Geist({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+  display: 'swap',
+});
 
 const mono = Geist_Mono({
   variable: '--font-geist-mono',
@@ -35,11 +41,15 @@ export default async function RootLayout({
   ]);
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${sans.variable} ${mono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className={mono.variable}>
+      <body>
         <a href="#main-content" className="fb-skip">
           Skip to content
         </a>
@@ -63,7 +73,7 @@ export default async function RootLayout({
                 target="_blank"
                 rel="noreferrer"
               >
-                [github ↗]
+                GitHub
               </a>
             </div>
           </div>
@@ -72,7 +82,7 @@ export default async function RootLayout({
 
         <div className="fb-shell">
           <aside className="fb-sidebar">
-            <NavDisclosure label="pages">
+            <NavDisclosure label="Manual index">
               <Sidebar sections={sections} docs={docs} packages={packages} />
             </NavDisclosure>
           </aside>

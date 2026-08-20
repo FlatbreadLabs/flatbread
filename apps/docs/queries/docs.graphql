@@ -29,9 +29,11 @@ query DocById($id: ID!) {
     id
     title
     summary
+    order
     section {
       id
       title
+      order
     }
     related {
       id

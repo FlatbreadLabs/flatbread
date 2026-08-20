@@ -47,7 +47,7 @@ export function ThemeToggle() {
       className="fb-button"
       aria-label={`Switch to the ${theme === 'dark' ? 'light' : 'dark'} theme`}
     >
-      {theme === 'dark' ? '[◐ dark]' : '[◑ light]'}
+      Theme: {theme}
     </button>
   );
 }

@@ -46,14 +46,14 @@ describe('CodeCopy', () => {
     await click(button);
 
     expect(writeText).toHaveBeenCalledWith('const answer = 42;');
-    expect(button.textContent).toBe('[copied]');
+    expect(button.textContent).toBe('Copied');
     expect(button.dataset.done).toBe('');
 
     await act(async () => vi.advanceTimersByTime(1599));
-    expect(button.textContent).toBe('[copied]');
+    expect(button.textContent).toBe('Copied');
 
     await act(async () => vi.advanceTimersByTime(1));
-    expect(button.textContent).toBe('[copy]');
+    expect(button.textContent).toBe('Copy');
     expect(button.dataset.done).toBeUndefined();
   });
 
@@ -64,11 +64,11 @@ describe('CodeCopy', () => {
     const button = copyButton();
     await click(button);
 
-    expect(button.textContent).toBe('[press ⌘C]');
+    expect(button.textContent).toBe('Press ⌘C');
     expect(button.dataset.done).toBeUndefined();
 
     await act(async () => vi.advanceTimersByTime(1600));
-    expect(button.textContent).toBe('[copy]');
+    expect(button.textContent).toBe('Copy');
   });
 
   it('shows the keyboard fallback when the clipboard API is unavailable', async () => {
@@ -80,7 +80,7 @@ describe('CodeCopy', () => {
 
     await click(copyButton());
 
-    expect(copyButton().textContent).toBe('[press ⌘C]');
+    expect(copyButton().textContent).toBe('Press ⌘C');
     expect(copyButton().dataset.done).toBeUndefined();
   });
 
@@ -91,7 +91,7 @@ describe('CodeCopy', () => {
     await click(copyButton());
 
     expect(writeText).toHaveBeenCalledWith('');
-    expect(copyButton().textContent).toBe('[copied]');
+    expect(copyButton().textContent).toBe('Copied');
   });
 
   it('keeps one copy button across rerender and remount', async () => {
@@ -129,8 +129,8 @@ describe('CodeCopy', () => {
 
     expect(writeText).toHaveBeenCalledOnce();
     expect(writeText).toHaveBeenCalledWith('pnpm test');
-    expect(firstButton.textContent).toBe('[copy]');
-    expect(secondButton.textContent).toBe('[copied]');
+    expect(firstButton.textContent).toBe('Copy');
+    expect(secondButton.textContent).toBe('Copied');
   });
 
   it('keeps overlapping reset timers independent across code blocks', async () => {
@@ -148,15 +148,15 @@ describe('CodeCopy', () => {
     await click(firstButton);
 
     await act(async () => vi.advanceTimersByTime(400));
-    expect(firstButton.textContent).toBe('[copied]');
-    expect(secondButton.textContent).toBe('[copied]');
+    expect(firstButton.textContent).toBe('Copied');
+    expect(secondButton.textContent).toBe('Copied');
 
     await act(async () => vi.advanceTimersByTime(800));
-    expect(firstButton.textContent).toBe('[copied]');
-    expect(secondButton.textContent).toBe('[copy]');
+    expect(firstButton.textContent).toBe('Copied');
+    expect(secondButton.textContent).toBe('Copy');
 
     await act(async () => vi.advanceTimersByTime(400));
-    expect(firstButton.textContent).toBe('[copy]');
+    expect(firstButton.textContent).toBe('Copy');
     expect(writeText.mock.calls).toEqual([
       ['pnpm build'],
       ['pnpm test'],

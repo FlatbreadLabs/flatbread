@@ -19,7 +19,7 @@ function docsPayload(title: string) {
         title,
         summary: 'Start here',
         order: 1,
-        section: { id: 'start', title: 'Start' },
+        section: { id: 'start', title: 'Start', order: 1 },
         _content: { raw: 'Getting started content.' },
       },
     ],
@@ -32,7 +32,8 @@ function docPagePayload() {
       id: 'getting-started',
       title: 'Getting started',
       summary: 'Start here',
-      section: { id: 'start', title: 'Start' },
+      order: 1,
+      section: { id: 'start', title: 'Start', order: 1 },
       related: [
         {
           id: 'next-steps',
@@ -108,8 +109,10 @@ describe('content readers', () => {
       id: 'getting-started',
       title: 'Getting started',
       summary: 'Start here',
+      order: 1,
       sectionId: 'start',
       sectionTitle: 'Start',
+      sectionOrder: 1,
       related: [
         {
           id: 'next-steps',
@@ -236,6 +239,37 @@ describe('content readers', () => {
 
     await expect(getDoc('getting-started')).rejects.toThrow(
       /Doc.*section\.title/
+    );
+  });
+
+  it.each([
+    ['null', null],
+    ['missing', undefined],
+    ['text', '1'],
+  ])('rejects a doc page with a %s order', async (_case, order) => {
+    const payload = docPagePayload();
+    vi.mocked(query).mockResolvedValueOnce({
+      Doc: { ...payload.Doc, order },
+    } as never);
+
+    await expect(getDoc('getting-started')).rejects.toThrow(/Doc.*order/);
+  });
+
+  it.each([
+    ['null', null],
+    ['missing', undefined],
+    ['text', '1'],
+  ])('rejects a doc page with a %s section order', async (_case, order) => {
+    const payload = docPagePayload();
+    vi.mocked(query).mockResolvedValueOnce({
+      Doc: {
+        ...payload.Doc,
+        section: { ...payload.Doc.section, order },
+      },
+    } as never);
+
+    await expect(getDoc('getting-started')).rejects.toThrow(
+      /Doc.*section\.order/
     );
   });
 
@@ -475,7 +509,8 @@ describe('content readers', () => {
       Doc: {
         id: 'getting-started',
         title: 'Getting started',
-        section: { id: 'start', title: 'Start' },
+        order: 1,
+        section: { id: 'start', title: 'Start', order: 1 },
         _content: { html: null },
       },
     } as never);

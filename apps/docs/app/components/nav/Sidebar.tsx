@@ -15,22 +15,16 @@ interface SidebarProps {
 interface Branch {
   id: string;
   title: string;
-  items: Array<{ href: string; label: string }>;
+  number?: number;
+  items: Array<{ href: string; label: string; number?: number }>;
 }
 
-/**
- * The navigation, drawn as a directory tree.
- *
- * A vertical list is the one place where box-drawing characters are completely
- * safe: `├─` and `└─` never have to stretch, so they line up whatever the
- * window is doing. The current page gets a plain text marker inside its link;
- * it does not need an animation library or a shared moving element.
- */
+/** Lists each manual section and page in its published order. */
 export function Sidebar({ sections, docs, packages }: SidebarProps) {
   const pathname = usePathname();
   const referenceBranches: Branch[] = groupPackages(packages).map((group) => ({
     id: `reference-${group.name.toLowerCase()}`,
-    title: `Reference · ${group.name}`,
+    title: `Package reference / ${group.name}`,
     items: group.packages.map((entry) => ({
       href: `/reference/${entry.id}/`,
       label: entry.id,
@@ -38,52 +32,62 @@ export function Sidebar({ sections, docs, packages }: SidebarProps) {
   }));
 
   const branches: Branch[] = [
-    ...sections.map((section) => ({
-      id: section.id,
-      title: section.title,
-      items: docs
-        .filter((doc) => doc.sectionId === section.id)
-        .map((doc) => ({ href: `/docs/${doc.id}/`, label: doc.title })),
-    })),
+    ...[...sections]
+      .sort((a, b) => a.order - b.order)
+      .map((section) => ({
+        id: section.id,
+        title: section.title,
+        number: section.order,
+        items: docs
+          .filter((doc) => doc.sectionId === section.id)
+          .sort((a, b) => a.order - b.order)
+          .map((doc) => ({
+            href: `/docs/${doc.id}/`,
+            label: doc.title,
+            number: doc.order,
+          })),
+      })),
     ...referenceBranches,
   ].filter((branch) => branch.items.length > 0);
 
   return (
-    <nav className="fb-tree" aria-label="Documentation">
+    <nav className="fb-tree" aria-label="Manual index">
       <ul className="fb-tree__root">
-        {branches.map((branch, branchIndex) => {
-          const lastBranch = branchIndex === branches.length - 1;
+        {branches.map((branch) => {
+          const sectionNumber = formatIndex(branch.number);
 
           return (
             <li key={branch.id} className="fb-tree__branch">
               <p className="fb-tree__title">
-                <span aria-hidden className="fb-tree__connector">
-                  {lastBranch ? '└─' : '├─'}
-                </span>
+                {sectionNumber ? (
+                  <span className="fb-tree__index">{sectionNumber} </span>
+                ) : null}
                 {branch.title}
               </p>
 
               <ul className="fb-tree__leaves">
-                {branch.items.map((item, itemIndex) => {
+                {branch.items.map((item) => {
                   const active = pathname === item.href;
-                  const lastItem = itemIndex === branch.items.length - 1;
+                  const pageNumber = formatIndex(item.number);
+                  const coordinate =
+                    sectionNumber && pageNumber
+                      ? `${sectionNumber}.${pageNumber}`
+                      : undefined;
 
                   return (
                     <li key={item.href} className="fb-tree__leaf">
-                      <span aria-hidden className="fb-tree__connector">
-                        {lastBranch ? '  ' : '│ '}
-                        {lastItem ? '└─' : '├─'}
-                      </span>
-
                       <Link
                         href={item.href}
                         className="fb-tree__link"
                         aria-current={active ? 'page' : undefined}
                         data-active={active ? '' : undefined}
                       >
+                        {coordinate ? (
+                          <span className="fb-tree__index">{coordinate} </span>
+                        ) : null}
                         {active ? (
-                          <span aria-hidden className="fb-tree__marker">
-                            ›
+                          <span className="fb-tree__current">
+                            Current page:{' '}
                           </span>
                         ) : null}
                         {item.label}
@@ -98,4 +102,8 @@ export function Sidebar({ sections, docs, packages }: SidebarProps) {
       </ul>
     </nav>
   );
+}
+
+function formatIndex(value: number | undefined): string | undefined {
+  return value === undefined ? undefined : String(value).padStart(2, '0');
 }

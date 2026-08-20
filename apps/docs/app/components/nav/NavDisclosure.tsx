@@ -53,10 +53,7 @@ export function NavDisclosure({
       open={wide || open}
       onToggle={(event) => setOpen(event.currentTarget.open)}
     >
-      <summary className="fb-nav__summary">
-        <span aria-hidden>{open ? '▾' : '▸'} </span>
-        {label}
-      </summary>
+      <summary className="fb-nav__summary">{label}</summary>
       {children}
     </details>
   );

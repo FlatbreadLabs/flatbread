@@ -39,23 +39,43 @@ export default async function PackagePage({
   return (
     <article className="fb-page">
       <div className="fb-page__body">
-        <header className="fb-page__header">
-          <p className="fb-page__eyebrow">
-            Reference
-            <span aria-hidden> · </span>
-            {entry.timeToRead} min
-            <span aria-hidden> · </span>
-            <span className="fb-page__source">
-              packages/{entry.id}/README.md
-            </span>
+        <header className="fb-page__header fb-plate">
+          <p className="fb-plate__eyebrow">
+            <span>Reference</span>
+            <span aria-hidden> / </span>
+            <span>Package documentation</span>
           </p>
 
           <h1 className="fb-page__title">{packageName(entry.id)}</h1>
 
-          <p className="fb-page__summary">
-            <strong>
-              {action.firstAction.label} ({action.firstAction.minutes} min):
+          <dl className="fb-plate__metadata">
+            <div>
+              <dt>Document</dt>
+              <dd>Package reference</dd>
+            </div>
+            <div>
+              <dt>Coordinate</dt>
+              <dd>Reference / {entry.id}</dd>
+            </div>
+            <div>
+              <dt>Read time</dt>
+              <dd>{entry.timeToRead} min</dd>
+            </div>
+            <div className="fb-plate__source">
+              <dt>Source</dt>
+              <dd>packages/{entry.id}/README.md</dd>
+            </div>
+          </dl>
+
+          <p className="fb-plate__figure">Reference plate</p>
+
+          <p className="fb-page__summary fb-reference__action">
+            <strong className="fb-reference__action-label">
+              Initial procedure:
             </strong>{' '}
+            <span>
+              {action.firstAction.label} ({action.firstAction.minutes} min):
+            </span>{' '}
             <code className="fb-reference__command">
               {action.firstAction.command}
             </code>
@@ -78,14 +98,14 @@ export default async function PackagePage({
         <CodeCopy scope="#doc-prose" />
 
         <Frame
-          label="next action"
+          label="follow-on reference"
           note={`${action.nextAction.minutes} min`}
-          className="fb-related"
+          className="fb-related fb-manual-references"
         >
           <p>
             <a href={action.nextAction.href}>
-              <span aria-hidden className="fb-related__arrow">
-                →
+              <span aria-hidden className="fb-manual-reference__number">
+                REF. 01
               </span>
               {action.nextAction.label}
             </a>
