@@ -1,0 +1,1 @@
+Follow-up audit: reject empty changelog sections, verify existing GitHub release bodies against filed notes, and include the synced Proof manifest in release staging docs.
