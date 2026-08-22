@@ -1,7 +1,7 @@
 {
   "name": "@flatbread/explorer",
   "version": "1.0.1",
-  "description": "Single-page app for browsing a Flatbread content graph, served by flatbread start. Ships an Proof preset.",
+  "description": "Single-page app for browsing a Flatbread content graph, served by flatbread start. Ships a Proof preset.",
   "type": "module",
   "scripts": {
     "build": "pnpm build:node && pnpm build:web",

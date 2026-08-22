@@ -127,7 +127,7 @@ function EmptyState({
         ]
       : [
           'No Proof records yet',
-          'Nothing found in the Proof content root. Journal a record and it will grow in here.',
+          'Nothing found in this content root. Journal a record and it will grow in here.',
         ];
 
   return (

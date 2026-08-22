@@ -1,6 +1,6 @@
 ---
 name: grill-with-efforts
-description: Run a relentless one-question-at-a-time planning interview that sharpens vocabulary and journals durable reasoning into the Flatbread Proof. Use when a plan is fuzzy and needs an Proof trail instead of ADRs.
+description: Run a relentless one-question-at-a-time planning interview that sharpens vocabulary and journals durable reasoning into Proof. Use when a plan is fuzzy and needs a Proof trail instead of ADRs.
 disable-model-invocation: true
 ---
 

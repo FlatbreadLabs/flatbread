@@ -1063,6 +1063,30 @@ export default {
 );
 
 test.serial(
+  'bootstrap names the write journal for Proof without a branded The Proof',
+  async (t) => {
+    const cwd = await createTempProject('flatbread-bootstrap-journal-copy-', t);
+    await writeFile(
+      join(cwd, 'flatbread.config.js'),
+      `import { source } from '@flatbread/source-filesystem';
+import { transformer } from '@flatbread/transformer-markdown';
+import { proofContent } from '@flatbread/proof';
+export default { source: source(), transformer: transformer(), content: proofContent() };`
+    );
+    const report = await inspectEffortBootstrap(cwd);
+    const journal = report.requirements.find(
+      (requirement) =>
+        requirement.code === 'EFFORT_BOOTSTRAP_JOURNAL_IGNORE_MISSING'
+    );
+    t.is(
+      journal?.message,
+      'The write journal for Proof at .flatbread-proof is not ignored.'
+    );
+    t.false((journal?.message ?? '').includes('The Proof'));
+  }
+);
+
+test.serial(
   'bootstrap detects a ready custom root and verify returns action-required JSON state',
   async (t) => {
     const cwd = await createTempProject('flatbread-bootstrap-ready-', t);

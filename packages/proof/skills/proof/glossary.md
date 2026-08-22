@@ -1,6 +1,6 @@
 # Proof glossary
 
-The Proof is persistent, queryable memory for long-horizon software
+Proof is persistent, queryable memory for long-horizon software
 work. It builds on Flatbread's content vocabulary: each primitive is a
 Collection, its instances are Records, and cross-primitive references are
 Relations in frontmatter.
