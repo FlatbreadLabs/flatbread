@@ -1,0 +1,20 @@
+---
+description: PR review and Grok Task subagents use the latest Cursor Grok model, never a pinned 4.5 slug.
+alwaysApply: true
+---
+
+# Latest Cursor Grok for review subagents
+
+When this run is a pull-request review, or when you spawn Task subagents
+for architecture, proof-journal, or correctness:
+
+1. Use the **latest Cursor Grok** model. Prefer omitting Task `model`, or
+   pass `inherit`, so children match the parent.
+2. If the Task tool requires an explicit slug, pick the newest
+   `cursor-grok-*` entry in that tool's allow-list.
+3. Do **not** pass `cursor-grok-4.5-high` or `cursor-grok-4.5-high-fast`.
+4. Do **not** write a versioned Grok slug into automation memory.
+
+The Flatbread PR Review automation executes
+`.cursor/commands/read-branch.md` as `/read-branch`. That file is the
+source of truth for this routing. Quality/simplify work stays on Composer.
