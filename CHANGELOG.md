@@ -2,7 +2,10 @@
 
 ## Unreleased
 
-- The DAG runner is now `@flatbread/oven` (`pnpm exec oven`); the memory package is now `@flatbread/proof` with the `flatbread proof` CLI.
+- The Proof skill now gates journaling on a 4/4 retention score. Agents
+  score the information before any mutation or body edit; existing records
+  do not bypass the gate. Four bundled eval cases ship with the skill and
+  load only when you run them.
 - Proof read envelopes now expose `complete` and `cap_reasons`. `page.has_more`
   is pagination-only and no longer signals the 25-record wall; use
   `cap_reasons` / `complete` for hard caps on `displayed_edges` and `bytes`.

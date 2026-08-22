@@ -1,0 +1,46 @@
+{
+  "skill_name": "proof",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "An implementation branch passes lint and 41 of 42 tests. The last failure is a flaky timer assertion owned by this branch. The next session should rerun it and adjust the timeout if it repeats. Preserve this handoff where it belongs.",
+      "expected_output": "Keep the handoff in a branch, run, PR, or tracker artifact. Do not create or update a Proof record.",
+      "assertions": [
+        "No .flatbread-proof record is created or updated",
+        "The response identifies the handoff as temporary implementation state",
+        "The response names a native work artifact instead of Proof"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Put this in project agent memory: for the current PR, the follow-up is split among five temporary file owners covering the changelog, mirrored references, CLI tests, digest tests, and render logic. The map is useful until the PR merges but changes no product rule.",
+      "expected_output": "Keep the ownership map in the PR or run artifact despite the request to put it in agent memory. Do not create or update a Proof record.",
+      "assertions": [
+        "No .flatbread-proof record is created or updated",
+        "The direct request to use project memory does not bypass the retention gate",
+        "The response places the ownership map in the PR or run artifact"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "A prior agent created a Finding only to note that a PR checklist used the wrong record kind. Product behavior did not change, and the correction matters only until review ends. Decide what durable project-memory action is warranted.",
+      "expected_output": "Create no new Proof record. Remove or fold the temporary record during branch review while retaining any separate durable product decision.",
+      "assertions": [
+        "No new Proof record is created",
+        "The response treats the journal correction as temporary bookkeeping",
+        "Any cleanup preserves separate durable rationale"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Maintainers made a project-wide, hard-to-reverse choice: Proof will not add numeric confidence fields to any record type. Uncertainty stays in cited evidence and record prose because scores from different models are not comparable. This will govern schema work, writer behavior, and docs. Preserve the conclusion through the repository's normal process.",
+      "expected_output": "Create and accept one Proof Decision through the typed writer. Preserve the rationale, alternatives, consequences, and reversal criteria.",
+      "assertions": [
+        "One durable Proof Decision is created",
+        "The rationale explains why model confidence scores are not comparable",
+        "The Decision covers schema, writer, and documentation consequences",
+        "No unrelated Proof record is created"
+      ]
+    }
+  ]
+}

@@ -4,21 +4,14 @@ effort: eff-proof-and-contributor-operating-system--ahhgtafvdhg4dfve
 title: Treat page.has_more as pagination-only
 state: accepted
 created_at: '2026-08-22T17:41:04.977Z'
-derives_from:
-  - fnd-pr-254-completeness-review-asked-for-a-paging-on--r631nr0gnqp9sypt
-  - iss-pr-254-journal-used-issue-kind-on-a-finding-and--9p7t7amz79y5rn3b
-supersedes:
-  - dec-address-pr-254-review-as-five-disjoint-file-grou--bx44enbv52ztnrnn
 ---
 
-Supersedes the prior Decision that named five file owners as the Choice. The file split is how the follow-up was split for review, not the rule that shipped.
+Context: A Proof read can be incomplete because another page exists or because the digest hit a hard cap. Treating both cases as page.has_more tells callers to page when no cursor can recover the omitted data.
 
-Context: PR 254 already exposes complete and cap_reasons. The 22 Aug review asked to document that page.has_more is pagination-only, lock two missing tests, and optionally refuse hasMore without a cursor.
+Choice: page.has_more means that another cursor-backed page exists. An input with hasMore: true and no non-empty nextCursor is refused. Hard caps appear through complete and cap_reasons; callers narrow the query or fail closed.
 
-Choice: page.has_more means pagination only. Unpaired hasMore without a nextCursor is refused. Hard caps stay on complete and cap_reasons. Callers page only when page.has_more is true. They use cap_reasons and complete for walls.
+Alternatives: Mark every incomplete read as page.has_more, or allow has_more without a cursor. Both options blur recoverable pagination with terminal truncation and can make callers retry a page that cannot help.
 
-Note: the follow-up locked that rule in five file groups: CHANGELOG, both reference.md copies, the CLI spawn, the digest unit, and renderDigest. That split is a working note, not the Choice.
+Consequences: The JSON envelope, digest header, and summary share one distinction. Callers page only with a cursor and treat hard caps as walls.
 
-Alternatives: keep the file-split Decision as the accepted record; skip the unpaired-cursor refuse. We kept the refuse because docs already call a null cursor an error.
-
-Reversal: revert the follow-up. Digest cache rebuilds on the next read.
+Reversal: Revisit this split only if every incomplete read gains one safe recovery action.
