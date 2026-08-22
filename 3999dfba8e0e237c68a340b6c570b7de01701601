@@ -1,0 +1,1 @@
+Address review: make dry-run gates fail honestly, preflight remote tags before npm, tighten GitHub 404 handling, replace the live changelog test, and record the release policy in Proof.
