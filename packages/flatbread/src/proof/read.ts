@@ -71,6 +71,9 @@ const FRONTMATTER_FIELDS = [
   'slug',
   'produced_in',
   'created_by',
+  'retracted',
+  'retracted_at',
+  'retracted_reason',
   'derives_from',
   'supersedes',
   'superseded_by',
@@ -184,6 +187,10 @@ function sortRecords(records: ReadRecord[]): ReadRecord[] {
       `${String(b.frontmatter.created_at ?? '')}\0${b.id}`
     )
   );
+}
+
+function isRetracted(record: ReadRecord): boolean {
+  return record.frontmatter.retracted === true;
 }
 
 function owningEffort(record: ReadRecord): string | undefined {
@@ -364,6 +371,9 @@ class EngineProjection {
       'slug',
       'produced_in',
       'created_by',
+      'retracted',
+      'retracted_at',
+      'retracted_reason',
       'derives_from',
       'invalidates',
       'invalidated_by',
@@ -581,7 +591,10 @@ export async function effortRecords(
       )
     )
       .flat()
-      .filter((record) => record.frontmatter.effort === effortId)
+      .filter(
+        (record) =>
+          record.frontmatter.effort === effortId && !isRetracted(record)
+      )
   );
   return render(
     options,
@@ -625,8 +638,10 @@ export async function listEfforts(
       await projection.query('Effort', {
         status: { in: normalizedStatuses },
       })
-    ).filter((record) =>
-      normalizedStatuses.includes(String(record.frontmatter.status))
+    ).filter(
+      (record) =>
+        normalizedStatuses.includes(String(record.frontmatter.status)) &&
+        !isRetracted(record)
     )
   );
   return render(
@@ -737,7 +752,9 @@ export async function blockingDecisions(
       kind: { eq: 'blocker' },
       status: { eq: 'open' },
     })
-  ).filter((issue) => issue.frontmatter.effort === effortId);
+  ).filter(
+    (issue) => issue.frontmatter.effort === effortId && !isRetracted(issue)
+  );
   const blockerIds = new Set(issues.map((issue) => issue.id));
   const decisions = sortRecords(
     (
@@ -747,6 +764,7 @@ export async function blockingDecisions(
     ).filter(
       (decision) =>
         decision.frontmatter.effort === effortId &&
+        !isRetracted(decision) &&
         (decision.relations.derives_from ?? []).some((id) => blockerIds.has(id))
     )
   );

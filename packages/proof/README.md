@@ -23,7 +23,9 @@ next run restores the earlier contents of the unfinished change.
 Version 1 supports these actions: `CreateEffort`, `SetEffortStatus`,
 `WriteIssue`, `WriteFinding`, `WriteDecision`, `WriteConstraint`, `WriteRisk`,
 `WriteCitation`, `WriteBlob`, `Supersede`, `Invalidate`, `ResolveIssue`,
-`AcceptDecision`, `MitigateRisk`, and `SetRiskState`.
+`AcceptDecision`, `MitigateRisk`, `SetRiskState`, and `Retract`. `Retract`
+hides a record that should not have stayed on the live graph without deleting
+the file.
 
 An Issue, Finding, Decision, Constraint, or Risk may name Citation ids in
 `cites` (Flatbread `refs`). A Citation body alone is valid (e.g. a URL); an

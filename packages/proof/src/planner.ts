@@ -55,6 +55,96 @@ function assertNoCitationBlobEdges(
     );
 }
 
+function isRetracted(record: SnapshotRecord): boolean {
+  return record.frontmatter.retracted === true;
+}
+
+function assertLive(record: SnapshotRecord): void {
+  if (isRetracted(record))
+    throw new ProofValidationError(`Artifact ${record.id} is retracted`);
+}
+
+const RELATION_VALUE_KEYS = [
+  'derives_from',
+  'supersedes',
+  'superseded_by',
+  'invalidates',
+  'invalidated_by',
+  'resolved_by',
+  'rejected_by',
+  'mitigated_by',
+  'evidence',
+  'cites',
+  'blob',
+] as const;
+
+function stripRelationId(
+  frontmatter: Record<string, unknown>,
+  id: string
+): { next: Record<string, unknown>; changed: boolean } {
+  const next = { ...frontmatter };
+  let changed = false;
+  for (const key of RELATION_VALUE_KEYS) {
+    const value = next[key];
+    if (value === id) {
+      delete next[key];
+      changed = true;
+      continue;
+    }
+    if (Array.isArray(value) && value.includes(id)) {
+      const filtered = value.filter((item) => item !== id);
+      if (filtered.length) next[key] = filtered;
+      else delete next[key];
+      changed = true;
+    }
+  }
+  return { next, changed };
+}
+
+const CLOSER_POINTER_KEYS = [
+  'resolved_by',
+  'mitigated_by',
+  'evidence',
+  'rejected_by',
+  'superseded_by',
+] as const;
+
+function isSoleCloser(
+  frontmatter: Record<string, unknown>,
+  id: string
+): boolean {
+  for (const key of CLOSER_POINTER_KEYS) {
+    const value = frontmatter[key];
+    if (Array.isArray(value) && value.includes(id)) {
+      if (value.filter((item) => item !== id).length === 0) return true;
+    } else if (value === id) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isLiveFinding(snapshot: ProofSnapshot, id: unknown): boolean {
+  if (typeof id !== 'string') return false;
+  const record = snapshot.getRecord(id);
+  return (
+    record !== undefined && record.kind === 'finding' && !isRetracted(record)
+  );
+}
+
+function isLastLiveFindingEvidence(
+  record: SnapshotRecord,
+  targetId: string,
+  snapshot: ProofSnapshot
+): boolean {
+  if (record.kind !== 'risk' || record.frontmatter.state !== 'realized')
+    return false;
+  const evidence = record.frontmatter.evidence;
+  if (!Array.isArray(evidence) || !evidence.includes(targetId)) return false;
+  if (!isLiveFinding(snapshot, targetId)) return false;
+  return !evidence.some((id) => id !== targetId && isLiveFinding(snapshot, id));
+}
+
 function assertCites(
   get: GetRecord,
   effortId: string,
@@ -66,6 +156,7 @@ function assertCites(
       throw new ProofValidationError(
         `cites must target a Citation, got ${target.kind} (${citeId})`
       );
+    assertLive(target);
     assertTargetEffort('cites', effortId, target);
   }
 }
@@ -99,8 +190,11 @@ function assertDerivesFrom(
   effortId: string,
   derivesFrom: string[] | undefined
 ): void {
-  for (const targetId of derivesFrom ?? [])
-    assertTargetEffort('derives_from', effortId, get(targetId));
+  for (const targetId of derivesFrom ?? []) {
+    const target = get(targetId);
+    assertLive(target);
+    assertTargetEffort('derives_from', effortId, target);
+  }
 }
 
 export function planMutation(
@@ -210,6 +304,7 @@ export function planMutation(
         throw new ProofValidationError(
           `Citation.blob must target a Blob, got ${blob.kind}`
         );
+      assertLive(blob);
       if (blob.frontmatter.effort !== raw.effort)
         throw new ProofValidationError(
           `Citation.blob ${raw.blob} belongs to a different effort`
@@ -243,6 +338,7 @@ export function planMutation(
     for (const edge of ['supersedes', 'invalidates'] as const)
       for (const targetId of (fm[edge] as string[] | undefined) ?? []) {
         const target = get(targetId);
+        assertLive(target);
         if (edge === 'supersedes' && target.kind !== kind)
           throw new ProofValidationError(
             'Supersedes must target the same kind'
@@ -284,6 +380,8 @@ export function planMutation(
       input.type === 'Supersede' ? input.supersederId : input.findingId
     );
     const b = get(input.targetId);
+    assertLive(a);
+    assertLive(b);
     const edge = input.type === 'Supersede' ? 'supersedes' : 'invalidates';
     const back =
       input.type === 'Supersede' ? 'superseded_by' : 'invalidated_by';
@@ -340,11 +438,15 @@ export function planMutation(
   }
   if (input.type === 'ResolveIssue') {
     const r = get(input.issueId);
+    assertLive(r);
     if (r.kind !== 'issue' || r.frontmatter.status !== 'open')
       throw new ProofValidationError('Issue is not open');
-    for (const id of input.resolvedBy)
-      if (get(id).frontmatter.effort !== r.frontmatter.effort)
+    for (const id of input.resolvedBy) {
+      const source = get(id);
+      assertLive(source);
+      if (source.frontmatter.effort !== r.frontmatter.effort)
         throw new ProofValidationError('Different effort');
+    }
     add(
       r.id,
       r.kind,
@@ -358,6 +460,7 @@ export function planMutation(
     return [...writes.values()];
   }
   if (input.type === 'AcceptDecision') {
+    assertLive(get(input.decisionId));
     for (const change of acceptDecisionLifecycle(snapshot, {
       decisionId: input.decisionId,
       rejectSiblings: input.rejectSiblings !== false,
@@ -373,6 +476,8 @@ export function planMutation(
   if (input.type === 'MitigateRisk') {
     const r = get(input.riskId),
       d = get(input.decisionId);
+    assertLive(r);
+    assertLive(d);
     if (
       r.kind !== 'risk' ||
       r.frontmatter.state !== 'open' ||
@@ -391,12 +496,15 @@ export function planMutation(
   }
   if (input.type === 'SetRiskState') {
     const r = get(input.riskId);
+    assertLive(r);
     if (r.kind !== 'risk' || r.frontmatter.state !== 'open')
       throw new ProofValidationError('Risk is not open');
     const evidence = input.evidence.map(get);
-    for (const x of evidence)
+    for (const x of evidence) {
+      assertLive(x);
       if (x.frontmatter.effort !== r.frontmatter.effort)
         throw new ProofValidationError('Different effort');
+    }
     if (
       input.state === 'realized' &&
       !evidence.some((x) => x.kind === 'finding')
@@ -408,6 +516,57 @@ export function planMutation(
       { ...r.frontmatter, state: input.state, evidence: input.evidence },
       r.body
     );
+    return [...writes.values()];
+  }
+  if (input.type === 'Retract') {
+    const target = get(input.recordId);
+    if (target.kind === 'effort')
+      throw new ProofValidationError(
+        'Retract does not apply to Efforts; set status to abandoned'
+      );
+    if (isRetracted(target))
+      throw new ProofValidationError(
+        `Artifact ${target.id} is already retracted`
+      );
+    const effortId = owningEffort(target);
+    if (!effortId)
+      throw new ProofValidationError('Retract target has no effort');
+    const dependents: string[] = [];
+    for (const record of snapshot.recordsByEffort(effortId)) {
+      if (record.id === target.id || isRetracted(record)) continue;
+      if (
+        isSoleCloser(record.frontmatter, target.id) ||
+        isLastLiveFindingEvidence(record, target.id, snapshot)
+      )
+        dependents.push(record.id);
+    }
+    if (dependents.length)
+      throw new ProofValidationError(
+        `Cannot retract ${
+          target.id
+        }; it is the sole closer for ${dependents.join(
+          ', '
+        )}. Supersede or retract those records first.`
+      );
+    const tombstone = { ...target.frontmatter };
+    for (const key of RELATION_VALUE_KEYS) delete tombstone[key];
+    add(
+      target.id,
+      target.kind,
+      {
+        ...tombstone,
+        retracted: true,
+        retracted_at: now.toISOString(),
+        retracted_reason: input.reason,
+      },
+      target.body
+    );
+    for (const record of snapshot.recordsByEffort(effortId)) {
+      if (record.id === target.id) continue;
+      const result = stripRelationId({ ...record.frontmatter }, target.id);
+      if (!result.changed) continue;
+      add(record.id, record.kind, result.next, record.body);
+    }
     return [...writes.values()];
   }
   throw new ProofValidationError('Unsupported mutation');

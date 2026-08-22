@@ -11,7 +11,7 @@ Generated as `<prefix>-<slug>--<16-char-crockford>` with prefixes `eff`,
 identity. Let the writer generate ids; capture them from mutation results
 (`artifacts[0].id` for creates).
 
-## The 15 mutations (`flatbread proof write '<json>'`)
+## The 16 mutations (`flatbread proof write '<json>'`)
 
 Common optional fields on all creates: `id`, `created_at` (ISO with offset),
 `produced_in`, `created_by` (opaque provenance strings). Forward edge fields
@@ -76,6 +76,38 @@ target was wrong (stronger than superseded).
 other `proposed` Decision in the Effort to `rejected` with a back-pointer.
 All mutations run in one journal transaction (save-or-undo).
 
+### Retract a record that should not stay on the live graph
+
+```json
+{ "type": "Retract", "recordId": "<id>", "reason": "..." }
+```
+
+`Retract` is for session noise and other records that should never have been
+written. It is not a hard delete and not a fold into a survivor:
+
+- Retract throws when the target is the last remaining value of
+  `resolved_by`, `mitigated_by`, `evidence`, `rejected_by`, or
+  `superseded_by` on a live same-Effort record. It also throws when the
+  target is the last live Finding-kind id on a realized Risk's `evidence`,
+  even if other non-Finding ids remain. Supersede or retract those
+  dependent records first. Do not `git rm`, and do not hand-edit
+  frontmatter to strip the pointer.
+- The file stays. Frontmatter gains `retracted: true`, `retracted_at`, and
+  `retracted_reason`. The body is unchanged so `proof get` can still explain
+  what was removed.
+- On a successful Retract, the writer clears that record's relation fields
+  and strips its id from every other record in the same Effort in the same
+  journal transaction.
+- Browse reads (`list`, `records`, `blocking-decisions`) omit retracted
+  records. `proof get` still returns them. `relations` follows stored edges
+  that remain; after a successful Retract, survivors should have none.
+- Efforts cannot be retracted. Set status to `abandoned` instead.
+- Later creates, `Supersede`, `Invalidate`, and lifecycle mutations reject
+  retracted ids. Git history is the undo story; there is no Restore mutation.
+
+Folding several noisy records into one survivor is a body edit on the
+survivor (score 4/4 if it adds claims) plus `Retract` on the rest.
+
 ### Mutation result
 
 ```json
@@ -102,6 +134,8 @@ the generated schema) and return a `ReadEnvelope`:
   "artifact_sha256": "...",
   "served_generation": "55",
   "consistency": { "mode": "eventual|strict", "min_generation": null },
+  "complete": true,
+  "cap_reasons": [],
   "page": { "returned": 2, "has_more": false, "next_cursor": null },
   "hints": ["getRecord(\"dec-...\")"]
 }
@@ -118,11 +152,29 @@ lists), one-hop related records, and an edge table. Body policy:
   from these digests — use `proof get` for the payload. Citation bodies
   (usually short) still excerpt normally.
 
-Caps: 25 primary records, one hop, 50 edges, 64 KiB; hitting a cap sets
-`complete: false` with named `cap_reasons` — narrow the query or page rather
-than expecting more. If a `get` body alone exceeds the 64 KiB digest byte
-cap, the digest fails closed with a byte-cap banner (it does **not** fake a
-full body via the 600/12 excerpt).
+Caps: 25 primary records, one hop, 50 edges, 64 KiB. Hitting a cap sets
+`complete: false` with named `cap_reasons`. Page only when `page.has_more` is
+true. Non-empty hard `cap_reasons` that paging cannot clear mean narrow the
+query or fail closed. `primary_records` is a defensive in-process signal after
+the CLI pre-slices to at most 25 primary records; `proof list` and
+`proof records` do not emit it. If a `get` body alone exceeds the 64 KiB
+digest byte cap, the digest fails closed with a byte-cap banner (it does **not**
+fake a full body via the 600/12 excerpt).
+
+Every read envelope carries `complete` and `cap_reasons`. Read it in this
+order:
+
+1. If `complete` is true, the artifact is complete.
+2. If `page.has_more` is true, fetch `page.next_cursor`. A null cursor is an
+   error; do not retry the same page.
+3. If `cap_reasons` is not empty, narrow the query or fail closed. It can hold
+   several sorted, duplicate-free values from `primary_records`,
+   `displayed_edges`, and `bytes`.
+4. A hard cap alone leaves `page.has_more: false` and `next_cursor: null`.
+   Paging and hard caps can occur together, but caps never create a cursor.
+
+Programs must read these fields from the JSON envelope; do not parse the
+digest or `summary` as a data feed.
 
 ### Commands
 
@@ -184,8 +236,10 @@ flatbread proof cache prune
 
 - Do not hand-edit record frontmatter or `.journal/`; bodies are freely
   editable (the reindexer validates and repairs projections).
-- Do not parse digest files as data feeds for other programs — they are
-  evidence for you to Read/grep; the envelope is the machine surface.
+- Do not `git rm` Proof records to correct the graph. Use `Retract`.
+- Do not parse digest files or `summary` as data feeds for other programs —
+  the digest is evidence for you to read or search; the envelope is the
+  machine surface.
 - Do not build polling loops around generations; strict reads wait
   server-side.
 - Do not model sessions/plans/agents as records — put provenance in

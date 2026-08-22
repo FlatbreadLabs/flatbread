@@ -28,7 +28,8 @@ export function acceptDecisionLifecycle(
     for (const sibling of snapshot.siblingDecisions(
       String(target.frontmatter.effort),
       { state: 'proposed', excludeId: target.id }
-    ))
+    )) {
+      if (sibling.frontmatter.retracted === true) continue;
       changes.push({
         record: sibling,
         nextFrontmatter: {
@@ -37,6 +38,7 @@ export function acceptDecisionLifecycle(
           rejected_by: target.id,
         },
       });
+    }
   return changes;
 }
 export function supersedeDecisionLifecycle(

@@ -954,3 +954,517 @@ test('later relation mutations reject targets from another Effort', (t) => {
       message: 'Invalid edge',
     });
 });
+
+test('Retract tombstones the target and strips inbound edges', (t) => {
+  const finding = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'Noise',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+    derives_from: [ids.issue],
+  });
+  const issue = record(ids.issue, 'issue', {
+    id: ids.issue,
+    effort: E,
+    title: 'Q',
+    kind: 'question',
+    status: 'open',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const decision = record(ids.decision, 'decision', {
+    id: ids.decision,
+    effort: E,
+    title: 'Keep',
+    state: 'accepted',
+    created_at: '2025-01-01T00:00:00.000Z',
+    derives_from: [ids.finding],
+    supersedes: [ids.finding],
+  });
+  const s = snap([issue, finding, decision]);
+  const writes = planMutation(
+    {
+      type: 'Retract',
+      recordId: ids.finding,
+      reason: 'PR checklist noise',
+    },
+    s,
+    '/root',
+    now
+  );
+  t.is(writes.length, 2);
+  const byId = Object.fromEntries(
+    writes.map((write) => [
+      write.id,
+      parseDocument(write.afterBytes, write.kind).frontmatter,
+    ])
+  );
+  t.is(byId[ids.finding].retracted, true);
+  t.is(byId[ids.finding].retracted_reason, 'PR checklist noise');
+  t.is(byId[ids.finding].retracted_at, now.toISOString());
+  t.is(byId[ids.finding].derives_from, undefined);
+  t.deepEqual(byId[ids.decision].derives_from, undefined);
+  t.deepEqual(byId[ids.decision].supersedes, undefined);
+  t.is(byId[ids.decision].retracted, undefined);
+  t.is(
+    writes.find((write) => write.id === ids.issue),
+    undefined
+  );
+});
+
+test('Retract refuses Efforts, repeats, and live links to retracted records', (t) => {
+  const finding = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'Noise',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+    retracted: true,
+    retracted_reason: 'already gone',
+  });
+  const s = snap([finding]);
+  t.throws(
+    () =>
+      planMutation(
+        { type: 'Retract', recordId: E, reason: 'no' },
+        s,
+        '/root',
+        now
+      ),
+    { message: /does not apply to Efforts/ }
+  );
+  t.throws(
+    () =>
+      planMutation(
+        {
+          type: 'Retract',
+          recordId: ids.finding,
+          reason: 'again',
+        },
+        s,
+        '/root',
+        now
+      ),
+    { message: new RegExp(`Artifact ${ids.finding} is already retracted`) }
+  );
+  t.throws(
+    () =>
+      planMutation(
+        {
+          type: 'WriteDecision',
+          id: ids.decision,
+          effort: E,
+          title: 'D',
+          body: '',
+          derives_from: [ids.finding],
+        },
+        s,
+        '/root',
+        now
+      ),
+    { message: new RegExp(`Artifact ${ids.finding} is retracted`) }
+  );
+});
+
+test('Retract refuses the sole closer for a live Issue (resolved_by)', (t) => {
+  const finding = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'Resolves Q',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const issue = record(ids.issue, 'issue', {
+    id: ids.issue,
+    effort: E,
+    title: 'Q',
+    kind: 'question',
+    status: 'resolved',
+    created_at: '2025-01-01T00:00:00.000Z',
+    resolved_by: [ids.finding],
+  });
+  const s = snap([issue, finding]);
+  t.throws(
+    () =>
+      planMutation(
+        { type: 'Retract', recordId: ids.finding, reason: 'noise' },
+        s,
+        '/root',
+        now
+      ),
+    { message: new RegExp(`sole closer for ${ids.issue}`) }
+  );
+});
+
+test('Retract refuses the sole closer for a live Risk (mitigated_by / evidence)', (t) => {
+  const decision = record(ids.decision, 'decision', {
+    id: ids.decision,
+    effort: E,
+    title: 'Mitigator',
+    state: 'accepted',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const riskMitigated = record(ids.risk, 'risk', {
+    id: ids.risk,
+    effort: E,
+    title: 'R1',
+    state: 'mitigated',
+    created_at: '2025-01-01T00:00:00.000Z',
+    mitigated_by: [ids.decision],
+  });
+  const finding = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'Realizes R2',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const riskRealized = record('rsk-two--0123456789abcdef', 'risk', {
+    id: 'rsk-two--0123456789abcdef',
+    effort: E,
+    title: 'R2',
+    state: 'realized',
+    created_at: '2025-01-01T00:00:00.000Z',
+    evidence: [ids.finding],
+  });
+  const s = snap([decision, riskMitigated, finding, riskRealized]);
+  t.throws(
+    () =>
+      planMutation(
+        { type: 'Retract', recordId: ids.decision, reason: 'noise' },
+        s,
+        '/root',
+        now
+      ),
+    { message: new RegExp(`sole closer for ${ids.risk}`) }
+  );
+  t.throws(
+    () =>
+      planMutation(
+        { type: 'Retract', recordId: ids.finding, reason: 'noise' },
+        s,
+        '/root',
+        now
+      ),
+    { message: new RegExp(`sole closer for rsk-two--0123456789abcdef`) }
+  );
+});
+
+test('Retract refuses the sole closer for a rejected sibling Decision (rejected_by)', (t) => {
+  const accepted = record(ids.decision, 'decision', {
+    id: ids.decision,
+    effort: E,
+    title: 'Accepted',
+    state: 'accepted',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const rejected = record(ids.decision2, 'decision', {
+    id: ids.decision2,
+    effort: E,
+    title: 'Rejected sibling',
+    state: 'rejected',
+    created_at: '2025-01-01T00:00:00.000Z',
+    rejected_by: [ids.decision],
+  });
+  const s = snap([accepted, rejected]);
+  t.throws(
+    () =>
+      planMutation(
+        { type: 'Retract', recordId: ids.decision, reason: 'noise' },
+        s,
+        '/root',
+        now
+      ),
+    { message: new RegExp(`sole closer for ${ids.decision2}`) }
+  );
+});
+
+test('Retract refuses the sole closer for a superseded record (superseded_by)', (t) => {
+  const supersedee = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'Old',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+    superseded_by: [ids.decision],
+  });
+  const superseder = record(ids.decision, 'decision', {
+    id: ids.decision,
+    effort: E,
+    title: 'New',
+    state: 'accepted',
+    created_at: '2025-01-01T00:00:00.000Z',
+    supersedes: [ids.finding],
+  });
+  const s = snap([supersedee, superseder]);
+  t.throws(
+    () =>
+      planMutation(
+        { type: 'Retract', recordId: ids.decision, reason: 'noise' },
+        s,
+        '/root',
+        now
+      ),
+    { message: new RegExp(`sole closer for ${ids.finding}`) }
+  );
+});
+
+test('Retract allows retracting one of several closers and strips the pointer', (t) => {
+  const findingA = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'Resolver A',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const findingB = record('fnd-two--0123456789abcdef', 'finding', {
+    id: 'fnd-two--0123456789abcdef',
+    effort: E,
+    title: 'Resolver B',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const issue = record(ids.issue, 'issue', {
+    id: ids.issue,
+    effort: E,
+    title: 'Q',
+    kind: 'question',
+    status: 'resolved',
+    created_at: '2025-01-01T00:00:00.000Z',
+    resolved_by: [ids.finding, 'fnd-two--0123456789abcdef'],
+  });
+  const s = snap([issue, findingA, findingB]);
+  const writes = planMutation(
+    { type: 'Retract', recordId: ids.finding, reason: 'noise' },
+    s,
+    '/root',
+    now
+  );
+  const byId = Object.fromEntries(
+    writes.map((write) => [
+      write.id,
+      parseDocument(write.afterBytes, write.kind).frontmatter,
+    ])
+  );
+  t.is(byId[ids.finding].retracted, true);
+  t.deepEqual(byId[ids.issue].resolved_by, ['fnd-two--0123456789abcdef']);
+  t.is(byId[ids.issue].status, 'resolved');
+});
+
+test('Retract ignores retracted survivors when checking sole closers', (t) => {
+  const finding = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'Resolves Q',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const issue = record(ids.issue, 'issue', {
+    id: ids.issue,
+    effort: E,
+    title: 'Q',
+    kind: 'question',
+    status: 'resolved',
+    created_at: '2025-01-01T00:00:00.000Z',
+    resolved_by: [ids.finding],
+    retracted: true,
+    retracted_reason: 'gone',
+  });
+  const s = snap([issue, finding]);
+  const writes = planMutation(
+    { type: 'Retract', recordId: ids.finding, reason: 'noise' },
+    s,
+    '/root',
+    now
+  );
+  const byId = Object.fromEntries(
+    writes.map((write) => [
+      write.id,
+      parseDocument(write.afterBytes, write.kind).frontmatter,
+    ])
+  );
+  t.is(byId[ids.finding].retracted, true);
+  t.is(byId[ids.issue].resolved_by, undefined);
+  t.is(byId[ids.issue].retracted, true);
+});
+
+test('Retract refuses the last Finding on a realized Risk with mixed evidence', (t) => {
+  const finding = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'Realizes R',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const decision = record(ids.decision, 'decision', {
+    id: ids.decision,
+    effort: E,
+    title: 'Also cited',
+    state: 'accepted',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const risk = record(ids.risk, 'risk', {
+    id: ids.risk,
+    effort: E,
+    title: 'R',
+    state: 'realized',
+    likelihood: 'low',
+    severity: 'high',
+    created_at: '2025-01-01T00:00:00.000Z',
+    evidence: [ids.finding, ids.decision],
+  });
+  const s = snap([finding, decision, risk]);
+  t.throws(
+    () =>
+      planMutation(
+        { type: 'Retract', recordId: ids.finding, reason: 'noise' },
+        s,
+        '/root',
+        now
+      ),
+    { message: new RegExp(`sole closer for ${ids.risk}`) }
+  );
+});
+
+test('Retract allows retracting a Decision from mixed evidence on a realized Risk', (t) => {
+  const finding = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'Realizes R',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const decision = record(ids.decision, 'decision', {
+    id: ids.decision,
+    effort: E,
+    title: 'Also cited',
+    state: 'accepted',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const risk = record(ids.risk, 'risk', {
+    id: ids.risk,
+    effort: E,
+    title: 'R',
+    state: 'realized',
+    likelihood: 'low',
+    severity: 'high',
+    created_at: '2025-01-01T00:00:00.000Z',
+    evidence: [ids.finding, ids.decision],
+  });
+  const s = snap([finding, decision, risk]);
+  const writes = planMutation(
+    { type: 'Retract', recordId: ids.decision, reason: 'noise' },
+    s,
+    '/root',
+    now
+  );
+  const byId = Object.fromEntries(
+    writes.map((write) => [
+      write.id,
+      parseDocument(write.afterBytes, write.kind).frontmatter,
+    ])
+  );
+  t.is(byId[ids.decision].retracted, true);
+  t.is(byId[ids.risk].state, 'realized');
+  t.deepEqual(byId[ids.risk].evidence, [ids.finding]);
+});
+
+test('Retract allows retracting one of several Findings from mixed evidence on a realized Risk', (t) => {
+  const findingA = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'Realizes R A',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const findingB = record('fnd-two--0123456789abcdef', 'finding', {
+    id: 'fnd-two--0123456789abcdef',
+    effort: E,
+    title: 'Realizes R B',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const decision = record(ids.decision, 'decision', {
+    id: ids.decision,
+    effort: E,
+    title: 'Also cited',
+    state: 'accepted',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const risk = record(ids.risk, 'risk', {
+    id: ids.risk,
+    effort: E,
+    title: 'R',
+    state: 'realized',
+    likelihood: 'low',
+    severity: 'high',
+    created_at: '2025-01-01T00:00:00.000Z',
+    evidence: [ids.finding, 'fnd-two--0123456789abcdef', ids.decision],
+  });
+  const s = snap([findingA, findingB, decision, risk]);
+  const writes = planMutation(
+    { type: 'Retract', recordId: ids.finding, reason: 'noise' },
+    s,
+    '/root',
+    now
+  );
+  const byId = Object.fromEntries(
+    writes.map((write) => [
+      write.id,
+      parseDocument(write.afterBytes, write.kind).frontmatter,
+    ])
+  );
+  t.is(byId[ids.finding].retracted, true);
+  t.is(byId[ids.risk].state, 'realized');
+  t.deepEqual(byId[ids.risk].evidence, [
+    ids.decision,
+    'fnd-two--0123456789abcdef',
+  ]);
+});
+
+test('Retract refuses the last live Finding when remaining Finding evidence is retracted', (t) => {
+  const liveFinding = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'Still live',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const retractedFinding = record('fnd-two--0123456789abcdef', 'finding', {
+    id: 'fnd-two--0123456789abcdef',
+    effort: E,
+    title: 'Already gone',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+    retracted: true,
+    retracted_reason: 'gone',
+  });
+  const decision = record(ids.decision, 'decision', {
+    id: ids.decision,
+    effort: E,
+    title: 'Also cited',
+    state: 'accepted',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const risk = record(ids.risk, 'risk', {
+    id: ids.risk,
+    effort: E,
+    title: 'R',
+    state: 'realized',
+    likelihood: 'low',
+    severity: 'high',
+    created_at: '2025-01-01T00:00:00.000Z',
+    evidence: ['fnd-two--0123456789abcdef', ids.finding, ids.decision],
+  });
+  const s = snap([liveFinding, retractedFinding, decision, risk]);
+  t.throws(
+    () =>
+      planMutation(
+        { type: 'Retract', recordId: ids.finding, reason: 'noise' },
+        s,
+        '/root',
+        now
+      ),
+    { message: new RegExp(`sole closer for ${ids.risk}`) }
+  );
+});
