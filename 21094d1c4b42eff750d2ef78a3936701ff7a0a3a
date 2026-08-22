@@ -1,0 +1,1 @@
+Push the annotated v* tag to origin before gh release create --verify-tag.
