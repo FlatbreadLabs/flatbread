@@ -6,6 +6,8 @@ kind: gap
 created_at: '2026-08-22T16:46:30.481Z'
 derives_from:
   - eff-proof-and-contributor-operating-system--ahhgtafvdhg4dfve
+superseded_by:
+  - fnd-pr-254-completeness-review-asked-for-a-paging-on--r631nr0gnqp9sypt
 cites:
   - cit-pr-254-grouped-review-22-aug--cpbe5anhpby3h625
 ---
