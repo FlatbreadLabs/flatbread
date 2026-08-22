@@ -425,6 +425,7 @@ export default {
     t.false(paged.complete);
     t.deepEqual(paged.cap_reasons, []);
     t.true(paged.page.has_more);
+    t.truthy(paged.page.next_cursor);
 
     const cappedResult = await runCli(
       cwd,
@@ -437,6 +438,7 @@ export default {
     t.false(capped.complete);
     t.deepEqual(capped.cap_reasons, ['bytes']);
     t.false(capped.page.has_more);
+    t.is(capped.page.next_cursor, null);
 
     const edgeResult = await runCli(
       cwd,
@@ -453,6 +455,8 @@ export default {
     t.deepEqual(edgeCapped.cap_reasons, ['displayed_edges']);
     t.true(edgeCapped.page.has_more);
     t.truthy(edgeCapped.page.next_cursor);
+    t.true(edgeCapped.summary.includes('displayed_edges'));
+    t.true(edgeCapped.summary.includes('pagination'));
   }
 );
 
