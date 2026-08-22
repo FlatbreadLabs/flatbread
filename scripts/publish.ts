@@ -1,7 +1,14 @@
 import { execFileSync, execSync } from 'child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import colors from 'kleur';
+import {
+  formatGithubReleaseNotes,
+  githubReleaseTag,
+  prepareReleaseChangelog,
+} from './utils/changelog';
 import { getMonorepoPublicPackages } from './utils/packageManifest';
 // import { version } from '../package.json';
 
@@ -11,6 +18,17 @@ export type NpmViewResult = {
 };
 
 export type PreflightStatus = 'publish' | 'already-published';
+
+export type GithubReleaseStatus = 'create' | 'already-exists';
+
+export type PublishOptions = {
+  readonly dryRun: boolean;
+};
+
+export type GhReleaseViewResult = {
+  stdout?: string;
+  error?: unknown;
+};
 
 export type PublishPackage = {
   name: string;
@@ -185,6 +203,180 @@ function insertSorted(values: string[], value: string): void {
   values.splice(index === -1 ? values.length : index, 0, value);
 }
 
+export function parsePublishArgs(argv: readonly string[]): PublishOptions {
+  let dryRun = false;
+  for (const arg of argv) {
+    if (arg === '--') continue;
+    if (arg === '--dry-run') {
+      dryRun = true;
+      continue;
+    }
+    throw new Error(`Unknown publish flag: ${arg}`);
+  }
+  return { dryRun };
+}
+
+export function classifyGhReleaseView(
+  result: GhReleaseViewResult
+): GithubReleaseStatus {
+  if (!result.error) {
+    try {
+      const value: unknown = JSON.parse(result.stdout ?? '');
+      if (
+        value &&
+        typeof value === 'object' &&
+        typeof (value as { tagName?: unknown }).tagName === 'string'
+      ) {
+        return 'already-exists';
+      }
+    } catch {
+      // Fall through to the error path when stdout is not the expected JSON.
+    }
+    throw new Error('gh release view returned an unexpected response');
+  }
+
+  const details = collectErrorDetails(result.error);
+  if (
+    details.includes('release not found') ||
+    details.includes('Not Found') ||
+    details.includes('HTTP 404')
+  ) {
+    return 'create';
+  }
+
+  throw new Error(`gh release view failed: ${details || 'unknown error'}`);
+}
+
+export function inspectGithubRelease(tag: string): GithubReleaseStatus {
+  try {
+    return classifyGhReleaseView({
+      stdout: execFileSync(
+        'gh',
+        ['release', 'view', tag, '--json', 'tagName'],
+        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }
+      ),
+    });
+  } catch (error) {
+    return classifyGhReleaseView({ error });
+  }
+}
+
+export function assertGithubCli(): void {
+  try {
+    execFileSync('gh', ['auth', 'status'], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch (error) {
+    throw new Error(
+      `GitHub CLI \`gh\` must be installed and authenticated before publish so the npm publish and GitHub release stay one step. ${collectErrorDetails(
+        error
+      )}`
+    );
+  }
+}
+
+export function assertCommitOnGithub(sha: string): void {
+  try {
+    execFileSync(
+      'gh',
+      ['api', `repos/{owner}/{repo}/commits/${sha}`, '-q', '.sha'],
+      {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      }
+    );
+  } catch (error) {
+    throw new Error(
+      `Commit ${sha} is not on GitHub. Push the release commit before publishing. ${collectErrorDetails(
+        error
+      )}`
+    );
+  }
+}
+
+function collectErrorDetails(error: unknown): string {
+  const errorRecord =
+    error && typeof error === 'object'
+      ? (error as Record<string, unknown>)
+      : undefined;
+  return errorRecord
+    ? [
+        errorRecord.code,
+        errorRecord.status,
+        errorRecord.stderr,
+        errorRecord.stdout,
+        errorRecord.message,
+      ]
+        .filter((value) => value != null && value !== '')
+        .map((value) =>
+          Buffer.isBuffer(value) ? value.toString('utf8') : String(value)
+        )
+        .join(' ')
+    : String(error ?? '');
+}
+
+export function ensureAnnotatedReleaseTag(tag: string, sha: string): void {
+  try {
+    const existing = execFileSync('git', ['rev-parse', `${tag}^{}`], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
+    if (existing !== sha) {
+      throw new Error(
+        `Tag ${tag} points at ${existing}, not the release commit ${sha}`
+      );
+    }
+    return;
+  } catch (error) {
+    const details = collectErrorDetails(error);
+    if (
+      !details.includes('unknown revision') &&
+      !details.includes('Not a valid object')
+    ) {
+      throw error instanceof Error ? error : new Error(details);
+    }
+  }
+
+  execFileSync('git', ['tag', '-a', tag, sha, '-m', `Release ${tag}`], {
+    stdio: 'inherit',
+  });
+}
+
+export function pushReleaseTag(tag: string): void {
+  execFileSync('git', ['push', 'origin', `refs/tags/${tag}`], {
+    stdio: 'inherit',
+  });
+}
+
+export function createGithubRelease(options: {
+  readonly tag: string;
+  readonly notes: string;
+  readonly target: string;
+}): void {
+  const directory = mkdtempSync(path.join(tmpdir(), 'flatbread-release-'));
+  const notesPath = path.join(directory, 'notes.md');
+  writeFileSync(notesPath, `${options.notes}\n`);
+  try {
+    execFileSync(
+      'gh',
+      [
+        'release',
+        'create',
+        options.tag,
+        '--title',
+        options.tag,
+        '--notes-file',
+        notesPath,
+        '--target',
+        options.target,
+        '--verify-tag',
+      ],
+      { stdio: 'inherit' }
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
 export function assertCleanRelease(): string {
   const status = execSync('git status --porcelain', {
     encoding: 'utf8',
@@ -221,19 +413,117 @@ export function preflightPackage(
   }
 }
 
-export async function publishPackages(): Promise<void> {
-  const releaseSha = assertCleanRelease();
+export async function publishPackages(
+  options: PublishOptions = { dryRun: false }
+): Promise<void> {
+  const dryRun = options.dryRun;
+  if (dryRun) {
+    console.log(
+      colors
+        .bold()
+        .yellow(
+          'Dry run: no npm publish, no GitHub release, no changelog write'
+        )
+    );
+  }
+
+  const releaseSha = dryRun
+    ? execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim()
+    : assertCleanRelease();
+  if (dryRun) {
+    console.log(colors.bold().green(`Release commit: ${releaseSha}`));
+    const dirty = execSync('git status --porcelain', {
+      encoding: 'utf8',
+    }).trim();
+    if (dirty) {
+      console.log(
+        colors
+          .bold()
+          .yellow(
+            'Working tree is dirty. A real publish would stop until you commit or restore these files:\n' +
+              dirty
+          )
+      );
+    }
+  }
+
   const packages = sortPackages(
     (await getMonorepoPublicPackages()) as unknown as PublishPackage[]
   );
   const releaseVersion = assertLockstepVersions(packages);
+  const releaseTag = githubReleaseTag(releaseVersion);
   console.log(
     colors.bold().green(`Public package release version: ${releaseVersion}`)
   );
 
-  execSync('pnpm run build', { stdio: 'inherit' });
-  execSync('pnpm run skills:check', { stdio: 'inherit' });
-  execSync('pnpm run skills:pack-check', { stdio: 'inherit' });
+  const changelogMarkdown = readFileSync('CHANGELOG.md', 'utf8');
+  const preparedChangelog = prepareReleaseChangelog(
+    changelogMarkdown,
+    releaseVersion
+  );
+  if (preparedChangelog.didShift) {
+    console.log(
+      colors
+        .bold()
+        .yellow(
+          `CHANGELOG.md still has Unreleased items that belong under ## ${releaseVersion}`
+        )
+    );
+    if (dryRun) {
+      console.log(
+        colors.bold('\nGitHub release notes (after the pending shift)\n')
+      );
+      console.log(
+        formatGithubReleaseNotes(preparedChangelog.notes, releaseVersion)
+      );
+    } else {
+      throw new Error(
+        `CHANGELOG.md still has Unreleased items that belong under ## ${releaseVersion}. Run \`pnpm changelog:shift\` and commit CHANGELOG.md before publishing.`
+      );
+    }
+  } else {
+    console.log(colors.bold('\nGitHub release notes\n'));
+    console.log(
+      formatGithubReleaseNotes(preparedChangelog.notes, releaseVersion)
+    );
+  }
+
+  if (dryRun) {
+    try {
+      assertGithubCli();
+      assertCommitOnGithub(releaseSha);
+      const githubStatus = inspectGithubRelease(releaseTag);
+      console.log(
+        colors
+          .bold()
+          .green(
+            githubStatus === 'already-exists'
+              ? `GitHub release ${releaseTag} already exists`
+              : `Would push ${releaseTag} and create the GitHub release at ${releaseSha}`
+          )
+      );
+    } catch (error) {
+      console.log(
+        colors
+          .bold()
+          .yellow(
+            error instanceof Error
+              ? error.message
+              : 'GitHub release preflight failed'
+          )
+      );
+    }
+  } else {
+    assertGithubCli();
+    assertCommitOnGithub(releaseSha);
+    inspectGithubRelease(releaseTag);
+  }
+
+  if (!dryRun) {
+    execSync('pnpm run build', { stdio: 'inherit' });
+    execSync('pnpm run skills:check', { stdio: 'inherit' });
+    execSync('pnpm run skills:pack-check', { stdio: 'inherit' });
+  }
 
   for (const { dirName, name, version } of packages) {
     try {
@@ -245,6 +535,11 @@ export async function publishPackages(): Promise<void> {
             .bold()
             .yellow(`Already published ${name} v${version}; skipping`)
         );
+        continue;
+      }
+
+      if (dryRun) {
+        console.log(colors.bold().green(`Would publish ${name} v${version}`));
         continue;
       }
 
@@ -260,11 +555,40 @@ export async function publishPackages(): Promise<void> {
       break;
     }
   }
-  if (process.exitCode === undefined) {
-    console.log(colors.bold().green(`Published release commit: ${releaseSha}`));
+  if (process.exitCode !== undefined) return;
+
+  if (dryRun) {
+    console.log(
+      colors
+        .bold()
+        .green(
+          `Dry run finished for ${releaseTag} at ${releaseSha}. Nothing was published.`
+        )
+    );
+    return;
   }
+
+  const githubStatus = inspectGithubRelease(releaseTag);
+  if (githubStatus === 'already-exists') {
+    console.log(
+      colors
+        .bold()
+        .yellow(`GitHub release ${releaseTag} already exists; skipping`)
+    );
+  } else {
+    ensureAnnotatedReleaseTag(releaseTag, releaseSha);
+    pushReleaseTag(releaseTag);
+    createGithubRelease({
+      tag: releaseTag,
+      notes: formatGithubReleaseNotes(preparedChangelog.notes, releaseVersion),
+      target: releaseSha,
+    });
+    console.log(colors.bold().green(`Created GitHub release ${releaseTag}`));
+  }
+
+  console.log(colors.bold().green(`Published release commit: ${releaseSha}`));
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  await publishPackages();
+  await publishPackages(parsePublishArgs(process.argv.slice(2)));
 }
