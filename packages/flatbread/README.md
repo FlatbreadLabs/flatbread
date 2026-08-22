@@ -23,7 +23,7 @@ CLI.
 
 People use it two ways.
 
-**Durable memory for coding agents.** The
+**Durable memory for coding agents.**
 [Proof](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/proof)
 stores an agent's reasoning as markdown records in the repository: Efforts,
 Issues, Findings, Decisions, Constraints, Risks, Citations, and Blobs. An agent
