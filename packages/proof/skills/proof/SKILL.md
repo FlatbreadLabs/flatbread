@@ -1,6 +1,6 @@
 ---
 name: proof
-description: Journal reasoning (decisions, findings, issues, constraints, risks, citations, blobs) into a Flatbread Proof and recall it with bounded reads. Use when starting or resuming a thread of work, recording a decision or finding, resolving an issue, checking what is blocking or still open on an effort, or when the user mentions effort graph, journaling, blocking decisions, agent memory, citation, blob, cites, longform, WriteCitation, or WriteBlob.
+description: Read and update Flatbread Proof, the repository's durable project memory, through bounded queries and typed mutations. Use for recall when resuming a known effort, checking blockers, or when the user mentions Proof or journaling. Use the write path only for a decision-relevant turning point that outlives the current PR or session and adds unique causal rationale. Never journal routine progress, handoffs, review notes, temporary gaps, implementation steps, or journal corrections.
 ---
 
 # Proof — agent journaling and recall
@@ -50,6 +50,36 @@ The write journal is `<root>/.journal/`; read digests cache under
 `.flatbread/proof/read-cache/` (both gitignored).
 
 ## Writing (journaling)
+
+### Mandatory write gate
+
+Proof is a map of durable reasons, not a work log. How to use Proof lives in
+this skill; do not journal the process itself as a Decision.
+
+Score only new retained information: create mutations and body text that add
+claims. Lifecycle transitions (`AcceptDecision`, `ResolveIssue`,
+`SetEffortStatus`, `MitigateRisk`, `SetRiskState`) and `proof cache prune` do
+not add retained claims and do not need a 4/4 score.
+
+Before a create or a body edit that adds claims, score the information being
+added — not the record that would receive it. Answer each test in private
+reasoning:
+
+1. **Future need:** Would losing it make a future agent materially
+   misunderstand why the project is shaped this way?
+2. **Durable effect:** Will it outlive the current PR or session and change a
+   product principle, public contract, architecture, constraint, risk, or docs
+   direction?
+3. **Causal value:** Does it explain why that change happened or what evidence
+   could reverse it?
+4. **Unique signal:** Does it add a reason or link that code, docs, Git, the PR
+   or tracker issue, and retained records do not already make clear?
+
+Do not create a record or add body claims unless the information scores
+**4/4**. An existing or open record does not bypass this gate; appending
+low-value text still consumes bounded reads. Keep failed candidates in the
+PR, tracker issue, commit, or run artifact. Citations and Blobs persist only
+when they support a 4/4 record.
 
 One command for all 15 mutations — pass the payload as a single JSON argument:
 
@@ -156,14 +186,16 @@ server-side.
    for the full body. Reserve opening `.flatbread-proof/**/*.md` for rare
    cases (e.g. digest byte-cap miss on an oversized record), not normal
    zoom-in.
-3. **During work:** when outside material supports a record, save large
-   content with `WriteBlob` if needed, then create a `WriteCitation`, then
-   create the Issue, Finding, Decision, Constraint, or Risk with
+3. **During work:** apply the write gate above before any create or body
+   edit that adds claims. When outside material supports a 4/4 record, save
+   large content with `WriteBlob` if needed, then create a `WriteCitation`,
+   then create the Issue, Finding, Decision, Constraint, or Risk with
    `cites: ["<cit-id>"]`. You cannot add a citation later, so create the
    Citation first. Open Issues for real gaps or blockers, and use
    `derives_from` on Decisions to link the Findings, Constraints, and Issues
    they respond to.
 4. **On commitment:** `AcceptDecision` (mind `rejectSiblings`), `ResolveIssue`
-   with `resolvedBy` citing the closing Decision/Findings.
+   with `resolvedBy` citing the closing Decision/Findings. These lifecycle
+   transitions do not need a 4/4 score.
 5. Maintenance: `flatbread proof cache prune` deletes digests older than
-   24h / over the 100 MiB ceiling.
+   24h / over the 100 MiB ceiling. Prune does not need a 4/4 score.
