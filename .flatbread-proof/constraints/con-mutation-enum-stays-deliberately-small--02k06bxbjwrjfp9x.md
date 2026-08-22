@@ -9,6 +9,8 @@ derives_from:
   - fnd-skill-and-hard-constraint-still-teach-13-mutatio--gvg2btns0q7rp0eq
 supersedes:
   - con-mutation-enum-stays-deliberately-small--45v1ae3neq26g1rz
+superseded_by:
+  - con-mutation-enum-stays-deliberately-small--0vf4ssfg2jmzxyn4
 ---
 
 V1 has exactly fifteen named mutations. Every operation has a Zod schema,
