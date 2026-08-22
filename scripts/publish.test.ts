@@ -1,8 +1,10 @@
 import test from 'ava';
 import {
   assertLockstepVersions,
+  classifyGhReleaseView,
   classifyNpmViewResult,
   parseNpmViewVersion,
+  parsePublishArgs,
   sortPackages,
 } from './publish';
 
@@ -172,4 +174,53 @@ test('npm view preflight aborts on ambiguous not-found text', (t) => {
 
 test('npm view preflight accepts numeric 404 status', (t) => {
   t.is(classifyNpmViewResult({ error: { status: 404 } }, '1.0.0'), 'publish');
+});
+
+test('parsePublishArgs accepts a dry run', (t) => {
+  t.deepEqual(parsePublishArgs(['--dry-run']), { dryRun: true });
+  t.deepEqual(parsePublishArgs(['--', '--dry-run']), { dryRun: true });
+  t.deepEqual(parsePublishArgs([]), { dryRun: false });
+});
+
+test('parsePublishArgs rejects unknown flags', (t) => {
+  const error = t.throws(() => parsePublishArgs(['--oops']));
+  t.regex(error?.message ?? '', /Unknown publish flag/);
+});
+
+test('gh release view recognizes an existing release', (t) => {
+  t.is(
+    classifyGhReleaseView({ stdout: '{"tagName":"v1.0.1"}\n' }),
+    'already-exists'
+  );
+});
+
+test('gh release view treats a missing release as needing create', (t) => {
+  t.is(
+    classifyGhReleaseView({
+      error: {
+        status: 1,
+        stderr: 'release not found',
+      },
+    }),
+    'create'
+  );
+  t.is(
+    classifyGhReleaseView({
+      error: { status: 1, stderr: Buffer.from('HTTP 404: Not Found') },
+    }),
+    'create'
+  );
+});
+
+test('gh release view aborts on unexpected failures', (t) => {
+  t.throws(
+    () =>
+      classifyGhReleaseView({
+        error: {
+          status: 1,
+          stderr: 'HTTP 401: Requires authentication',
+        },
+      }),
+    { message: /gh release view failed/ }
+  );
 });

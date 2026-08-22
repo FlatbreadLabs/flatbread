@@ -90,8 +90,8 @@ https://github.com/FlatbreadLabs/oven.
 
 There are two steps:
 
-1. Bump every public package to one version
-2. Publish the release
+1. Bump every public package to one version and file `CHANGELOG.md`
+2. Publish the release to npm and GitHub together
 
 ### Lockstep versions
 
@@ -123,15 +123,29 @@ What the script does:
   - Skipping packages that are not yet published on npm
 - Passes every public package manifest to one `bumpp` command so one chosen
   version is written across the set
+- Moves `CHANGELOG.md` Unreleased list items under a new `## <version>`
+  heading and leaves the empty Unreleased section (plus any trailing file
+  note) in place. Those filed items become the GitHub release notes, after
+  the centered Flatbread mark and a `Flatbread - v<version> Release Notes`
+  title.
 - Stops before publishing if any public package version differs
 
 Notes:
 
-- Commit the version bumps after the script completes. For example:
+- Commit the version bumps and changelog after the script completes. For
+  example:
 
   ```bash
-  git add packages/**/package.json
+  git add packages/**/package.json packages/proof/skills/proof/release.json CHANGELOG.md
   git commit -m "release: bump public packages"
+  ```
+
+- If versions are already bumped but Unreleased still has items, file them
+  without bumping again:
+
+  ```bash
+  pnpm changelog:shift --dry-run
+  pnpm changelog:shift
   ```
 
 - Debugging: set `FLATBREAD_BUMP_DEBUG=1` to see detection details
@@ -142,9 +156,11 @@ Notes:
 
 - New public packages join the same version as the rest of the release set.
 
-### 2) Publish packages
+### 2) Publish packages and the GitHub release
 
-> Note: you must have access permissions on NPM
+> Note: you must have access permissions on NPM and a logged-in GitHub CLI
+> (`gh auth status`). Push the release commit before publishing so GitHub
+> can see the SHA.
 
 When changing the Proof skill, edit the source files under
 `packages/proof/skills/proof/`, then run these checks in order:
@@ -159,10 +175,21 @@ Bump and publish `@flatbread/proof` and `flatbread` together when the
 skill and runtime need matching versions. The publish script checks the copied
 skill files and package contents first. It then publishes ordinary packages,
 `@flatbread/proof`, and finally `flatbread`, stopping at the first
-failure.
+failure. After every package is on npm, it creates the annotated
+`v<flatbread-version>` tag, pushes that tag to `origin`, and opens a GitHub
+release. The notes start with the centered Flatbread mark and a
+`Flatbread - v<version> Release Notes` title, then the filed changelog
+section.
 
-Publish all public packages (the script checks for one shared version, builds,
-then attempts to publish each package):
+Preview both sides without publishing:
+
+```bash
+pnpm publish:dry
+```
+
+Publish all public packages and the matching GitHub release (the script
+checks for one shared version, builds, then attempts to publish each
+package):
 
 ```bash
 pnpm publish:ci
@@ -170,6 +197,8 @@ pnpm publish:ci
 
 Details:
 
+- Requires a clean working tree, a `CHANGELOG.md` section for the release
+  version, and `gh` authenticated against this repository
 - Builds the repo: `pnpm run build`
 - Iterates public packages in dependency-safe deterministic order and runs:
 
@@ -183,24 +212,15 @@ Details:
   network, and other errors abort before that package is published.
 - If a release stops after some packages publish, rerun `pnpm publish:ci`
   safely. Exact versions already published are skipped, and the script resumes
-  with the first package that still needs publishing.
+  with the first package that still needs publishing. The GitHub release is
+  created only after every package is on npm. The script writes the annotated
+  tag locally, pushes `refs/tags/v<version>` to `origin`, then runs
+  `gh release create --verify-tag`. An existing GitHub release is skipped.
 - Unpublished packages will be published for the first time
 - Dist-tags (alpha/beta) are currently disabled in the script. If you need them, bump with a pre-release version (`x.y.z-alpha.n`) and add tagging logic in `scripts/publish.ts`
 
-### Post-publish
-
-- Only after every package publishes successfully, create an annotated,
-  immutable `v<flatbread-version>` Git tag at the exact release commit SHA
-  printed by `pnpm publish:ci`, then push the release commit and tag:
-
-  ```bash
-  git tag -a v<flatbread-version> <release-commit-sha> -m "Release v<flatbread-version>"
-  git push
-  git push origin v<flatbread-version>
-  ```
-
-  Protect release tags in the repository settings so they cannot be moved or
-  deleted after publication.
+Protect release tags in the repository settings so they cannot be moved or
+deleted after publication.
 
 End users install the skill from that release tag and install the matching
 `flatbread` version. Replace `X` with the released version — `1.0.0` for the
@@ -226,7 +246,12 @@ install a newer release tag and its matching `flatbread` version.
   - Unpublished packages are skipped during bump but will be published during `publish:ci`
 
 - First-time publish of a new package
+
   - Set an appropriate initial version in `packages/<name>/package.json`
   - Run `pnpm publish:ci` (the script will publish it)
+
+- Publish stops because Unreleased still has items
+  - Versions were bumped without filing the changelog. Run
+    `pnpm changelog:shift`, commit `CHANGELOG.md`, then publish again.
 
 If something’s unclear or you hit an issue, please open an issue or ask in Slack.
