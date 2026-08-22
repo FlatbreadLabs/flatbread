@@ -1,0 +1,66 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 1024 1024"
+  role="img"
+  aria-labelledby="title desc"
+>
+  <title id="title">Flatbread light monochrome mark</title>
+  <desc id="desc">
+    A one-color warm white Flatbread mark on a transparent field.
+  </desc>
+
+  <defs>
+    <mask
+      id="tile-cutouts"
+      maskUnits="userSpaceOnUse"
+      x="0"
+      y="0"
+      width="1024"
+      height="1024"
+    >
+      <rect width="1024" height="1024" fill="#fff" />
+      <rect x="178" y="698" width="500" height="132" rx="34" fill="#000" />
+      <rect x="234" y="530" width="500" height="132" rx="34" fill="#000" />
+      <rect x="290" y="362" width="500" height="132" rx="34" fill="#000" />
+      <rect x="346" y="194" width="500" height="132" rx="34" fill="#000" />
+    </mask>
+  </defs>
+
+  <g fill="#FFE8DC" mask="url(#tile-cutouts)">
+    <rect x="268" y="678" width="376" height="4" />
+    <rect x="324" y="510" width="376" height="4" />
+    <rect x="380" y="342" width="376" height="4" />
+
+    <rect x="160" y="680" width="536" height="168" rx="52" />
+    <rect x="216" y="512" width="536" height="168" rx="52" />
+    <rect x="272" y="344" width="536" height="168" rx="52" />
+    <rect x="328" y="176" width="536" height="168" rx="52" />
+
+    <path d="M336.182 320 C346.417 336 290.417 352 280.182 368 H400 V320 Z" />
+    <path d="M855.818 320 C845.583 336 789.583 352 799.818 368 H740 V320 Z" />
+    <path d="M280.182 488 C290.417 504 234.417 520 224.182 536 H344 V488 Z" />
+    <path d="M799.818 488 C789.583 504 733.583 520 743.818 536 H684 V488 Z" />
+    <path d="M224.182 656 C234.417 672 178.417 688 168.182 704 H288 V656 Z" />
+    <path d="M743.818 656 C733.583 672 677.583 688 687.818 704 H628 V656 Z" />
+  </g>
+
+  <g fill="#FFE8DC">
+    <path
+      d="M242 698 H212 A34 34 0 0 0 178 732 V796 A34 34 0 0 0 212 830 H242 Z"
+    />
+    <path
+      d="M298 530 H268 A34 34 0 0 0 234 564 V628 A34 34 0 0 0 268 662 H298 Z"
+    />
+    <path
+      d="M354 362 H324 A34 34 0 0 0 290 396 V460 A34 34 0 0 0 324 494 H354 Z"
+    />
+    <path
+      d="M410 194 H380 A34 34 0 0 0 346 228 V292 A34 34 0 0 0 380 326 H410 Z"
+    />
+
+    <rect x="282" y="746" width="328" height="36" rx="18" />
+    <rect x="338" y="578" width="260" height="36" rx="18" />
+    <rect x="394" y="410" width="192" height="36" rx="18" />
+    <rect x="450" y="242" width="124" height="36" rx="18" />
+  </g>
+</svg>
