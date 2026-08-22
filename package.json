@@ -34,6 +34,8 @@
     "play:build": "pnpm build && cd examples/nextjs && pnpm build",
     "prepublish:ci": "pnpm install --frozen-lockfile && pnpm build:types",
     "publish:ci": "esno scripts/publish.ts",
+    "publish:dry": "esno scripts/publish.ts --dry-run",
+    "changelog:shift": "esno scripts/changelog.ts",
     "bump": "esno scripts/bumpVersions.ts",
     "test:ava": "ava",
     "test:vitest": "pnpm --filter @flatbread/codegen --filter @flatbread/utils test",

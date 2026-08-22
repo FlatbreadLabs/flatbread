@@ -7,6 +7,7 @@ import {
   getMonorepoPublicPackages,
   PathedFlatbreadPackage,
 } from './utils/packageManifest';
+import { prepareReleaseChangelog } from './utils/changelog';
 
 type PackageChangeInfo = PathedFlatbreadPackage & {
   changedSinceLastPublish: boolean;
@@ -362,6 +363,32 @@ async function main(): Promise<void> {
     )}\n`
   );
   execSync('pnpm skills:sync', { stdio: 'inherit' });
+
+  const changelogMarkdown = await fs.readFile('CHANGELOG.md', 'utf8');
+  const preparedChangelog = prepareReleaseChangelog(
+    changelogMarkdown,
+    flatbreadManifest.version
+  );
+  if (preparedChangelog.didShift) {
+    await fs.writeFile('CHANGELOG.md', preparedChangelog.markdown);
+    if (preparedChangelog.didMoveItems) {
+      console.log(
+        colors
+          .bold()
+          .green(
+            `Moved CHANGELOG.md Unreleased items under ## ${flatbreadManifest.version}`
+          )
+      );
+    } else {
+      console.log(
+        colors
+          .bold()
+          .yellow(
+            `Created empty CHANGELOG.md heading ## ${flatbreadManifest.version}. Add release notes before publishing.`
+          )
+      );
+    }
+  }
 }
 
 const invokedScript = process.argv[1]

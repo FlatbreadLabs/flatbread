@@ -1,8 +1,13 @@
 import test from 'ava';
 import {
   assertLockstepVersions,
+  classifyGhReleaseView,
   classifyNpmViewResult,
+  classifyRemoteReleaseTag,
   parseNpmViewVersion,
+  parsePublishArgs,
+  preflightGithubRelease,
+  prepareReadyReleaseChangelog,
   sortPackages,
 } from './publish';
 
@@ -172,4 +177,253 @@ test('npm view preflight aborts on ambiguous not-found text', (t) => {
 
 test('npm view preflight accepts numeric 404 status', (t) => {
   t.is(classifyNpmViewResult({ error: { status: 404 } }, '1.0.0'), 'publish');
+});
+
+test('parsePublishArgs accepts a dry run', (t) => {
+  t.deepEqual(parsePublishArgs(['--dry-run']), { dryRun: true });
+  t.deepEqual(parsePublishArgs(['--', '--dry-run']), { dryRun: true });
+  t.deepEqual(parsePublishArgs([]), { dryRun: false });
+});
+
+test('parsePublishArgs rejects unknown flags', (t) => {
+  const error = t.throws(() => parsePublishArgs(['--oops']));
+  t.regex(error?.message ?? '', /Unknown publish flag/);
+});
+
+test('gh release view recognizes an existing release', (t) => {
+  t.is(
+    classifyGhReleaseView(
+      {
+        stdout: '{"tagName":"v1.0.1","body":"Filed release notes.\\r\\n"}\n',
+      },
+      'v1.0.1',
+      'Filed release notes.'
+    ),
+    'already-exists'
+  );
+});
+
+test('gh release view rejects existing notes that differ from the changelog', (t) => {
+  t.throws(
+    () =>
+      classifyGhReleaseView(
+        {
+          stdout: '{"tagName":"v1.0.1","body":"Hand-written notes."}\n',
+        },
+        'v1.0.1',
+        'Filed release notes.'
+      ),
+    { message: /does not match its CHANGELOG\.md notes/ }
+  );
+  t.throws(
+    () =>
+      classifyGhReleaseView(
+        { stdout: '{"tagName":"v1.0.1","body":""}\n' },
+        'v1.0.1',
+        'Filed release notes.'
+      ),
+    { message: /does not match its CHANGELOG\.md notes/ }
+  );
+});
+
+test('gh release view treats a missing release as needing create', (t) => {
+  t.is(
+    classifyGhReleaseView(
+      {
+        error: {
+          status: 1,
+          stderr: 'release not found',
+        },
+      },
+      'v1.0.1',
+      'Filed release notes.'
+    ),
+    'create'
+  );
+  t.is(
+    classifyGhReleaseView(
+      {
+        error: { status: 1, stderr: Buffer.from('HTTP 404: Not Found') },
+      },
+      'v1.0.1',
+      'Filed release notes.'
+    ),
+    'create'
+  );
+});
+
+test('gh release view aborts on unexpected failures', (t) => {
+  t.throws(
+    () =>
+      classifyGhReleaseView(
+        {
+          error: {
+            status: 1,
+            stderr: 'HTTP 401: Requires authentication',
+          },
+        },
+        'v1.0.1',
+        'Filed release notes.'
+      ),
+    { message: /gh release view failed/ }
+  );
+  t.throws(
+    () =>
+      classifyGhReleaseView(
+        {
+          error: {
+            status: 1,
+            stderr: 'GraphQL: Not Found (repository)',
+          },
+        },
+        'v1.0.1',
+        'Filed release notes.'
+      ),
+    { message: /gh release view failed/ }
+  );
+});
+
+test('publish changelog gate distinguishes leftover items from a missing heading', (t) => {
+  const withItems = `# Changelog
+
+## Unreleased
+
+- File this release note.
+
+## 1.0.0
+
+Older.
+`;
+  const withoutItems = `# Changelog
+
+## Unreleased
+
+Notes stay here.
+
+## 1.0.0
+
+Older.
+`;
+
+  t.throws(() => prepareReadyReleaseChangelog(withItems, '1.0.1'), {
+    message: /still has Unreleased list items/,
+  });
+  t.throws(() => prepareReadyReleaseChangelog(withoutItems, '1.0.1'), {
+    message: /missing ## 1\.0\.1.*no list items/,
+  });
+});
+
+test('publish changelog gate accepts a filed release section', (t) => {
+  const prepared = prepareReadyReleaseChangelog(
+    `# Changelog
+
+## Unreleased
+
+Notes stay here.
+
+## 1.0.1
+
+- Filed release note.
+
+## 1.0.0
+
+Older.
+`,
+    '1.0.1'
+  );
+
+  t.false(prepared.didShift);
+  t.is(prepared.notes, '- Filed release note.');
+});
+
+test('publish changelog gate rejects an empty filed release section', (t) => {
+  t.throws(
+    () =>
+      prepareReadyReleaseChangelog(
+        `# Changelog
+
+## Unreleased
+
+Notes stay here.
+
+## 1.0.1
+
+## 1.0.0
+
+Older.
+`,
+        '1.0.1'
+      ),
+    { message: /section ## 1\.0\.1 has no release notes/ }
+  );
+});
+
+test('GitHub preflight propagates CLI and commit failures', (t) => {
+  const inspectGithubRelease = (): 'create' => 'create';
+  const commitFailure = new Error('release commit is not on GitHub');
+
+  t.throws(
+    () =>
+      preflightGithubRelease('v1.0.1', 'abc123', 'Filed release notes.', {
+        assertGithubCli: () => {
+          throw new Error('gh is not authenticated');
+        },
+        assertCommitOnGithub: () => undefined,
+        inspectGithubRelease,
+      }),
+    { message: 'gh is not authenticated' }
+  );
+  t.throws(
+    () =>
+      preflightGithubRelease('v1.0.1', 'abc123', 'Filed release notes.', {
+        assertGithubCli: () => undefined,
+        assertCommitOnGithub: () => {
+          throw commitFailure;
+        },
+        inspectGithubRelease,
+      }),
+    { is: commitFailure }
+  );
+});
+
+test('remote release tag preflight accepts an absent tag', (t) => {
+  t.is(classifyRemoteReleaseTag('', 'v1.0.1', 'release-sha'), 'absent');
+});
+
+test('remote release tag preflight accepts a lightweight tag on the release commit', (t) => {
+  t.is(
+    classifyRemoteReleaseTag(
+      'release-sha\trefs/tags/v1.0.1\n',
+      'v1.0.1',
+      'release-sha'
+    ),
+    'same-commit'
+  );
+});
+
+test('remote release tag preflight compares an annotated tag peeled commit', (t) => {
+  t.is(
+    classifyRemoteReleaseTag(
+      `tag-object-sha\trefs/tags/v1.0.1
+release-sha\trefs/tags/v1.0.1^{}
+`,
+      'v1.0.1',
+      'release-sha'
+    ),
+    'same-commit'
+  );
+});
+
+test('remote release tag preflight rejects a different commit', (t) => {
+  t.throws(
+    () =>
+      classifyRemoteReleaseTag(
+        `tag-object-sha\trefs/tags/v1.0.1
+other-commit\trefs/tags/v1.0.1^{}
+`,
+        'v1.0.1',
+        'release-sha'
+      ),
+    { message: /points at other-commit.*not the release commit release-sha/ }
+  );
 });
