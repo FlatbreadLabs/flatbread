@@ -108,6 +108,11 @@ export const SetRiskStateSchema = z.object({
   state: z.enum(['realized', 'accepted']),
   evidence: id.array().min(1),
 });
+export const RetractSchema = z.object({
+  type: z.literal('Retract'),
+  recordId: id,
+  reason: z.string().min(1),
+});
 export const ProofMutationSchema = z.discriminatedUnion('type', [
   CreateEffortSchema,
   SetEffortStatusSchema,
@@ -124,6 +129,7 @@ export const ProofMutationSchema = z.discriminatedUnion('type', [
   AcceptDecisionSchema,
   MitigateRiskSchema,
   SetRiskStateSchema,
+  RetractSchema,
 ]);
 export type ProofMutation = z.input<typeof ProofMutationSchema>;
 export const EffortFrontmatterSchema = z

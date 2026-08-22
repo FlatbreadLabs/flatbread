@@ -24,12 +24,12 @@
     {
       "id": 3,
       "prompt": "A prior agent created a Finding only to note that a PR checklist used the wrong record kind. Product behavior did not change, and the correction matters only until review ends. Decide what durable project-memory action is warranted.",
-      "expected_output": "Create no new Proof record. The writer has no delete mutation. Leave the temporary Finding for maintainers, or if a PR must drop the file, strip inbound and outbound ids on retained records in the same change so reads do not fail closed on dangling edges. Keep any separate durable product decision.",
+      "expected_output": "Create no new Proof record. Retract the temporary Finding with type Retract and a reason. Do not git rm the file or hand-edit frontmatter. Keep any separate durable product decision.",
       "assertions": [
         "No new Proof record is created",
-        "The response treats the journal correction as temporary bookkeeping",
-        "The response does not teach a bare record delete",
-        "Any cleanup preserves separate durable rationale and clears edges on retained records"
+        "The response retracts the temporary Finding through the typed writer",
+        "The response does not teach a git delete or frontmatter strip",
+        "Any cleanup preserves separate durable rationale"
       ]
     },
     {

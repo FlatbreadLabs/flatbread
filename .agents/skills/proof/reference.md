@@ -11,7 +11,7 @@ Generated as `<prefix>-<slug>--<16-char-crockford>` with prefixes `eff`,
 identity. Let the writer generate ids; capture them from mutation results
 (`artifacts[0].id` for creates).
 
-## The 15 mutations (`flatbread proof write '<json>'`)
+## The 16 mutations (`flatbread proof write '<json>'`)
 
 Common optional fields on all creates: `id`, `created_at` (ISO with offset),
 `produced_in`, `created_by` (opaque provenance strings). Forward edge fields
@@ -75,6 +75,30 @@ target was wrong (stronger than superseded).
 `AcceptDecision` with `rejectSiblings: true` (the default!) also sets every
 other `proposed` Decision in the Effort to `rejected` with a back-pointer.
 All mutations run in one journal transaction (save-or-undo).
+
+### Retract a record that should not stay on the live graph
+
+```json
+{ "type": "Retract", "recordId": "<id>", "reason": "..." }
+```
+
+`Retract` is for session noise and other records that should never have been
+written. It is not a hard delete and not a fold into a survivor:
+
+- The file stays. Frontmatter gains `retracted: true`, `retracted_at`, and
+  `retracted_reason`. The body is unchanged so `proof get` can still explain
+  what was removed.
+- The writer clears that record's relation fields and strips its id from
+  every other record in the same Effort in the same journal transaction.
+- Browse reads (`list`, `records`, `blocking-decisions`) omit retracted
+  records. `proof get` still returns them. `relations` follows stored edges
+  that remain; after a successful Retract, survivors should have none.
+- Efforts cannot be retracted. Set status to `abandoned` instead.
+- Later creates, `Supersede`, `Invalidate`, and lifecycle mutations reject
+  retracted ids. Git history is the undo story; there is no Restore mutation.
+
+Folding several noisy records into one survivor is a body edit on the
+survivor (score 4/4 if it adds claims) plus `Retract` on the rest.
 
 ### Mutation result
 
@@ -204,6 +228,7 @@ flatbread proof cache prune
 
 - Do not hand-edit record frontmatter or `.journal/`; bodies are freely
   editable (the reindexer validates and repairs projections).
+- Do not `git rm` Proof records to correct the graph. Use `Retract`.
 - Do not parse digest files or `summary` as data feeds for other programs —
   the digest is evidence for you to read or search; the envelope is the
   machine surface.

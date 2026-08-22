@@ -10,7 +10,7 @@ repository. It has eight record types: **Effort**, **Issue**, **Finding**,
 **Decision**, **Constraint**, and **Risk** capture the work and reasoning;
 **Citation** stores a source or reference; and **Blob** stores attached
 content such as a document, JSON, or image. Every record belongs to one
-Effort. Create and update records through 15 typed mutations, and read them
+Effort. Create and update records through 16 typed mutations, and read them
 through 5 bounded queries. Do not hand-edit record frontmatter, although you
 may edit record bodies freely.
 
@@ -58,8 +58,11 @@ this skill; do not journal the process itself as a Decision.
 
 Score only new retained information: create mutations and body text that add
 claims. Lifecycle transitions (`AcceptDecision`, `ResolveIssue`,
-`SetEffortStatus`, `MitigateRisk`, `SetRiskState`) and `proof cache prune` do
-not add retained claims and do not need a 4/4 score.
+`SetEffortStatus`, `MitigateRisk`, `SetRiskState`), `Retract`, and
+`proof cache prune` do not add retained claims and do not need a 4/4 score.
+`Supersede` and `Invalidate` write retained edges; score the reason for the
+edge the same as a create. Body edits that only drop claims stay out of the
+gate.
 
 Before a create or a body edit that adds claims, score the information being
 added — not the record that would receive it. Answer each test in private
@@ -81,7 +84,7 @@ low-value text still consumes bounded reads. Keep failed candidates in the
 PR, tracker issue, commit, or run artifact. Citations and Blobs persist only
 when they support a 4/4 record.
 
-One command for all 15 mutations — pass the payload as a single JSON argument:
+One command for all 16 mutations — pass the payload as a single JSON argument:
 
 ```bash
 flatbread proof write '{"type":"WriteDecision","effort":"<eff-id>","title":"...","body":"...","derives_from":["<id>"]}'
@@ -91,7 +94,7 @@ Response: `{"generation":"<token>","artifacts":[{"id","path","operation"}],"touc
 **Capture `artifacts[0].id`** to wire later edges, and **keep `generation`**
 for strict read-your-writes.
 
-Full payload shapes for all 15 mutations: read [reference.md](./reference.md).
+Full payload shapes for all 16 mutations: read [reference.md](./reference.md).
 Critical semantics:
 
 - Creates always start in the initial lifecycle state: `WriteDecision` →
@@ -99,6 +102,12 @@ Critical semantics:
   state; use lifecycle mutations (`AcceptDecision`, `ResolveIssue`,
   `MitigateRisk`, `SetRiskState`) to transition. `WriteCitation` and
   `WriteBlob` have no lifecycle state.
+- `Retract` removes a record from browse reads without deleting the file.
+  Pass a reason. The writer strips that id from other records in the same
+  Effort so reads do not fail closed. Use it for session noise that should
+  never have been journaled. Do not `git rm` records or hand-edit
+  frontmatter. `proof get` still returns a retracted record. Efforts cannot
+  be retracted; abandon them instead.
 - `AcceptDecision` defaults `rejectSiblings: true`, which rejects ALL other
   proposed Decisions in the same Effort. Pass `"rejectSiblings": false`
   unless you deliberately want the competing proposals closed.
@@ -196,6 +205,7 @@ server-side.
    they respond to.
 4. **On commitment:** `AcceptDecision` (mind `rejectSiblings`), `ResolveIssue`
    with `resolvedBy` citing the closing Decision/Findings. These lifecycle
-   transitions do not need a 4/4 score.
+   transitions do not need a 4/4 score. Retract session noise with `Retract`
+   rather than deleting files.
 5. Maintenance: `flatbread proof cache prune` deletes digests older than
    24h / over the 100 MiB ceiling. Prune does not need a 4/4 score.

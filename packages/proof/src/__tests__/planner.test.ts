@@ -954,3 +954,114 @@ test('later relation mutations reject targets from another Effort', (t) => {
       message: 'Invalid edge',
     });
 });
+
+test('Retract tombstones the target and strips inbound edges', (t) => {
+  const finding = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'Noise',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+    derives_from: [ids.issue],
+  });
+  const issue = record(ids.issue, 'issue', {
+    id: ids.issue,
+    effort: E,
+    title: 'Q',
+    kind: 'question',
+    status: 'open',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const decision = record(ids.decision, 'decision', {
+    id: ids.decision,
+    effort: E,
+    title: 'Keep',
+    state: 'accepted',
+    created_at: '2025-01-01T00:00:00.000Z',
+    derives_from: [ids.finding],
+    supersedes: [ids.finding],
+  });
+  const s = snap([issue, finding, decision]);
+  const writes = planMutation(
+    {
+      type: 'Retract',
+      recordId: ids.finding,
+      reason: 'PR checklist noise',
+    },
+    s,
+    '/root',
+    now
+  );
+  t.is(writes.length, 2);
+  const byId = Object.fromEntries(
+    writes.map((write) => [
+      write.id,
+      parseDocument(write.afterBytes, write.kind).frontmatter,
+    ])
+  );
+  t.is(byId[ids.finding].retracted, true);
+  t.is(byId[ids.finding].retracted_reason, 'PR checklist noise');
+  t.is(byId[ids.finding].retracted_at, now.toISOString());
+  t.is(byId[ids.finding].derives_from, undefined);
+  t.deepEqual(byId[ids.decision].derives_from, undefined);
+  t.deepEqual(byId[ids.decision].supersedes, undefined);
+  t.is(byId[ids.decision].retracted, undefined);
+  t.is(
+    writes.find((write) => write.id === ids.issue),
+    undefined
+  );
+});
+
+test('Retract refuses Efforts, repeats, and live links to retracted records', (t) => {
+  const finding = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'Noise',
+    kind: 'survey',
+    created_at: '2025-01-01T00:00:00.000Z',
+    retracted: true,
+    retracted_reason: 'already gone',
+  });
+  const s = snap([finding]);
+  t.throws(
+    () =>
+      planMutation(
+        { type: 'Retract', recordId: E, reason: 'no' },
+        s,
+        '/root',
+        now
+      ),
+    { message: /does not apply to Efforts/ }
+  );
+  t.throws(
+    () =>
+      planMutation(
+        {
+          type: 'Retract',
+          recordId: ids.finding,
+          reason: 'again',
+        },
+        s,
+        '/root',
+        now
+      ),
+    { message: new RegExp(`Artifact ${ids.finding} is already retracted`) }
+  );
+  t.throws(
+    () =>
+      planMutation(
+        {
+          type: 'WriteDecision',
+          id: ids.decision,
+          effort: E,
+          title: 'D',
+          body: '',
+          derives_from: [ids.finding],
+        },
+        s,
+        '/root',
+        now
+      ),
+    { message: new RegExp(`Artifact ${ids.finding} is retracted`) }
+  );
+});

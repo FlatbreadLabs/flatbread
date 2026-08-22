@@ -1222,3 +1222,92 @@ export default { source: source(), transformer: transformer(), content: proofCon
     process.exitCode = previous;
   }
 );
+
+test.serial(
+  'Retract drops a record from browse reads and keeps get',
+  async (t) => {
+    const cwd = await createTempProject('flatbread-effort-retract-', t);
+    for (const directory of [
+      'efforts',
+      'issues',
+      'findings',
+      'decisions',
+      'constraints',
+      'risks',
+      'citations',
+      'blobs',
+    ])
+      await mkdir(join(cwd, '.flatbread-proof', directory), {
+        recursive: true,
+      });
+    await writeFile(
+      join(cwd, 'flatbread.config.js'),
+      `import { source } from '@flatbread/source-filesystem';
+import { transformer } from '@flatbread/transformer-markdown';
+import { proofContent } from '@flatbread/proof';
+export default {
+  source: source(),
+  transformer: transformer(),
+  content: proofContent(${JSON.stringify(
+    relative(cwd, join(cwd, '.flatbread-proof'))
+  )}),
+};`
+    );
+    const effort = await handleEffortWrite(
+      JSON.stringify({ type: 'CreateEffort', title: 'E', body: '' }),
+      { cwd }
+    );
+    const effortId = effort.artifacts[0].id;
+    const finding = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteFinding',
+        effort: effortId,
+        title: 'Checklist kind',
+        body: 'temporary review note',
+        kind: 'survey',
+      }),
+      { cwd }
+    );
+    const findingId = finding.artifacts[0].id;
+    const decision = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteDecision',
+        effort: effortId,
+        title: 'Keep',
+        body: 'durable product rule',
+        derives_from: [findingId],
+      }),
+      { cwd }
+    );
+    const decisionId = decision.artifacts[0].id;
+    const retracted = await handleEffortWrite(
+      JSON.stringify({
+        type: 'Retract',
+        recordId: findingId,
+        reason: 'session noise; not a turning point',
+      }),
+      { cwd }
+    );
+    const listed = await handleEffortRecords(effortId, {
+      cwd,
+      kinds: ['finding', 'decision'],
+      strictMinGeneration: retracted.generation,
+    });
+    const listedDigest = await readFile(listed.artifact_path, 'utf8');
+    t.false(listedDigest.includes(findingId));
+    t.true(listedDigest.includes(decisionId));
+    const got = await handleEffortGet(findingId, {
+      cwd,
+      strictMinGeneration: retracted.generation,
+    });
+    const gotDigest = await readFile(got.artifact_path, 'utf8');
+    t.true(gotDigest.includes('retracted: true'));
+    t.true(gotDigest.includes('temporary review note'));
+    const neighbors = await handleEffortRelations(effortId, decisionId, {
+      cwd,
+      relations: ['derives_from'],
+      strictMinGeneration: retracted.generation,
+    });
+    t.is(neighbors.page.returned, 0);
+  }
+);

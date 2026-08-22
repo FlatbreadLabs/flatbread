@@ -86,11 +86,16 @@ const validMutations: Record<string, Record<string, unknown>> = {
     state: 'realized',
     evidence: [fnd],
   },
+  Retract: {
+    type: 'Retract',
+    recordId: fnd,
+    reason: 'session noise; not a durable turning point',
+  },
 };
 
-test('each of the 15 mutation schemas accepts a valid input', (t) => {
+test('each of the 16 mutation schemas accepts a valid input', (t) => {
   const types = Object.keys(validMutations);
-  t.is(types.length, 15);
+  t.is(types.length, 16);
   for (const type of types) {
     t.notThrows(() => ProofMutationSchema.parse(validMutations[type]), type);
   }

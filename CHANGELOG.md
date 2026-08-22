@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- `flatbread proof write` now accepts `Retract`. Session noise and other
+  records that should not stay on the live graph are tombstoned in place:
+  the file remains, browse reads omit it, and the writer strips the id from
+  other records in the same Effort so relation reads do not fail closed.
+  `proof get` still returns the retracted record. Efforts cannot be
+  retracted; abandon them instead. Do not `git rm` Proof records.
 - The Proof skill now applies a 4/4 write gate. Agents score the information
   before a create or a body edit that adds claims; existing records do not
   bypass the gate. Four bundled eval cases ship with the skill for a manual
