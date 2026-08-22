@@ -2,10 +2,12 @@
 id: dec-address-pr-254-review-as-five-disjoint-file-grou--bx44enbv52ztnrnn
 effort: eff-proof-and-contributor-operating-system--ahhgtafvdhg4dfve
 title: Address PR 254 review as five disjoint file groups
-state: accepted
+state: superseded
 created_at: '2026-08-22T16:46:40.750Z'
 derives_from:
   - fnd-pr-254-still-omitted-paging-only-has-more-map-an--hk8r9xfee39s64vc
+superseded_by:
+  - dec-treat-page-has-more-as-pagination-only--dv24ta688adf262v
 ---
 
 Context: PR 254 already exposes complete and cap_reasons. The 22 Aug review asked to document that page.has_more is pagination-only and to lock two missing tests, plus optional refuse of hasMore without a cursor.
