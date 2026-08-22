@@ -325,7 +325,7 @@ export async function inspectEffortBootstrap(
     requirements.push(
       requirement(
         'EFFORT_BOOTSTRAP_JOURNAL_IGNORE_MISSING',
-        `The Proof journal for ${graphRoot} is not ignored.`,
+        `The write journal for Proof at ${graphRoot} is not ignored.`,
         `Add **/${graphRoot}/.journal/ to .gitignore.`
       )
     );

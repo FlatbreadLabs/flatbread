@@ -1,13 +1,13 @@
 ---
 name: effort-modeling
-description: Sharpen a project's vocabulary and planning through one-question-at-a-time grilling, then journal Decisions, Constraints, Findings, Issues, and Risks into the Flatbread Proof. Use when a plan needs durable reasoning instead of ADRs.
+description: Sharpen a project's vocabulary and planning through one-question-at-a-time grilling, then journal Decisions, Constraints, Findings, Issues, and Risks into Proof. Use when a plan needs durable reasoning instead of ADRs.
 disable-model-invocation: true
 ---
 
 # Effort modeling
 
 Use this discipline while a plan or design is being shaped. Store planning
-records in the Proof. Keep project terms in a glossary such as
+records in Proof. Keep project terms in a glossary such as
 `CONTEXT.md` or `docs/glossary.md`.
 
 ## Resume before asking
@@ -36,7 +36,7 @@ answer, and resolve prerequisite choices before dependent ones.
 ## Journal the right speech act
 
 Use `flatbread proof write` for the current Effort, following
-[the Proof reference](../proof/reference.md):
+[Proof reference](../proof/reference.md):
 
 - **Finding** — evidence about code, users, or runtime behavior.
 - **Issue** — a question, defect, gap, or blocker needing attention.

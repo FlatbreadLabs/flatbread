@@ -1,7 +1,7 @@
 # `@flatbread/explorer`
 
 Content-relation explorer for Flatbread. v1 ships a generic single-page app
-(SPA) shell plus an **Proof** preset. When your config uses
+(SPA) shell plus a **Proof** preset. When your config uses
 `proofContent()`, `flatbread start` serves this UI at `/`.
 
 ## Try it locally

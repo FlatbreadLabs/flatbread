@@ -1,8 +1,8 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/FlatbreadLabs/flatbread/main/assets/flatbread%20logo%20v2%20x4%401-1728x1080%20centered%20header.png"/>
+  <img src="https://raw.githubusercontent.com/FlatbreadLabs/flatbread/main/assets/brand/flatbread-mark.svg" alt="Flatbread logo" width="256" />
 </p>
 
-<h1 align="center">Flatbread 🥪</h1>
+<h1 align="center">Flatbread</h1>
 
 <p align="center">
   <a href="https://github.com/FlatbreadLabs/flatbread/actions/workflows/pipeline.yml">
@@ -23,7 +23,7 @@ CLI.
 
 People use it two ways.
 
-**Durable memory for coding agents.** The
+**Durable memory for coding agents.**
 [Proof](https://github.com/FlatbreadLabs/flatbread/tree/main/packages/proof)
 stores an agent's reasoning as markdown records in the repository: Efforts,
 Issues, Findings, Decisions, Constraints, Risks, Citations, and Blobs. An agent

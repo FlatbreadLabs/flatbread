@@ -5,7 +5,7 @@ description: Read and update Flatbread Proof, the repository's durable project m
 
 # Proof — agent journaling and recall
 
-The Proof stores durable project memory as markdown records in the
+Proof stores durable project memory as markdown records in the
 repository. It has eight record types: **Effort**, **Issue**, **Finding**,
 **Decision**, **Constraint**, and **Risk** capture the work and reasoning;
 **Citation** stores a source or reference; and **Blob** stores attached

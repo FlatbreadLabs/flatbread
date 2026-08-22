@@ -16,7 +16,7 @@ control how it reads files and turns them into data.
 
 ## The lead use case: memory for coding agents
 
-The [Proof](../packages/proof/README.md) is a Flatbread content
+[Proof](../packages/proof/README.md) is a Flatbread content
 model for what a coding agent works out along the way. An agent records an
 Effort and then writes Issues, Findings, Decisions, Constraints, Risks,
 Citations, and Blobs against it. Each record is a markdown file under
