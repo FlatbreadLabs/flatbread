@@ -101,6 +101,29 @@ function stripRelationId(
   return { next, changed };
 }
 
+const CLOSER_POINTER_KEYS = [
+  'resolved_by',
+  'mitigated_by',
+  'evidence',
+  'rejected_by',
+  'superseded_by',
+] as const;
+
+function isSoleCloser(
+  frontmatter: Record<string, unknown>,
+  id: string
+): boolean {
+  for (const key of CLOSER_POINTER_KEYS) {
+    const value = frontmatter[key];
+    if (Array.isArray(value) && value.includes(id)) {
+      if (value.filter((item) => item !== id).length === 0) return true;
+    } else if (value === id) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function assertCites(
   get: GetRecord,
   effortId: string,
@@ -487,6 +510,20 @@ export function planMutation(
     const effortId = owningEffort(target);
     if (!effortId)
       throw new ProofValidationError('Retract target has no effort');
+    const dependents: string[] = [];
+    for (const record of snapshot.recordsByEffort(effortId)) {
+      if (record.id === target.id || isRetracted(record)) continue;
+      if (isSoleCloser(record.frontmatter, target.id))
+        dependents.push(record.id);
+    }
+    if (dependents.length)
+      throw new ProofValidationError(
+        `Cannot retract ${
+          target.id
+        }; it is the sole closer for ${dependents.join(
+          ', '
+        )}. Supersede or retract those records first.`
+      );
     const tombstone = { ...target.frontmatter };
     for (const key of RELATION_VALUE_KEYS) delete tombstone[key];
     add(
