@@ -1,0 +1,1 @@
+Address review: report an empty changelog version heading as a placeholder instead of claiming Unreleased notes moved, with explicit state and tests.
