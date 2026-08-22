@@ -120,11 +120,14 @@ lists), one-hop related records, and an edge table. Body policy:
   from these digests — use `proof get` for the payload. Citation bodies
   (usually short) still excerpt normally.
 
-Caps: 25 primary records, one hop, 50 edges, 64 KiB; hitting a cap sets
-`complete: false` with named `cap_reasons` — narrow the query or page rather
-than expecting more. If a `get` body alone exceeds the 64 KiB digest byte
-cap, the digest fails closed with a byte-cap banner (it does **not** fake a
-full body via the 600/12 excerpt).
+Caps: 25 primary records, one hop, 50 edges, 64 KiB. Hitting a cap sets
+`complete: false` with named `cap_reasons`. Page only when `page.has_more` is
+true. Non-empty hard `cap_reasons` that paging cannot clear mean narrow the
+query or fail closed. `primary_records` is a defensive in-process signal after
+the CLI pre-slices to at most 25 primary records; `proof list` and
+`proof records` do not emit it. If a `get` body alone exceeds the 64 KiB
+digest byte cap, the digest fails closed with a byte-cap banner (it does **not**
+fake a full body via the 600/12 excerpt).
 
 Every read envelope carries `complete` and `cap_reasons`. Read it in this
 order:

@@ -3,9 +3,12 @@
 ## Unreleased
 
 - The DAG runner is now `@flatbread/oven` (`pnpm exec oven`); the memory package is now `@flatbread/proof` with the `flatbread proof` CLI.
-- Proof read envelopes now expose `complete` and `cap_reasons`. Callers can
-  tell paging from the `primary_records`, `displayed_edges`, and `bytes` caps
-  without parsing the digest Markdown or `summary` text.
+- Proof read envelopes now expose `complete` and `cap_reasons`. `page.has_more`
+  is pagination-only and no longer signals the 25-record wall; use
+  `cap_reasons` / `complete` for hard caps on `displayed_edges` and `bytes`.
+  The `primary_records` limit remains an in-process defensive signal because
+  the CLI read bridge slices to 25 records before rendering. Callers can tell
+  paging from hard caps without parsing the digest Markdown or `summary` text.
 - `@flatbread/source-filesystem` reads a content directory that does not exist
   as an empty collection instead of throwing `ENOENT`. Git cannot store an
   empty directory, and a Proof write creates only the directory it writes, so

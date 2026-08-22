@@ -110,7 +110,11 @@ function digestCompleteness(
   return { complete: !hasMore && capReasons.length === 0, capReasons };
 }
 
-function yamlHeader(input: DigestInput, state: DigestCompleteness) {
+function yamlHeader(
+  input: DigestInput,
+  state: DigestCompleteness,
+  hasMore: boolean
+): string {
   const query = JSON.stringify(input.query);
   return [
     '---',
@@ -122,7 +126,7 @@ function yamlHeader(input: DigestInput, state: DigestCompleteness) {
     `primary: ${JSON.stringify({
       returned: Math.min(input.records.length, CAP_RECORDS),
       total_known: input.totalKnown ?? input.records.length,
-      has_more: Boolean(input.hasMore),
+      has_more: hasMore,
     })}`,
     `complete: ${state.complete}`,
     `caps: ${JSON.stringify({
@@ -259,6 +263,11 @@ async function durableWrite(path: string, bytes: Buffer): Promise<void> {
 
 export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
   const primaryBodyMode: RecordBodyMode = input.fullBody ? 'full' : 'excerpt';
+  const nextCursor =
+    typeof input.nextCursor === 'string' && input.nextCursor.length > 0
+      ? input.nextCursor
+      : null;
+  const hasMore = Boolean(input.hasMore) && nextCursor !== null;
   const records = [...input.records].sort((a, b) =>
     `${String(a.frontmatter.created_at ?? '')}\0${a.id}`.localeCompare(
       `${String(b.frontmatter.created_at ?? '')}\0${b.id}`
@@ -275,7 +284,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
   const reasons: ReadCapReason[] = [];
   if (records.length > CAP_RECORDS) reasons.push('primary_records');
   if (input.edges.length > CAP_EDGES) reasons.push('displayed_edges');
-  let completeness = digestCompleteness(Boolean(input.hasMore), reasons);
+  let completeness = digestCompleteness(hasMore, reasons);
   const checkpoints = input.checkpointLines?.length
     ? ['## Lineage checkpoints', ...input.checkpointLines, '']
     : [];
@@ -287,7 +296,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
   const renderRelated = (record: ReadRecord) =>
     renderRecord(record, { bodyMode: 'excerpt' });
   let markdown = [
-    yamlHeader(input, completeness),
+    yamlHeader(input, completeness, hasMore),
     ...(input.anomaly ? [`> anomaly: ${input.anomaly}`, ''] : []),
     '# Proof read',
     '## Index',
@@ -308,7 +317,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
   ].join('\n');
   if (Buffer.byteLength(markdown) > CAP_BYTES) {
     reasons.push('bytes');
-    completeness = digestCompleteness(Boolean(input.hasMore), reasons);
+    completeness = digestCompleteness(hasMore, reasons);
     // Full-body digests must not silently fall back to the 600/12 excerpt.
     // Prefer a visible byte-cap miss banner over a fake "full" body.
     const overflowBodyMode: RecordBodyMode = input.fullBody
@@ -321,7 +330,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
         ? 'body exceeded digest byte cap'
         : input.anomaly;
     const header = [
-      yamlHeader(input, completeness),
+      yamlHeader(input, completeness, hasMore),
       ...(anomaly ? [`> anomaly: ${anomaly}`, ''] : []),
       '# Proof read',
       '## Index',
@@ -383,7 +392,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
       visible,
       completeness.complete,
       completeness.capReasons,
-      Boolean(input.hasMore)
+      hasMore
     ),
     artifact_path: path,
     artifact_sha256: createHash('sha256').update(bytes).digest('hex'),
@@ -393,8 +402,8 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
     cap_reasons: completeness.capReasons,
     page: {
       returned: visible.length,
-      has_more: Boolean(input.hasMore),
-      next_cursor: input.hasMore ? input.nextCursor ?? null : null,
+      has_more: hasMore,
+      next_cursor: hasMore ? nextCursor : null,
     },
     hints: (
       input.hints ?? ids.slice(0, 10).map((id) => `getRecord("${id}")`)
