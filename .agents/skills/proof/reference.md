@@ -85,11 +85,19 @@ All mutations run in one journal transaction (save-or-undo).
 `Retract` is for session noise and other records that should never have been
 written. It is not a hard delete and not a fold into a survivor:
 
+- Retract throws when the target is the last remaining value of
+  `resolved_by`, `mitigated_by`, `evidence`, `rejected_by`, or
+  `superseded_by` on a live same-Effort record. It also throws when the
+  target is the last live Finding-kind id on a realized Risk's `evidence`,
+  even if other non-Finding ids remain. Supersede or retract those
+  dependent records first. Do not `git rm`, and do not hand-edit
+  frontmatter to strip the pointer.
 - The file stays. Frontmatter gains `retracted: true`, `retracted_at`, and
   `retracted_reason`. The body is unchanged so `proof get` can still explain
   what was removed.
-- The writer clears that record's relation fields and strips its id from
-  every other record in the same Effort in the same journal transaction.
+- On a successful Retract, the writer clears that record's relation fields
+  and strips its id from every other record in the same Effort in the same
+  journal transaction.
 - Browse reads (`list`, `records`, `blocking-decisions`) omit retracted
   records. `proof get` still returns them. `relations` follows stored edges
   that remain; after a successful Retract, survivors should have none.

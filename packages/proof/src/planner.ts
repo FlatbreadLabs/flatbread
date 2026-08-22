@@ -124,6 +124,27 @@ function isSoleCloser(
   return false;
 }
 
+function isLiveFinding(snapshot: ProofSnapshot, id: unknown): boolean {
+  if (typeof id !== 'string') return false;
+  const record = snapshot.getRecord(id);
+  return (
+    record !== undefined && record.kind === 'finding' && !isRetracted(record)
+  );
+}
+
+function isLastLiveFindingEvidence(
+  record: SnapshotRecord,
+  targetId: string,
+  snapshot: ProofSnapshot
+): boolean {
+  if (record.kind !== 'risk' || record.frontmatter.state !== 'realized')
+    return false;
+  const evidence = record.frontmatter.evidence;
+  if (!Array.isArray(evidence) || !evidence.includes(targetId)) return false;
+  if (!isLiveFinding(snapshot, targetId)) return false;
+  return !evidence.some((id) => id !== targetId && isLiveFinding(snapshot, id));
+}
+
 function assertCites(
   get: GetRecord,
   effortId: string,
@@ -513,7 +534,10 @@ export function planMutation(
     const dependents: string[] = [];
     for (const record of snapshot.recordsByEffort(effortId)) {
       if (record.id === target.id || isRetracted(record)) continue;
-      if (isSoleCloser(record.frontmatter, target.id))
+      if (
+        isSoleCloser(record.frontmatter, target.id) ||
+        isLastLiveFindingEvidence(record, target.id, snapshot)
+      )
         dependents.push(record.id);
     }
     if (dependents.length)
