@@ -1,3 +1,15 @@
+---
+id: positioning
+title: Flatbread positioning
+section: concepts
+order: 10
+summary: What Flatbread is, who it is for, and what it does not do.
+related:
+  - glossary
+  - pmf-decision-rubric
+  - data-ownership
+---
+
 # Flatbread positioning
 
 For installation and usage, see the [main README](../README.md). For

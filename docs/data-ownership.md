@@ -1,3 +1,14 @@
+---
+id: data-ownership
+title: Data ownership and exit story
+section: concepts
+order: 30
+summary: Your flat files stay the source of truth; exports and types keep them portable.
+related:
+  - json-export
+  - positioning
+---
+
 # Data ownership and exit story
 
 Flatbread's portability story starts with a simple constraint: **your flat files

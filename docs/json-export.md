@@ -1,3 +1,13 @@
+---
+id: json-export
+title: Snapshot export
+section: concepts
+order: 40
+summary: Turn the content graph into portable JSON and CSV review artifacts.
+related:
+  - data-ownership
+---
+
 # Snapshot export
 
 Snapshot exports are part of Flatbread's data ownership story: they turn the

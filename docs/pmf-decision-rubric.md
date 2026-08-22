@@ -1,3 +1,14 @@
+---
+id: pmf-decision-rubric
+title: Comparing Flatbread with other tools
+section: reference
+order: 10
+summary: Where Flatbread fits next to databases, CMSs, and file-based tools.
+related:
+  - positioning
+  - glossary
+---
+
 # Comparing Flatbread with other tools
 
 This page helps explain where Flatbread fits. It compares Flatbread with tools
