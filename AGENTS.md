@@ -59,6 +59,15 @@ The repo uses Mergify stacks for PR management. The `mergify-cli` is installed v
 - The commit-msg hook (`.husky/commit-msg`) auto-appends a `Change-Id` trailer for stack tracking.
 - See `.agents/skills/mergify-stack/SKILL.md` for the full workflow.
 
+### PR review models
+
+The Flatbread PR Review automation runs `.cursor/commands/read-branch.md`
+as `/read-branch`. Architecture, proof-journal, and correctness subagents
+use the **latest Cursor Grok** model. Do not pin `cursor-grok-4.5-high`.
+Prefer `inherit` (or omit Task `model`) so children match the parent.
+Quality/simplify stays on Composer. See
+`.cursor/rules/cursor-grok-latest.mdc`.
+
 ### Gotchas
 
 - **Native build scripts are approved in `pnpm-workspace.yaml`.** The `onlyBuiltDependencies` list allows esbuild, sharp, @swc/core, etc. to run their postinstall scripts automatically during `pnpm install`.
