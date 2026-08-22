@@ -2,36 +2,52 @@
 
 ## Unreleased
 
-- `flatbread proof write` now accepts `Retract`. Session noise and other
-  records that should not stay on the live graph are tombstoned in place:
-  the file remains, browse reads omit it, and the writer strips the id from
-  other records in the same Effort so relation reads do not fail closed.
-  `proof get` still returns the retracted record. Efforts cannot be
+Notes for the Flatbread release train. Some packages also keep their own
+changelog; this file covers the repository as a whole.
+
+## 1.1.0
+
+- `flatbread proof write` now accepts `Retract` (#260). Session noise and
+  other records that should not stay on the live graph are tombstoned in
+  place: the file remains, browse reads omit it, and the writer strips the
+  id from other records in the same Effort so relation reads do not fail
+  closed. `proof get` still returns the retracted record. Efforts cannot be
   retracted; abandon them instead. Do not `git rm` Proof records.
+  Retract refuses a sole closer (the last live record that closes another
+  live record in the same Effort) and refuses the last live Finding on a
+  realized Risk.
 - The Proof skill now applies a 4/4 write gate. Agents score the information
   before a create or a body edit that adds claims; existing records do not
   bypass the gate. Four bundled eval cases ship with the skill for a manual
   eval run.
-- Proof read envelopes now expose `complete` and `cap_reasons`. `page.has_more`
-  is pagination-only and no longer signals the 25-record wall; use
-  `cap_reasons` / `complete` for hard caps on `displayed_edges` and `bytes`.
-  The `primary_records` limit remains an in-process defensive signal because
-  the CLI read bridge slices to 25 records before rendering. Callers can tell
-  paging from hard caps without parsing the digest Markdown or `summary` text.
+- Proof read envelopes now expose `complete` and `cap_reasons` (#254).
+  `page.has_more` is pagination-only and no longer signals the 25-record
+  wall; use `cap_reasons` / `complete` for hard caps on `displayed_edges`
+  and `bytes`. The `primary_records` limit remains an in-process defensive
+  signal because the CLI read bridge slices to 25 records before rendering.
+  An unpaired `hasMore` flag without a non-empty cursor is refused. Callers
+  can tell paging from hard caps without parsing the digest Markdown or
+  `summary` text.
 - **Breaking for writes:** Proof now rejects create-time `derives_from`,
-  `supersedes`, and `invalidates` targets from another Effort. The later
-  `Supersede` and `Invalidate` forms already rejected these edges. Rejected
-  creates write no record or reverse projection and leave the generation
-  unchanged.
-  `flatbread proof relations` now reports stored legacy or hand-edited foreign
-  edges as `PROOF_CROSS_EFFORT_RELATION` instead of dropping them into a
-  successful empty page.
-
-Notes for the Flatbread release train. Some packages also keep their own
-changelog; this file covers the repository as a whole.
+  `supersedes`, and `invalidates` targets from another Effort (#253). The
+  later `Supersede` and `Invalidate` forms already rejected these edges.
+  Rejected creates write no record or reverse projection and leave the
+  generation unchanged.
+  `flatbread proof relations` now reports stored legacy or hand-edited
+  foreign edges as `PROOF_CROSS_EFFORT_RELATION` instead of dropping them
+  into a successful empty page.
+- READMEs and docs use Proof as the product name, not "The Proof" (#259).
+- Brand marks land under `assets/brand/` for docs and GitHub releases
+  (#256).
+- `pnpm publish:ci` now creates the GitHub release from the filed
+  `CHANGELOG.md` section after every public package is on npm (#261).
+  `pnpm publish:dry` runs the same readiness gates without writing.
 
 ## 1.0.1
 
+- All public packages ship at lockstep `1.0.1`.
+- `pnpm publish:ci` treats an npm registry 404 as "not yet published" and
+  continues, instead of aborting the remaining packages.
 - The DAG runner is now `@flatbread/oven` (`pnpm exec oven`); the memory package is now `@flatbread/proof` with the `flatbread proof` CLI.
 - `@flatbread/source-filesystem` reads a content directory that does not exist
   as an empty collection instead of throwing `ENOENT`. Git cannot store an
