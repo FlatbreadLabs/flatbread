@@ -719,3 +719,50 @@ test('snapshot before-image drives journal-compatible end-to-end output', async 
   t.is(result.artifacts[0].frontmatter.status, 'paused');
   t.is(result.artifacts[0].body, 'captured body\n');
 });
+
+test('Retract marks the file and strips inbound ids on survivors', async (t) => {
+  const { root, writer } = await makeWriter();
+  const effort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E', body: '' })
+  );
+  const finding = soleId(
+    await writer.mutate({
+      type: 'WriteFinding',
+      effort,
+      title: 'Noise',
+      body: 'checklist kind was wrong',
+      kind: 'survey',
+    })
+  );
+  const decision = soleId(
+    await writer.mutate({
+      type: 'WriteDecision',
+      effort,
+      title: 'Keep',
+      body: 'durable product rule',
+      derives_from: [finding],
+    })
+  );
+  const result = await writer.mutate({
+    type: 'Retract',
+    recordId: finding,
+    reason: 'session noise; not a turning point',
+  });
+  t.true(result.touched.some((row) => row.id === finding));
+  t.true(result.touched.some((row) => row.id === decision));
+  const retracted = await readFrontmatter(root, `findings/${finding}.md`);
+  t.is(retracted.data.retracted, true);
+  t.is(retracted.data.retracted_reason, 'session noise; not a turning point');
+  t.is(retracted.content.trim(), 'checklist kind was wrong');
+  const survivor = await readFrontmatter(root, `decisions/${decision}.md`);
+  t.is(survivor.data.derives_from, undefined);
+  t.is(survivor.data.retracted, undefined);
+  await t.throwsAsync(
+    writer.mutate({
+      type: 'Retract',
+      recordId: finding,
+      reason: 'again',
+    }),
+    { instanceOf: ProofValidationError, message: /already retracted/ }
+  );
+});

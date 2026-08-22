@@ -1,6 +1,6 @@
 ---
 name: proof
-description: Journal reasoning (decisions, findings, issues, constraints, risks, citations, blobs) into a Flatbread Proof and recall it with bounded reads. Use when starting or resuming a thread of work, recording a decision or finding, resolving an issue, checking what is blocking or still open on an effort, or when the user mentions effort graph, journaling, blocking decisions, agent memory, citation, blob, cites, longform, WriteCitation, or WriteBlob.
+description: Read and update Flatbread Proof, the repository's durable project memory, through bounded queries and typed mutations. Use for recall when resuming a known effort, checking blockers, or when the user mentions Proof or journaling. Use the write path only for a decision-relevant turning point that outlives the current PR or session and adds unique causal rationale. Never journal routine progress, handoffs, review notes, temporary gaps, implementation steps, or journal corrections.
 ---
 
 # Proof — agent journaling and recall
@@ -10,7 +10,7 @@ repository. It has eight record types: **Effort**, **Issue**, **Finding**,
 **Decision**, **Constraint**, and **Risk** capture the work and reasoning;
 **Citation** stores a source or reference; and **Blob** stores attached
 content such as a document, JSON, or image. Every record belongs to one
-Effort. Create and update records through 15 typed mutations, and read them
+Effort. Create and update records through 16 typed mutations, and read them
 through 5 bounded queries. Do not hand-edit record frontmatter, although you
 may edit record bodies freely.
 
@@ -51,7 +51,40 @@ The write journal is `<root>/.journal/`; read digests cache under
 
 ## Writing (journaling)
 
-One command for all 15 mutations — pass the payload as a single JSON argument:
+### Mandatory write gate
+
+Proof is a map of durable reasons, not a work log. How to use Proof lives in
+this skill; do not journal the process itself as a Decision.
+
+Score only new retained information: create mutations and body text that add
+claims. Lifecycle transitions (`AcceptDecision`, `ResolveIssue`,
+`SetEffortStatus`, `MitigateRisk`, `SetRiskState`), `Retract`, and
+`proof cache prune` do not add retained claims and do not need a 4/4 score.
+`Supersede` and `Invalidate` write retained edges; score the reason for the
+edge the same as a create. Body edits that only drop claims stay out of the
+gate.
+
+Before a create or a body edit that adds claims, score the information being
+added — not the record that would receive it. Answer each test in private
+reasoning:
+
+1. **Future need:** Would losing it make a future agent materially
+   misunderstand why the project is shaped this way?
+2. **Durable effect:** Will it outlive the current PR or session and change a
+   product principle, public contract, architecture, constraint, risk, or docs
+   direction?
+3. **Causal value:** Does it explain why that change happened or what evidence
+   could reverse it?
+4. **Unique signal:** Does it add a reason or link that code, docs, Git, the PR
+   or tracker issue, and retained records do not already make clear?
+
+Do not create a record or add body claims unless the information scores
+**4/4**. An existing or open record does not bypass this gate; appending
+low-value text still consumes bounded reads. Keep failed candidates in the
+PR, tracker issue, commit, or run artifact. Citations and Blobs persist only
+when they support a 4/4 record.
+
+One command for all 16 mutations — pass the payload as a single JSON argument:
 
 ```bash
 flatbread proof write '{"type":"WriteDecision","effort":"<eff-id>","title":"...","body":"...","derives_from":["<id>"]}'
@@ -61,7 +94,7 @@ Response: `{"generation":"<token>","artifacts":[{"id","path","operation"}],"touc
 **Capture `artifacts[0].id`** to wire later edges, and **keep `generation`**
 for strict read-your-writes.
 
-Full payload shapes for all 15 mutations: read [reference.md](./reference.md).
+Full payload shapes for all 16 mutations: read [reference.md](./reference.md).
 Critical semantics:
 
 - Creates always start in the initial lifecycle state: `WriteDecision` →
@@ -69,6 +102,12 @@ Critical semantics:
   state; use lifecycle mutations (`AcceptDecision`, `ResolveIssue`,
   `MitigateRisk`, `SetRiskState`) to transition. `WriteCitation` and
   `WriteBlob` have no lifecycle state.
+- `Retract` removes a record from browse reads without deleting the file.
+  Pass a reason. The writer strips that id from other records in the same
+  Effort so reads do not fail closed. Use it for session noise that should
+  never have been journaled. Do not `git rm` records or hand-edit
+  frontmatter. `proof get` still returns a retracted record. Efforts cannot
+  be retracted; abandon them instead.
 - `AcceptDecision` defaults `rejectSiblings: true`, which rejects ALL other
   proposed Decisions in the same Effort. Pass `"rejectSiblings": false`
   unless you deliberately want the competing proposals closed.
@@ -156,14 +195,17 @@ server-side.
    for the full body. Reserve opening `.flatbread-proof/**/*.md` for rare
    cases (e.g. digest byte-cap miss on an oversized record), not normal
    zoom-in.
-3. **During work:** when outside material supports a record, save large
-   content with `WriteBlob` if needed, then create a `WriteCitation`, then
-   create the Issue, Finding, Decision, Constraint, or Risk with
+3. **During work:** apply the write gate above before any create or body
+   edit that adds claims. When outside material supports a 4/4 record, save
+   large content with `WriteBlob` if needed, then create a `WriteCitation`,
+   then create the Issue, Finding, Decision, Constraint, or Risk with
    `cites: ["<cit-id>"]`. You cannot add a citation later, so create the
    Citation first. Open Issues for real gaps or blockers, and use
    `derives_from` on Decisions to link the Findings, Constraints, and Issues
    they respond to.
 4. **On commitment:** `AcceptDecision` (mind `rejectSiblings`), `ResolveIssue`
-   with `resolvedBy` citing the closing Decision/Findings.
+   with `resolvedBy` citing the closing Decision/Findings. These lifecycle
+   transitions do not need a 4/4 score. Retract session noise with `Retract`
+   rather than deleting files.
 5. Maintenance: `flatbread proof cache prune` deletes digests older than
-   24h / over the 100 MiB ceiling.
+   24h / over the 100 MiB ceiling. Prune does not need a 4/4 score.

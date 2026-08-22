@@ -80,6 +80,15 @@ to a Blob. Both links must stay within the same Effort. `flatbread proof relatio
 New edge vocabulary needs a dogfooded query the existing vocabulary cannot
 express.
 
+## Retraction
+
+`Retract` hides a record that should not have been journaled. The file stays
+on disk with `retracted: true` so ids remain resolvable and
+`PROOF_DANGLING_RELATION` does not fire. Browse reads omit retracted
+records. `proof get` still returns the body and the reason. This is not
+supersession (a better same-kind claim) and not invalidation (a Finding that
+the target was wrong). Git is the undo story; there is no Restore mutation.
+
 ## Intentional non-models
 
 Session, Run, Plan, Artifact, Agent, Investigation, Question, Proposal,
