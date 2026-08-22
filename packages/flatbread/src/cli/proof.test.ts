@@ -334,6 +334,133 @@ export default {
 );
 
 test.serial(
+  'spawned CLI exposes complete, paged, byte-, and edge-capped reads',
+  async (t) => {
+    const cwd = await createTempProject('flatbread-effort-completeness-', t);
+    await writeFile(
+      join(cwd, 'flatbread.config.js'),
+      `import { source } from '@flatbread/source-filesystem';
+import { transformer } from '@flatbread/transformer-markdown';
+import { proofContent } from '@flatbread/proof';
+export default {
+  source: source(),
+  transformer: transformer(),
+  content: proofContent('.flatbread-proof'),
+};`
+    );
+    const firstEffort = await handleEffortWrite(
+      JSON.stringify({ type: 'CreateEffort', title: 'First', body: '' }),
+      { cwd }
+    );
+    await handleEffortWrite(
+      JSON.stringify({ type: 'CreateEffort', title: 'Second', body: '' }),
+      { cwd }
+    );
+    const blob = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteBlob',
+        effort: firstEffort.artifacts[0].id,
+        title: 'Large payload',
+        body: 'x'.repeat(70 * 1024),
+        kind: 'markdown',
+      }),
+      { cwd }
+    );
+    const effortId = firstEffort.artifacts[0].id;
+    const citationIds = Array.from(
+      { length: 51 },
+      (_, index) =>
+        `cit-edge-${String(index).padStart(2, '0')}--0123456789abcdef`
+    );
+    const findingId = 'fnd-edge-source--0123456789abcdef';
+    await mkdir(join(cwd, '.flatbread-proof', 'citations'), {
+      recursive: true,
+    });
+    await mkdir(join(cwd, '.flatbread-proof', 'findings'), {
+      recursive: true,
+    });
+    await Promise.all(
+      citationIds.map((id, index) =>
+        writeFile(
+          join(cwd, '.flatbread-proof', 'citations', `${id}.md`),
+          serializeDocument(`https://example.com/${index}`, {
+            id,
+            effort: effortId,
+            title: `Edge ${index}`,
+            created_at: `2025-01-01T00:00:${String(index).padStart(
+              2,
+              '0'
+            )}.000Z`,
+            role: 'evidence',
+          })
+        )
+      )
+    );
+    await writeFile(
+      join(cwd, '.flatbread-proof', 'findings', `${findingId}.md`),
+      serializeDocument('', {
+        id: findingId,
+        effort: effortId,
+        title: 'Edge source',
+        created_at: '2025-01-01T00:01:00.000Z',
+        kind: 'measurement',
+        cites: citationIds,
+      })
+    );
+
+    const completeResult = await runCli(
+      cwd,
+      'proof',
+      'get',
+      firstEffort.artifacts[0].id
+    );
+    t.is(completeResult.code, 0);
+    const complete = JSON.parse(completeResult.stdout);
+    t.true(complete.complete);
+    t.deepEqual(complete.cap_reasons, []);
+
+    const pagedResult = await runCli(cwd, 'proof', 'list', '--limit', '1');
+    t.is(pagedResult.code, 0);
+    const paged = JSON.parse(pagedResult.stdout);
+    t.false(paged.complete);
+    t.deepEqual(paged.cap_reasons, []);
+    t.true(paged.page.has_more);
+    t.truthy(paged.page.next_cursor);
+
+    const cappedResult = await runCli(
+      cwd,
+      'proof',
+      'get',
+      blob.artifacts[0].id
+    );
+    t.is(cappedResult.code, 0);
+    const capped = JSON.parse(cappedResult.stdout);
+    t.false(capped.complete);
+    t.deepEqual(capped.cap_reasons, ['bytes']);
+    t.false(capped.page.has_more);
+    t.is(capped.page.next_cursor, null);
+
+    const edgeResult = await runCli(
+      cwd,
+      'proof',
+      'relations',
+      effortId,
+      findingId,
+      '--relations',
+      'cites'
+    );
+    t.is(edgeResult.code, 0);
+    const edgeCapped = JSON.parse(edgeResult.stdout);
+    t.false(edgeCapped.complete);
+    t.deepEqual(edgeCapped.cap_reasons, ['displayed_edges']);
+    t.true(edgeCapped.page.has_more);
+    t.truthy(edgeCapped.page.next_cursor);
+    t.true(edgeCapped.summary.includes('displayed_edges'));
+    t.true(edgeCapped.summary.includes('pagination'));
+  }
+);
+
+test.serial(
   'effort list defaults to active and supports explicit statuses and cursors',
   async (t) => {
     const cwd = await createTempProject('flatbread-effort-list-', t);
