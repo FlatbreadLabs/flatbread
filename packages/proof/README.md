@@ -52,7 +52,7 @@ contains your project's one `flatbread.config.*` file.
 
 The skill and the `flatbread` package must use the same release. Read
 [`skills/proof/release.json`](./skills/proof/release.json) for the current
-`gitTag` and `flatbreadVersion` — today `v1.1.0` and `1.1.0` — and use those
+`gitTag` and `flatbreadVersion` and use those
 values exactly:
 
 ```bash

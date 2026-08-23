@@ -48,8 +48,7 @@ review them in a pull request, and trace how a choice changed. Nothing lives
 in a private chat log or a hosted store.
 
 The install pins below come from the current
-[Proof release manifest](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/proof/skills/proof/release.json)
-(`v1.1.0` / `1.1.0`). Use the values in that file exactly; do not substitute a
+[Proof release manifest](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/proof/skills/proof/release.json). Use the values in that file exactly; do not substitute a
 floating branch or guessed version.
 
 1. Install the Proof skill and the matching `flatbread` package:
