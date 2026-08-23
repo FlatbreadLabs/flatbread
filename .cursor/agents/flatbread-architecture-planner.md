@@ -27,7 +27,7 @@ Return:
 - Validation plan.
 - Open questions and human checkpoints.
 
-Keep recommendations aligned with `flatbread-flow-pmf-audit.md` and `flatbread-flow-agentic-workflows.md`.
+Keep recommendations aligned with `internal/flatbread-flow-pmf-audit.md` and `internal/flatbread-flow-agentic-workflows.md`.
 
 ## Output Schema For DAG Handoff
 
