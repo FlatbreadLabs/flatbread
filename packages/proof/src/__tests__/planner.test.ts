@@ -166,6 +166,41 @@ test('11 WriteFinding with supersedes', (t) => {
   );
   t.deepEqual(w[1].beforeBytes, s.getRawBytes(ids.finding));
 });
+test('WriteDecision with supersedes transitions the target state', (t) => {
+  const target = record(ids.decision, 'decision', {
+    id: ids.decision,
+    effort: E,
+    title: 'Old',
+    state: 'accepted',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const s = snap([target]);
+  const w = planMutation(
+    {
+      type: 'WriteDecision',
+      id: ids.decision2,
+      effort: E,
+      title: 'New',
+      body: '',
+      supersedes: [ids.decision],
+    },
+    s,
+    '/root',
+    now
+  );
+  const targetFrontmatter = parseDocument(
+    w[1].afterBytes,
+    'decision'
+  ).frontmatter;
+
+  t.deepEqual(
+    w.map((write) => write.id),
+    [ids.decision2, ids.decision]
+  );
+  t.is(targetFrontmatter.state, 'superseded');
+  t.deepEqual(targetFrontmatter.superseded_by, [ids.decision2]);
+  t.deepEqual(w[1].beforeBytes, s.getRawBytes(ids.decision));
+});
 test('12 WriteDecision with invalidates', (t) => {
   const target = record(ids.finding, 'finding', {
     id: ids.finding,

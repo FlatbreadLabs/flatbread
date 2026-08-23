@@ -359,7 +359,10 @@ export function planMutation(
         const reverse =
           edge === 'supersedes' ? 'superseded_by' : 'invalidated_by';
         const current =
-          reverseUpdates.get(target.id)?.frontmatter ?? target.frontmatter;
+          reverseUpdates.get(target.id)?.frontmatter ??
+          (edge === 'supersedes' && target.kind === 'decision'
+            ? supersedeDecisionLifecycle(snapshot, target.id).nextFrontmatter
+            : target.frontmatter);
         reverseUpdates.set(target.id, {
           target,
           frontmatter: {
