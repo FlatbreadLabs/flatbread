@@ -1,6 +1,6 @@
 # Flatbread Flow Agentic Workflows
 
-This playbook turns `flatbread-flow-pmf-audit.md` into an execution workflow for agents working on Flatbread. Use it when planning or implementing product changes that affect the relational content model, GraphQL schema, generated TypeScript, CLI, examples, docs, or release process.
+This playbook turns the PMF audit into an execution workflow for agents working on Flatbread. Use it when planning or implementing product changes that affect the relational content model, GraphQL schema, generated TypeScript, CLI, examples, docs, or release process.
 
 ## Product Direction
 

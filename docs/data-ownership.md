@@ -1,6 +1,6 @@
 # Data ownership and exit story
 
-Flatbread's portability story starts with a simple constraint: **your flat files
+Flatbread's portability rests on one constraint: **your flat files
 remain the source of truth**. Markdown, YAML, and any other source files live in
 your repository, move through normal Git workflows, and can be reviewed without
 a hosted dashboard.
@@ -52,8 +52,8 @@ const csv = await exportCollectionsAsCsv(configResult, {
 ```
 
 Both exports validate the content graph before returning output. Broken refs or
-duplicate IDs fail before snapshots are produced, which keeps the export story
-aligned with Flatbread's relational integrity work.
+duplicate IDs fail before snapshots are produced, which keeps exports
+consistent with the validated content graph.
 
 See [snapshot export docs](./json-export.md) for sort order, path behavior,
 relation handling, and CSV flattening details.
@@ -66,10 +66,9 @@ Flatbread server is running, standard GraphQL tooling can introspect
 GraphQL documents and generated TypeScript operation types are useful migration
 artifacts because they show the read shapes your app depended on.
 
-If you leave Flatbread, the prototype generated read API should be treated as a
-convenience wrapper to replace or reimplement; the raw files, JSON/CSV
-snapshots, GraphQL operation documents, and operation result types are the more
-durable exit surfaces.
+If you leave Flatbread, treat the generated read API as a convenience wrapper
+to replace or reimplement; the raw files, JSON/CSV snapshots, GraphQL operation
+documents, and operation result types are the more durable exit surfaces.
 
 ## What Flatbread does not lock in
 

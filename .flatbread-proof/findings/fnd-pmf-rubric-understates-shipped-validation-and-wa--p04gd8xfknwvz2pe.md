@@ -7,11 +7,13 @@ created_at: '2026-07-19T01:30:56.615Z'
 derives_from:
   - fnd-reference-integrity-is-roadmap-critical--2ss712xpmsfh77xf
   - fnd-unified-watch-loop-is-the-intended-runtime-contr--t9ghag8yqxgf3p5t
+superseded_by:
+  - fnd-comparison-page-now-matches-shipped-watch-and-va--bkat8y0abty4pvcz
 ---
 
 ## Evidence
 
-- `docs/pmf-decision-rubric.md` describes reliable content hot reload as not yet a pillar and treats ordinary content edits requiring a full restart as a no-go signal.
+- `docs/comparison.md` describes reliable content hot reload as not yet a pillar and treats ordinary content edits requiring a full restart as a no-go signal.
 - `docs/local-dev-loop.md` documents `flatbread start --watch` as the supported unified path: valid content/config edits hot-swap the GraphQL schema without restarting the framework.
 - `packages/flatbread/src/cli/index.ts` exposes `start --watch`, and live-server tests cover filesystem watch to schema hot-swap.
 - The same rubric describes configured reference integrity as uneven and suggests silent query-time null chains, while `validateRecords` runs before schema generation and reports duplicate IDs, missing targets, and invalid reference shapes.

@@ -3,7 +3,7 @@
 For installation and usage, see the [main README](../README.md). For
 definitions used in the docs and config, see the [glossary](./glossary.md).
 To compare Flatbread with databases, CMSs, and other file-based tools, see
-[Comparing Flatbread with other tools](./pmf-decision-rubric.md). For keeping
+[Comparing Flatbread with other tools](./comparison.md). For keeping
 and moving your data, see [data ownership](./data-ownership.md).
 
 Flatbread turns files in Git into a typed relational graph. A project has

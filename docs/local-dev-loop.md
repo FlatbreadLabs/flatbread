@@ -40,8 +40,8 @@ Expected behavior:
   hot-swaps, and generated artifact refreshes.
 - Editing a `.graphql` document or a content/config file refreshes
   `generated/graphql.ts`; do not run `flatbread codegen --watch` beside it.
-- The generated content-model types and prototype read API are refreshed by
-  the same codegen command.
+- The generated content-model types and read API are refreshed by the same
+  codegen command.
 - The running GraphQL endpoint at `http://localhost:5057/graphql` hot-swaps
   valid content and config generations without restarting the framework.
 

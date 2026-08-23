@@ -8,7 +8,7 @@ hosted CMS, a full writing product, or a general-purpose database.
 but it is only one option.
 
 See also: [Flatbread positioning](./positioning.md) and
-[Comparing Flatbread with other tools](./pmf-decision-rubric.md).
+[Comparing Flatbread with other tools](./comparison.md).
 
 ---
 
@@ -33,7 +33,7 @@ A **named group** of content of the same kind, declared in your Flatbread config
 
 ### ID
 
-An identifier Flatbread uses to **point at one item within a collection** so relations can resolve. Today, Flatbread expects loaded entries to expose an `id`-shaped value that query arguments and `refs` can compare against; future ID work should keep that rule explicit across files, generated types, and query interfaces. IDs wire the graph together **in the repository**; they are not a centralized “primary key service” like a server database would provide.
+An identifier Flatbread uses to **point at one item within a collection** so relations can resolve. Flatbread expects loaded entries to expose an `id`-shaped value that query arguments and `refs` can compare against. IDs wire the graph together **in the repository**; they are not a centralized "primary key service" like a server database would provide.
 
 Current normalization rule: IDs may be **non-empty strings** or **finite numbers**. Flatbread compares record lookup arguments through a normalized string form, so a record with `id: 123`, a GraphQL argument `id: "123"`, and a GraphQL `ID` integer literal `id: 123` refer to the same record. Top-level equality and membership filters on a collection record’s `id` use the same normalized comparison; ordered filters (`lt`, `gt`, etc.) continue to use normal scalar comparison and should not be treated as stable ID semantics. String IDs are trimmed before comparison, so `id: " 123 "` normalizes to `"123"`. Empty strings, `null`, `undefined`, booleans, objects, `NaN`, and infinite numbers are rejected as invalid record IDs; if more than one record is invalid, Flatbread reports the invalid IDs together. Duplicate IDs after normalization (for example `123` and `"123"` in the same collection) are invalid because they would otherwise resolve inconsistently.
 
@@ -50,8 +50,7 @@ When GraphQL is your **query interface**, the **generated GraphQL schema** descr
 **Generated TypeScript** from GraphQL document codegen (for example, an
 operation result type such as `GetPostsAuthorsAndTagsQuery`) types that way of
 reading data only. Records and relations still come from repository files and
-config. Any future generated TypeScript reader without GraphQL would be
-documented separately.
+config.
 
 ### Record
 
@@ -69,4 +68,4 @@ A **configured link** from entries in one collection to another (for example, `r
 
 ### Validation
 
-Checks that your **Flatbread configuration, plugin wiring, and loaded content graph** are consistent enough to read safely. Near-term validation work should make broken references, duplicate IDs, and unsupported relation shapes clear before they become query-time surprises. This is still scoped to Flatbread’s content graph; it is not a promise of every database constraint or every editorial rule a CMS might enforce.
+Checks that your **Flatbread configuration, plugin wiring, and loaded content graph** are consistent enough to read safely. Broken references, duplicate IDs, and unsupported relation shapes fail before they reach query time. This covers the content graph only; it is not a promise of every database constraint or editorial rule a CMS might enforce.

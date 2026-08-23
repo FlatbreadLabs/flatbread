@@ -79,8 +79,8 @@ pnpm run demo:watch-query
 ```
 
 Then run `pnpm run demo:edit`; the terminal prints updated Markdown
-posts/authors/tags and YAML author query results. Full walkthrough:
-[`docs/edit-file-see-query-update-demo.md`](../../docs/edit-file-see-query-update-demo.md).
+posts/authors/tags and YAML author query results. Restore the files after
+with `pnpm run demo:restore`.
 
 ## Content path
 

@@ -64,7 +64,7 @@ Treat breaking work as a coordinated monorepo release across `flatbread`, `@flat
 
 ## Default DAG Shape
 
-When this skill is run under the external Oven CLI (`@flatbread/oven` from https://github.com/FlatbreadLabs/oven), use the topology in `flatbread-flow-agentic-workflows.md` ("DAG Topology" section). The canonical schema-migration shape — express the DAG via `depends_on` only; the runner computes ranks via Kahn topo-sort. The shape below is what `pnpm exec oven --init-only` produces for the starter template (21 tasks across 7 ranks):
+When this skill is run under the external Oven CLI (`@flatbread/oven` from https://github.com/FlatbreadLabs/oven), use the topology in `internal/flatbread-flow-agentic-workflows.md` ("DAG Topology" section). The canonical schema-migration shape — express the DAG via `depends_on` only; the runner computes ranks via Kahn topo-sort. The shape below is what `pnpm exec oven --init-only` produces for the starter template (21 tasks across 7 ranks):
 
 ```
 rank 1  diag-schema, diag-resolvers, diag-types, diag-codegen, diag-cli,

@@ -43,8 +43,7 @@ console.log(JSON.stringify(snapshot, null, 2));
 
 - JSON export is read-only; it does not mutate source files.
 - Relation values are exported as normalized IDs, not expanded nested records.
-- Source metadata is included today so snapshots are actionable during review.
-  A future option may strip `_path` / `_filename` for content-only diffs.
+- Source metadata is included so snapshots are actionable during review.
 
 ## CSV flat views
 
@@ -53,8 +52,7 @@ CSV export is intentionally a flat view over the same validated JSON snapshot:
 - scalar fields become columns;
 - scalar arrays and relation-id arrays are joined with `;` by default;
 - relation fields remain normalized reference IDs rather than expanded records;
-- nested objects such as `_content` are omitted because they do not yet have a
-  stable flat representation.
+- nested objects such as `_content` are omitted from the flat view;
 - the delimiter defaults to `,`; `;` and tab are also supported;
 - joined array/relation values default to `;`, configurable with
   `relationSeparator`.

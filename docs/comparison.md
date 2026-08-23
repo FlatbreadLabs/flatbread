@@ -1,7 +1,7 @@
 # Comparing Flatbread with other tools
 
-This page helps explain where Flatbread fits. It compares Flatbread with tools
-that people often consider for the same job.
+This page compares Flatbread with tools people often consider for the same job,
+so you can decide whether it fits your project.
 
 **Flatbread in one sentence:** it turns related content files in a TypeScript
 project into data your app can read. GraphQL and codegen are common ways to
@@ -27,9 +27,9 @@ Each column describes a group of tools, not every product in that group.
 | **Local development**          | **Medium–Strong** — `flatbread start --watch` reloads valid content and config changes. Package code and app refresh behavior still need their own rebuild or restart. | **Strong** — local databases and migration tools are well established. | **Varies** — offline work and previews depend on the provider.                          | **Medium–Strong** — many tools rebuild when files change.                             | **Strong for saving files** — structured data updates need extra tooling.                        |
 | **Reading data from an agent** | **Medium** — GraphQL and generated TypeScript can read related data; more direct agent tools are still developing.                                                     | **Strong** when the agent can use SQL safely.                          | **Medium** — HTTP APIs work, but authentication and rate limits add steps.              | **Medium** — build-time access is simple; asking new questions at run time is harder. | **Weak–Medium** — search is common, but structured filtering is less common.                     |
 
-## What to emphasize
+## When to choose Flatbread
 
-| If someone is comparing Flatbread with…    | Explain that Flatbread offers…                                                                                                         |
+| If you are coming from…                    | Flatbread gives you…                                                                                                                   |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
 | **SQLite or Postgres**                     | Content files that stay in Git and can be reviewed in pull requests. It does not replace database transactions or many-writer systems. |
 | **Notion, Contentful, or Sanity**          | Repository ownership and file-based content instead of a hosted editing service.                                                       |
