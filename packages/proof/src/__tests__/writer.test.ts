@@ -97,6 +97,7 @@ test('WriteDecision with supersedes materializes superseded_by on the target fil
   });
   t.is(result.touched.length, 2);
   const target = await readFrontmatter(root, `decisions/${older}.md`);
+  t.is(target.data.state, 'superseded');
   t.deepEqual(target.data.superseded_by, [soleId(result)]);
   const newer = result.artifacts.find((a) => a.operation === 'created')!;
   t.deepEqual(newer.frontmatter.supersedes, [older]);
