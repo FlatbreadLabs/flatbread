@@ -7,6 +7,8 @@ created_at: '2026-07-19T01:30:56.615Z'
 derives_from:
   - fnd-reference-integrity-is-roadmap-critical--2ss712xpmsfh77xf
   - fnd-unified-watch-loop-is-the-intended-runtime-contr--t9ghag8yqxgf3p5t
+superseded_by:
+  - fnd-comparison-page-now-matches-shipped-watch-and-va--bkat8y0abty4pvcz
 ---
 
 ## Evidence
