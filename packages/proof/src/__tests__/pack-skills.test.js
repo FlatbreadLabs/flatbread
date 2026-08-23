@@ -66,6 +66,25 @@ test('pack verification rejects monorepo-only CLI invocations', (t) => {
   t.true(error.message.includes(canonicalFiles[1]));
 });
 
+test('pack verification rejects version placeholders in skill docs', (t) => {
+  const error = t.throws(() =>
+    verifyPackPayload(
+      [{ files: canonicalFiles.map((path) => ({ path })) }],
+      canonicalFiles,
+      [
+        ...canonicalTexts,
+        {
+          path: canonicalFiles[3],
+          text: 'npx skills add .../tree/<gitTag>/packages/proof/skills/proof',
+        },
+      ],
+      packageVersions
+    )
+  );
+  t.true(error.message.includes('version placeholders'));
+  t.true(error.message.includes('install-skill'));
+});
+
 test('pack verification rejects release identity drift', (t) => {
   const error = t.throws(() =>
     verifyReleaseIdentity(

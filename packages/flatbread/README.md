@@ -47,16 +47,17 @@ repository, so the next session and your coworkers read the same reasons,
 review them in a pull request, and trace how a choice changed. Nothing lives
 in a private chat log or a hosted store.
 
-The install pins below come from the current
-[Proof release manifest](https://github.com/FlatbreadLabs/flatbread/blob/main/packages/proof/skills/proof/release.json). Use the values in that file exactly; do not substitute a
-floating branch or guessed version.
-
 1. Install the Proof skill and the matching `flatbread` package:
 
    ```bash
-   npx skills add https://github.com/FlatbreadLabs/flatbread/tree/v1.1.0/packages/proof/skills/proof --skill proof
-   npm install --save-dev flatbread@1.1.0
+   npx --yes flatbread@latest proof install-skill
    ```
+
+   That command downloads the latest `flatbread` CLI, pins that exact version
+   as a devDependency, and copies the Proof skill that shipped with it. You
+   do not copy a version number or git tag. `@latest` only chooses which CLI
+   to run; the project then receives that CLI's exact version. To pin an
+   older release, replace `@latest` with that version.
 
 2. Add the Proof content model to `flatbread.config.js`, keeping any content
    entries you already have:

@@ -83,6 +83,18 @@ export function verifyPackPayload(
       ].join('\n')
     );
   }
+  const placeholderFiles = canonicalTexts
+    .filter((entry) => /<gitTag>|<flatbreadVersion>/.test(entry.text))
+    .map((entry) => entry.path);
+  if (placeholderFiles.length > 0) {
+    throw new Error(
+      [
+        'Canonical skill docs contain version placeholders that block copy-paste:',
+        ...placeholderFiles.map((file) => `  ${file}`),
+        'Tell users to run `npx --yes flatbread@latest proof install-skill` instead.',
+      ].join('\n')
+    );
+  }
   verifyReleaseIdentity(canonicalTexts, packageVersions);
 }
 
