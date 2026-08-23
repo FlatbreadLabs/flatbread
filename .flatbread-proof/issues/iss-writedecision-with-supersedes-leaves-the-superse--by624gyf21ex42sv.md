@@ -3,10 +3,12 @@ id: iss-writedecision-with-supersedes-leaves-the-superse--by624gyf21ex42sv
 effort: eff-effort-graph-memory-and-agent-wedge--szeqvmgqjqnhd002
 title: WriteDecision with supersedes leaves the superseded Decision in state accepted
 kind: defect
-status: open
+status: resolved
 created_at: '2026-07-26T05:07:15.240Z'
 derives_from:
   - fnd-supersession-transitions-decision-state-on-the-r--2m807tcfjz2jz9gt
+resolved_by:
+  - dec-use-semantic-mutations-and-a-standalone-writer--2d0m3tkqhad4yyhr
 ---
 
 ## Problem
