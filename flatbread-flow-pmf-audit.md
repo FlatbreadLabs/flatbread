@@ -6,7 +6,7 @@ Generated from the DAG task runner audit on May 7, 2026.
 > research, not current setup instructions. For the current development steps
 > and watch behavior, see [Local development loop](./docs/local-dev-loop.md).
 
-**Buyer-facing comparison rubric** (SQLite, CMS, Contentlayer-like, agent-artifact workflows; issue #144 acceptance-style criteria): [docs/pmf-decision-rubric.md](./docs/pmf-decision-rubric.md).
+**Buyer-facing comparison rubric** (SQLite, CMS, Contentlayer-like, agent-artifact workflows; issue #144 acceptance-style criteria): [docs/comparison.md](./docs/comparison.md).
 
 Canvas: `file:///Users/tonyketcham/.cursor/projects/Users-tonyketcham-Code-Github-personal-flatbread/canvases/dag-flatbread-pmf-audit.canvas.tsx`
 

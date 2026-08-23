@@ -11,7 +11,7 @@ derives_from:
 
 ## Evidence
 
-- `docs/pmf-decision-rubric.md` describes reliable content hot reload as not yet a pillar and treats ordinary content edits requiring a full restart as a no-go signal.
+- `docs/comparison.md` describes reliable content hot reload as not yet a pillar and treats ordinary content edits requiring a full restart as a no-go signal.
 - `docs/local-dev-loop.md` documents `flatbread start --watch` as the supported unified path: valid content/config edits hot-swap the GraphQL schema without restarting the framework.
 - `packages/flatbread/src/cli/index.ts` exposes `start --watch`, and live-server tests cover filesystem watch to schema hot-swap.
 - The same rubric describes configured reference integrity as uneven and suggests silent query-time null chains, while `validateRecords` runs before schema generation and reports duplicate IDs, missing targets, and invalid reference shapes.
