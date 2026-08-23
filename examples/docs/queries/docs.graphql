@@ -1,0 +1,40 @@
+# GraphQL documents read by the docs site. Codegen includes these when
+# generating typed operations in generated/graphql.ts.
+
+fragment DocPageSummary on DocPage {
+  id
+  _slug
+  title
+  section
+  order
+  summary
+  related
+  _content {
+    excerpt
+    timeToRead
+  }
+}
+
+query GetAllDocPages {
+  allDocPages(sortBy: "order", order: ASC) {
+    ...DocPageSummary
+  }
+}
+
+query GetDocPageById($id: ID!) {
+  DocPage(id: $id) {
+    id
+    _slug
+    title
+    section
+    order
+    summary
+    related
+    _content {
+      raw
+      html
+      excerpt
+      timeToRead
+    }
+  }
+}

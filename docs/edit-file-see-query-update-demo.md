@@ -1,3 +1,13 @@
+---
+id: edit-file-see-query-update-demo
+title: Edit file, see query update demo
+section: guides
+order: 20
+summary: A single-process demo of editing a file and watching the query update.
+related:
+  - local-dev-loop
+---
+
 # Edit file → see query update demo
 
 This is a single-process demo harness, not the long-running `flatbread start`

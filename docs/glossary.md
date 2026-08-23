@@ -1,3 +1,14 @@
+---
+id: glossary
+title: Flatbread glossary
+section: concepts
+order: 20
+summary: Definitions for collections, records, refs, and relations.
+related:
+  - positioning
+  - pmf-decision-rubric
+---
+
 # Flatbread glossary — relational content primitives
 
 This page defines words used by Flatbread. Flatbread turns files in your

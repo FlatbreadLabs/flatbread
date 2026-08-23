@@ -1,0 +1,229 @@
+@import 'tailwindcss';
+
+/*
+  Docs site design tokens. Dark "engineering paper" default: near-black
+  background, warm off-white ink, one lime accent used in three places only
+  (active nav marker, link hover underline, selection). Hairline borders, no
+  rounded corners, no shadows, no gradients. Everything is monospaced.
+*/
+
+:root {
+  --background: #0b0b0c;
+  --foreground: #e6e6e6;
+  --muted: #141417;
+  --muted-foreground: #7a7a82;
+  --accent: #c8ff3e;
+  --border: #2a2a2e;
+  --rule: #3a3a40;
+  --selection: rgba(200, 255, 62, 0.25);
+}
+
+:root[data-theme='light'] {
+  --background: #fafafa;
+  --foreground: #141417;
+  --muted: #f0f0f0;
+  --muted-foreground: #5a5a62;
+  --accent: #4d6800;
+  --border: #d8d8dc;
+  --rule: #c0c0c6;
+  --selection: rgba(77, 104, 0, 0.18);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-border: var(--border);
+  --color-rule: var(--rule);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-mono), ui-monospace, 'SF Mono', Menlo, Consolas,
+    monospace;
+  font-feature-settings: 'liga' 0;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--selection);
+}
+
+/* Prose inside rendered markdown. */
+.prose {
+  max-width: 70ch;
+  color: var(--foreground);
+}
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+  scroll-margin-top: 6rem;
+}
+.prose h1 {
+  font-size: 1.6rem;
+}
+.prose h2 {
+  font-size: 1.25rem;
+}
+.prose h3 {
+  font-size: 1.05rem;
+}
+.prose p,
+.prose ul,
+.prose ol {
+  margin: 0.9rem 0;
+}
+.prose a {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s ease;
+}
+.prose a:hover {
+  text-decoration-color: var(--accent);
+}
+.prose code {
+  font-family: var(--font-mono), monospace;
+  background: var(--muted);
+  padding: 0.1em 0.35em;
+  border: 1px solid var(--border);
+  font-size: 0.85em;
+}
+.prose pre {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+.prose pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+}
+.prose blockquote {
+  border-left: 2px solid var(--rule);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+  margin: 1.25rem 0;
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.5rem;
+}
+.prose li {
+  margin: 0.35rem 0;
+}
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+.prose table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+}
+.prose th,
+.prose td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.prose img {
+  max-width: 100%;
+  border: 1px solid var(--border);
+}
+
+/* The ASCII rule: a line of box-drawing characters with an inline label. */
+.ascii-rule {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--rule);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  user-select: none;
+}
+.ascii-rule::before,
+.ascii-rule::after {
+  content: '';
+  height: 1px;
+  background: var(--rule);
+  min-width: 1rem;
+}
+.ascii-rule[data-align='left']::after {
+  flex: 1;
+}
+.ascii-rule[data-align='right']::before {
+  flex: 1;
+}
+.ascii-rule[data-align='center']::before,
+.ascii-rule[data-align='center']::after {
+  flex: 1;
+}
+.ascii-rule__label {
+  color: var(--muted-foreground);
+}
+.ascii-rule__bracket {
+  color: var(--rule);
+}
+
+/* Terminal-style code block frame. */
+.code-frame {
+  border: 1px solid var(--border);
+  margin: 1.25rem 0;
+}
+.code-frame__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--muted);
+  font-size: 0.72rem;
+  color: var(--muted-foreground);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.code-frame__bar .lang {
+  color: var(--accent);
+}
+.code-frame pre {
+  margin: 0;
+  border: none;
+  background: var(--background);
+}
+
+/* Reduced motion: honor the user's preference. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
