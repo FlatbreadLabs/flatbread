@@ -116,9 +116,16 @@ if [ -f "$REPORT" ]; then
     fail "$REPORT holds only ${program_count} '### ' program blocks; expected at least 25"
   fi
 
-  # A relative date in a funding report is a bug: it goes stale silently.
-  if grep -nEi '\b(next month|last month|this spring|next spring|in the fall|next fall|a few weeks from now)\b' "$REPORT"; then
-    fail "$REPORT uses a relative date; every deadline must carry an absolute date with its year"
+  # A relative date given as a deadline goes stale silently, so reject it. A
+  # rolling cadence ("decided by the end of the next month") is not a date
+  # claim, so only flag a relative phrase standing in for the deadline value.
+  if grep -nEi '^ *\|? *Deadline (—|-|:) *(the )?(next|last|this|coming) (month|week|spring|summer|autumn|fall|winter|year)\b' "$REPORT"; then
+    fail "$REPORT states a deadline as a relative date; every deadline must carry an absolute date with its year"
+  fi
+
+  # These phrases never carry a checkable date, wherever they appear.
+  if grep -nEi '\b(a few weeks from now|sometime soon|in the near future|shortly after this report)\b' "$REPORT"; then
+    fail "$REPORT uses a vague date phrase; name an absolute date or say UNKNOWN"
   fi
 fi
 
