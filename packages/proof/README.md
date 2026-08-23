@@ -90,8 +90,8 @@ export default defineConfig({
 
 `proofContent()` adds eight collections under `.flatbread-proof/`. Pass a
 path — `proofContent('path/to/graph')` — when the project needs another
-root. Every `flatbread proof` command requires this complete preset in the
-config before it will run.
+root. Proof read and write commands require this complete preset in the
+config; `bootstrap` reports when it is missing or incomplete.
 
 ### 3. Ignore the working state
 
