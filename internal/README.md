@@ -6,6 +6,14 @@ documentation**. End-user docs live under [`docs/`](../docs/).
 ## Files
 
 - `flatbread-flow-agentic-workflows.md` — agentic-workflows playbook (execution phases, DAG topology, port-5057 safety, failure recovery, human checkpoints).
+- `funding/` — funding and support programs for Proof. [`funding/README.md`](./funding/README.md)
+  ranks every program the research run kept, with award size, applicant type,
+  status, deadline, how to apply, and a pitch angle.
+  [`funding/deadlines.md`](./funding/deadlines.md) is the same set as a dated
+  calendar. `funding/research/` holds the working lane files behind the report.
+  The DAG that wrote them is
+  `.cursor/dags/flatbread/dag-funding-research.json`. Re-check any figure on the
+  day you apply; funder pages move.
 
 The agent harness uses this playbook as a living reference:
 
