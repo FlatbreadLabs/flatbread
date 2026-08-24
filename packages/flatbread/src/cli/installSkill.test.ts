@@ -85,6 +85,28 @@ test('planProofSkillInstall uses pnpm add and pnpm dlx', (t) => {
   t.deepEqual(plan.addSkill.args.slice(0, 2), ['dlx', 'skills']);
 });
 
+test('planProofSkillInstall uses yarn add and npx, not yarn dlx', (t) => {
+  const plan = planProofSkillInstall('yarn', '1.2.3', '/tmp/proof-skill');
+  t.deepEqual(plan.addPackage, {
+    command: 'yarn',
+    args: ['add', '--dev', '--exact', 'flatbread@1.2.3'],
+  });
+  t.deepEqual(plan.addSkill, {
+    command: 'npx',
+    args: [
+      '--yes',
+      'skills',
+      'add',
+      '/tmp/proof-skill',
+      '--skill',
+      'proof',
+      '--copy',
+      '-y',
+    ],
+  });
+  t.false(plan.addSkill.args.includes('dlx'));
+});
+
 test('detectProjectPackageManager prefers packageManager over lockfiles', async (t) => {
   const cwd = await tempDir('flatbread-install-pm-', t);
   await writeJson(join(cwd, 'package.json'), {

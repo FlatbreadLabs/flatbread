@@ -168,14 +168,16 @@ export function planProofSkillInstall(
         },
       };
     case 'yarn':
+      // Yarn Classic (v1) has no `dlx`. Berry does, but npx is present
+      // wherever this CLI runs. Keep `yarn add` for the package pin.
       return {
         addPackage: {
           command: 'yarn',
           args: ['add', '--dev', '--exact', spec],
         },
         addSkill: {
-          command: 'yarn',
-          args: ['dlx', 'skills', ...skillArgs],
+          command: 'npx',
+          args: ['--yes', 'skills', ...skillArgs],
         },
       };
     case 'bun':
