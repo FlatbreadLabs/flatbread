@@ -4,6 +4,8 @@
 
 <h1 align="center">Flatbread</h1>
 
+<p align="center"><strong>Context alignment, version controlled.</strong></p>
+
 <p align="center">
   <a href="https://github.com/FlatbreadLabs/flatbread/actions/workflows/pipeline.yml">
     <img src="https://github.com/FlatbreadLabs/flatbread/actions/workflows/pipeline.yml/badge.svg" alt="pipeline status"/>
@@ -16,9 +18,12 @@
   </a>
 </p>
 
-Flatbread turns files in Git into a typed relational graph. Each Markdown or
-YAML file becomes a record in a named collection, and `refs` in
-`flatbread.config.js` link records to each other by ID. Your files stay the
+Flatbread keeps shared project context in Git so humans and coding agents
+stay aligned on long-running work. The same files are a typed relational
+graph that a site, docs set, or app can query.
+
+Each Markdown or YAML file becomes a record in a named collection, and `refs`
+in `flatbread.config.js` link records to each other by ID. Your files stay the
 source of truth, with normal Git branches, reviews, and history. GraphQL is
 one read interface over that graph, not the whole product: apps can also read
 it through generated TypeScript, and coding agents read it through bounded
