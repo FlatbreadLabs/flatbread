@@ -7,7 +7,20 @@ export const packageRoot = resolve(
   fileURLToPath(new URL('..', import.meta.url))
 );
 export const canonicalSkillRoot = resolve(packageRoot, 'skills');
-export const forbiddenInvocation = 'node packages/flatbread/bin/flatbread.js';
+export const forbiddenSkillSubstrings = [
+  'node packages/flatbread/bin/flatbread.js',
+  'pnpm skills:sync',
+  'dogfooding this monorepo',
+  'exclusively generated projection',
+];
+
+function collapsed(text) {
+  return text.replace(/\s+/g, ' ');
+}
+
+function skillTextContains(text, needle) {
+  return collapsed(text).includes(collapsed(needle));
+}
 
 export function verifyReleaseIdentity(canonicalTexts, packageVersions) {
   const entry = canonicalTexts.find(
@@ -71,15 +84,20 @@ export function verifyPackPayload(
     );
   }
 
-  const forbiddenFiles = canonicalTexts
-    .filter((entry) => entry.text.includes(forbiddenInvocation))
-    .map((entry) => entry.path);
-  if (forbiddenFiles.length > 0) {
+  const forbiddenHits = [];
+  for (const entry of canonicalTexts) {
+    for (const needle of forbiddenSkillSubstrings) {
+      if (skillTextContains(entry.text, needle)) {
+        forbiddenHits.push({ path: entry.path, needle });
+      }
+    }
+  }
+  if (forbiddenHits.length > 0) {
     throw new Error(
       [
-        `Canonical skill text contains the monorepo-only invocation "${forbiddenInvocation}":`,
-        ...forbiddenFiles.map((file) => `  ${file}`),
-        'Use the installed flatbread CLI instead.',
+        'Canonical skill text contains maintainer-only substrings:',
+        ...forbiddenHits.map((hit) => `  ${hit.path}: "${hit.needle}"`),
+        'Keep packaged skill markdown consumer-only. Maintainer workflow lives in AGENTS.md, CONTRIBUTING.md, and the install-skill skip path.',
       ].join('\n')
     );
   }

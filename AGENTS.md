@@ -73,6 +73,7 @@ Quality/simplify stays on Composer. See
 - **Native build scripts are approved in `pnpm-workspace.yaml`.** The `onlyBuiltDependencies` list allows esbuild, sharp, @swc/core, etc. to run their postinstall scripts automatically during `pnpm install`.
 - **Vitest packages run in watch mode by default.** Always use `vitest run` (not bare `vitest`) to get a single run and exit.
 - **`flatbread` CLI is not on PATH globally.** From `examples/nextjs`, prefer `pnpm exec flatbread …` (local binary), or `npx flatbread` from a shell. The `pnpm play` script from the root handles this automatically.
+- **Proof skill in this monorepo.** Use the workspace `flatbread` binary. After editing `packages/proof/skills/proof`, run `pnpm skills:sync`. Do not run `proof install-skill` here; the CLI skips it.
 - **Build before test.** All packages must be built (`pnpm build`) before running tests or starting dev servers. `pnpm test` handles this automatically.
 - **`-H, --https` does not make Flatbread serve HTTPS.** The server listens over plain HTTP whatever you pass. From `examples/nextjs`, run `pnpm exec flatbread start -- next dev --turbopack`.
 - **Full local CI parity check:** `pnpm verify` runs lint, typecheck, build, and all tests.

@@ -1,10 +1,5 @@
 # Proof setup
 
-The canonical skill files live in this package. The repository
-`.agents/skills/proof/` directory is an exclusively generated
-projection: do not edit it directly, and stale projected files are deleted by
-`pnpm skills:sync`.
-
 ## 1. Install the matching CLI and skill
 
 From the project root, with npm, pnpm, Yarn, or Bun:
@@ -28,9 +23,6 @@ and `packageManager` is unset, it stops rather than guessing.
 `release.json` next to this file is lockstep identity for the packaged
 skill. `skills-lock.json` is installation provenance only; do not treat its
 optional ref or version fields as release identity.
-
-When dogfooding this monorepo, use the workspace `flatbread` binary and
-`pnpm skills:sync`. Do not install Flatbread from npm.
 
 ## 2. Review the configuration
 

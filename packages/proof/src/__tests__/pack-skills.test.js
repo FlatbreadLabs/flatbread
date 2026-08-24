@@ -1,5 +1,6 @@
 import test from 'ava';
 import {
+  forbiddenSkillSubstrings,
   verifyPackPayload,
   verifyReleaseIdentity,
 } from '../../scripts/pack-skills.mjs';
@@ -48,7 +49,28 @@ test('pack verification rejects missing canonical skill files', (t) => {
   t.true(error.message.includes(canonicalFiles[1]));
 });
 
-test('pack verification rejects monorepo-only CLI invocations', (t) => {
+for (const needle of forbiddenSkillSubstrings) {
+  test(`pack verification rejects maintainer-only substring "${needle}"`, (t) => {
+    const error = t.throws(() =>
+      verifyPackPayload(
+        [{ files: canonicalFiles.map((path) => ({ path })) }],
+        canonicalFiles,
+        [
+          ...canonicalTexts,
+          {
+            path: canonicalFiles[1],
+            text: needle,
+          },
+        ],
+        packageVersions
+      )
+    );
+    t.true(error.message.includes(canonicalFiles[1]));
+    t.true(error.message.includes(needle));
+  });
+}
+
+test('pack verification rejects maintainer-only substrings that wrap across lines', (t) => {
   const error = t.throws(() =>
     verifyPackPayload(
       [{ files: canonicalFiles.map((path) => ({ path })) }],
@@ -56,14 +78,15 @@ test('pack verification rejects monorepo-only CLI invocations', (t) => {
       [
         ...canonicalTexts,
         {
-          path: canonicalFiles[1],
-          text: 'node packages/flatbread/bin/flatbread.js',
+          path: canonicalFiles[3],
+          text: 'directory is an exclusively generated\nprojection: do not edit it',
         },
       ],
       packageVersions
     )
   );
-  t.true(error.message.includes(canonicalFiles[1]));
+  t.true(error.message.includes(canonicalFiles[3]));
+  t.true(error.message.includes('exclusively generated projection'));
 });
 
 test('pack verification rejects version placeholders in skill docs', (t) => {
