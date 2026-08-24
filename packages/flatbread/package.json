@@ -2,6 +2,22 @@
   "name": "flatbread",
   "version": "1.1.0",
   "description": "Git-native memory for coding agents and relational content for TypeScript apps. Files in your repo become a typed graph you read over GraphQL, generated TypeScript, or the CLI.",
+  "keywords": [
+    "agent-memory",
+    "coding-agents",
+    "context-engineering",
+    "project-memory",
+    "context-management",
+    "agent-context",
+    "llm-memory",
+    "git-native",
+    "markdown-cms",
+    "git-cms",
+    "file-based-cms",
+    "docs-as-code",
+    "markdown",
+    "knowledge-graph"
+  ],
   "type": "module",
   "scripts": {
     "build": "tsup",
