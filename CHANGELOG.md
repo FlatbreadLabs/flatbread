@@ -2,9 +2,11 @@
 
 ## Unreleased
 
+## 1.2.0
+
 - `flatbread proof install-skill` installs the Proof skill that shipped with
-  the running CLI and pins that same `flatbread` version as a devDependency.
-  End-user docs now tell people to run
+  the running CLI and pins that same `flatbread` version as a devDependency
+  (#267). End-user docs now tell people to run
   `npx --yes flatbread@latest proof install-skill`, so README copy-paste
   blocks no longer need a version or git tag on every release.
 
