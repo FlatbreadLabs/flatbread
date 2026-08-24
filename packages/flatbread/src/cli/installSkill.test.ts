@@ -300,7 +300,12 @@ test.serial('spawned CLI dry-run prints JSON without traces', async (t) => {
         'install-skill',
         '--dry-run',
       ],
-      { cwd }
+      {
+        cwd,
+        // Pipeline CI sets this. The bin must still load dist relative to
+        // itself, not `cwd/node_modules/flatbread`.
+        env: { ...process.env, FLATBREAD_CI: 'true' },
+      }
     );
     let stdout = '';
     let stderr = '';
@@ -309,7 +314,11 @@ test.serial('spawned CLI dry-run prints JSON without traces', async (t) => {
     child.on('error', reject);
     child.on('close', (code) => resolve({ code, stdout, stderr }));
   });
-  t.is(result.code, 0, result.stderr);
+  t.is(result.code, 0, result.stderr || result.stdout);
+  t.true(
+    result.stdout.trim().startsWith('{'),
+    `expected JSON on stdout, got ${JSON.stringify(result.stdout)}`
+  );
   const payload = JSON.parse(result.stdout);
   t.is(payload.status, 'dry_run');
   t.is(payload.package_manager, 'npm');
