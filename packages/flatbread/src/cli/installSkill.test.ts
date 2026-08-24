@@ -9,6 +9,8 @@ import {
   detectProjectPackageManager,
   handleEffortInstallSkill,
   planProofSkillInstall,
+  quoteWindowsCmdArg,
+  resolveExecFileInvocation,
   resolveProofSkillRoot,
 } from './installSkill.js';
 
@@ -186,7 +188,7 @@ test('install-skill skips adding the package when it is already exact', async (t
   });
   t.is(report.package, 'skipped');
   t.is(ran.length, 1);
-  t.true(ran[0] === 'npx' || ran[0] === 'npx.cmd');
+  t.is(ran[0], 'npx');
 });
 
 test('install-skill skips the Flatbread workspace', async (t) => {
@@ -277,6 +279,43 @@ test('end-user install docs are copy-pasteable without version placeholders', as
       `${file} still pins a GitHub tree version`
     );
   }
+});
+
+test('Windows cmd quoting wraps spaces and doubles inner quotes', (t) => {
+  t.is(quoteWindowsCmdArg('npm'), 'npm');
+  t.is(quoteWindowsCmdArg(''), '""');
+  t.is(
+    quoteWindowsCmdArg('C:\\Users\\Jane Doe\\skill'),
+    '"C:\\Users\\Jane Doe\\skill"'
+  );
+  t.is(quoteWindowsCmdArg('foo"bar'), '"foo""bar"');
+});
+
+test('Windows invocations run through cmd.exe so .cmd shims can spawn', (t) => {
+  const unix = resolveExecFileInvocation('linux', 'npm', [
+    'install',
+    '--save-dev',
+    'flatbread@1.1.0',
+  ]);
+  t.deepEqual(unix, {
+    file: 'npm',
+    args: ['install', '--save-dev', 'flatbread@1.1.0'],
+    options: {},
+  });
+
+  const windows = resolveExecFileInvocation('win32', 'npx', [
+    '--yes',
+    'skills',
+    'add',
+    'C:\\Users\\Jane Doe\\proof',
+  ]);
+  t.is(windows.file, process.env.ComSpec || 'cmd.exe');
+  t.deepEqual(windows.args.slice(0, 3), ['/d', '/s', '/c']);
+  t.is(windows.args[3], 'npx --yes skills add "C:\\Users\\Jane Doe\\proof"');
+  t.deepEqual(windows.options, {
+    windowsHide: true,
+    windowsVerbatimArguments: true,
+  });
 });
 
 test.serial('spawned CLI dry-run prints JSON without traces', async (t) => {

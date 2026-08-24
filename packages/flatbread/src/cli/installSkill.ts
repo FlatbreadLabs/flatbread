@@ -257,7 +257,7 @@ export async function handleEffortInstallSkill(
   const run = options.run ?? defaultRun;
   for (const step of commands) {
     try {
-      await run(executable(step.command), step.args, { cwd });
+      await run(step.command, step.args, { cwd });
     } catch (error) {
       throw commandFailed(step, error);
     }
@@ -280,17 +280,51 @@ async function defaultRun(
   args: readonly string[],
   options: { cwd: string }
 ): Promise<{ stdout: string; stderr: string }> {
-  const result = await execFileAsync(command, [...args], {
+  const invocation = resolveExecFileInvocation(process.platform, command, args);
+  const result = await execFileAsync(invocation.file, invocation.args, {
     cwd: options.cwd,
     encoding: 'utf8',
     maxBuffer: 10 * 1024 * 1024,
+    ...invocation.options,
   });
   return { stdout: result.stdout, stderr: result.stderr };
 }
 
-function executable(name: string): string {
-  if (process.platform !== 'win32') return name;
-  return name.endsWith('.cmd') ? name : `${name}.cmd`;
+/**
+ * Build the `execFile` invocation for a package-manager command.
+ *
+ * Node 20.12+ refuses to spawn `.cmd` / `.bat` shims unless `cmd.exe`
+ * runs them. npm, pnpm, Yarn, and Bun all install as `.cmd` on Windows.
+ * `bun` is also `bun.exe`. Going through `ComSpec` lets PATHEXT resolve
+ * both. Unix keeps a direct `execFile`.
+ */
+export function resolveExecFileInvocation(
+  platform: NodeJS.Platform,
+  command: string,
+  args: readonly string[]
+): {
+  file: string;
+  args: string[];
+  options: {
+    windowsHide?: boolean;
+    windowsVerbatimArguments?: boolean;
+  };
+} {
+  if (platform !== 'win32') {
+    return { file: command, args: [...args], options: {} };
+  }
+  const line = [command, ...args].map(quoteWindowsCmdArg).join(' ');
+  return {
+    file: process.env.ComSpec || 'cmd.exe',
+    args: ['/d', '/s', '/c', line],
+    options: { windowsHide: true, windowsVerbatimArguments: true },
+  };
+}
+
+export function quoteWindowsCmdArg(value: string): string {
+  if (value.length === 0) return '""';
+  if (!/[\s"&<>()^|%!]/.test(value)) return value;
+  return `"${value.replace(/"/g, '""')}"`;
 }
 
 async function readProjectPackage(cwd: string): Promise<ProjectPackage> {
