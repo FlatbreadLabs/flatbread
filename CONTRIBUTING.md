@@ -234,17 +234,20 @@ Details:
 Protect release tags in the repository settings so they cannot be moved or
 deleted after publication.
 
-End users install the skill from that release tag and install the matching
-`flatbread` version. Replace `X` with the released version — `1.0.0` for the
-first stable release, so the tag is `v1.0.0`:
+End users do not copy a version or git tag. After a release is on npm they
+run:
 
 ```bash
-npx skills add https://github.com/FlatbreadLabs/flatbread/tree/vX/packages/proof/skills/proof --skill proof
-npm install --save-dev flatbread@X
+npx --yes flatbread@latest proof install-skill
 ```
 
-`skills update` does not advance an immutable tag. To upgrade deliberately,
-install a newer release tag and its matching `flatbread` version.
+That command downloads the published CLI, pins that exact `flatbread`
+version as a devDependency, and copies the Proof skill that shipped inside
+the package. `@latest` only chooses which CLI to run. To pin an older
+release, replace `@latest` with that version.
+
+`skills update` does not advance an immutable install. To upgrade, run the
+installer again from a newer CLI.
 
 ## Troubleshooting
 

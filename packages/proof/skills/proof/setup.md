@@ -1,43 +1,28 @@
 # Proof setup
 
-The canonical skill files live in this package. The repository
-`.agents/skills/proof/` directory is an exclusively generated
-projection: do not edit it directly, and stale projected files are deleted by
-`pnpm skills:sync`.
+## 1. Install the matching CLI and skill
 
-## 1. Choose the package manager
-
-Use the nearest `package.json`'s `packageManager` field first. If it is absent,
-inspect lockfiles. Exactly one of `package-lock.json`, `pnpm-lock.yaml`,
-`yarn.lock`, or `bun.lock`/`bun.lockb` must exist. If multiple conflicting
-lockfiles exist, ask the user which manager owns the project.
-
-For an end-user release, read `release.json` next to this file. It is the
-canonical package and tag authority: use its `flatbreadVersion` and `gitTag`
-values exactly. `skills-lock.json` is installation provenance/restore data only;
-do not use its optional ref or version fields as release identity:
+From the project root, with npm, pnpm, Yarn, or Bun:
 
 ```bash
-npx skills add https://github.com/FlatbreadLabs/flatbread/tree/<gitTag>/packages/proof/skills/proof --skill proof
-npm install --save-dev flatbread@<flatbreadVersion>
+npx --yes flatbread@latest proof install-skill
 ```
 
-Equivalent commands are:
+That command downloads the latest `flatbread` CLI, adds that exact version as
+a devDependency, and copies the Proof skill that shipped with it into your
+agent skill directories. You do not substitute a version or git tag.
 
-```bash
-pnpm dlx skills add https://github.com/FlatbreadLabs/flatbread/tree/<gitTag>/packages/proof/skills/proof --skill proof
-pnpm add -D flatbread@<flatbreadVersion>
+`@latest` only chooses which CLI to run. The installer then pins that CLI's
+exact version in the project — it does not write a floating `latest` range.
+To pin a specific release, replace `@latest` with that version.
 
-yarn dlx skills add https://github.com/FlatbreadLabs/flatbread/tree/<gitTag>/packages/proof/skills/proof --skill proof
-yarn add -D flatbread@<flatbreadVersion>
+The installer detects your package manager from `package.json`'s
+`packageManager` field, then from lockfiles. If several lockfiles conflict
+and `packageManager` is unset, it stops rather than guessing.
 
-bunx skills add https://github.com/FlatbreadLabs/flatbread/tree/<gitTag>/packages/proof/skills/proof --skill proof
-bun add -d flatbread@<flatbreadVersion>
-```
-
-Do not use a floating branch, `latest`, or a guessed version. When dogfooding
-the Flatbread monorepo, use its workspace `flatbread` binary and do not install
-Flatbread from npm.
+`release.json` next to this file is lockstep identity for the packaged
+skill. `skills-lock.json` is installation provenance only; do not treat its
+optional ref or version fields as release identity.
 
 ## 2. Review the configuration
 

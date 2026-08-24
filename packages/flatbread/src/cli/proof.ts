@@ -20,6 +20,7 @@ import {
   listEfforts,
 } from '../proof/read.js';
 import type { PrimitiveKind, ReadRelation } from '@flatbread/proof';
+import { handleEffortInstallSkill } from './installSkill.js';
 
 export interface EffortCliOptions {
   cwd?: string;
@@ -493,6 +494,22 @@ export function registerProofCommands(prog: any): void {
     .option('--verify', 'Exit nonzero when activation is incomplete', false)
     .action(async (options: Record<string, unknown>) =>
       printResult(handleEffortBootstrap(mapEffortCliOptions(options)))
+    );
+  prog
+    .command(
+      'proof install-skill',
+      'Install the Proof skill and matching flatbread package'
+    )
+    .option('--dry-run', 'Print planned actions without writing', false)
+    .option('--skip-package', 'Install the skill only', false)
+    .action(async (options: Record<string, unknown>) =>
+      printResult(
+        handleEffortInstallSkill({
+          dryRun: options['dry-run'] === true || options.dryRun === true,
+          skipPackage:
+            options['skip-package'] === true || options.skipPackage === true,
+        })
+      )
     );
   paginationOptions(
     consistencyOptions(

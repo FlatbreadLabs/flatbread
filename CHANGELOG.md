@@ -2,8 +2,11 @@
 
 ## Unreleased
 
-Notes for the Flatbread release train. Some packages also keep their own
-changelog; this file covers the repository as a whole.
+- `flatbread proof install-skill` installs the Proof skill that shipped with
+  the running CLI and pins that same `flatbread` version as a devDependency.
+  End-user docs now tell people to run
+  `npx --yes flatbread@latest proof install-skill`, so README copy-paste
+  blocks no longer need a version or git tag on every release.
 
 ## 1.1.0
 

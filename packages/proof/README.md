@@ -50,20 +50,19 @@ contains your project's one `flatbread.config.*` file.
 
 ### 1. Install the skill and the matching runtime
 
-The skill and the `flatbread` package must use the same release. Read
-[`skills/proof/release.json`](./skills/proof/release.json) for the current
-`gitTag` and `flatbreadVersion` and use those
-values exactly:
+The skill and the `flatbread` package must use the same release. One command
+does both: it downloads the latest `flatbread` CLI, pins that exact version
+as a devDependency, and copies the Proof skill that shipped with it.
 
 ```bash
-npx skills add https://github.com/FlatbreadLabs/flatbread/tree/v1.1.0/packages/proof/skills/proof --skill proof
-npm install --save-dev flatbread@1.1.0
+npx --yes flatbread@latest proof install-skill
 ```
 
-`npx skills add` runs the `skills` CLI, which copies the pinned skill folder
-from that release tag into your project so agent tools can load it. The
-[setup guide](./skills/proof/setup.md) gives the equivalent pnpm, Yarn, and
-Bun commands.
+`@latest` only chooses which CLI to run. The project then receives that
+CLI's exact version, not a floating range. To pin an older release, replace
+`@latest` with that version. The
+[setup guide](./skills/proof/setup.md) explains how the installer detects
+npm, pnpm, Yarn, or Bun.
 
 ### 2. Add the Proof content model
 
