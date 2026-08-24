@@ -120,6 +120,13 @@ if [ -f "$PROFILE" ]; then
     fail "$PROFILE has ${program_count} program blocks but only ${time_lines} 'Time commitment —' lines"
   fi
 
+  # Every program must trace to a lane file. A writing node that cannot name
+  # where a program came from has invented it.
+  source_lines=$(grep -c '^Source —' "$PROFILE")
+  if [ "$source_lines" -lt "$program_count" ]; then
+    fail "$PROFILE has ${program_count} program blocks but only ${source_lines} 'Source —' provenance lines"
+  fi
+
   if grep -nEi '^ *\|? *Deadline (—|-|:) *(the )?(next|last|this|coming) (month|week|spring|summer|autumn|fall|winter|year)\b' "$PROFILE"; then
     fail "$PROFILE states a deadline as a relative date; every deadline must carry an absolute date with its year"
   fi
@@ -142,9 +149,14 @@ def section(name):
     return m.group(1) if m else ""
 
 
+def normalize(name):
+    """Compare names without tripping on spacing, case, or dash style."""
+    return re.sub(r"\s+", " ", name).strip().strip("`*").casefold().replace("—", "-")
+
+
 def program_names(body):
     """Program names from the first cell of each table row, minus headers."""
-    names = set()
+    names = {}
     for line in body.splitlines():
         line = line.strip()
         if not line.startswith("|"):
@@ -157,8 +169,16 @@ def program_names(body):
             continue
         if name.lower() in {"program", "programme", "step", "date"}:
             continue
-        names.add(name)
+        names[normalize(name)] = name
     return names
+
+
+def detail_headings(body):
+    """Program names from each `### ` heading in the detail section."""
+    return {
+        normalize(m.group(1)): m.group(1).strip()
+        for m in re.finditer(r"^### (.+?)\s*$", body, re.M)
+    }
 
 
 screened = program_names(section("Screened out by this profile"))
@@ -174,8 +194,29 @@ if not planned:
         "no program rows parsed from '## Do these now' / '## Programs by opportunity'"
     )
 
-for name in sorted(screened & planned):
-    problems.append(f"'{name}' is screened out by this profile but still appears in the plan")
+for key in sorted(set(screened) & set(planned)):
+    problems.append(
+        f"'{planned[key]}' is screened out by this profile but still appears in the plan"
+    )
+
+# The report promises one detail block per master-table row. Coincidentally
+# equal counts are not correspondence, so compare the two name sets.
+table = program_names(section("Programs by opportunity"))
+detail = detail_headings(section("Program detail"))
+
+missing_detail = sorted(set(table) - set(detail))
+orphan_detail = sorted(set(detail) - set(table))
+
+if missing_detail:
+    problems.append(
+        f"{len(missing_detail)} master-table rows have no '### ' detail block, "
+        f"starting with: {', '.join(table[k] for k in missing_detail[:5])}"
+    )
+if orphan_detail:
+    problems.append(
+        f"{len(orphan_detail)} detail blocks are absent from the master table, "
+        f"starting with: {', '.join(detail[k] for k in orphan_detail[:5])}"
+    )
 
 if problems:
     for line in problems:
@@ -183,7 +224,8 @@ if problems:
     sys.exit(1)
 
 print(
-    f"consistency ok: {len(screened)} screened out, {len(planned)} planned, no overlap"
+    f"consistency ok: {len(screened)} screened out, {len(planned)} planned, "
+    f"no overlap; {len(table)} master rows each match a detail block"
 )
 PY
   )
