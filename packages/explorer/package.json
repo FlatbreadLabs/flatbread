@@ -1,6 +1,6 @@
 {
   "name": "@flatbread/explorer",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Single-page app for browsing a Flatbread content graph, served by flatbread start. Ships a Proof preset.",
   "type": "module",
   "scripts": {
