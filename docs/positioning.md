@@ -42,6 +42,72 @@ review in Git, and teams building TypeScript sites, internal tools, and starter
 projects that want versioned, reviewable content and links between entries
 without setting up a CMS database.
 
+## Public tagline and GitHub topics
+
+**Tagline:** Context alignment, version controlled.
+
+That line is the GitHub About blurb. It names the problem — people, agents, and
+the record of _why_ drifting apart — and the store (Git). It does not name
+GraphQL, CMS, or Markdown. Keep it. The README and this page explain the two
+paths; the About field should stay short.
+
+### Canonical GitHub topics
+
+GitHub shows at most 20 topics. Topic pages sort by stars. Flatbread had 64
+stars on 24 August 2026, so it only ranks on small, specific topics. Oceans
+such as `javascript` or `ai-agents` hide the repo. Tiny, honest niches already
+show it near the top.
+
+The live list lives in [`.github/topics.json`](../.github/topics.json). That
+file is the payload for GitHub's topics API. A repo admin applies it after
+this change lands on `main`:
+
+```bash
+gh api -X PUT repos/FlatbreadLabs/flatbread/topics --input .github/topics.json
+```
+
+Order is the About sidebar order: agent memory first, then Git/file content.
+
+| Topic                 | Why it is here                                                                           | 24 Aug 2026 snapshot                                                                             |
+| --------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `agent-memory`        | Name of the Proof path. People filter for this.                                          | 2,958 repos. Top of the page is 70k-star work. We will not rank it yet.                          |
+| `coding-agents`       | Who the lead path is for.                                                                | 3,244 repos. Same: demand tag, not a ranking bet.                                                |
+| `context-engineering` | The 2026 name for designing what an agent sees. Flatbread is a versioned context source. | 2,773 repos. High search interest; Java tutorials also wear this tag.                            |
+| `project-memory`      | Exact pain: memory that belongs to the repo, not a chat.                                 | 154 repos. Top repo has 497 stars. 64 stars should land on the first page.                       |
+| `context-management`  | Operational name for stopping context drift.                                             | 1,321 repos. Demand tag.                                                                         |
+| `agent-context`       | Closest topic to the tagline.                                                            | 77 repos. After noise tags (TiDB), the next repos are 1.3k stars and down. 64 stars should show. |
+| `llm-memory`          | Research and memory-library searchers use this, not `agent-memory`.                      | 451 repos. Demand tag; first page is 15k-star work.                                              |
+| `git-native`          | How the store works, without saying "GitHub".                                            | 59 repos. Flatbread is already 6th (64 stars).                                                   |
+| `markdown-cms`        | File-based publishing path, Markdown-shaped.                                             | 13 repos. Flatbread is already 1st.                                                              |
+| `git-cms`             | Git-backed content for sites and docs.                                                   | 17 repos. Flatbread is already 4th, after Nuxt Content and Plenti.                               |
+| `file-based-cms`      | Common search phrase for Contentlayer-class tools.                                       | 14 repos. 64 stars would be 2nd (current 2nd has 35 stars).                                      |
+| `docs-as-code`        | Docs and internal-tool path, smaller than `headless-cms`.                                | 368 repos. First page starts at 3.7k stars; still the honest docs niche.                         |
+
+### Dropped topics
+
+The repo previously used 20 topics, many of them implementation labels.
+
+| Topic                                                                           | Why it is out                                                                                                                                            |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ai-agents`, `markdown`, `javascript`, `typescript`, `nodejs`, `nextjs`, `yaml` | Oceans. 37k–670k repos. A 64-star project never appears. README search still matches those words.                                                        |
+| `graphql`, `graphql-codegen`                                                    | One read interface, not the product.                                                                                                                     |
+| `headless-cms`                                                                  | Real CMS search traffic, but Strapi (73k stars) owns the page. `git-cms` / `markdown-cms` / `file-based-cms` are the niches we can win.                  |
+| `knowledge-graph`                                                               | Proof is a Git-tracked graph of records. The topic page is Neo4j, RAG, and PKM giants (100k-star range). Keep the phrase in prose; do not compete there. |
+| `knowledge-base`, `local-first`, `static-content`                               | Adjacent communities (wikis, CRDTs, SSGs) that are not this product.                                                                                     |
+| `agent-skills`                                                                  | The Proof skill is a distribution channel. This repo is not a skill pack.                                                                                |
+| `mcp`, `rag`, `graph-rag`, `claude-code`                                        | Dishonest until we ship those surfaces. Hitchhiking on `claude-code` (63k repos) would also pin us to one host.                                          |
+
+### What this is not
+
+Do not add empty vanity tags such as `context-alignment` or `durable-memory`
+(single-digit repo counts, no searchers). Do not add `git-based-cms`: Decap CMS
+already owns that 41-repo page, and `git-cms` covers the same idea with a
+better current rank.
+
+Revisit the list when star count crosses a few hundred (demand-topic pages
+become reachable) or when a new surface ships (MCP, hosted search) and a new
+tag becomes true.
+
 **What Flatbread does not do:**
 
 - It is not a hosted CMS, dashboard, or writing UI.
