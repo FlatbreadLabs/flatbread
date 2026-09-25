@@ -6,6 +6,8 @@ kind: hard
 created_at: '2026-08-22T20:28:27.386Z'
 supersedes:
   - con-mutation-enum-stays-deliberately-small--02k06bxbjwrjfp9x
+superseded_by:
+  - con-mutation-enum-stays-deliberately-small--3hw451bsedfj6khs
 ---
 
 V1 has exactly sixteen named mutations. Every operation has a Zod schema, validates against a committed index generation, and owns a defined semantic transition.

@@ -152,7 +152,7 @@ An agent resuming work follows the same bounded loop each time.
    Reads cap at 25 primary records, one relation hop, 50 displayed edges,
    and a 64 KiB digest; check `complete`, `page.has_more`, and `cap_reasons`
    in the envelope before treating a digest as the whole story.
-3. **Write only durable knowledge.** All 16 typed mutations go through one
+3. **Write only durable knowledge.** All 17 typed mutations go through one
    command: `flatbread proof write '<json>'`. Before a create or a body edit
    adds a claim, the packaged skill applies a four-part gate — future need,
    durable effect, causal value, and unique signal — and writes only when
@@ -164,10 +164,12 @@ An agent resuming work follows the same bounded loop each time.
    generation; Proof waits up to 3000 ms by default, then fails with
    `PROOF_GENERATION_WAIT_TIMEOUT`. Do not build a polling loop.
 5. **Close the loop.** Use lifecycle mutations when the team commits to a
-   choice or resolves an Issue. One default deserves care: `AcceptDecision`
-   sets `rejectSiblings` to `true`, which rejects every other proposed
-   Decision in the same Effort — pass `"rejectSiblings":false` unless that
-   is what you mean. When a record should never have entered the graph, use
+   choice or resolves an Issue. `AcceptDecision` rejects only proposed
+   Decisions tied to the same `question` Issue, even after it closes. Pass `rejects` to name
+   other alternatives and `dryRun: true` to preview the changes. Its result
+   lists all changed and rejected Decision ids. `ReopenDecision` restores a
+   rejected Decision to proposed with a reason. When a record should never
+   have entered the graph, use
    `Retract`: the file and reason stay in history, but browse reads omit the
    record. Do not delete record files or hand-edit frontmatter.
 
@@ -226,7 +228,7 @@ service; your normal Git workflow decides when records are shared.
 
 Every command prints one JSON object to standard output; errors print JSON
 to standard error and exit with status 1. The
-[full API reference](./skills/proof/reference.md) lists all 16 mutations,
+[full API reference](./skills/proof/reference.md) lists all 17 mutations,
 read flags, lifecycle states, relation names, paging rules, and error codes.
 
 ## Optional explorer

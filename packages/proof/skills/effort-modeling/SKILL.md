@@ -71,8 +71,9 @@ create a Citation instead of copying the source into the record body:
 
 Record a Decision when it is hard to reverse, surprising without context, and
 the result of a real trade-off. Create it as proposed while the user is still
-deciding; call `AcceptDecision` only after they commit. Always pass
-`"rejectSiblings": false` unless deliberately closing every competing proposal.
+deciding; call `AcceptDecision` only after they commit. It rejects only
+proposals tied to the same `question` Issue, even after it closes. Use `rejects` to name other
+alternatives and `dryRun: true` to review the planned changes first.
 
 Use the long-form body template in [DECISION-BODY.md](./DECISION-BODY.md) when
 the rationale would otherwise be lost. The body is the durable explanation;

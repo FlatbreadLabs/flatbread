@@ -87,7 +87,8 @@ on disk with `retracted: true` so ids remain resolvable and
 `PROOF_DANGLING_RELATION` does not fire. Browse reads omit retracted
 records. `proof get` still returns the body and the reason. This is not
 supersession (a better same-kind claim) and not invalidation (a Finding that
-the target was wrong). Git is the undo story; there is no Restore mutation.
+the target was wrong). Git is the undo path for Retract; `ReopenDecision` only returns a rejected
+Decision to proposed. There is no generic Restore mutation.
 
 ## Intentional non-models
 

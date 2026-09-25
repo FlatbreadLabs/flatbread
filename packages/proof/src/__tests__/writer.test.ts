@@ -369,7 +369,7 @@ test('ResolveIssue rejects non-open issues and cross-effort sources', async (t) 
   );
 });
 
-test('AcceptDecision rejects proposed siblings and leaves others untouched', async (t) => {
+test('AcceptDecision changes only stated alternatives and dry-run predicts the same IDs', async (t) => {
   const { root, writer } = await makeWriter();
   const effort = soleId(
     await writer.mutate({ type: 'CreateEffort', title: 'E1', body: '' })
@@ -377,51 +377,246 @@ test('AcceptDecision rejects proposed siblings and leaves others untouched', asy
   const otherEffort = soleId(
     await writer.mutate({ type: 'CreateEffort', title: 'E2', body: '' })
   );
-  const winner = soleId(
-    await writer.mutate({ type: 'WriteDecision', effort, title: 'W', body: '' })
+  const question = soleId(
+    await writer.mutate({
+      type: 'WriteIssue',
+      effort,
+      title: 'Which model?',
+      body: '',
+      kind: 'question',
+    })
   );
-  const sibling = soleId(
-    await writer.mutate({ type: 'WriteDecision', effort, title: 'S', body: '' })
+  const winner = soleId(
+    await writer.mutate({
+      type: 'WriteDecision',
+      effort,
+      title: 'Winner',
+      body: '',
+      derives_from: [question],
+    })
+  );
+  const alternative = soleId(
+    await writer.mutate({
+      type: 'WriteDecision',
+      effort,
+      title: 'Alternative',
+      body: '',
+      derives_from: [question],
+    })
+  );
+  const unrelated = soleId(
+    await writer.mutate({
+      type: 'WriteDecision',
+      effort,
+      title: 'Other question',
+      body: '',
+    })
   );
   const foreign = soleId(
     await writer.mutate({
       type: 'WriteDecision',
       effort: otherEffort,
-      title: 'Other',
+      title: 'Foreign',
       body: '',
     })
+  );
+  const before = await readFrontmatter(root, `decisions/${alternative}.md`);
+  const preview = await writer.mutate({
+    type: 'AcceptDecision',
+    decisionId: winner,
+    dryRun: true,
+  });
+  t.true(preview.dryRun);
+  t.deepEqual(preview.changedDecisionIds, [winner, alternative]);
+  t.deepEqual(preview.rejectedIds, [alternative]);
+  t.deepEqual(
+    (await readFrontmatter(root, `decisions/${alternative}.md`)).data,
+    before.data
+  );
+  t.is(
+    (await readFrontmatter(root, `decisions/${winner}.md`)).data.state,
+    'proposed'
   );
   const result = await writer.mutate({
     type: 'AcceptDecision',
     decisionId: winner,
   });
-  t.deepEqual(result.touched.map((x) => x.id).sort(), [winner, sibling].sort());
-  const winnerDoc = await readFrontmatter(root, `decisions/${winner}.md`);
-  t.is(winnerDoc.data.state, 'accepted');
-  const siblingDoc = await readFrontmatter(root, `decisions/${sibling}.md`);
-  t.is(siblingDoc.data.state, 'rejected');
-  t.is(siblingDoc.data.rejected_by, winner);
-  const foreignDoc = await readFrontmatter(root, `decisions/${foreign}.md`);
-  t.is(foreignDoc.data.state, 'proposed');
-  t.is(foreignDoc.data.rejected_by, undefined);
-  // A later accept must not touch the already-rejected sibling.
-  const later = soleId(
-    await writer.mutate({ type: 'WriteDecision', effort, title: 'L', body: '' })
+  t.is(Number(result.generation), Number(preview.generation) + 1);
+  t.deepEqual(result.changedDecisionIds, preview.changedDecisionIds);
+  t.deepEqual(result.rejectedIds, preview.rejectedIds);
+  t.is(
+    (await readFrontmatter(root, `decisions/${alternative}.md`)).data
+      .rejected_by,
+    winner
   );
-  const secondAccept = await writer.mutate({
-    type: 'AcceptDecision',
-    decisionId: later,
-  });
-  t.deepEqual(
-    secondAccept.touched.map((x) => x.id),
-    [later]
+  t.is(
+    (await readFrontmatter(root, `decisions/${unrelated}.md`)).data.state,
+    'proposed'
   );
-  const siblingAfter = await readFrontmatter(root, `decisions/${sibling}.md`);
-  t.is(siblingAfter.data.rejected_by, winner);
-  // Accepting a non-proposed decision is rejected.
+  t.is(
+    (await readFrontmatter(root, `decisions/${foreign}.md`)).data.state,
+    'proposed'
+  );
+  await t.throwsAsync(
+    writer.mutate({
+      type: 'AcceptDecision',
+      decisionId: unrelated,
+      rejects: [foreign],
+    }),
+    { instanceOf: ProofValidationError }
+  );
+  t.is(
+    (await readFrontmatter(root, `decisions/${unrelated}.md`)).data.state,
+    'proposed'
+  );
+  await t.throwsAsync(
+    writer.mutate({
+      type: 'AcceptDecision',
+      decisionId: unrelated,
+      rejects: [alternative],
+    }),
+    { instanceOf: ProofValidationError }
+  );
   await t.throwsAsync(
     writer.mutate({ type: 'AcceptDecision', decisionId: winner }),
     { instanceOf: ProofValidationError }
+  );
+});
+
+test('ReopenDecision restores a rejected Decision and records why', async (t) => {
+  const { root, writer } = await makeWriter();
+  const effort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E', body: '' })
+  );
+  const winner = soleId(
+    await writer.mutate({ type: 'WriteDecision', effort, title: 'W', body: '' })
+  );
+  const other = soleId(
+    await writer.mutate({ type: 'WriteDecision', effort, title: 'O', body: '' })
+  );
+  await writer.mutate({
+    type: 'AcceptDecision',
+    decisionId: winner,
+    rejects: [other],
+  });
+  const result = await writer.mutate({
+    type: 'ReopenDecision',
+    decisionId: other,
+    reason: 'Rejected by mistake',
+  });
+  t.deepEqual(result.changedDecisionIds, [other]);
+  const data = (await readFrontmatter(root, `decisions/${other}.md`)).data;
+  t.is(data.state, 'proposed');
+  t.is(data.rejected_by, undefined);
+  t.is(data.reopen_history[0].reason, 'Rejected by mistake');
+  t.is(data.reopen_history[0].rejected_by, winner);
+  await t.throwsAsync(
+    writer.mutate({ type: 'AcceptDecision', decisionId: other }),
+    {
+      instanceOf: ProofValidationError,
+      message: /rejected by accepted Decision/,
+    }
+  );
+  t.is(
+    (await readFrontmatter(root, `decisions/${other}.md`)).data.state,
+    'proposed'
+  );
+  await t.throwsAsync(
+    writer.mutate({
+      type: 'ReopenDecision',
+      decisionId: other,
+      reason: 'again',
+    }),
+    { instanceOf: ProofValidationError }
+  );
+});
+
+test('AcceptDecision refuses a second accepted answer to a closed question', async (t) => {
+  const { root, writer } = await makeWriter();
+  const effort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E', body: '' })
+  );
+  const question = soleId(
+    await writer.mutate({
+      type: 'WriteIssue',
+      effort,
+      title: 'Which?',
+      body: '',
+      kind: 'question',
+    })
+  );
+  const first = soleId(
+    await writer.mutate({
+      type: 'WriteDecision',
+      effort,
+      title: 'First',
+      body: '',
+      derives_from: [question],
+    })
+  );
+  const second = soleId(
+    await writer.mutate({
+      type: 'WriteDecision',
+      effort,
+      title: 'Second',
+      body: '',
+      derives_from: [question],
+    })
+  );
+  await writer.mutate({
+    type: 'AcceptDecision',
+    decisionId: first,
+    rejectSiblings: false,
+  });
+  await writer.mutate({
+    type: 'ResolveIssue',
+    issueId: question,
+    resolution: 'resolved',
+    resolvedBy: [first],
+  });
+  await t.throwsAsync(
+    writer.mutate({ type: 'AcceptDecision', decisionId: second }),
+    {
+      instanceOf: ProofValidationError,
+      message: /already has accepted Decision/,
+    }
+  );
+  t.is(
+    (await readFrontmatter(root, `decisions/${second}.md`)).data.state,
+    'proposed'
+  );
+});
+
+test('Decision preview refuses an unfinished journal without changing records', async (t) => {
+  const { root, writer } = await makeWriter();
+  const effort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'E', body: '' })
+  );
+  const decision = soleId(
+    await writer.mutate({
+      type: 'WriteDecision',
+      effort,
+      title: 'Choice',
+      body: '',
+    })
+  );
+  const generationPath = join(root, '.journal', 'generation.json');
+  const beforeGeneration = await readFile(generationPath, 'utf8');
+  await mkdir(join(root, '.journal', 'txns', 'unfinished'), {
+    recursive: true,
+  });
+  await t.throwsAsync(
+    writer.mutate({
+      type: 'AcceptDecision',
+      decisionId: decision,
+      dryRun: true,
+    }),
+    { instanceOf: ProofValidationError, message: /journal recovery is pending/ }
+  );
+  t.is(await readFile(generationPath, 'utf8'), beforeGeneration);
+  t.is(
+    (await readFrontmatter(root, `decisions/${decision}.md`)).data.state,
+    'proposed'
   );
 });
 

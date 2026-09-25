@@ -1335,3 +1335,81 @@ export default {
     t.is(neighbors.page.returned, 0);
   }
 );
+
+test.serial(
+  'proof write --dry-run previews Decision changes without saving',
+  async (t) => {
+    const cwd = await createTempProject('flatbread-decision-preview-', t);
+    await writeFile(
+      join(cwd, 'flatbread.config.js'),
+      `import { source } from '@flatbread/source-filesystem';
+import { transformer } from '@flatbread/transformer-markdown';
+import { proofContent } from '@flatbread/proof';
+export default { source: source(), transformer: transformer(), content: proofContent('.flatbread-proof') };`
+    );
+    const effort = await handleEffortWrite(
+      JSON.stringify({ type: 'CreateEffort', title: 'Preview', body: '' }),
+      { cwd }
+    );
+    const decision = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteDecision',
+        effort: effort.artifacts[0].id,
+        title: 'Choice',
+        body: '',
+      }),
+      { cwd }
+    );
+    const id = decision.artifacts[0].id;
+    const preview = await runCli(
+      cwd,
+      'proof',
+      'write',
+      JSON.stringify({ type: 'AcceptDecision', decisionId: id }),
+      '--dry-run'
+    );
+    t.is(preview.code, 0);
+    const result = JSON.parse(preview.stdout);
+    t.true(result.dryRun);
+    t.deepEqual(result.changedDecisionIds, [id]);
+    t.deepEqual(result.rejectedIds, []);
+    t.is(result.generation, decision.generation);
+    const saved = await handleEffortGet(id, { cwd });
+    const text = await readFile(saved.artifact_path, 'utf8');
+    t.regex(text, /proposed/);
+    const alternative = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteDecision',
+        effort: effort.artifacts[0].id,
+        title: 'Alternative',
+        body: '',
+      }),
+      { cwd }
+    );
+    const alternativeId = alternative.artifacts[0].id;
+    await handleEffortWrite(
+      JSON.stringify({
+        type: 'AcceptDecision',
+        decisionId: id,
+        rejects: [alternativeId],
+      }),
+      { cwd }
+    );
+    const reopened = await handleEffortWrite(
+      JSON.stringify({
+        type: 'ReopenDecision',
+        decisionId: alternativeId,
+        reason: 'Wrong choice',
+      }),
+      { cwd }
+    );
+    const reopenedGet = await handleEffortGet(alternativeId, {
+      cwd,
+      strictMinGeneration: reopened.generation,
+    });
+    const reopenedText = await readFile(reopenedGet.artifact_path, 'utf8');
+    t.regex(reopenedText, /reopen_history:/);
+    t.regex(reopenedText, /Wrong choice/);
+    t.true(reopenedText.includes(id));
+  }
+);

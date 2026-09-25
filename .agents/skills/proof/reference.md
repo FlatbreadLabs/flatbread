@@ -11,7 +11,7 @@ Generated as `<prefix>-<slug>--<16-char-crockford>` with prefixes `eff`,
 identity. Let the writer generate ids; capture them from mutation results
 (`artifacts[0].id` for creates).
 
-## The 16 mutations (`flatbread proof write '<json>'`)
+## The 17 mutations (`flatbread proof write '<json>'`)
 
 Common optional fields on all creates: `id`, `created_at` (ISO with offset),
 `produced_in`, `created_by` (opaque provenance strings). Forward edge fields
@@ -67,14 +67,23 @@ target was wrong (stronger than superseded).
 
 ```json
 {"type":"ResolveIssue","issueId":"<iss-id>","resolution":"resolved|deferred|wontfix","resolvedBy":["<dec-or-fnd-id>"]}
-{"type":"AcceptDecision","decisionId":"<dec-id>","rejectSiblings":false}
+{"type":"AcceptDecision","decisionId":"<dec-id>","rejects":["<other-dec-id>"],"dryRun":true}
+{"type":"ReopenDecision","decisionId":"<rejected-dec-id>","reason":"Rejected by mistake"}
 {"type":"MitigateRisk","riskId":"<rsk-id>","decisionId":"<accepted-dec-id>"}
 {"type":"SetRiskState","riskId":"<rsk-id>","state":"realized|accepted","evidence":["<fnd-id>"]}
 ```
 
-`AcceptDecision` with `rejectSiblings: true` (the default!) also sets every
-other `proposed` Decision in the Effort to `rejected` with a back-pointer.
-All mutations run in one journal transaction (save-or-undo).
+`AcceptDecision` with `rejectSiblings: true` (the default) rejects only proposed
+Decisions that derive from the same Issue whose `kind` is `question`, even
+once it closes. Use `rejects` to name other alternatives. The result lists `changedDecisionIds`
+and `rejectedIds`. Set `dryRun: true` or pass `--dry-run` to `proof write` to see the same planned changes without
+saving them or advancing `generation`. A preview fails if an earlier journal
+transaction still needs recovery. `ReopenDecision` returns a rejected
+Decision to `proposed`, clears its live `rejected_by` link, and keeps the old
+link and reason in `reopen_history`. Acceptance fails if a shared question
+already has an accepted Decision, or if the proposed Decision was reopened
+after rejection by a still-accepted Decision. Commits run in one journal
+transaction.
 
 ### Retract a record that should not stay on the live graph
 
@@ -103,7 +112,9 @@ written. It is not a hard delete and not a fold into a survivor:
   that remain; after a successful Retract, survivors should have none.
 - Efforts cannot be retracted. Set status to `abandoned` instead.
 - Later creates, `Supersede`, `Invalidate`, and lifecycle mutations reject
-  retracted ids. Git history is the undo story; there is no Restore mutation.
+  retracted ids. Git is the undo path for Retract; `ReopenDecision` only
+  returns a rejected Decision to proposed. There is no generic Restore
+  mutation.
 
 Folding several noisy records into one survivor is a body edit on the
 survivor (score 4/4 if it adds claims) plus `Retract` on the rest.
@@ -113,6 +124,9 @@ survivor (score 4/4 if it adds claims) plus `Retract` on the rest.
 ```json
 {
   "generation": "57",
+  "dryRun": false,
+  "changedDecisionIds": ["dec-..."],
+  "rejectedIds": ["dec-..."],
   "artifacts": [
     { "id": "...", "path": "decisions/....md", "operation": "created|updated" }
   ],

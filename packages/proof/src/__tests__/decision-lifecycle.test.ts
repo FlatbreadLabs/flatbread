@@ -16,8 +16,23 @@ function snapshot(
   states = ['proposed', 'proposed', 'rejected'],
   foreign = false
 ) {
-  return createProofSnapshot(
-    ids.map((id, i) => ({
+  return createProofSnapshot([
+    {
+      id: 'iss-question--0123456789abcdef',
+      kind: 'issue' as const,
+      path: 'issues/question.md',
+      frontmatter: {
+        id: 'iss-question--0123456789abcdef',
+        effort,
+        title: 'Which choice?',
+        created_at: '2025-01-01T00:00:00.000Z',
+        kind: 'question',
+        status: 'open',
+      },
+      body: '',
+      rawBytes: Buffer.from('question'),
+    },
+    ...ids.map((id, i) => ({
       id,
       kind: 'decision' as const,
       path: `decisions/${id}.md`,
@@ -27,11 +42,12 @@ function snapshot(
         title: id,
         created_at: '2025-01-01T00:00:00.000Z',
         state: states[i],
+        ...(i < 2 ? { derives_from: ['iss-question--0123456789abcdef'] } : {}),
       },
       body: '',
       rawBytes: Buffer.from(id),
-    }))
-  );
+    })),
+  ]);
 }
 test('21 acceptance rejects proposed siblings', (t) => {
   const changes = acceptDecisionLifecycle(snapshot(), {
@@ -57,6 +73,7 @@ test('22 supersede flips a Decision target', (t) => {
     title: ids[0],
     created_at: '2025-01-01T00:00:00.000Z',
     state: 'proposed',
+    derives_from: ['iss-question--0123456789abcdef'],
   };
   const change = supersedeDecisionLifecycle(snapshot(), ids[0]);
   t.deepEqual(change.nextFrontmatter, {

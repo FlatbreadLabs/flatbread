@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Proof write contract (#277): `AcceptDecision` now rejects only explicit
+  alternatives tied to the same question Issue or named in `rejects`, reports
+  changed and rejected Decision ids, and supports a journal-safe dry run. The
+  seventeenth typed mutation, `ReopenDecision`, returns a rejected Decision to
+  proposed while retaining rejection history. Acceptance refuses a second
+  winner for the same question or an alternative rejected by a still-accepted
+  Decision. The changed default rejection scope is a breaking behavioral
+  change for callers that relied on Effort-wide rejection.
+
 ## 1.2.0
 
 - `flatbread proof install-skill` installs the Proof skill that shipped with

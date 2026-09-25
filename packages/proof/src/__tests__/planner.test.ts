@@ -394,6 +394,7 @@ test('18 AcceptDecision', (t) => {
     title: 'A',
     created_at: '2025-01-01T00:00:00.000Z',
     state: 'proposed',
+    derives_from: [ids.issue],
   });
   const b = record(ids.decision2, 'decision', {
     id: ids.decision2,
@@ -401,10 +402,19 @@ test('18 AcceptDecision', (t) => {
     title: 'B',
     created_at: '2025-01-01T00:00:00.000Z',
     state: 'proposed',
+    derives_from: [ids.issue],
+  });
+  const question = record(ids.issue, 'issue', {
+    id: ids.issue,
+    effort: E,
+    title: 'Question',
+    created_at: '2025-01-01T00:00:00.000Z',
+    kind: 'question',
+    status: 'open',
   });
   const w = planMutation(
     { type: 'AcceptDecision', decisionId: ids.decision },
-    snap([a, b]),
+    snap([a, b, question]),
     '/root',
     now
   );

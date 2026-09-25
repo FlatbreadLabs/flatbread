@@ -37,6 +37,7 @@ export interface EffortCliOptions {
   cursor?: string;
   relations?: string[];
   verify?: boolean;
+  dryRun?: boolean;
 }
 
 export function mapEffortCliOptions(
@@ -67,6 +68,10 @@ export function mapEffortCliOptions(
       cursor: typeof options.cursor === 'string' ? options.cursor : undefined,
       relations: split(options.relations),
       verify: options.verify === true ? true : undefined,
+      dryRun:
+        options['dry-run'] === true || options.dryRun === true
+          ? true
+          : undefined,
     }).filter(([, value]) => value !== undefined)
   ) as EffortCliOptions;
 }
@@ -117,6 +122,9 @@ export async function handleEffortWrite(
   generation: string;
   artifacts: { id: string; path: string; operation: string }[];
   touched: { id: string; path: string }[];
+  dryRun?: boolean;
+  changedDecisionIds?: string[];
+  rejectedIds?: string[];
 }> {
   const raw: unknown = JSON.parse(json);
   if (
@@ -128,7 +136,18 @@ export async function handleEffortWrite(
     throw new ProofValidationError(
       'CreateEffort does not accept cites; create the Effort before its Citations.'
     );
-  const input = ProofMutationSchema.parse(raw);
+  if (
+    options.dryRun &&
+    (raw === null ||
+      typeof raw !== 'object' ||
+      (raw as Record<string, unknown>).type !== 'AcceptDecision')
+  )
+    throw new ProofValidationError(
+      '--dry-run is only valid for AcceptDecision'
+    );
+  const input = ProofMutationSchema.parse(
+    options.dryRun ? { ...(raw as object), dryRun: true } : raw
+  );
   const cwd = options.cwd ?? process.cwd();
   const writer = createProofWriter({ rootDir: await rootFor(cwd) });
   const result = await writer.mutate(input);
@@ -140,6 +159,9 @@ export async function handleEffortWrite(
       operation,
     })),
     touched: result.touched,
+    dryRun: result.dryRun,
+    changedDecisionIds: result.changedDecisionIds,
+    rejectedIds: result.rejectedIds,
   };
 }
 
@@ -425,6 +447,7 @@ export function registerProofCommands(prog: any): void {
 
   prog
     .command('proof write <json>', 'Write a validated Proof mutation')
+    .option('--dry-run', 'Preview an AcceptDecision without writing', false)
     .action(async (json: string, options: Record<string, unknown>) =>
       printResult(handleEffortWrite(json, mapEffortCliOptions(options)))
     );

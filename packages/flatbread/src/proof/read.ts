@@ -81,6 +81,7 @@ const FRONTMATTER_FIELDS = [
   'invalidated_by',
   'resolved_by',
   'rejected_by',
+  'reopen_history',
   'mitigated_by',
   'evidence',
   'cites',
@@ -374,6 +375,9 @@ class EngineProjection {
       'retracted',
       'retracted_at',
       'retracted_reason',
+      ...((available.has('reopen_history')
+        ? ['reopen_history { at reason rejected_by }']
+        : []) as string[]),
       'derives_from',
       'invalidates',
       'invalidated_by',

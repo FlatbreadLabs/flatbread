@@ -96,6 +96,13 @@ export const AcceptDecisionSchema = z.object({
   type: z.literal('AcceptDecision'),
   decisionId: id,
   rejectSiblings: z.boolean().optional().default(true),
+  rejects: id.array().optional(),
+  dryRun: z.boolean().optional(),
+});
+export const ReopenDecisionSchema = z.object({
+  type: z.literal('ReopenDecision'),
+  decisionId: id,
+  reason: z.string().min(1),
 });
 export const MitigateRiskSchema = z.object({
   type: z.literal('MitigateRisk'),
@@ -127,6 +134,7 @@ export const ProofMutationSchema = z.discriminatedUnion('type', [
   InvalidateSchema,
   ResolveIssueSchema,
   AcceptDecisionSchema,
+  ReopenDecisionSchema,
   MitigateRiskSchema,
   SetRiskStateSchema,
   RetractSchema,

@@ -88,6 +88,7 @@ const FRONTMATTER_KEYS = [
   'invalidated_by',
   'resolved_by',
   'rejected_by',
+  'reopen_history',
   'mitigated_by',
   'evidence',
   'role',
