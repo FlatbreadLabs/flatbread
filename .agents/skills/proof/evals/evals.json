@@ -35,10 +35,10 @@
     {
       "id": 4,
       "prompt": "Maintainers made a project-wide, hard-to-reverse choice: Proof will not add numeric confidence fields to any record type. Uncertainty stays in cited evidence and record prose because scores from different models are not comparable. This will govern schema work, writer behavior, and docs. Preserve the conclusion through the repository's normal process.",
-      "expected_output": "Create and accept one Proof Decision through the typed writer. Pass rejectSiblings false so unrelated proposed Decisions on the same Effort stay proposed. Preserve the rationale, alternatives, consequences, and reversal criteria.",
+      "expected_output": "Create and accept one Proof Decision through the typed writer. Confirm unrelated proposed Decisions on the same Effort stay proposed. Preserve the rationale, alternatives, consequences, and reversal criteria.",
       "assertions": [
         "One durable Proof Decision is created",
-        "AcceptDecision passes rejectSiblings false",
+        "AcceptDecision leaves unrelated proposed Decisions untouched",
         "The rationale explains why model confidence scores are not comparable",
         "The Decision covers schema, writer, and documentation consequences",
         "No unrelated Proof record is created or rejected"

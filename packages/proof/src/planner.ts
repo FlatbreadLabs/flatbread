@@ -8,6 +8,7 @@ import {
 } from './ids.js';
 import {
   acceptDecisionLifecycle,
+  reopenDecisionLifecycle,
   supersedeDecisionLifecycle,
 } from './decision-lifecycle.js';
 import type { ProofSnapshot } from './snapshot.js';
@@ -467,6 +468,7 @@ export function planMutation(
     for (const change of acceptDecisionLifecycle(snapshot, {
       decisionId: input.decisionId,
       rejectSiblings: input.rejectSiblings !== false,
+      rejects: input.rejects,
     }))
       add(
         change.record.id,
@@ -474,6 +476,21 @@ export function planMutation(
         { ...change.nextFrontmatter },
         change.record.body
       );
+    return [...writes.values()];
+  }
+  if (input.type === 'ReopenDecision') {
+    const change = reopenDecisionLifecycle(
+      snapshot,
+      input.decisionId,
+      input.reason,
+      now
+    );
+    add(
+      change.record.id,
+      change.record.kind,
+      { ...change.nextFrontmatter },
+      change.record.body
+    );
     return [...writes.values()];
   }
   if (input.type === 'MitigateRisk') {

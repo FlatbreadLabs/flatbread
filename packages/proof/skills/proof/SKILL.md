@@ -10,7 +10,7 @@ repository. It has eight record types: **Effort**, **Issue**, **Finding**,
 **Decision**, **Constraint**, and **Risk** capture the work and reasoning;
 **Citation** stores a source or reference; and **Blob** stores attached
 content such as a document, JSON, or image. Every record belongs to one
-Effort. Create and update records through 16 typed mutations, and read them
+Effort. Create and update records through 17 typed mutations, and read them
 through 5 bounded queries. Do not hand-edit record frontmatter, although you
 may edit record bodies freely.
 
@@ -57,7 +57,7 @@ Proof is a map of durable reasons, not a work log. How to use Proof lives in
 this skill; do not journal the process itself as a Decision.
 
 Score only new retained information: create mutations and body text that add
-claims. Lifecycle transitions (`AcceptDecision`, `ResolveIssue`,
+claims. Lifecycle transitions (`AcceptDecision`, `ReopenDecision`, `ResolveIssue`,
 `SetEffortStatus`, `MitigateRisk`, `SetRiskState`), `Retract`, and
 `proof cache prune` do not add retained claims and do not need a 4/4 score.
 `Supersede` and `Invalidate` write retained edges; score the reason for the
@@ -84,17 +84,17 @@ low-value text still consumes bounded reads. Keep failed candidates in the
 PR, tracker issue, commit, or run artifact. Citations and Blobs persist only
 when they support a 4/4 record.
 
-One command for all 16 mutations — pass the payload as a single JSON argument:
+One command for all 17 mutations — pass the payload as a single JSON argument:
 
 ```bash
 flatbread proof write '{"type":"WriteDecision","effort":"<eff-id>","title":"...","body":"...","derives_from":["<id>"]}'
 ```
 
-Response: `{"generation":"<token>","artifacts":[{"id","path","operation"}],"touched":[...]}`.
-**Capture `artifacts[0].id`** to wire later edges, and **keep `generation`**
-for strict read-your-writes.
+`AcceptDecision` response: `{"generation":"<token>","dryRun":false,"artifacts":[{"id","path","operation"}],"touched":[...],"changedDecisionIds":["dec-..."],"rejectedIds":["dec-..."]}`.
+For creates, **capture `artifacts[0].id`** to wire later edges. Keep the
+returned `generation` for strict read-your-writes.
 
-Full payload shapes for all 16 mutations: read [reference.md](./reference.md).
+Full payload shapes for all 17 mutations: read [reference.md](./reference.md).
 Critical semantics:
 
 - Creates always start in the initial lifecycle state: `WriteDecision` →
@@ -108,9 +108,13 @@ Critical semantics:
   never have been journaled. Do not `git rm` records or hand-edit
   frontmatter. `proof get` still returns a retracted record. Efforts cannot
   be retracted; abandon them instead.
-- `AcceptDecision` defaults `rejectSiblings: true`, which rejects ALL other
-  proposed Decisions in the same Effort. Pass `"rejectSiblings": false`
-  unless you deliberately want the competing proposals closed.
+- `AcceptDecision` defaults `rejectSiblings: true`, which rejects only
+  proposed Decisions derived from the same `question` Issue, even if the
+  Issue is closed. Use
+  `rejects: ["<dec-id>"]` to name other alternatives. The result lists
+  `changedDecisionIds` and `rejectedIds`; pass `dryRun: true` to preview
+  without saving. Use `ReopenDecision` with a reason to restore a rejected
+  Decision to proposed while keeping its rejection in `reopen_history`.
 - Edges are forward-only in payloads (`derives_from`, `supersedes`,
   `invalidates`); back-edges are materialized automatically.
 - External sources: create a `WriteCitation` record (its body may be a URL,
@@ -203,8 +207,9 @@ server-side.
    Citation first. Open Issues for real gaps or blockers, and use
    `derives_from` on Decisions to link the Findings, Constraints, and Issues
    they respond to.
-4. **On commitment:** `AcceptDecision` (mind `rejectSiblings`), `ResolveIssue`
-   with `resolvedBy` citing the closing Decision/Findings. These lifecycle
+4. **On commitment:** preview `AcceptDecision` with `dryRun: true`, inspect
+   its `rejectedIds`, then commit the acceptance. Use `ResolveIssue` with
+   `resolvedBy` citing the closing Decision/Findings. These lifecycle
    transitions do not need a 4/4 score. Retract session noise with `Retract`
    rather than deleting files.
 5. Maintenance: `flatbread proof cache prune` deletes digests older than

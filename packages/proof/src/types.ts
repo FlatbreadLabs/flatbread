@@ -24,6 +24,9 @@ export interface MutationResult {
   generation: GenerationToken;
   artifacts: WrittenArtifact[];
   touched: TouchedArtifact[];
+  dryRun?: boolean;
+  changedDecisionIds?: string[];
+  rejectedIds?: string[];
 }
 export interface CommittedGenerationPublication {
   rootDir: string;

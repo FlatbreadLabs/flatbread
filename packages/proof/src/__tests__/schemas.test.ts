@@ -79,6 +79,11 @@ const validMutations: Record<string, Record<string, unknown>> = {
     resolvedBy: [dec],
   },
   AcceptDecision: { type: 'AcceptDecision', decisionId: dec },
+  ReopenDecision: {
+    type: 'ReopenDecision',
+    decisionId: dec,
+    reason: 'Rejected by mistake',
+  },
   MitigateRisk: { type: 'MitigateRisk', riskId: rsk, decisionId: dec },
   SetRiskState: {
     type: 'SetRiskState',
@@ -93,9 +98,9 @@ const validMutations: Record<string, Record<string, unknown>> = {
   },
 };
 
-test('each of the 16 mutation schemas accepts a valid input', (t) => {
+test('each of the 17 mutation schemas accepts a valid input', (t) => {
   const types = Object.keys(validMutations);
-  t.is(types.length, 16);
+  t.is(types.length, 17);
   for (const type of types) {
     t.notThrows(() => ProofMutationSchema.parse(validMutations[type]), type);
   }

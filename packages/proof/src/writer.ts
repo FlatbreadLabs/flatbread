@@ -1,6 +1,7 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { acquireWriterLock } from './lock.js';
+import { ProofValidationError } from './errors.js';
 import { commitJournal, recoverJournal } from './journal.js';
 import { planMutation } from './planner.js';
 import { filesystemProofSnapshotSource } from './snapshot.js';
@@ -26,7 +27,21 @@ export function createProofWriter(options: ProofWriterOptions): ProofWriter {
   async function mutate(input: any): Promise<MutationResult> {
     const lock = await acquireWriterLock(options.rootDir, options.lockOptions);
     try {
-      await recoverJournal(options.rootDir, (p) => publisher.publish(p));
+      const dryRun = input.type === 'AcceptDecision' && input.dryRun === true;
+      if (dryRun) {
+        const pending = await readdir(
+          join(options.rootDir, '.journal', 'txns')
+        ).catch((error: { code?: string }) => {
+          if (error.code === 'ENOENT') return [];
+          throw error;
+        });
+        if (pending.length)
+          throw new ProofValidationError(
+            'Cannot preview while journal recovery is pending; recover first'
+          );
+      } else {
+        await recoverJournal(options.rootDir, (p) => publisher.publish(p));
+      }
       let current = 0;
       try {
         current =
@@ -46,14 +61,16 @@ export function createProofWriter(options: ProofWriterOptions): ProofWriter {
         options.randomBytes
       );
       const generation = Number(current) + 1;
-      const tx = await commitJournal(
-        options.rootDir,
-        lock.token,
-        writes,
-        generation,
-        (p) => publisher.publish(p),
-        () => lock.verify()
-      );
+      const tx = dryRun
+        ? String(current)
+        : await commitJournal(
+            options.rootDir,
+            lock.token,
+            writes,
+            generation,
+            (p) => publisher.publish(p),
+            () => lock.verify()
+          );
       const artifacts: WrittenArtifact[] = writes.map((w) => {
         const parsed = parseDocument(w.afterBytes, w.kind);
         return {
@@ -69,6 +86,17 @@ export function createProofWriter(options: ProofWriterOptions): ProofWriter {
         generation: tx,
         artifacts,
         touched: writes.map((w) => ({ id: w.id, path: w.relativePath })),
+        ...(input.type === 'AcceptDecision'
+          ? {
+              dryRun,
+              changedDecisionIds: writes.map((w) => w.id),
+              rejectedIds: artifacts
+                .filter((a) => a.frontmatter.state === 'rejected')
+                .map((a) => a.id),
+            }
+          : input.type === 'ReopenDecision'
+          ? { changedDecisionIds: writes.map((w) => w.id) }
+          : {}),
       };
     } finally {
       await lock.release();
