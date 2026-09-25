@@ -1,1 +1,6 @@
-Correct the Proof skill wording for cross-Effort Retract and split a joined bullet found during the #279 integration check.
+Revision history for #280:
+
+rev 2 (content) 2026-09-25 10:21 UTC — Correct the Proof skill wording for cross-Effort Retract and split a joined bullet found during the #279 integration check.
+rev 1 (initial) 2026-09-25 10:21 UTC
+
+<!-- mergify-revision-data: {"schema_version":1,"pull_number":280,"entries":[{"number":1,"change_type":"initial","old_sha":null,"new_sha":"c8689e31debdd4eb8d36dfbcc0735361d3c6db6b","timestamp_iso":"2026-09-25T10:21:23Z","reason":"","replay_sha":null,"compare_url":null},{"number":2,"change_type":"content","old_sha":"c8689e31debdd4eb8d36dfbcc0735361d3c6db6b","new_sha":"34951bb55b6cd4bf7572aaa4be31cf75c6317812","timestamp_iso":"2026-09-25T10:21:23Z","reason":"Correct the Proof skill wording for cross-Effort Retract and split a joined bullet found during the #279 integration check.","replay_sha":null,"compare_url":"https://github.com/FlatbreadLabs/flatbread/compare/c8689e31debdd4eb8d36dfbcc0735361d3c6db6b...34951bb55b6cd4bf7572aaa4be31cf75c6317812"}]} -->
