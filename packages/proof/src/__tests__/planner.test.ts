@@ -57,7 +57,7 @@ function one(
 ) {
   t.is(writes.length, 1);
   t.is(writes[0].id, id);
-  t.is(writes[0].relativePath, path);
+  t.is(writes[0].relativePath.replace(/\\/g, '/'), path);
   t.is(writes[0].operation, op);
   t.deepEqual(
     parseDocument(writes[0].afterBytes, writes[0].kind).frontmatter,
@@ -891,7 +891,44 @@ test('derives_from accepts the record governing Effort', (t) => {
   });
 });
 
-test('create relations reject targets from another Effort', (t) => {
+test('derives_from accepts a live record in another Effort without a reverse write', (t) => {
+  const foreignFindingId = 'fnd-foreign--0123456789abcdef';
+  const s = snap([
+    record(E2, 'effort', {
+      id: E2,
+      title: 'E2',
+      created_at: '2025-01-01T00:00:00.000Z',
+      status: 'active',
+    }),
+    record(foreignFindingId, 'finding', {
+      id: foreignFindingId,
+      effort: E2,
+      title: 'Foreign',
+      kind: 'measurement',
+      created_at: '2025-01-01T00:00:00.000Z',
+    }),
+  ]);
+  const writes = planMutation(
+    {
+      type: 'WriteDecision',
+      id: ids.decision,
+      effort: E,
+      title: 'Feature choice',
+      body: '',
+      derives_from: [foreignFindingId],
+    },
+    s,
+    '/root',
+    now
+  );
+  t.is(writes.length, 1);
+  t.is(writes[0].id, ids.decision);
+  t.deepEqual(
+    parseDocument(writes[0].afterBytes, 'decision').frontmatter.derives_from,
+    [foreignFindingId]
+  );
+});
+test('state-changing create relations reject targets from another Effort', (t) => {
   const otherEffort = record(E2, 'effort', {
     id: E2,
     title: 'E2',
@@ -908,17 +945,6 @@ test('create relations reject targets from another Effort', (t) => {
   });
   const s = snap([otherEffort, foreignFinding]);
   const attempts: { relation: string; input: ProofMutation }[] = [
-    {
-      relation: 'derives_from',
-      input: {
-        type: 'WriteDecision',
-        id: ids.decision,
-        effort: E,
-        title: 'Cross derive',
-        body: '',
-        derives_from: [foreignFindingId],
-      },
-    },
     {
       relation: 'supersedes',
       input: {

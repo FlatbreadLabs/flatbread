@@ -16,10 +16,11 @@ identity. Let the writer generate ids; capture them from mutation results
 Common optional fields on all creates: `id`, `created_at` (ISO with offset),
 `produced_in`, `created_by` (opaque provenance strings). Forward edge fields
 on all creates except `CreateEffort`, `WriteCitation`, and `WriteBlob`:
-`derives_from[]`, `supersedes[]`, `invalidates[]` (arrays of existing ids;
-targets are validated and must stay in the new record's Effort). An Effort
-record counts as belonging to itself, so a record may `derive_from` its own
-governing Effort.
+`derives_from[]`, `supersedes[]`, `invalidates[]` (arrays of existing ids).
+`derives_from` can name a live record in any Effort. It records a cause but
+changes no target. `supersedes` and `invalidates` change targets and must stay
+in the new record's Effort. An Effort record counts as belonging to itself, so
+a record may `derives_from` its own governing Effort.
 
 Optional `cites[]` on Issue, Finding, Decision, Constraint, and Risk creates:
 existing **Citation** ids in the **same Effort**. Create Citations first, then
@@ -105,7 +106,7 @@ written. It is not a hard delete and not a fold into a survivor:
   `retracted_reason`. The body is unchanged so `proof get` can still explain
   what was removed.
 - On a successful Retract, the writer clears that record's relation fields
-  and strips its id from every other record in the same Effort in the same
+  and strips its id from every other record across all Efforts in the same
   journal transaction.
 - Browse reads (`list`, `records`, `blocking-decisions`) omit retracted
   records. `proof get` still returns them. `relations` follows stored edges
@@ -216,7 +217,14 @@ flatbread proof cache prune
   `invalidated_by`, `resolved_by`, and `evidence`, the CLI returns
   `PROOF_DANGLING_RELATION`. Flatbread's core reference check rejects missing
   targets for the other relations. A stored target from another Effort returns
-  `PROOF_CROSS_EFFORT_RELATION`; it never becomes a successful empty page.
+  `PROOF_CROSS_EFFORT_RELATION` for state-changing or `cites` edges. A foreign
+  `derives_from` target appears as one checkpoint line with its Effort id,
+  kind, and current state. Its body is not expanded. Page through more targets
+  with `--cursor`; `proof get <targetId>` opens one explicitly.
+- `MitigateRisk` still links a Risk to an accepted Decision in the same Effort.
+  For a feature Decision in another Effort, write and accept a Decision in the
+  Risk's Effort that `derives_from` the feature Decision, then use that local
+  Decision to mitigate the Risk.
 - `--resolve head`: follow `superseded_by` to the current tip; ancestors
   render as checkpoint lines (max 5, then a count).
 - `blocking-decisions` membership (frozen): Decision in the effort with
@@ -232,8 +240,8 @@ flatbread proof cache prune
 - Errors (stderr JSON, exit 1): `PROOF_GENERATION_WAIT_TIMEOUT`,
   `PROOF_INVALID_CURSOR` (cursor reused across a different query or
   generation), `PROOF_DANGLING_RELATION` (a stored relation target is missing),
-  and `PROOF_CROSS_EFFORT_RELATION` (a stored relation target belongs to another
-  Effort).
+  and `PROOF_CROSS_EFFORT_RELATION` (a stored state-changing or `cites`
+  target belongs to another Effort).
 
 ## Configuration surface
 

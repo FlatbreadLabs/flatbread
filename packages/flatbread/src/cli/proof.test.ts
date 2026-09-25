@@ -924,6 +924,12 @@ export default {
         derives_from: [missingId],
       })
     );
+    const getResult = await handleEffortGet(decisionId, { cwd });
+    t.true(
+      (await readFile(getResult.artifact_path, 'utf8')).includes(
+        'Written before its evidence existed.'
+      )
+    );
     const error = await t.throwsAsync<ProofDanglingRelationError>(
       () =>
         handleEffortRelations(effortId, decisionId, {
@@ -957,7 +963,97 @@ export default {
 );
 
 test.serial(
-  'cross-Effort relations reject on write and report legacy edges',
+  'foreign causal references page without expanding target bodies',
+  async (t) => {
+    const cwd = await createTempProject('flatbread-foreign-causal-pages-', t);
+    await writeFile(
+      join(cwd, 'flatbread.config.js'),
+      `import { source } from '@flatbread/source-filesystem';
+import { transformer } from '@flatbread/transformer-markdown';
+import { proofContent } from '@flatbread/proof';
+export default { source: source(), transformer: transformer(), content: proofContent('.flatbread-proof') };`
+    );
+    const domain = (
+      await handleEffortWrite(
+        JSON.stringify({ type: 'CreateEffort', title: 'Domain', body: '' }),
+        { cwd }
+      )
+    ).artifacts[0].id;
+    const feature = (
+      await handleEffortWrite(
+        JSON.stringify({ type: 'CreateEffort', title: 'Feature', body: '' }),
+        { cwd }
+      )
+    ).artifacts[0].id;
+    const causes: string[] = [];
+    for (let i = 0; i < 26; i++) {
+      const result = await handleEffortWrite(
+        JSON.stringify({
+          type: 'WriteFinding',
+          effort: domain,
+          title: `Cause ${i}`,
+          body: `foreign body ${i}`,
+          kind: 'measurement',
+        }),
+        { cwd }
+      );
+      causes.push(result.artifacts[0].id);
+    }
+    const decision = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteDecision',
+        effort: feature,
+        title: 'Feature choice',
+        body: '',
+        derives_from: causes,
+      }),
+      { cwd }
+    );
+    const fromId = decision.artifacts[0].id;
+    const first = await handleEffortRelations(feature, fromId, {
+      cwd,
+      relations: ['derives_from'],
+      limit: 25,
+      strictMinGeneration: decision.generation,
+    });
+    t.is(first.page.returned, 25);
+    t.true(first.page.has_more);
+    const firstDigest = await readFile(first.artifact_path, 'utf8');
+    t.is((firstDigest.match(/^- foreign derives_from/gm) ?? []).length, 25);
+    t.false(firstDigest.includes('foreign body'));
+    const got = await handleEffortGet(fromId, {
+      cwd,
+      strictMinGeneration: decision.generation,
+    });
+    const getDigest = await readFile(got.artifact_path, 'utf8');
+    t.is((getDigest.match(/^foreign derives_from/gm) ?? []).length, 25);
+    t.true(
+      getDigest.includes(
+        '1 more foreign references; use proof relations to page through them'
+      )
+    );
+    t.false(getDigest.includes('foreign body'));
+    const second = await handleEffortRelations(feature, fromId, {
+      cwd,
+      relations: ['derives_from'],
+      limit: 25,
+      cursor: first.page.next_cursor ?? undefined,
+      strictMinGeneration: decision.generation,
+    });
+    t.is(second.page.returned, 1);
+    t.false(second.page.has_more);
+    t.is(
+      (
+        (await readFile(second.artifact_path, 'utf8')).match(
+          /^- foreign derives_from/gm
+        ) ?? []
+      ).length,
+      1
+    );
+  }
+);
+test.serial(
+  'cross-Effort causal links read as checkpoints while state edges fail closed',
   async (t) => {
     const cwd = await createTempProject('flatbread-effort-cross-edge-', t);
     await writeFile(
@@ -1002,6 +1098,14 @@ export default {
       { cwd }
     );
     const decisionAId = decisionA.artifacts[0].id;
+    await handleEffortWrite(
+      JSON.stringify({
+        type: 'AcceptDecision',
+        decisionId: decisionAId,
+        rejectSiblings: false,
+      }),
+      { cwd }
+    );
 
     const ownEffortDecision = await handleEffortWrite(
       JSON.stringify({
@@ -1034,17 +1138,37 @@ export default {
       { cwd }
     );
     const decisionBId = decisionB.artifacts[0].id;
+    const crossDerive = await handleEffortWrite(
+      JSON.stringify({
+        type: 'WriteDecision',
+        effort: effortBId,
+        title: 'Cross derive',
+        body: '',
+        derives_from: [decisionAId],
+      }),
+      { cwd }
+    );
+    t.is(crossDerive.touched.length, 1);
+    const crossDeriveId = crossDerive.artifacts[0].id;
+    const causalRead = await handleEffortRelations(effortBId, crossDeriveId, {
+      cwd,
+      relations: ['derives_from'],
+      strictMinGeneration: crossDerive.generation,
+    });
+    t.is(causalRead.page.returned, 1);
+    t.true(causalRead.complete);
+    const checkpoint = `foreign derives_from -> ${decisionAId} (decision; effort ${effortAId}; state accepted)`;
+    const causalDigest = await readFile(causalRead.artifact_path, 'utf8');
+    t.true(causalDigest.includes(checkpoint));
+    t.false(causalDigest.includes('### ' + decisionAId));
+    const recordRead = await handleEffortGet(crossDeriveId, {
+      cwd,
+      strictMinGeneration: crossDerive.generation,
+    });
+    t.true(
+      (await readFile(recordRead.artifact_path, 'utf8')).includes(checkpoint)
+    );
     const rejectedWrites = [
-      {
-        relation: 'derives_from',
-        input: {
-          type: 'WriteDecision',
-          effort: effortBId,
-          title: 'Cross derive',
-          body: '',
-          derives_from: [findingAId],
-        },
-      },
       {
         relation: 'supersedes',
         input: {
@@ -1083,7 +1207,7 @@ export default {
           'utf8'
         )
       ).generation,
-      Number(decisionB.generation)
+      Number(crossDerive.generation)
     );
 
     await writeFile(
@@ -1114,11 +1238,6 @@ export default {
 
     const forwardEdges = [
       {
-        relation: 'derives_from',
-        to_id: findingAId,
-        target_effort_id: effortAId,
-      },
-      {
         relation: 'supersedes',
         to_id: decisionAId,
         target_effort_id: effortAId,
@@ -1133,7 +1252,7 @@ export default {
       () =>
         handleEffortRelations(effortBId, decisionBId, {
           cwd,
-          relations: ['derives_from', 'supersedes', 'invalidates'],
+          relations: ['supersedes', 'invalidates'],
           strictMinGeneration: decisionB.generation,
         }),
       { instanceOf: ProofCrossEffortRelationError }
@@ -1141,7 +1260,7 @@ export default {
     t.deepEqual(forwardError?.shape, {
       error: {
         code: 'PROOF_CROSS_EFFORT_RELATION',
-        message: `Record ${decisionBId} in effort ${effortBId} stores relation targets outside that effort: derives_from -> ${findingAId} (effort ${effortAId}), supersedes -> ${decisionAId} (effort ${effortAId}), invalidates -> ${decisionAId} (effort ${effortAId})`,
+        message: `Record ${decisionBId} in effort ${effortBId} stores relation targets outside that effort: supersedes -> ${decisionAId} (effort ${effortAId}), invalidates -> ${decisionAId} (effort ${effortAId})`,
         effort_id: effortBId,
         from_id: decisionBId,
         edges: forwardEdges,
@@ -1178,7 +1297,7 @@ export default {
       effortBId,
       decisionBId,
       '--relations',
-      'derives_from,supersedes,invalidates',
+      'supersedes,invalidates',
       '--strict-min-generation',
       decisionB.generation
     );

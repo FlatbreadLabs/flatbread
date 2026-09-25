@@ -37,11 +37,12 @@ which keeps reads small and gives each piece of evidence a clear home.
 | **Blob**       | Attached content such as a document, JSON payload, or image |
 
 Typed relations preserve the reasoning between records. A Decision can
-`derive_from` the Findings, Constraints, and Issues it responds to. A Finding
+`derives_from` the Findings, Constraints, and Issues it responds to. A Finding
 can `invalidate` an older Finding or Decision. Records cite evidence through
 `cites`, which names Citation records; a Citation can attach one Blob. Proof
-validates every link and keeps it within one Effort. The
-[Proof glossary](./skills/proof/glossary.md) gives the exact meanings.
+validates every link. Causal `derives_from` references may reach live records
+in other Efforts; state-changing links and `cites` stay within one Effort.
+The [Proof glossary](./skills/proof/glossary.md) gives the exact meanings.
 
 ## First success
 
@@ -189,6 +190,11 @@ Tracked records live in eight directories under the graph root:
 └── blobs/
 ```
 
+A feature Effort can keep its Decisions together while each Decision
+`derives_from` live records in other Efforts. `proof relations` shows each
+foreign cause as a one-line checkpoint with its Effort id and current state.
+Use `proof get <id>` when you need the target's body. Links that change a
+target's state, including `supersedes` and `invalidates`, stay in one Effort.
 A single mutation may touch several of these files, because Proof
 materializes reverse links and lifecycle changes together. The writer
 validates IDs, record kinds, and Effort boundaries first, then applies the
