@@ -7,6 +7,10 @@ so you can decide whether it fits your project.
 project into data your app can read. GraphQL and codegen are common ways to
 read that data, but they are not the product itself.
 
+Public tagline: **Context alignment, version controlled.** See
+[Flatbread positioning](./positioning.md) for the GitHub About blurb and
+the topic list used for discovery.
+
 ## How to use this table
 
 Each column describes a group of tools, not every product in that group.
