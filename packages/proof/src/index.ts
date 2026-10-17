@@ -13,6 +13,7 @@ export { recoverJournal } from './journal.js';
 export * from './live.js';
 export * from './journalBarrier.js';
 export * from './digest.js';
+export * from './compaction.js';
 export {
   READ_RELATIONS,
   ProofConsistencyError,

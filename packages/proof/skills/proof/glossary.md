@@ -30,6 +30,13 @@ Findings cite evidence, resolve Issues, inform Decisions, surface Risks, and
 may invalidate past Findings or Decisions. A retrospective Finding is evidence
 gathered after a decision shipped.
 
+A **compaction** is a Finding with `kind: compaction`, written only through
+`WriteCompaction`. It gives one short, current account of an Effort and links
+to the records behind it through `derives_from`. Its `covers` field, set by
+the writer, records which records were live and where each stood, so a later
+read can list exactly what changed. Each compaction supersedes the one before
+it.
+
 ### Decision
 
 A commitment among alternatives. A proposed Decision is an active alternative;

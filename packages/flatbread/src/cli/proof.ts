@@ -14,6 +14,7 @@ import {
 } from '@flatbread/proof';
 import {
   blockingDecisions,
+  effortBrief,
   effortRecords,
   relations,
   getRecord,
@@ -230,6 +231,19 @@ export async function handleEffortBlockingDecisions(
 ): Promise<ReadEnvelope> {
   const cwd = options.cwd ?? process.cwd();
   return blockingDecisions(effortId, {
+    cwd,
+    rootDir: await rootFor(cwd),
+    cacheRoot: resolve(cwd, '.flatbread/proof'),
+    consistency: consistency(options),
+  });
+}
+
+export async function handleEffortBrief(
+  effortId: string,
+  options: EffortCliOptions = {}
+): Promise<ReadEnvelope> {
+  const cwd = options.cwd ?? process.cwd();
+  return effortBrief(effortId, {
     cwd,
     rootDir: await rootFor(cwd),
     cacheRoot: resolve(cwd, '.flatbread/proof'),
@@ -476,6 +490,19 @@ export function registerProofCommands(prog: any): void {
       printResult(
         handleEffortBlockingDecisions(effortId, mapEffortCliOptions(options))
       )
+    );
+  prog
+    .command(
+      'proof brief <effortId>',
+      'Read where an Effort stands: its head compaction and what changed since'
+    )
+    .option(
+      '--strict-min-generation <token>',
+      'Require a durable journal generation'
+    )
+    .option('--timeout-ms <ms>', 'Strict-read wait timeout')
+    .action(async (effortId: string, options: Record<string, unknown>) =>
+      printResult(handleEffortBrief(effortId, mapEffortCliOptions(options)))
     );
   const consistencyOptions = (command: any) =>
     command

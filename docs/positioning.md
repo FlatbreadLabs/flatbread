@@ -23,8 +23,8 @@ Citations, and Blobs against it. Each record is a markdown file under
 `.flatbread-proof/`, so it is committed, diffed, reviewed, and reverted like
 source. Writes go through `flatbread proof write`; reads come back as bounded
 digests from `flatbread proof list`, `flatbread proof records`,
-`flatbread proof relations`, `flatbread proof blocking-decisions`, and
-`flatbread proof get`.
+`flatbread proof relations`, `flatbread proof blocking-decisions`,
+`flatbread proof brief`, and `flatbread proof get`.
 
 That solves a plain problem: an agent that closes its session forgets why it
 chose what it chose. Putting the reasoning in the repository keeps it next to

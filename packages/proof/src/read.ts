@@ -44,6 +44,7 @@ export type ReadQuery =
       effort_id: string;
       page?: { cursor?: string; limit?: number };
     }
+  | { type: 'effortBrief'; effort_id: string }
   | {
       type: 'listEfforts';
       status: EffortStatus[];

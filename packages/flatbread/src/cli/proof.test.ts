@@ -27,6 +27,7 @@ import {
   handleEffortGet,
   handleEffortList,
   handleEffortRecords,
+  handleEffortBrief,
   handleEffortRelations,
   handleEffortWrite,
   inspectEffortBootstrap,
@@ -1411,5 +1412,151 @@ export default { source: source(), transformer: transformer(), content: proofCon
     t.regex(reopenedText, /reopen_history:/);
     t.regex(reopenedText, /Wrong choice/);
     t.true(reopenedText.includes(id));
+  }
+);
+
+test.serial(
+  'brief reports the head compaction, its changes, and staleness',
+  async (t) => {
+    const cwd = await createTempProject('flatbread-effort-brief-', t);
+    await writeFile(
+      join(cwd, 'flatbread.config.js'),
+      `import { source } from '@flatbread/source-filesystem';
+import { transformer } from '@flatbread/transformer-markdown';
+import { proofContent } from '@flatbread/proof';
+export default {
+  source: source(),
+  transformer: transformer(),
+  content: proofContent('.flatbread-proof'),
+};`
+    );
+    const write = async (payload: Record<string, unknown>) =>
+      handleEffortWrite(JSON.stringify(payload), { cwd });
+    const effortId = (
+      await write({ type: 'CreateEffort', title: 'Brief', body: '' })
+    ).artifacts[0].id;
+    const decisionId = (
+      await write({
+        type: 'WriteDecision',
+        effort: effortId,
+        title: 'Pick the index',
+        body: 'Use the sorted index.',
+      })
+    ).artifacts[0].id;
+
+    const empty = await handleEffortBrief(effortId, { cwd });
+    t.deepEqual(empty.compaction, {
+      head_id: null,
+      heads: 0,
+      stale: false,
+      changes: 1,
+      recompact: true,
+    });
+
+    const citationId = (
+      await write({
+        type: 'WriteCitation',
+        effort: effortId,
+        title: 'Index benchmark',
+        body: 'https://example.com/benchmark',
+      })
+    ).artifacts[0].id;
+    const first = await write({
+      type: 'WriteCompaction',
+      effort: effortId,
+      title: 'Index choice pending',
+      body: 'One proposed Decision: the sorted index.',
+      // A Citation is never live, so it must not read as a moved target.
+      derives_from: [decisionId, citationId],
+    });
+    const firstId = first.artifacts[0].id;
+    const fresh = await handleEffortBrief(effortId, {
+      cwd,
+      strictMinGeneration: first.generation,
+    });
+    t.deepEqual(fresh.compaction, {
+      head_id: firstId,
+      heads: 1,
+      stale: false,
+      changes: 0,
+      recompact: false,
+    });
+    const freshDigest = await readFile(fresh.artifact_path, 'utf8');
+    t.true(freshDigest.includes('One proposed Decision: the sorted index.'));
+    t.false(freshDigest.includes('covers'));
+
+    const accepted = await write({
+      type: 'AcceptDecision',
+      decisionId,
+    });
+    const stale = await handleEffortBrief(effortId, {
+      cwd,
+      strictMinGeneration: accepted.generation,
+    });
+    t.like(stale.compaction, { head_id: firstId, stale: true, changes: 1 });
+    t.true(stale.compaction?.recompact);
+    const staleDigest = await readFile(stale.artifact_path, 'utf8');
+    t.true(
+      staleDigest.includes(
+        `- changed | ${decisionId} | decision | proposed -> accepted | Pick the index`
+      )
+    );
+    t.true(staleDigest.includes('## Stale derivations'));
+
+    const second = await write({
+      type: 'WriteCompaction',
+      effort: effortId,
+      title: 'Index chosen',
+      body: 'Accepted: the sorted index.',
+      derives_from: [decisionId],
+    });
+    const secondId = second.artifacts[0].id;
+    t.deepEqual(
+      second.touched.map((touched) => touched.id).sort(),
+      [firstId, secondId].sort()
+    );
+    const result = await runCli(
+      cwd,
+      'proof',
+      'brief',
+      effortId,
+      '--strict-min-generation',
+      second.generation
+    );
+    t.is(result.code, 0, result.stderr);
+    const renewed = JSON.parse(result.stdout);
+    t.like(renewed.compaction, {
+      head_id: secondId,
+      heads: 1,
+      stale: false,
+      changes: 0,
+      recompact: false,
+    });
+    const renewedDigest = await readFile(renewed.artifact_path, 'utf8');
+    t.true(renewedDigest.includes('## Lineage checkpoints'));
+    t.true(renewedDigest.includes(`${firstId} | Index choice pending`));
+    t.false(renewedDigest.includes('One proposed Decision'));
+
+    const head = await handleEffortGet(firstId, {
+      cwd,
+      resolve: 'head',
+      strictMinGeneration: second.generation,
+    });
+    t.true(
+      (await readFile(head.artifact_path, 'utf8')).includes(
+        'Accepted: the sorted index.'
+      )
+    );
+
+    await t.throwsAsync(
+      write({
+        type: 'WriteFinding',
+        effort: effortId,
+        title: 'Hand-made',
+        body: '',
+        kind: 'compaction',
+      }),
+      { message: /WriteCompaction/ }
+    );
   }
 );

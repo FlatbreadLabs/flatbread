@@ -1513,3 +1513,134 @@ test('Retract refuses the last live Finding when remaining Finding evidence is r
     { message: new RegExp(`sole closer for ${ids.risk}`) }
   );
 });
+
+function compaction(
+  id: string,
+  fm: Record<string, unknown> = {}
+): ReturnType<typeof record> {
+  return record(id, 'finding', {
+    id,
+    effort: E,
+    title: 'Where it stands',
+    kind: 'compaction',
+    created_at: '2025-01-01T00:00:00.000Z',
+    covers: [],
+    ...fm,
+  });
+}
+
+test('WriteCompaction records covers and supersedes every head', (t) => {
+  const openIssue = record(ids.issue, 'issue', {
+    id: ids.issue,
+    effort: E,
+    title: 'Q',
+    kind: 'question',
+    status: 'open',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const accepted = record(ids.decision, 'decision', {
+    id: ids.decision,
+    effort: E,
+    title: 'D',
+    state: 'accepted',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const rejected = record(ids.decision2, 'decision', {
+    id: ids.decision2,
+    effort: E,
+    title: 'D2',
+    state: 'rejected',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const headA = compaction('fnd-head-a--0123456789abcdef');
+  const headB = compaction('fnd-head-b--0123456789abcdef');
+  const older = compaction('fnd-older--0123456789abcdef', {
+    superseded_by: [headA.id],
+  });
+  const id = 'fnd-new-head--0000000000000000';
+  const writes = planMutation(
+    {
+      type: 'WriteCompaction',
+      id,
+      effort: E,
+      title: 'Now',
+      body: 'Current account.',
+      derives_from: [ids.decision, ids.decision2],
+    },
+    snap([openIssue, accepted, rejected, headA, headB, older]),
+    '/root',
+    now
+  );
+  const created = writes.find((w) => w.id === id)!;
+  t.is(created.operation, 'create');
+  const fm = parseDocument(created.afterBytes, 'finding').frontmatter;
+  t.is(fm.kind, 'compaction');
+  t.deepEqual(fm.supersedes, [headA.id, headB.id]);
+  // Live records plus the rejected derives_from target; compactions excluded.
+  t.deepEqual(fm.covers, [
+    `${ids.decision}@accepted`,
+    `${ids.decision2}@rejected`,
+    `${ids.issue}@open`,
+  ]);
+  for (const head of [headA, headB]) {
+    const update = writes.find((w) => w.id === head.id)!;
+    t.deepEqual(
+      parseDocument(update.afterBytes, 'finding').frontmatter.superseded_by,
+      [id]
+    );
+  }
+  t.is(writes.length, 3);
+});
+
+test('compactions cannot be created, chained, or superseded another way', (t) => {
+  const head = compaction('fnd-head-a--0123456789abcdef');
+  const finding = record(ids.finding, 'finding', {
+    id: ids.finding,
+    effort: E,
+    title: 'F',
+    kind: 'measurement',
+    created_at: '2025-01-01T00:00:00.000Z',
+  });
+  const s = snap([head, finding]);
+  const attempts: ProofMutation[] = [
+    {
+      type: 'WriteFinding',
+      effort: E,
+      title: 'X',
+      body: '',
+      kind: 'compaction',
+    },
+    {
+      type: 'WriteCompaction',
+      effort: E,
+      title: 'X',
+      body: '',
+      derives_from: [head.id],
+    },
+    {
+      type: 'WriteFinding',
+      effort: E,
+      title: 'X',
+      body: '',
+      kind: 'measurement',
+      supersedes: [head.id],
+    },
+    { type: 'Supersede', supersederId: finding.id, targetId: head.id },
+    { type: 'Supersede', supersederId: head.id, targetId: finding.id },
+    { type: 'Invalidate', findingId: head.id, targetId: finding.id },
+  ];
+  for (const input of attempts)
+    t.throws(
+      () => planMutation(input, s, '/root', now, random),
+      undefined,
+      input.type
+    );
+  t.notThrows(() =>
+    planMutation(
+      { type: 'Invalidate', findingId: finding.id, targetId: head.id },
+      s,
+      '/root',
+      now
+    )
+  );
+});

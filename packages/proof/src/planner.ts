@@ -11,6 +11,12 @@ import {
   reopenDecisionLifecycle,
   supersedeDecisionLifecycle,
 } from './decision-lifecycle.js';
+import {
+  COMPACTION_KIND,
+  compactionCovers,
+  compactionHeads,
+  isCompaction,
+} from './compaction.js';
 import type { ProofSnapshot } from './snapshot.js';
 import type { PlannedWrite, PrimitiveKind } from './types.js';
 import type { ProofMutation } from './schemas.js';
@@ -198,6 +204,13 @@ function assertDerivesFrom(
   }
 }
 
+function assertNotCompaction(record: SnapshotRecord, rule: string): void {
+  if (isCompaction(record))
+    throw new ProofValidationError(
+      `${record.id} is a compaction; ${rule}. Write a new compaction with WriteCompaction instead.`
+    );
+}
+
 export function planMutation(
   input: ProofMutation,
   snapshot: ProofSnapshot,
@@ -279,6 +292,68 @@ export function planMutation(
     add(r.id, r.kind, { ...r.frontmatter, status: input.status }, r.body);
     return [...writes.values()];
   }
+  if (input.type === 'WriteCompaction') {
+    const id =
+      input.id ?? generateArtifactId('finding', input.title, randomBytes);
+    if (!validateArtifactId(id, 'finding') || snapshot.hasId(id))
+      throw new ProofValidationError('Invalid or duplicate id');
+    const effort = get(input.effort);
+    if (effort.kind !== 'effort')
+      throw new ProofValidationError('Invalid effort');
+    assertCites(get, input.effort, input.cites);
+    assertDerivesFrom(get, input.effort, input.derives_from);
+    for (const targetId of input.derives_from ?? [])
+      assertNotCompaction(
+        get(targetId),
+        'compactions link to earlier compactions through supersedes, never derives_from'
+      );
+    const effortRecords = snapshot.recordsByEffort(input.effort);
+    // Superseding every head keeps one chain, and heals a fork left by a merge.
+    const heads = compactionHeads(effortRecords)
+      .map((head) => head.id)
+      .sort();
+    add(
+      id,
+      'finding',
+      {
+        id,
+        effort: input.effort,
+        title: input.title,
+        kind: COMPACTION_KIND,
+        created_at: input.created_at ?? now.toISOString(),
+        ...(input.produced_in !== undefined
+          ? { produced_in: input.produced_in }
+          : {}),
+        ...(input.created_by !== undefined
+          ? { created_by: input.created_by }
+          : {}),
+        ...(input.derives_from?.length
+          ? { derives_from: input.derives_from }
+          : {}),
+        ...(input.cites?.length ? { cites: input.cites } : {}),
+        ...(heads.length ? { supersedes: heads } : {}),
+        covers: compactionCovers(effortRecords, input.derives_from),
+      },
+      input.body,
+      'create'
+    );
+    for (const headId of heads) {
+      const head = get(headId);
+      add(
+        head.id,
+        head.kind,
+        {
+          ...head.frontmatter,
+          superseded_by: [
+            ...((head.frontmatter.superseded_by as string[] | undefined) ?? []),
+            id,
+          ],
+        },
+        head.body
+      );
+    }
+    return [...writes.values()];
+  }
   if (input.type in kinds) {
     const kind = kinds[input.type];
     const raw = input as Record<string, unknown> & {
@@ -293,6 +368,10 @@ export function planMutation(
     };
     if (kind === 'blob' || kind === 'citation')
       assertNoCitationBlobEdges(input.type, raw);
+    if (kind === 'finding' && raw.kind === COMPACTION_KIND)
+      throw new ProofValidationError(
+        'WriteFinding cannot create a compaction; use WriteCompaction so the writer records what it covers.'
+      );
     const id = raw.id ?? generateArtifactId(kind, raw.title, randomBytes);
     if (!validateArtifactId(id, kind) || snapshot.hasId(id))
       throw new ProofValidationError('Invalid or duplicate id');
@@ -340,6 +419,8 @@ export function planMutation(
       for (const targetId of (fm[edge] as string[] | undefined) ?? []) {
         const target = get(targetId);
         assertLive(target);
+        if (edge === 'supersedes')
+          assertNotCompaction(target, 'only another compaction supersedes it');
         if (edge === 'supersedes' && target.kind !== kind)
           throw new ProofValidationError(
             'Supersedes must target the same kind'
@@ -386,6 +467,14 @@ export function planMutation(
     const b = get(input.targetId);
     assertLive(a);
     assertLive(b);
+    if (input.type === 'Supersede') {
+      assertNotCompaction(a, 'it supersedes only through WriteCompaction');
+      assertNotCompaction(b, 'only another compaction supersedes it');
+    } else
+      assertNotCompaction(
+        a,
+        'a compaction summarizes evidence and cannot invalidate it'
+      );
     const edge = input.type === 'Supersede' ? 'supersedes' : 'invalidates';
     const back =
       input.type === 'Supersede' ? 'superseded_by' : 'invalidated_by';

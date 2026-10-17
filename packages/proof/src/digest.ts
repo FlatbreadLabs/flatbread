@@ -32,6 +32,24 @@ export interface ReadEdge {
 
 export type ReadCapReason = 'primary_records' | 'displayed_edges' | 'bytes';
 
+/** Machine-readable state of an Effort's head compaction (`brief` only). */
+export interface CompactionStatus {
+  head_id: string | null;
+  /** Head compactions nothing supersedes; above 1 means a merge forked them. */
+  heads: number;
+  /** A `derives_from` target changed standing, or the head was invalidated. */
+  stale: boolean;
+  /** Records whose standing changed since the head's `covers` snapshot. */
+  changes: number;
+  /** True when no head exists, it forked, it is stale, or changes hit the threshold. */
+  recompact: boolean;
+}
+
+export interface DigestSection {
+  heading: string;
+  lines: string[];
+}
+
 export interface ReadEnvelope {
   summary: string;
   artifact_path: string;
@@ -42,6 +60,7 @@ export interface ReadEnvelope {
   cap_reasons: ReadCapReason[];
   page: { returned: number; has_more: boolean; next_cursor: string | null };
   hints: string[];
+  compaction?: CompactionStatus;
 }
 
 export interface DigestInput {
@@ -62,6 +81,9 @@ export interface DigestInput {
   relatedRecords?: readonly ReadRecord[];
   /** When true, primary record bodies are rendered in full (getRecord path). */
   fullBody?: boolean;
+  /** Extra line-per-record sections, rendered after checkpoints. */
+  sections?: readonly DigestSection[];
+  compaction?: CompactionStatus;
 }
 
 const CAP_RECORDS = 25;
@@ -292,6 +314,11 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
   const checkpoints = input.checkpointLines?.length
     ? ['## Lineage checkpoints', ...input.checkpointLines, '']
     : [];
+  const extraSections = (input.sections ?? []).flatMap((section) => [
+    `## ${section.heading}`,
+    ...section.lines,
+    '',
+  ]);
   const renderPrimary = (
     record: ReadRecord,
     bodyMode: RecordBodyMode = primaryBodyMode
@@ -311,6 +338,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
       ? ['## Related records', ...input.relatedRecords.map(renderRelated)]
       : []),
     ...checkpoints,
+    ...extraSections,
     '## Displayed edges',
     '| From | Relation | To |',
     '| --- | --- | --- |',
@@ -355,6 +383,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
     const edgeHeader = [
       ...header,
       ...sections,
+      ...extraSections,
       '## Displayed edges',
       '| From | Relation | To |',
       '| --- | --- | --- |',
@@ -412,6 +441,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
     hints: (
       input.hints ?? ids.slice(0, 10).map((id) => `getRecord("${id}")`)
     ).slice(0, 10),
+    ...(input.compaction ? { compaction: input.compaction } : {}),
   };
   return envelope;
 }
