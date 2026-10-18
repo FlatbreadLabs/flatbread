@@ -1,0 +1,1052 @@
+{
+  "effort": "ports",
+  "questions": [
+    {
+      "id": "ports-001",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["lookup", "distractor"],
+      "question": "How many milliseconds does each frame get in the Skiff 40 Hz mode?",
+      "answer": {
+        "kind": "value",
+        "value": "25",
+        "accept": ["25 ms", "25 milliseconds"]
+      },
+      "evidence": ["con-frame-2"],
+      "path": [],
+      "checks": [
+        {
+          "type": "body",
+          "record": "con-frame-2",
+          "includes": "Skiff 40 Hz mode: 25 ms per frame",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "33.3 ms is the 30 Hz budget, and the only figure in the older Frame budget record.",
+        "8.3 ms comes from a retracted Frame budget copied from the render Effort's Meridian 120 Hz mode."
+      ]
+    },
+    {
+      "id": "ports-002",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "How large may the on-device pipeline cache grow on a Skiff's storage?",
+      "answer": {
+        "kind": "value",
+        "value": "384 MB",
+        "accept": ["384", "384 megabytes"]
+      },
+      "evidence": ["dec-pso-ondevice"],
+      "path": [],
+      "checks": [
+        {
+          "type": "body",
+          "record": "dec-pso-ondevice",
+          "includes": "capped at 384 MB",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "212 MB is how much the cache held after a full playthrough, not its cap.",
+        "140 MB is the size of the prebuilt blobs the cache replaced."
+      ]
+    },
+    {
+      "id": "ports-003",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "What was the worst sustained read rate on a Skiff microSD card that was nearly full and warm?",
+      "answer": {
+        "kind": "value",
+        "value": "61 MB/s",
+        "accept": ["61", "61 MB per second"]
+      },
+      "evidence": ["fnd-sd-speed-2"],
+      "path": [],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-sd-speed-2",
+          "includes": "61 MB/s",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "92 MB/s is the March figure from new, empty cards on a cold Skiff, later shown wrong."
+      ]
+    },
+    {
+      "id": "ports-004",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["lifecycle"],
+      "question": "In what state did the ports team leave the risk that Skiff throttles its GPU in long handheld sessions?",
+      "answer": {
+        "kind": "value",
+        "value": "accepted"
+      },
+      "evidence": ["rsk-thermal", "fnd-thermal"],
+      "path": [],
+      "checks": [
+        {
+          "type": "field",
+          "record": "rsk-thermal",
+          "field": "state"
+        }
+      ],
+      "traps": [
+        "The risk was neither mitigated by a Decision nor realized; the 8 percent drop was absorbed and the risk accepted."
+      ]
+    },
+    {
+      "id": "ports-005",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["negative", "lifecycle"],
+      "question": "On what date did Saltglass Reach pass full Skiff certification?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": ["iss-blk-storm", "rsk-cert-slip", "fnd-cert-report"],
+      "path": [],
+      "checks": [
+        {
+          "type": "field",
+          "record": "iss-blk-storm",
+          "field": "status",
+          "expect": "open"
+        },
+        {
+          "type": "field",
+          "record": "rsk-cert-slip",
+          "field": "state",
+          "expect": "open"
+        }
+      ],
+      "traps": [
+        "2026-05-15 is when the pre-certification report came back, with two failures.",
+        "2026-06-01 is when Skiff became a launch platform, not a certification date."
+      ]
+    },
+    {
+      "id": "ports-034",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "According to the Skiff beta retrospective, how much schedule did the wrong pipeline choice cost?",
+      "answer": {
+        "kind": "value",
+        "value": "6 weeks",
+        "accept": ["6", "six weeks"]
+      },
+      "evidence": ["fnd-retro"],
+      "path": [],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-retro",
+          "includes": "cost 6 weeks of schedule",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The Kelp switch took one week; that figure sits earlier in the same record."
+      ]
+    },
+    {
+      "id": "ports-006",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["supersession", "current-state"],
+      "question": "Which record holds the Skiff memory budget the ports team works to today?",
+      "answer": {
+        "kind": "record",
+        "value": "con-skiff-mem-8"
+      },
+      "evidence": ["con-skiff-mem-9", "con-skiff-mem-8"],
+      "path": [["con-skiff-mem-9", "superseded_by", "con-skiff-mem-8"]],
+      "checks": [
+        {
+          "type": "head",
+          "start": "con-skiff-mem-9"
+        }
+      ],
+      "traps": [
+        "Both versions share the title Skiff memory budget; the 9 GB version was superseded."
+      ]
+    },
+    {
+      "id": "ports-007",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["blob"],
+      "question": "In the Skiff pre-certification report attached to the ports work, what defect code did the platform holder give the HUD text failure?",
+      "answer": {
+        "kind": "value",
+        "value": "SKF-UI-031"
+      },
+      "evidence": ["cit-cert-report", "blb-cert-report"],
+      "path": [["cit-cert-report", "blob", "blb-cert-report"]],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blb-cert-report",
+          "includes": "| SKF-UI-031 | Interface | Fail |",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "SKF-ST-012 is the autosave failure and SKF-DSP-004 the docked judder advisory."
+      ]
+    },
+    {
+      "id": "ports-008",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["rejected-alternative"],
+      "question": "Which Decision's acceptance rejected the spatial upscaler option for Skiff?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-tern-skiff"
+      },
+      "evidence": ["dec-skiff-spatial", "dec-tern-skiff"],
+      "path": [["dec-skiff-spatial", "rejected_by", "dec-tern-skiff"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "iss-upscale-q",
+          "where": {
+            "state": "accepted"
+          }
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-skiff-spatial", "rejected_by", "dec-tern-skiff"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The native 720p option was rejected by the same acceptance; it is a fellow loser, not the rejecter."
+      ]
+    },
+    {
+      "id": "ports-009",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["invalidation"],
+      "question": "Which Decision did the full-card microSD measurement prove wrong?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-seamless-ft"
+      },
+      "evidence": ["fnd-sd-speed-2", "dec-seamless-ft"],
+      "path": [["fnd-sd-speed-2", "invalidates", "dec-seamless-ft"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "invalidated"
+          }
+        },
+        {
+          "type": "edge",
+          "edge": ["fnd-sd-speed-2", "invalidates", "dec-seamless-ft"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The same Finding also invalidates the 92 MB/s Finding, but that is a Finding, not a Decision.",
+        "The 2 MB streaming read Decision rests on the bad number but was never invalidated."
+      ]
+    },
+    {
+      "id": "ports-010",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["temporal", "supersession", "distractor"],
+      "question": "Which Frame budget record was in force for Skiff at the vertical slice?",
+      "answer": {
+        "kind": "record",
+        "value": "con-frame-1"
+      },
+      "evidence": ["con-frame-2", "con-frame-1"],
+      "path": [["con-frame-2", "supersedes", "con-frame-1"]],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "con-frame-2",
+          "at": "2025-12-15T23:59:59Z"
+        }
+      ],
+      "traps": [
+        "The current Frame budget with the 25 ms 40 Hz mode came in January 2026, after the slice.",
+        "A third Frame budget record with 8.3 ms was retracted noise copied from the render Effort."
+      ]
+    },
+    {
+      "id": "ports-011",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["distractor", "retraction"],
+      "question": "On second visits, what share of pipeline lookups hit the Skiff on-device pipeline cache?",
+      "answer": {
+        "kind": "value",
+        "value": "99.6 percent",
+        "accept": ["99.6%", "99.6"]
+      },
+      "evidence": ["dec-pso-ondevice", "fnd-cache-warm"],
+      "path": [["dec-pso-ondevice", "supports", "fnd-cache-warm"]],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-cache-warm",
+          "includes": "99.6 percent of pipeline lookups hit the cache",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "97 percent is the build farm's shader compile cache hit rate, in a retracted Finding posted here by mistake."
+      ]
+    },
+    {
+      "id": "ports-012",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["rationale"],
+      "question": "Why did the ports team raise the Skiff dynamic resolution floor above 540p?",
+      "answer": {
+        "kind": "text",
+        "rubric": [["caustic"], ["shimmer"], ["576p"]]
+      },
+      "evidence": ["dec-dynres-2", "fnd-dynres-540"],
+      "path": [["dec-dynres-2", "derives_from", "fnd-dynres-540"]],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-dynres-540",
+          "includes": ["caustic patterns under saltglass shimmer", "576p"],
+          "expect": true
+        }
+      ],
+      "traps": ["Frame time was not the reason; 540p fit the 33.3 ms budget."]
+    },
+    {
+      "id": "ports-013",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["lookup"],
+      "question": "The Skiff upscaler choice depends on a render Decision. What is that render Decision's exact title?",
+      "answer": {
+        "kind": "value",
+        "value": "Ship Tern as Lantern's only upscaler"
+      },
+      "evidence": ["iss-upscale-q", "dec-tern-skiff"],
+      "path": [["iss-upscale-q", "resolved_by", "dec-tern-skiff"]],
+      "checks": [
+        {
+          "type": "body",
+          "record": "dec-tern-skiff",
+          "includes": "\"Ship Tern as Lantern's only upscaler\"",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The Skiff Decision's own title is about the Performance preset; the render title is quoted in its body."
+      ]
+    },
+    {
+      "id": "ports-014",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["temporal", "supersession"],
+      "question": "Which Skiff dynamic resolution Decision was in force at the vertical slice?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-dynres-1"
+      },
+      "evidence": ["dec-dynres-3", "dec-dynres-2", "dec-dynres-1"],
+      "path": [
+        ["dec-dynres-3", "supersedes", "dec-dynres-2"],
+        ["dec-dynres-2", "supersedes", "dec-dynres-1"]
+      ],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-dynres-3",
+          "at": "2025-12-15T23:59:59Z"
+        }
+      ],
+      "traps": [
+        "The 504p floor is today's, adopted in July 2026.",
+        "The 576p floor came in January 2026 and was the floor at alpha, not at the slice."
+      ]
+    },
+    {
+      "id": "ports-015",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["blob", "distractor"],
+      "question": "The Finding that measured the Skiff harbor district memory peak attaches a capture. Which memory category was largest in that capture?",
+      "answer": {
+        "kind": "value",
+        "value": "textures",
+        "accept": ["texture", "textures (3184 MB)"]
+      },
+      "evidence": ["fnd-mem-capture", "cit-mem-capture", "blb-mem-capture"],
+      "path": [
+        ["fnd-mem-capture", "cites", "cit-mem-capture"],
+        ["cit-mem-capture", "blob", "blb-mem-capture"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blb-mem-capture",
+          "includes": "\"textures\": 3184",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The Finding says audio banks grew the most; growth is not size.",
+        "The streaming pool is the second largest at 2048 MB."
+      ]
+    },
+    {
+      "id": "ports-016",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["reopened", "rejected-alternative"],
+      "question": "The Decision that resolved the Skiff first-visit hitch defect had once been rejected. Which Decision rejected it?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-pso-ship"
+      },
+      "evidence": ["iss-hitches", "dec-pso-ondevice", "dec-pso-ship"],
+      "path": [
+        ["iss-hitches", "resolved_by", "dec-pso-ondevice"],
+        ["dec-pso-ondevice", "reopen_history", "dec-pso-ship"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "iss-pso-q",
+          "where": {
+            "standing": "superseded"
+          }
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-pso-ondevice", "reopen_history", "dec-pso-ship"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The on-device cache now has no live rejected_by link; the rejecter is only in its reopen history.",
+        "The ubershader option was rejected alongside it, not the cause of its rejection."
+      ]
+    },
+    {
+      "id": "ports-017",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["dead-evidence", "invalidation"],
+      "question": "The Decision to stream Skiff world tiles in 2 MB reads rests on a storage measurement. Which Finding showed that measurement was wrong?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-sd-speed-2"
+      },
+      "evidence": ["dec-stream-block", "fnd-sd-speed", "fnd-sd-speed-2"],
+      "path": [
+        ["dec-stream-block", "derives_from", "fnd-sd-speed"],
+        ["fnd-sd-speed", "invalidated_by", "fnd-sd-speed-2"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "bodyIncludes": "Worst sustained read across the budget cards"
+        },
+        {
+          "type": "field",
+          "record": "fnd-sd-speed",
+          "field": "standing",
+          "expect": "invalidated"
+        }
+      ],
+      "traps": [
+        "The 2 MB read Decision is still accepted; nothing invalidated it directly, so reading only its state hides the problem."
+      ]
+    },
+    {
+      "id": "ports-018",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["compaction", "supersession"],
+      "question": "The newest summary of the ports work gives a Skiff dynamic resolution floor. What floor is in force today?",
+      "answer": {
+        "kind": "value",
+        "value": "504p",
+        "accept": ["504"]
+      },
+      "evidence": ["cmp-2", "dec-dynres-2", "dec-dynres-3"],
+      "path": [
+        ["cmp-2", "derives_from", "dec-dynres-2"],
+        ["dec-dynres-2", "superseded_by", "dec-dynres-3"]
+      ],
+      "checks": [
+        {
+          "type": "compaction",
+          "field": "stale",
+          "expect": true
+        },
+        {
+          "type": "compaction",
+          "field": "staleTargets",
+          "expect": ["ports.dec-dynres-2"]
+        },
+        {
+          "type": "head",
+          "start": "dec-dynres-2",
+          "expect": "ports.dec-dynres-3"
+        }
+      ],
+      "traps": [
+        "The summary says 576p; it was written before the July 2026 change to 504p and is stale."
+      ]
+    },
+    {
+      "id": "ports-019",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["lookup", "lifecycle"],
+      "question": "The Skiff autosave certification defect was fixed by a Decision. What write limit does the Constraint behind that Decision set?",
+      "answer": {
+        "kind": "value",
+        "value": "4 MB per minute",
+        "accept": ["4 MB a minute", "4 MB/min", "4"]
+      },
+      "evidence": ["iss-cert-skiff-save", "dec-delta-save", "con-skiff-write"],
+      "path": [
+        ["iss-cert-skiff-save", "resolved_by", "dec-delta-save"],
+        ["dec-delta-save", "derives_from", "con-skiff-write"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "con-skiff-write",
+          "includes": "at most 4 MB per minute",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "11 MB per minute is what the old autosave wrote.",
+        "2.6 MB per minute is what the delta saves are expected to write."
+      ]
+    },
+    {
+      "id": "ports-020",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["supersession", "rationale"],
+      "question": "Which Finding explains why the Skiff memory budget dropped from its first value?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-sdk12"
+      },
+      "evidence": ["con-skiff-mem-9", "con-skiff-mem-8", "fnd-sdk12"],
+      "path": [
+        ["con-skiff-mem-9", "superseded_by", "con-skiff-mem-8"],
+        ["con-skiff-mem-8", "derives_from", "fnd-sdk12"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "derivesFrom": "con-skiff-mem-9"
+        }
+      ],
+      "traps": [
+        "The harbor capture at 8.6 GB came after the cut and measured against it; it did not cause it.",
+        "The 6.9 GB slice capture was invalidated, but it has nothing to do with the budget change."
+      ]
+    },
+    {
+      "id": "ports-021",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["blob", "lifecycle"],
+      "question": "The Skiff pre-certification report gives each problem a code. What code does it give the Skiff defect that the ports team closed as won't fix?",
+      "answer": {
+        "kind": "value",
+        "value": "SKF-DSP-004"
+      },
+      "evidence": [
+        "iss-cert-skiff-flicker",
+        "fnd-cert-report",
+        "cit-cert-report",
+        "blb-cert-report"
+      ],
+      "path": [
+        ["iss-cert-skiff-flicker", "derives_from", "fnd-cert-report"],
+        ["fnd-cert-report", "cites", "cit-cert-report"],
+        ["cit-cert-report", "blob", "blb-cert-report"]
+      ],
+      "checks": [
+        {
+          "type": "field",
+          "record": "iss-cert-skiff-flicker",
+          "field": "status",
+          "expect": "wontfix"
+        },
+        {
+          "type": "body",
+          "record": "blb-cert-report",
+          "includes": "| SKF-DSP-004 | Display | Advisory |",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The Meridian activity card defect was deferred, not closed as won't fix, and has no Skiff code.",
+        "SKF-UI-031 and SKF-ST-012 were fixed."
+      ]
+    },
+    {
+      "id": "ports-022",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["supersession", "lifecycle"],
+      "question": "The Finding used as evidence that the Skiff out-of-memory risk came true was measured against a memory budget. Which Citation explains why that budget is lower than the first one?",
+      "answer": {
+        "kind": "record",
+        "value": "cit-skiff-sdk-12"
+      },
+      "evidence": [
+        "rsk-skiff-oom",
+        "fnd-mem-capture",
+        "con-skiff-mem-8",
+        "fnd-sdk12",
+        "cit-skiff-sdk-12"
+      ],
+      "path": [
+        ["rsk-skiff-oom", "evidence", "fnd-mem-capture"],
+        ["fnd-mem-capture", "derives_from", "con-skiff-mem-8"],
+        ["con-skiff-mem-8", "derives_from", "fnd-sdk12"],
+        ["fnd-sdk12", "cites", "cit-skiff-sdk-12"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["citation"],
+          "bodyIncludes": "/sdk/1.2/"
+        },
+        {
+          "type": "edge",
+          "edge": ["fnd-sdk12", "cites", "cit-skiff-sdk-12"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The SDK 0.9 memory map is the source of the original 9 GB figure.",
+        "The harbor memory capture Citation backs the measurement, not the budget cut."
+      ]
+    },
+    {
+      "id": "ports-023",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["blocker", "supersession", "lookup"],
+      "question": "The open Skiff storm blocker came from a capture taken at the dynamic resolution floor in force today. That floor relies on an upscaler Decision. Which Finding measured that upscaler's cost on Skiff?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-tern-cost"
+      },
+      "evidence": [
+        "iss-blk-storm",
+        "fnd-storm-capture",
+        "dec-dynres-3",
+        "dec-tern-skiff",
+        "fnd-tern-cost"
+      ],
+      "path": [
+        ["iss-blk-storm", "derives_from", "fnd-storm-capture"],
+        ["fnd-storm-capture", "derives_from", "dec-dynres-3"],
+        ["dec-dynres-3", "derives_from", "dec-tern-skiff"],
+        ["dec-tern-skiff", "derives_from", "fnd-tern-cost"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "derivesFrom": "iss-upscale-q"
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-tern-skiff", "derives_from", "fnd-tern-cost"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The storm GPU capture is the floor's own evidence and measures resolution, not the upscaler.",
+        "The prototype particle-cap test measures the proposed blocker fix, not Tern."
+      ]
+    },
+    {
+      "id": "ports-024",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["invalidation", "supersession"],
+      "question": "The Skiff first-visit hitch defect led to a question whose first recorded answer was later replaced. Which Finding disproved the evidence behind that first answer?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-driver-keyed"
+      },
+      "evidence": [
+        "iss-hitches",
+        "iss-pso-q",
+        "dec-pso-ship",
+        "fnd-blob-portable",
+        "fnd-driver-keyed"
+      ],
+      "path": [
+        ["iss-hitches", "supports", "iss-pso-q"],
+        ["iss-pso-q", "resolved_by", "dec-pso-ship"],
+        ["dec-pso-ship", "derives_from", "fnd-blob-portable"],
+        ["fnd-blob-portable", "invalidated_by", "fnd-driver-keyed"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "bodyIncludes": "checks a driver hash in every blob"
+        },
+        {
+          "type": "edge",
+          "edge": ["fnd-blob-portable", "invalidated_by", "fnd-driver-keyed"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The pipeline count Finding backs the on-device cache but disproved nothing.",
+        "The question Issue still lists the superseded prebuilt-blob Decision as its resolver, so a reader who stops there misses the invalidation."
+      ]
+    },
+    {
+      "id": "ports-025",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["supersession", "distractor"],
+      "question": "Follow the Skiff dynamic resolution question to the floor in force today. Which upscaler Decision does that floor rely on?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-tern-skiff"
+      },
+      "evidence": [
+        "iss-dynres-q",
+        "dec-dynres-1",
+        "dec-dynres-2",
+        "dec-dynres-3",
+        "dec-tern-skiff"
+      ],
+      "path": [
+        ["iss-dynres-q", "resolved_by", "dec-dynres-1"],
+        ["dec-dynres-1", "superseded_by", "dec-dynres-2"],
+        ["dec-dynres-2", "superseded_by", "dec-dynres-3"],
+        ["dec-dynres-3", "derives_from", "dec-tern-skiff"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "iss-upscale-q",
+          "where": {
+            "state": "accepted"
+          }
+        },
+        {
+          "type": "head",
+          "start": "dec-dynres-1",
+          "expect": "ports.dec-dynres-3"
+        }
+      ],
+      "traps": [
+        "The Issue still points at the first, superseded floor; stopping there finds no upscaler link.",
+        "The spatial upscaler was rejected; the render Effort's Tern Decision is not a record in this Effort."
+      ]
+    },
+    {
+      "id": "ports-026",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["blob", "lifecycle"],
+      "question": "The Decision to use Kelp's high-ratio mode for Skiff textures answered a risk that came true. In the capture attached to that risk's evidence, how many MB did audio banks use?",
+      "answer": {
+        "kind": "value",
+        "value": "912",
+        "accept": ["912 MB"]
+      },
+      "evidence": [
+        "dec-kelp-skiff",
+        "rsk-skiff-oom",
+        "fnd-mem-capture",
+        "cit-mem-capture",
+        "blb-mem-capture"
+      ],
+      "path": [
+        ["dec-kelp-skiff", "derives_from", "rsk-skiff-oom"],
+        ["rsk-skiff-oom", "evidence", "fnd-mem-capture"],
+        ["fnd-mem-capture", "cites", "cit-mem-capture"],
+        ["cit-mem-capture", "blob", "blb-mem-capture"]
+      ],
+      "checks": [
+        {
+          "type": "field",
+          "record": "rsk-skiff-oom",
+          "field": "state",
+          "expect": "realized"
+        },
+        {
+          "type": "body",
+          "record": "blb-mem-capture",
+          "includes": "\"audio_banks\": 912",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "388 MB is how much audio banks grew since the slice, the only audio figure in the Finding's body."
+      ]
+    },
+    {
+      "id": "ports-027",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["dead-evidence", "aggregate"],
+      "question": "Which live Decisions and Risks in the ports work still rest directly on a Finding that was later proven wrong?",
+      "answer": {
+        "kind": "records",
+        "value": ["dec-stream-block", "rsk-skiff-stream"]
+      },
+      "evidence": [
+        "fnd-sd-speed",
+        "fnd-sd-speed-2",
+        "dec-stream-block",
+        "rsk-skiff-stream",
+        "dec-seamless-ft",
+        "fnd-blob-portable",
+        "dec-pso-ship",
+        "fnd-mem-early"
+      ],
+      "path": [],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision", "risk"],
+          "live": true,
+          "restsOn": ["invalidated"]
+        }
+      ],
+      "traps": [
+        "The seamless fast travel Decision was itself invalidated, so it is not live.",
+        "The prebuilt blob Decision rested on a disproved Finding but was superseded."
+      ]
+    },
+    {
+      "id": "ports-028",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["lifecycle", "aggregate"],
+      "question": "How many Risks in the ports work are still open?",
+      "answer": {
+        "kind": "count",
+        "value": 2
+      },
+      "evidence": [
+        "rsk-skiff-oom",
+        "rsk-tern-cost",
+        "rsk-pso-hitch",
+        "rsk-thermal",
+        "rsk-skiff-stream",
+        "rsk-cert-slip"
+      ],
+      "path": [],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["risk"],
+          "where": {
+            "state": "open"
+          },
+          "count": true
+        }
+      ],
+      "traps": [
+        "The out-of-memory risk is realized, which is live but not open."
+      ]
+    },
+    {
+      "id": "ports-029",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["compaction", "aggregate"],
+      "question": "Since the newest summary of the ports work was written, how many records have joined the live set, left it, or changed standing?",
+      "answer": {
+        "kind": "count",
+        "value": 8
+      },
+      "evidence": [
+        "cmp-2",
+        "dec-dynres-2",
+        "dec-dynres-3",
+        "fnd-dynres-gpu",
+        "fnd-storm-capture",
+        "iss-blk-storm",
+        "dec-storm-cap",
+        "dec-storm-30",
+        "fnd-storm-cap-test"
+      ],
+      "path": [],
+      "checks": [
+        {
+          "type": "compaction",
+          "field": "changes"
+        }
+      ],
+      "traps": [
+        "The summary's own text reads as current; only the changes since it was taken show how far it has drifted."
+      ]
+    },
+    {
+      "id": "ports-030",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["blocker", "lifecycle"],
+      "question": "Which proposed Decisions are waiting on an open blocker in the ports work?",
+      "answer": {
+        "kind": "records",
+        "value": ["dec-storm-cap", "dec-storm-30"]
+      },
+      "evidence": [
+        "iss-blk-storm",
+        "dec-storm-cap",
+        "dec-storm-30",
+        "iss-blk-devkits"
+      ],
+      "path": [],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "where": {
+            "state": "proposed"
+          }
+        },
+        {
+          "type": "select",
+          "kinds": ["issue"],
+          "where": {
+            "kind": "blocker",
+            "status": "open"
+          },
+          "expect": ["ports.iss-blk-storm"]
+        }
+      ],
+      "traps": [
+        "The dev kit blocker was resolved in March 2026 and no Decision waits on it.",
+        "The prototype test of the particle cap is a Finding, not a Decision, and settles nothing."
+      ]
+    },
+    {
+      "id": "ports-031",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["lifecycle", "aggregate"],
+      "question": "Which certification defects did the ports team close as deferred or won't fix rather than resolved?",
+      "answer": {
+        "kind": "records",
+        "value": ["iss-cert-meridian-cards", "iss-cert-skiff-flicker"]
+      },
+      "evidence": [
+        "iss-cert-meridian-cards",
+        "iss-cert-skiff-flicker",
+        "iss-cert-skiff-save",
+        "iss-cert-skiff-hud",
+        "iss-cert-meridian-suspend"
+      ],
+      "path": [],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["issue"],
+          "where": {
+            "status": ["deferred", "wontfix"]
+          }
+        }
+      ],
+      "traps": [
+        "The autosave, HUD, and Meridian suspend defects were all resolved with fixes."
+      ]
+    },
+    {
+      "id": "ports-032",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["retraction", "aggregate"],
+      "question": "How many records in the ports work were retracted as noise?",
+      "answer": {
+        "kind": "count",
+        "value": 2
+      },
+      "evidence": ["fnd-noise-shader", "con-noise-frame"],
+      "path": [],
+      "checks": [
+        {
+          "type": "select",
+          "retracted": "only",
+          "count": true
+        }
+      ],
+      "traps": [
+        "Superseded and invalidated records are not retracted; they stay on the live browse reads with their history."
+      ]
+    },
+    {
+      "id": "ports-033",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["negative", "distractor", "retraction"],
+      "question": "What frame budget does the ports work set for Meridian's 120 Hz mode?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": ["con-frame-2", "con-noise-frame"],
+      "path": [],
+      "checks": [
+        {
+          "type": "field",
+          "record": "con-noise-frame",
+          "field": "standing",
+          "expect": "retracted"
+        },
+        {
+          "type": "body",
+          "record": "con-frame-2",
+          "includes": "belong to the render Effort",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "8.3 ms appears only in a retracted record copied from the render Effort by mistake.",
+        "16.6 ms is the Meridian 60 Hz budget, not 120 Hz."
+      ]
+    }
+  ]
+}
