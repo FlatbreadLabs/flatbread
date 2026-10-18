@@ -8,6 +8,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { isCompaction } from '@flatbread/proof';
 import {
   hasEdge,
   idFor,
@@ -125,26 +126,56 @@ function validate(graph, set, q, errors, seen, warnings = []) {
       .filter((key) => key.endsWith('.effort'))
       .map((key) => key.split('.')[0])
       .filter((name) => name !== set.effort);
+    const answers = (r) =>
+      Array.isArray(r) ? r.length > 0 : r !== null && r !== 0 && r !== false;
     const wide = (q.checks ?? []).filter(
       (c) => (c.type === 'select' || c.type === 'compaction') && !c.effort
     );
-    const elsewhere = others.filter((name) =>
-      wide.some((c) => {
-        try {
-          const r = runCheck(graph, name, { ...c, effort: name });
-          return Array.isArray(r)
-            ? r.length > 0
-            : r !== null && r !== 0 && r !== false;
-        } catch {
-          return false;
-        }
-      })
+    // A check that starts from one record is ambiguous when another Effort
+    // holds a record a reader could take for it: same kind and title, or
+    // another compaction. Run the check again from each such record.
+    const single = (q.checks ?? []).filter((c) =>
+      ['asof', 'head', 'chain'].includes(c.type)
+    );
+    const analogs = (c, name) => {
+      let start;
+      try {
+        start = graph.records.get(idFor(graph, set.effort, c.start));
+      } catch {
+        return [];
+      }
+      const effortId = graph.keymap[`${name}.effort`];
+      return [...graph.records.values()].filter(
+        (rec) =>
+          rec.frontmatter.effort === effortId &&
+          rec.kind === start.kind &&
+          (rec.frontmatter.title === start.frontmatter.title ||
+            (isCompaction(start) && isCompaction(rec)))
+      );
+    };
+    const elsewhere = others.filter(
+      (name) =>
+        wide.some((c) => {
+          try {
+            return answers(runCheck(graph, name, { ...c, effort: name }));
+          } catch {
+            return false;
+          }
+        }) ||
+        single.some((c) =>
+          analogs(c, name).some((rec) => {
+            try {
+              const start = graph.keyById.get(rec.id);
+              return answers(runCheck(graph, name, { ...c, start }));
+            } catch {
+              return false;
+            }
+          })
+        )
     );
     if (!named && elsewhere.length)
       warnings.push(
-        `${set.file} ${
-          q.id
-        }: an Effort-wide check also answers in ${elsewhere.join(
+        `${set.file} ${q.id}: its check also answers in ${elsewhere.join(
           ', '
         )}; name the Effort, or set "scoped": true if the wording pins it down`
       );

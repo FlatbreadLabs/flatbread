@@ -1187,7 +1187,7 @@
       "tier": 2,
       "hops": 2,
       "categories": ["temporal", "compaction"],
-      "question": "Which compaction was the head compaction when beta started on 2026-06-01?",
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, which compaction was the head compaction when beta started on 2026-06-01?",
       "answer": {
         "kind": "record",
         "value": "cmp-2"

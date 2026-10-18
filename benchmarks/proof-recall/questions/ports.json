@@ -274,7 +274,7 @@
       "tier": 1,
       "hops": 1,
       "categories": ["temporal", "supersession", "distractor"],
-      "question": "Which Frame budget record was in force for Skiff at the vertical slice?",
+      "question": "In the \"Meridian and Skiff ports\" Effort, which Frame budget record was in force for Skiff at the vertical slice?",
       "answer": {
         "kind": "record",
         "value": "con-frame-1"

@@ -626,7 +626,7 @@
       "tier": 1,
       "hops": 1,
       "categories": ["temporal", "supersession"],
-      "question": "Which version of the Frame budget Constraint was current on alpha day, 2026-03-02?",
+      "question": "In the \"Lantern renderer overhaul\" Effort, which version of the Frame budget Constraint was current on alpha day, 2026-03-02?",
       "answer": {
         "kind": "record",
         "value": "con-budget-2"
@@ -1631,7 +1631,7 @@
       "tier": 3,
       "hops": 2,
       "categories": ["temporal", "supersession", "distractor"],
-      "question": "When the Meridian 120 Hz performance mode budget was first recorded, which version of the Frame budget Constraint was current?",
+      "question": "In the \"Lantern renderer overhaul\" Effort, when the Meridian 120 Hz performance mode budget was first recorded, which version of the Frame budget Constraint was current?",
       "answer": {
         "kind": "record",
         "value": "con-budget-2"
