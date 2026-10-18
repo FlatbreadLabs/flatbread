@@ -25,8 +25,9 @@ import {
   type PrimitiveKind,
 } from '@flatbread/proof';
 import { loadConfig } from '@flatbread/config';
-import { realpath } from 'node:fs/promises';
-import { relative, resolve } from 'node:path';
+import { createHash } from 'node:crypto';
+import { readdir, realpath, stat } from 'node:fs/promises';
+import { join, relative, resolve } from 'node:path';
 
 export interface EffortProjectionOptions {
   readonly cwd: string;
@@ -449,12 +450,38 @@ let projectionCache: Map<string, Promise<EngineProjection>> | undefined;
 
 /**
  * Keeps built graphs in memory for the life of the process. Entries are keyed
- * by the graph root's real path and its write-journal generation, so callers
- * in different folders that link to one graph share it, and a write to the
- * graph makes the next read build it again.
+ * by the graph root's real path and a fingerprint of its record files, so
+ * callers in different folders that link to one graph share it, and any
+ * change to a record file makes the next read build it again. The journal
+ * generation alone is not enough: it lives in a gitignored folder, and a
+ * pull, merge, or checkout changes records without bumping it.
  */
 export function enableProjectionCache(): void {
   projectionCache ??= new Map();
+}
+
+/**
+ * A hash of every record file's path, size, and modification time under
+ * `root`. Statting a few thousand files takes milliseconds, far less than
+ * rebuilding the graph.
+ */
+async function recordFingerprint(root: string): Promise<string> {
+  const hash = createHash('sha256');
+  const walk = async (dir: string): Promise<void> => {
+    const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+    for (const entry of entries) {
+      if (entry.name === '.journal') continue;
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) await walk(path);
+      else if (entry.name.endsWith('.md')) {
+        const info = await stat(path).catch(() => null);
+        if (info) hash.update(`${path}\0${info.size}\0${info.mtimeMs}\n`);
+      }
+    }
+  };
+  await walk(root);
+  return hash.digest('hex');
 }
 
 async function makeProjection(
@@ -462,7 +489,9 @@ async function makeProjection(
 ): Promise<EngineProjection> {
   if (!projectionCache) return loadProjection(options);
   const root = await realpath(options.rootDir).catch(() => options.rootDir);
-  const key = `${root}\0${await generation(root)}`;
+  const key = `${root}\0${await generation(root)}\0${await recordFingerprint(
+    root
+  )}`;
   let projection = projectionCache.get(key);
   if (!projection) {
     for (const stale of [...projectionCache.keys()])

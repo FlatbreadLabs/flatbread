@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import {
   lstat,
   mkdtemp,
+  readdir,
+  readFile,
   rm,
   symlink,
   unlink,
@@ -115,6 +117,26 @@ test.serial(
     t.is(write.code, 0, write.stderr);
     const after = await runCli(cwd, served, 'proof', 'records', effortId);
     t.regex(JSON.parse(after.stdout).summary, /^2 records/);
+
+    // A record changed outside the writer, as a pull or checkout does, also
+    // reaches the next served read, though the journal generation stays put.
+    const copied = join(cwd, '.flatbread-proof', 'findings', 'pulled.md');
+    const [firstFinding] = (
+      await readdir(join(cwd, '.flatbread-proof', 'findings'))
+    ).sort();
+    const text = await readFile(
+      join(cwd, '.flatbread-proof', 'findings', firstFinding),
+      'utf8'
+    );
+    const pulledId = 'fnd-pulled-from-a-teammate--0123456789abcdef';
+    await writeFile(
+      copied,
+      text
+        .replace(/^id: .*$/m, `id: ${pulledId}`)
+        .replace(/^title: .*$/m, 'title: Pulled')
+    );
+    const pulled = await runCli(cwd, served, 'proof', 'records', effortId);
+    t.regex(JSON.parse(pulled.stdout).summary, /^3 records/);
 
     // Errors keep the CLI's JSON shape and exit code.
     const bad = await runCli(cwd, served, 'proof', 'records');
