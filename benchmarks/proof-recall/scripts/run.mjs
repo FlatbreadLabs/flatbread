@@ -4,26 +4,47 @@
 //
 //   node scripts/run.mjs <work-dir> --name <run> [--model haiku]
 //        [--strategies brief,nobrief] [--only render] [--ids a,b]
-//        [--jobs 8] [--timeout 600] [--graph <built-graph-dir>] [--no-serve]
+//        [--jobs 8] [--timeout 600] [--graph <built-graph-dir>]
+//        [--server <socket>] [--no-serve]
+//   node scripts/run.mjs --stop-server [--server <socket>]
 //
 // Each session works in <work-dir>/<strategy>/<id>/, which holds a link to
-// one shared copy of the graph (<work-dir>/graph, without the key map),
-// TASK.md, the agent's answer.json, and transcript.jsonl. A rerun skips
-// sessions that already have both an answer and a transcript, so an
-// interrupted run picks up where it stopped. Keep <work-dir> outside the
-// repository, so no CLAUDE.md or AGENTS.md reaches the agent.
+// the shared copy of the graph, TASK.md, the agent's answer.json, and
+// transcript.jsonl. A rerun skips sessions that already have both an answer
+// and a transcript, so an interrupted run picks up where it stopped. Keep
+// <work-dir> outside the repository, so no CLAUDE.md or AGENTS.md reaches the
+// agent.
 //
-// Unless --no-serve is given, one `flatbread proof serve` process keeps the
-// graph loaded for the whole run and answers every session's reads, so a read
-// does not rebuild the graph. It serves reads only.
+// Runs share two things, kept under <tmp>/flatbread-proof-recall/:
+//
+// - graphs/<hash>/: one read-only copy of each built graph, without its key
+//   map, named by a hash of its contents. Every run on the same build reads
+//   the same files.
+// - proof.sock: one `flatbread proof serve` process that keeps each graph
+//   loaded and answers every session's reads, so no read rebuilds the graph.
+//   It serves reads only. The first run that finds no server starts one and
+//   leaves it running for later runs, including runs in parallel; stop it
+//   with --stop-server, or restart it after rebuilding the CLI so it runs
+//   the new code. --no-serve makes every read run locally instead.
 //
 // Sessions get only the Bash, Read, and Write tools, no MCP servers, and no
 // settings files, so an agent cannot reach other sessions or services.
 import { spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
-import { createWriteStream, existsSync } from 'node:fs';
-import { chmod, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { createWriteStream, existsSync, openSync } from 'node:fs';
+import {
+  chmod,
+  mkdir,
+  readdir,
+  readFile,
+  rename,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises';
+import { request } from 'node:http';
+import { tmpdir } from 'node:os';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { collect } from './collect.mjs';
 import {
@@ -34,6 +55,8 @@ import {
 import { STRATEGIES, taskText } from './task.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// What runs share: graph copies and the read server.
+const SHARED = join(tmpdir(), 'flatbread-proof-recall');
 const TOOLS = 'Bash,Read,Write';
 const FLATBREAD_BIN = resolve(
   BENCH,
@@ -72,6 +95,8 @@ function args(argv) {
     timeout: 600,
     graph: undefined,
     serve: true,
+    server: join(SHARED, 'proof.sock'),
+    stopServer: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
@@ -85,9 +110,12 @@ function args(argv) {
     else if (flag === '--timeout') out.timeout = Number(next());
     else if (flag === '--graph') out.graph = resolve(next());
     else if (flag === '--no-serve') out.serve = false;
+    else if (flag === '--server') out.server = resolve(next());
+    else if (flag === '--stop-server') out.stopServer = true;
     else if (!flag.startsWith('--') && !out.dir) out.dir = resolve(flag);
     else throw new Error(`Unknown argument ${flag}`);
   }
+  if (out.stopServer) return out;
   if (!out.dir || !out.name)
     throw new Error('usage: run.mjs <work-dir> --name <run> [options]');
   if (out.dir.startsWith(resolve(BENCH, '..', '..') + '/'))
@@ -95,26 +123,88 @@ function args(argv) {
   return out;
 }
 
-/** Starts `flatbread proof serve` on `socket` and waits until it listens. */
-function startServer(socket, cwd) {
-  return new Promise((resolveStart, rejectStart) => {
-    const child = spawn(
-      process.execPath,
-      [FLATBREAD_BIN, 'proof', 'serve', '--socket', socket],
-      { cwd, stdio: ['ignore', 'pipe', 'inherit'] }
+const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
+
+/** True when something answers HTTP on `socket`: a running `proof serve`. */
+function serverAnswers(socket) {
+  return new Promise((answer) => {
+    const req = request(
+      { socketPath: socket, path: '/', method: 'GET' },
+      (res) => {
+        res.resume();
+        answer(true);
+      }
     );
-    let out = '';
-    child.stdout.on('data', (chunk) => {
-      out += chunk;
-      if (out.includes('"serving"')) resolveStart(child);
+    req.on('error', () => answer(false));
+    req.setTimeout(2000, () => {
+      req.destroy();
+      answer(false);
     });
-    child.on('exit', (code) =>
-      rejectStart(new Error(`proof serve exited with ${code}: ${out}`))
-    );
+    req.end();
   });
 }
 
-/** One hash over every file's path and bytes under `dir`. */
+/**
+ * Reuses the read server on `socket`, or starts one that outlives this run.
+ * A lock folder makes sure that runs starting together start one server.
+ */
+async function ensureServer(socket) {
+  if (await serverAnswers(socket)) return 'reused';
+  const dir = dirname(socket);
+  await mkdir(dir, { recursive: true });
+  const lock = `${socket}.lock`;
+  for (let i = 0; ; i++) {
+    try {
+      await mkdir(lock);
+      break;
+    } catch {
+      if (await serverAnswers(socket)) return 'reused';
+      // A run that died mid-start leaves its lock; take it after a minute.
+      const age = Date.now() - (await stat(lock).catch(() => null))?.mtimeMs;
+      if (age > 60e3) await rm(lock, { recursive: true, force: true });
+      else if (i > 600) throw new Error(`Gave up waiting for ${lock}`);
+      await sleep(200);
+    }
+  }
+  try {
+    if (await serverAnswers(socket)) return 'reused';
+    const log = openSync(join(dir, 'serve.log'), 'a');
+    const child = spawn(
+      process.execPath,
+      [FLATBREAD_BIN, 'proof', 'serve', '--socket', socket],
+      { cwd: dir, detached: true, stdio: ['ignore', log, log] }
+    );
+    child.unref();
+    await writeFile(`${socket}.pid`, `${child.pid}\n`);
+    for (let i = 0; i < 300; i++) {
+      if (await serverAnswers(socket)) return 'started';
+      await sleep(200);
+    }
+    throw new Error(`proof serve did not start; see ${join(dir, 'serve.log')}`);
+  } finally {
+    await rm(lock, { recursive: true, force: true });
+  }
+}
+
+/** Stops the server that `ensureServer` started on `socket`. */
+async function stopServer(socket) {
+  const pid = Number(await readFile(`${socket}.pid`, 'utf8').catch(() => NaN));
+  if (pid) {
+    try {
+      process.kill(pid);
+      console.log(`Stopped proof serve (pid ${pid})`);
+    } catch {
+      console.log(`No proof serve running as pid ${pid}`);
+    }
+  } else console.log(`No proof serve recorded for ${socket}`);
+  await rm(`${socket}.pid`, { force: true });
+  await rm(socket, { force: true });
+}
+
+/**
+ * One hash over every file under `dir` but the key map: its path relative to
+ * `dir` and its bytes. A graph and its public copy hash the same.
+ */
 async function treeHash(dir) {
   const hash = createHash('sha256');
   const walk = async (path) => {
@@ -124,11 +214,36 @@ async function treeHash(dir) {
     for (const entry of entries) {
       const child = join(path, entry.name);
       if (entry.isDirectory()) await walk(child);
-      else hash.update(child).update(await readFile(child));
+      else if (entry.name !== 'keymap.json')
+        hash
+          .update(relative(dir, child))
+          .update('\0')
+          .update(await readFile(child));
     }
   };
   await walk(dir);
   return hash.digest('hex');
+}
+
+/**
+ * The shared public copy of `graph`, made once per build. A copy whose files
+ * no longer match its name was changed after the fact, so it is made again.
+ */
+async function sharedGraph(graph = join(BENCH, '.flatbread-proof')) {
+  const hash = await treeHash(graph);
+  const dir = join(SHARED, 'graphs', hash.slice(0, 16));
+  if (existsSync(dir) && (await treeHash(dir)) === hash) return { dir, hash };
+  await rm(dir, { recursive: true, force: true });
+  const temporary = `${dir}.tmp-${randomUUID()}`;
+  await copyPublicGraph(temporary, graph);
+  await chmodTree(temporary);
+  try {
+    await rename(temporary, dir);
+  } catch {
+    // Another run made the same copy first.
+    await rm(temporary, { recursive: true, force: true });
+  }
+  return { dir, hash };
 }
 
 /** Makes a folder tree read-only, so no session can change what others read. */
@@ -194,6 +309,7 @@ function runSession(folder, model, timeoutSeconds) {
 
 async function main() {
   const options = args(process.argv.slice(2));
+  if (options.stopServer) return stopServer(options.server);
   const questions = await publicQuestions(options);
   // Alternate strategies question by question, so a change in API speed or
   // load over the run falls on both strategies alike.
@@ -214,25 +330,19 @@ async function main() {
   console.log(
     `${sessions.length} sessions, ${todo.length} to run, ${options.jobs} at a time`
   );
-  // One read-only copy of the graph, without its key map, that every
-  // session folder links to. Copying a large graph per session would fill
-  // the disk.
-  const shared = join(options.dir, 'graph');
-  if (!existsSync(shared)) {
-    await copyPublicGraph(shared, options.graph);
-    await chmodTree(shared);
-  }
-  // Root ignores file modes, so also check afterwards that nothing changed.
-  const before = await treeHash(shared);
-  const socket = join(options.dir, 'proof.sock');
-  const server = options.serve ? await startServer(socket, options.dir) : null;
+  // Copying a large graph per session would fill the disk, so every session
+  // links to one read-only copy.
+  const { dir: shared, hash } = await sharedGraph(options.graph);
+  const socket = options.serve ? options.server : undefined;
+  if (socket)
+    console.log(`proof serve on ${socket}: ${await ensureServer(socket)}`);
   let done = 0;
   const failures = [];
   const worker = async () => {
     for (let s = todo.shift(); s; s = todo.shift()) {
       await prepareFolder(s.folder, [s.q], options.graph, {
         linkTo: shared,
-        server: server ? socket : undefined,
+        server: socket,
       });
       await writeFile(
         join(s.folder, 'TASK.md'),
@@ -246,8 +356,8 @@ async function main() {
   };
   await Promise.all(Array.from({ length: options.jobs }, worker));
   if (failures.length) console.warn(`Failed:\n${failures.join('\n')}`);
-  server?.kill();
-  if ((await treeHash(shared)) !== before)
+  // Root ignores file modes, so check that no session changed the graph.
+  if ((await treeHash(shared)) !== hash)
     console.warn(`The shared graph in ${shared} changed during the run`);
   await mkdir(join(BENCH, 'runs'), { recursive: true });
   for (const strategy of options.strategies)

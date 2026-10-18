@@ -1,4 +1,4 @@
-import { createServer, type Server } from 'node:http';
+import { createServer, request, type Server } from 'node:http';
 import { existsSync } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -35,6 +35,25 @@ export interface ServedRead {
   readonly stdout: string;
   readonly stderr: string;
   readonly code: number;
+}
+
+/** True when something answers HTTP on `socketPath`. */
+function answers(socketPath: string): Promise<boolean> {
+  return new Promise((resolveAnswer) => {
+    const probe = request(
+      { socketPath, path: '/', method: 'GET' },
+      (response) => {
+        response.resume();
+        resolveAnswer(true);
+      }
+    );
+    probe.on('error', () => resolveAnswer(false));
+    probe.setTimeout(2000, () => {
+      probe.destroy();
+      resolveAnswer(false);
+    });
+    probe.end();
+  });
 }
 
 function invalid(message: string): never {
@@ -110,7 +129,13 @@ export async function runRead(
 export async function serveProofReads(socketPath: string): Promise<Server> {
   enableProjectionCache();
   await mkdir(dirname(socketPath), { recursive: true });
-  if (existsSync(socketPath)) await rm(socketPath);
+  if (existsSync(socketPath)) {
+    // Replacing the socket file would strand a live server, still running
+    // but unreachable. Only a socket nothing answers on is taken over.
+    if (await answers(socketPath))
+      throw new Error(`A proof serve already answers on ${socketPath}`);
+    await rm(socketPath);
+  }
   const server = createServer((request, response) => {
     const reply = (status: number, body: ServedRead) => {
       response.writeHead(status, { 'content-type': 'application/json' });

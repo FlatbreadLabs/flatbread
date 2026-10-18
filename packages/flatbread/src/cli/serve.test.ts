@@ -124,6 +124,11 @@ test.serial(
     t.is(badLimit.code, 1);
     t.is(JSON.parse(badLimit.stderr).error.code, 'PROOF_INVALID_ARGUMENT');
 
+    // A second server cannot take the socket from a live one.
+    await t.throwsAsync(serveProofReads(socket), {
+      message: /already answers on/,
+    });
+
     // The server itself refuses anything but a read.
     const refused = await runRead(['write', '{}'], cwd);
     t.is(refused.code, 1);

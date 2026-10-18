@@ -263,9 +263,15 @@ A benchmark agent must never see `spec/`, `questions/`, or `keymap.json`.
    config, a `./flatbread` wrapper, `TASK.md`, and, afterwards, the
    agent's `answer.json` and `transcript.jsonl`. Sessions get only the
    Bash, Read, and Write tools, no MCP servers, and no settings files.
-   One `flatbread proof serve` process keeps the graph loaded for the
-   whole run and answers every session's reads (`--no-serve` turns it
-   off); on the 10x graph a read drops from about 7 seconds to under 1.
+   Runs share one read-only copy of each built graph and one
+   `flatbread proof serve` process, both under
+   `<tmp>/flatbread-proof-recall/`. The server keeps each graph loaded
+   and answers every session's reads; on the 10x graph a read drops from
+   about 7 seconds to under 1. The first run that finds no server starts
+   one and leaves it running for later or parallel runs. Stop it with
+   `node scripts/run.mjs --stop-server`, and restart it that way after
+   rebuilding the CLI, since it keeps running the code it started with.
+   `--no-serve` makes reads run locally.
    Keep the work folder outside the repository. A rerun skips finished
    sessions. When every session ends, `run.mjs` writes
    `runs/<run>-brief.json` and `runs/<run>-nobrief.json`, taking tokens
