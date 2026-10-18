@@ -1,0 +1,210 @@
+{
+  "run": {
+    "name": "pilot-1-nobrief",
+    "strategy": "no-brief",
+    "protocol": "one session answers all 46 questions",
+    "sample": "stratified, seed pilot-1",
+    "harness": {
+      "total_tokens": 239556,
+      "total_tool_calls": 27,
+      "duration_ms": 313576
+    },
+    "note": "Per-answer tool_calls are the agent own tally; the harness totals are authoritative."
+  },
+  "answers": {
+    "netcode-004": {
+      "answer": "Rollback had to re-run the tide step on every rolled-back frame, costing 4.8 ms on Skiff (a fifth of the 25 ms frame), and the workarounds tried (smaller window, quarter-resolution tides, leaving tides out of the snapshot) failed. The reason depends on the world Decision \"Run the tide simulation in 32.32 fixed point\" (dec-run-the-tide-simulation-in-32-32-fixed-point--c5rjfcnmhne4h05e), which keeps tides deterministic.",
+      "tool_calls": 4
+    },
+    "netcode-006": {
+      "answer": "dec-prototype-rollback-netcode-for-co-op--2tx2s2p3sfbwj8x4",
+      "tool_calls": 2
+    },
+    "netcode-010": {
+      "answer": "dec-use-a-6-frame-rollback-window-with-1-frame-of-in--s53944zhkw103frk",
+      "tool_calls": 2
+    },
+    "netcode-012": {
+      "answer": "dec-re-simulate-tides-at-quarter-resolution-during-r--7ah25p0r0xt9719f",
+      "tool_calls": 2
+    },
+    "netcode-015": {
+      "answer": 2,
+      "tool_calls": 2
+    },
+    "tools-002": {
+      "answer": "47 minutes",
+      "tool_calls": 2
+    },
+    "tools-006": {
+      "answer": "dec-build-a-content-addressed-shader-compile-cache-s--e65rq9439k7xz5zh",
+      "tool_calls": 2
+    },
+    "tools-014": {
+      "answer": false,
+      "tool_calls": 2
+    },
+    "tools-015": {
+      "answer": [
+        "rsk-shader-cache-storage-could-outgrow-the-4-tb-farm--76y9649mwrx7aavd",
+        "iss-developer-workstations-cannot-read-the-farm-shad--q2xw0f7fze6z55nj"
+      ],
+      "tool_calls": 2
+    },
+    "tools-016": {
+      "answer": "dec-key-the-shader-cache-on-preprocessed-source-defi--qx2da8e4cbkx0drp",
+      "tool_calls": 2
+    },
+    "ports-001": {
+      "answer": "25 ms",
+      "tool_calls": 2
+    },
+    "ports-034": {
+      "answer": "6 weeks",
+      "tool_calls": 3
+    },
+    "ports-012": {
+      "answer": "At the 540p floor the saltglass caustics shimmered badly in motion even after Tern (7 of 10 dune views); at 576p shimmer dropped to 2 of 10 for 1.3 ms more on the worst view.",
+      "tool_calls": 2
+    },
+    "ports-015": {
+      "answer": "textures (3,184 MB)",
+      "tool_calls": 4
+    },
+    "ports-016": {
+      "answer": "dec-ship-prebuilt-pipeline-blobs-in-the-skiff-packag--3vjysjgy9qkvzebn",
+      "tool_calls": 2
+    },
+    "ports-022": {
+      "answer": "cit-skiff-sdk-1-2-release-notes--7gwwn8xxffrx6npe",
+      "tool_calls": 2
+    },
+    "ports-026": {
+      "answer": "912 MB",
+      "tool_calls": 4
+    },
+    "ports-030": {
+      "answer": [
+        "dec-cap-tide-storm-particles-at-6-000-on-skiff--resze52afjxyxys1",
+        "dec-drop-skiff-to-30-hz-while-a-tide-storm-is-on-scr--72vx1c8s4jrs6axc"
+      ],
+      "tool_calls": 3
+    },
+    "ports-033": {
+      "answer": "unknown",
+      "tool_calls": 2
+    },
+    "cross-011": {
+      "answer": false,
+      "tool_calls": 3
+    },
+    "cross-012": {
+      "answer": "61 MB/s",
+      "tool_calls": 3
+    },
+    "ports-013": {
+      "answer": "Ship Tern as Lantern's only upscaler",
+      "tool_calls": 3
+    },
+    "cross-013": {
+      "answer": "The Skiff port runs Tern at the Performance preset (2.1 ms), which saves 1.8 ms over Quality (3.9 ms).",
+      "tool_calls": 3
+    },
+    "cross-017": {
+      "answer": false,
+      "tool_calls": 4
+    },
+    "render-002": {
+      "answer": "3.4x",
+      "tool_calls": 3
+    },
+    "render-005": {
+      "answer": true,
+      "tool_calls": 2
+    },
+    "render-021": {
+      "answer": "dec-adopt-a-visibility-buffer-for-all-opaque-geometr--68vchzqgd1avw8q4",
+      "tool_calls": 2
+    },
+    "render-033": {
+      "answer": "128 MB",
+      "tool_calls": 3
+    },
+    "render-040": {
+      "answer": "fnd-lantern-at-alpha--ckpd9ecvdjqbcr7c",
+      "tool_calls": 2
+    },
+    "render-050": {
+      "answer": "con-frame-budget--fzdrbxns6dmrrmy3",
+      "tool_calls": 2
+    },
+    "render-056": {
+      "answer": "208,000 meshlets",
+      "tool_calls": 3
+    },
+    "render-059": {
+      "answer": "fnd-sdf-gi-costs-4-7-ms-on-meridian--sm19rt2f274ajsvr",
+      "tool_calls": 2
+    },
+    "render-070": {
+      "answer": [
+        "dec-use-signed-distance-field-gi--yn366zmp3k7snd9w",
+        "dec-enable-meshlet-cone-culling-on-all-platforms--cpyweprmzcqhqsv2",
+        "dec-feed-a-saltglass-reactive-mask-into-tern--xezjs7v3vq3r8e6k"
+      ],
+      "tool_calls": 3
+    },
+    "render-075": {
+      "answer": "3",
+      "tool_calls": 3
+    },
+    "cross-009": {
+      "answer": "con-skiff-memory-budget--nf7qbhsnmcn6v479",
+      "tool_calls": 3
+    },
+    "cross-015": {
+      "answer": "Two Efforts are no longer active: \"Co-op rollback netcode prototype\" was abandoned, when the Decision \"Abandon rollback netcode for co-op\" stopped rollback (re-running tides cost 4.8 ms on Skiff) and co-op moved to host-authoritative sync; \"Shader compile cache and build farm\" was completed once the cache was turned on for every farm build.",
+      "tool_calls": 3
+    },
+    "world-014": {
+      "answer": "unknown",
+      "tool_calls": 3
+    },
+    "world-016": {
+      "answer": "unknown",
+      "tool_calls": 2
+    },
+    "world-022": {
+      "answer": "fnd-41-of-alpha-crash-reports-have-no-usable-stack--35a50b07ferhf13m",
+      "tool_calls": 2
+    },
+    "world-035": {
+      "answer": false,
+      "tool_calls": 2
+    },
+    "world-046": {
+      "answer": "con-streaming-pool-budget--632bkbs79bwj4cr5",
+      "tool_calls": 2
+    },
+    "world-053": {
+      "answer": "1.9 ms (from 5.1 ms to 3.2 ms)",
+      "tool_calls": 3
+    },
+    "world-059": {
+      "answer": "dec-derive-the-missing-harmonic-phase-from-each-save--gbqrvvgyq2gy2gnw",
+      "tool_calls": 2
+    },
+    "world-066": {
+      "answer": "46 player-proximity reads",
+      "tool_calls": 4
+    },
+    "world-069": {
+      "answer": 6,
+      "tool_calls": 5
+    },
+    "world-077": {
+      "answer": 9,
+      "tool_calls": 3
+    }
+  }
+}

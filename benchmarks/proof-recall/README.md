@@ -244,11 +244,48 @@ support of that standing.
 
 A benchmark agent must never see `spec/`, `questions/`, or `keymap.json`.
 
-1. Copy `.flatbread-proof/` (without `keymap.json`) and `flatbread.config.js`
-   into an empty folder, and symlink the repository's `node_modules` into it
-   so the config's imports resolve.
-2. Give the agent that folder, the questions' `id` and `question` text only,
-   and one read strategy: `brief` first, `records` only, or raw files.
-3. Record each answer with its token and tool-call counts in
-   `runs/<name>.json`, in the shape `scripts/grade.mjs` describes.
-4. Run `node scripts/grade.mjs runs/<name>.json`.
+1. Run `node scripts/prepare-run.mjs <folder> [--ids q1,q2]`. The folder gets
+   the graph without the key map, the config, a `./flatbread` wrapper, and
+   `questions.json` with each question's text and answer format only.
+2. Start a fresh agent session for each question. A session that answers many
+   questions loads the graph once and spreads that cost across all of them,
+   which hides both the cost and the difficulty (see the pilot below).
+3. Give the agent the folder and one read strategy: `brief` first, `records`
+   without `brief`, or raw files. Allow one graph command per tool call; a
+   shell loop that dumps every Effort turns a recall test into a reading test.
+4. Take tokens and tool calls from the agent harness, not from the agent. In
+   the pilot, agents' own tallies were 2.4 and 4.5 times the harness counts.
+5. Save answers in `runs/<name>.json`, in the shape `scripts/grade.mjs`
+   describes, and run `node scripts/grade.mjs runs/<name>.json`.
+
+## Pilot results
+
+The first pilot (`runs/pilot-1-*.json`) drew a stratified sample of 46
+questions: 8 at each of tiers 0 to 3 and 14 at tier 4, from every Effort. Two
+fresh agents answered all 46 in one session each, from clean run folders.
+Audits of their tool calls found no access to answers.
+
+| Strategy      | Correct  | Tool calls | Tokens  | Time    |
+| ------------- | -------- | ---------- | ------- | ------- |
+| `brief` first | 46 of 46 | 46         | 203,004 | 7.3 min |
+| no `brief`    | 45 of 46 | 27         | 239,556 | 5.2 min |
+
+What it showed:
+
+1. **One session per batch puts the benchmark at its ceiling.** Both agents
+   read most of the graph early, then answered from it. Tiers stopped
+   mattering. The protocol above now asks for one session per question.
+2. **The one miss was an exact count.** The no-`brief` agent counted 6 records
+   changed since the world compaction; there are 7. The `brief` envelope
+   reports that count directly.
+3. **The grader was too strict.** Four answers carried the right value plus
+   detail ("46 player-proximity reads"). `grade.mjs` now accepts those.
+4. **One run per strategy proves nothing about strategies.** The token gap is
+   a single pair of runs.
+
+Next steps, in order:
+
+1. Run each sampled question in its own session, for both strategies, with
+   harness token counts.
+2. If accuracy is still at the ceiling, cap tool calls per question, or grow
+   the graph past what one agent can read whole.
