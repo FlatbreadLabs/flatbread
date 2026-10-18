@@ -433,35 +433,32 @@ function validateLimit(limit: number | undefined): void {
   );
 }
 
+/** The JSON a failed Proof command prints on stderr. */
+export function errorPayload(error: unknown): unknown {
+  if (
+    error !== null &&
+    typeof error === 'object' &&
+    'shape' in error &&
+    typeof (error as { shape: unknown }).shape === 'object' &&
+    (error as { shape: unknown }).shape !== null
+  )
+    return (error as { shape: unknown }).shape;
+  if (error instanceof Error) {
+    try {
+      return JSON.parse(error.message);
+    } catch {
+      return { error: { code: 'PROOF_CLI_ERROR', message: error.message } };
+    }
+  }
+  return { error: { code: 'PROOF_CLI_ERROR', message: String(error) } };
+}
+
 export function registerProofCommands(prog: any): void {
-  const hasShape = (
-    value: unknown
-  ): value is { shape: Record<string, unknown> } => {
-    if (value === null || typeof value !== 'object' || !('shape' in value))
-      return false;
-    const candidate = value as { shape: unknown };
-    return typeof candidate.shape === 'object' && candidate.shape !== null;
-  };
   const printResult = async (result: Promise<unknown>): Promise<void> => {
     try {
       console.log(JSON.stringify(await result));
     } catch (error) {
-      let payload: unknown;
-      if (hasShape(error)) payload = error.shape;
-      else if (error instanceof Error) {
-        try {
-          payload = JSON.parse(error.message);
-        } catch {
-          payload = {
-            error: { code: 'PROOF_CLI_ERROR', message: error.message },
-          };
-        }
-      } else {
-        payload = {
-          error: { code: 'PROOF_CLI_ERROR', message: String(error) },
-        };
-      }
-      console.error(JSON.stringify(payload));
+      console.error(JSON.stringify(errorPayload(error)));
       process.exitCode = 1;
     }
   };

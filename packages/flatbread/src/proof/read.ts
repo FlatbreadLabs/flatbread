@@ -25,6 +25,7 @@ import {
   type PrimitiveKind,
 } from '@flatbread/proof';
 import { loadConfig } from '@flatbread/config';
+import { realpath } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 
 export interface EffortProjectionOptions {
@@ -434,12 +435,43 @@ class EngineProjection {
   }
 }
 
-async function makeProjection(
+async function loadProjection(
   options: EffortProjectionOptions
 ): Promise<EngineProjection> {
   const loaded = await loadConfig({ cwd: options.cwd });
   if (!loaded.config) throw new Error('Flatbread config is not defined');
   return new EngineProjection(configForCwd(loaded.config, options.cwd));
+}
+
+// Off by default: each CLI call builds the graph once and exits. A
+// long-lived read server turns it on, so later reads skip the build.
+let projectionCache: Map<string, Promise<EngineProjection>> | undefined;
+
+/**
+ * Keeps built graphs in memory for the life of the process. Entries are keyed
+ * by the graph root's real path and its write-journal generation, so callers
+ * in different folders that link to one graph share it, and a write to the
+ * graph makes the next read build it again.
+ */
+export function enableProjectionCache(): void {
+  projectionCache ??= new Map();
+}
+
+async function makeProjection(
+  options: EffortProjectionOptions
+): Promise<EngineProjection> {
+  if (!projectionCache) return loadProjection(options);
+  const root = await realpath(options.rootDir).catch(() => options.rootDir);
+  const key = `${root}\0${await generation(root)}`;
+  let projection = projectionCache.get(key);
+  if (!projection) {
+    for (const stale of [...projectionCache.keys()])
+      if (stale.startsWith(`${root}\0`)) projectionCache.delete(stale);
+    projection = loadProjection(options);
+    projection.catch(() => projectionCache?.delete(key));
+    projectionCache.set(key, projection);
+  }
+  return projection;
 }
 
 async function render(

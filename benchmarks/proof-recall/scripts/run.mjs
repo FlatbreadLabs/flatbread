@@ -4,7 +4,7 @@
 //
 //   node scripts/run.mjs <work-dir> --name <run> [--model haiku]
 //        [--strategies brief,nobrief] [--only render] [--ids a,b]
-//        [--jobs 8] [--timeout 600] [--graph <built-graph-dir>]
+//        [--jobs 8] [--timeout 600] [--graph <built-graph-dir>] [--no-serve]
 //
 // Each session works in <work-dir>/<strategy>/<id>/, which holds a link to
 // one shared copy of the graph (<work-dir>/graph, without the key map),
@@ -12,6 +12,10 @@
 // sessions that already have both an answer and a transcript, so an
 // interrupted run picks up where it stopped. Keep <work-dir> outside the
 // repository, so no CLAUDE.md or AGENTS.md reaches the agent.
+//
+// Unless --no-serve is given, one `flatbread proof serve` process keeps the
+// graph loaded for the whole run and answers every session's reads, so a read
+// does not rebuild the graph. It serves reads only.
 //
 // Sessions get only the Bash, Read, and Write tools, no MCP servers, and no
 // settings files, so an agent cannot reach other sessions or services.
@@ -31,6 +35,15 @@ import { STRATEGIES, taskText } from './task.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const TOOLS = 'Bash,Read,Write';
+const FLATBREAD_BIN = resolve(
+  BENCH,
+  '..',
+  '..',
+  'packages',
+  'flatbread',
+  'bin',
+  'flatbread.js'
+);
 // Variables that tie a process to the Claude Code session that launched it.
 // A benchmark session inheriting them could report into that session.
 const SESSION_VARS = [
@@ -58,6 +71,7 @@ function args(argv) {
     jobs: 8,
     timeout: 600,
     graph: undefined,
+    serve: true,
   };
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
@@ -70,6 +84,7 @@ function args(argv) {
     else if (flag === '--jobs') out.jobs = Number(next());
     else if (flag === '--timeout') out.timeout = Number(next());
     else if (flag === '--graph') out.graph = resolve(next());
+    else if (flag === '--no-serve') out.serve = false;
     else if (!flag.startsWith('--') && !out.dir) out.dir = resolve(flag);
     else throw new Error(`Unknown argument ${flag}`);
   }
@@ -78,6 +93,25 @@ function args(argv) {
   if (out.dir.startsWith(resolve(BENCH, '..', '..') + '/'))
     throw new Error('Keep <work-dir> outside the repository');
   return out;
+}
+
+/** Starts `flatbread proof serve` on `socket` and waits until it listens. */
+function startServer(socket, cwd) {
+  return new Promise((resolveStart, rejectStart) => {
+    const child = spawn(
+      process.execPath,
+      [FLATBREAD_BIN, 'proof', 'serve', '--socket', socket],
+      { cwd, stdio: ['ignore', 'pipe', 'inherit'] }
+    );
+    let out = '';
+    child.stdout.on('data', (chunk) => {
+      out += chunk;
+      if (out.includes('"serving"')) resolveStart(child);
+    });
+    child.on('exit', (code) =>
+      rejectStart(new Error(`proof serve exited with ${code}: ${out}`))
+    );
+  });
 }
 
 /** One hash over every file's path and bytes under `dir`. */
@@ -190,11 +224,16 @@ async function main() {
   }
   // Root ignores file modes, so also check afterwards that nothing changed.
   const before = await treeHash(shared);
+  const socket = join(options.dir, 'proof.sock');
+  const server = options.serve ? await startServer(socket, options.dir) : null;
   let done = 0;
   const failures = [];
   const worker = async () => {
     for (let s = todo.shift(); s; s = todo.shift()) {
-      await prepareFolder(s.folder, [s.q], options.graph, { linkTo: shared });
+      await prepareFolder(s.folder, [s.q], options.graph, {
+        linkTo: shared,
+        server: server ? socket : undefined,
+      });
       await writeFile(
         join(s.folder, 'TASK.md'),
         taskText({ folder: s.folder, strategy: s.strategy, ...s.q })
@@ -207,6 +246,7 @@ async function main() {
   };
   await Promise.all(Array.from({ length: options.jobs }, worker));
   if (failures.length) console.warn(`Failed:\n${failures.join('\n')}`);
+  server?.kill();
   if ((await treeHash(shared)) !== before)
     console.warn(`The shared graph in ${shared} changed during the run`);
   await mkdir(join(BENCH, 'runs'), { recursive: true });

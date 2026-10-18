@@ -247,7 +247,17 @@ flatbread proof relations <effortId> <fromId> --relations r1,r2 [--limit n] [--c
 flatbread proof blocking-decisions <effortId> [consistency flags]
 flatbread proof brief <effortId> [consistency flags]
 flatbread proof cache prune
+flatbread proof serve [--socket .flatbread/proof/serve.sock]
 ```
+
+- `proof serve` keeps the graph loaded in one process and answers the six
+  reads above (`list`, `records`, `get`, `relations`, `blocking-decisions`,
+  `brief`); it serves nothing that writes. Set `FLATBREAD_PROOF_SERVER` to its
+  socket and those read commands go to it, in any folder whose graph root
+  resolves to the same files. Each later read then takes a fraction of a
+  second instead of rebuilding the graph. A write bumps the journal
+  generation, and the next served read rebuilds from disk. If the socket is
+  unreachable, reads run locally as before.
 
 - `--kinds`: `effort|issue|finding|decision|constraint|risk|citation|blob`.
   `records` includes every non-Effort kind except Blob by default. Add

@@ -52,12 +52,13 @@ export async function copyPublicGraph(
  * Empties `out` and fills it with a graph, the config, and the questions.
  * The graph is the committed one unless `graph` names another build. With
  * `linkTo`, the folder links to a public graph copy instead of copying one.
+ * With `server`, its `./flatbread` sends reads to that `proof serve` socket.
  */
 export async function prepareFolder(
   out,
   questions,
   graph = join(BENCH, '.flatbread-proof'),
-  { linkTo } = {}
+  { linkTo, server } = {}
 ) {
   await rm(out, { recursive: true, force: true });
   await mkdir(out, { recursive: true });
@@ -74,7 +75,9 @@ export async function prepareFolder(
   );
   await writeFile(
     join(out, 'flatbread'),
-    `#!/bin/sh\nexec node "${join(
+    `#!/bin/sh\n${
+      server ? `export FLATBREAD_PROOF_SERVER="${server}"\n` : ''
+    }exec node "${join(
       REPO,
       'packages',
       'flatbread',
