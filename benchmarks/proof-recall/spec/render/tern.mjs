@@ -1,0 +1,326 @@
+// Tern against the Halcyon vendor upscaler; ghosting on saltglass; presets.
+// Halcyon is rejected, reopened, and rejected again by an outside Decision.
+import { d, json, INES, TOMASZ, YUSUF, PRIYA, DARA } from './people.mjs';
+
+export default [
+  {
+    at: d('2025-10-01 11:00'),
+    key: 'iss-upscaler-q',
+    type: 'WriteIssue',
+    kind: 'question',
+    title: 'Which upscaler should Lantern ship?',
+    created_by: INES,
+    body: 'Lantern renders below output resolution on every platform and needs a temporal upscaler. Options: Tern, the studio upscaler inside Lantern; Halcyon, a vendor upscaler with an SDK; or a split between them by platform.',
+  },
+  {
+    at: d('2025-10-02 09:00'),
+    key: 'con-one-upscaler',
+    type: 'WriteConstraint',
+    kind: 'soft',
+    title: 'One upscaler path on every platform',
+    created_by: INES,
+    body:
+      'Lantern should carry one temporal upscaler across PC, Meridian and Skiff. Every reactive mask, motion vector fix and saltglass special case otherwise has to be done twice. ' +
+      'Ines Okafor will bend this only for a large quality gain.',
+  },
+  {
+    at: d('2025-10-16 10:00'),
+    key: 'fnd-halcyon-eval',
+    type: 'WriteFinding',
+    kind: 'survey',
+    title: 'Halcyon vendor upscaler: quality and platform coverage',
+    created_by: TOMASZ,
+    derives_from: ['iss-upscaler-q'],
+    body:
+      'Halcyon gives cleaner disocclusions than Tern on PC and costs 1.2 ms at 4K output on Meridian. The SDK ships for PC and Meridian only; there is no Skiff build and the vendor gives no date for one. ' +
+      'The license is per title and needs legal review. Halcyon is a closed binary, so saltglass fixes would mean filing vendor tickets.',
+  },
+  {
+    at: d('2025-10-16 11:00'),
+    key: 'fnd-tern-cost-1',
+    type: 'WriteFinding',
+    kind: 'measurement',
+    title: 'Tern cost at 4K output on Meridian',
+    created_by: TOMASZ,
+    derives_from: ['iss-upscaler-q'],
+    body: 'Tern upscaling 1440p to 4K on Meridian costs 1.9 ms on the dunes benchmark, with history reprojection the largest part. That is 0.7 ms more than Halcyon on the same view.',
+  },
+  {
+    at: d('2025-10-28 13:00'),
+    key: 'dec-tern',
+    type: 'WriteDecision',
+    title: "Ship Tern as Lantern's only upscaler",
+    created_by: TOMASZ,
+    derives_from: [
+      'iss-upscaler-q',
+      'con-one-upscaler',
+      'fnd-tern-cost-1',
+      'fnd-halcyon-eval',
+    ],
+    body:
+      'Tern is the only temporal upscaler Lantern ships, on PC, Meridian and Skiff. Halcyon has no Skiff build, and shipping it on two platforms would break the one-upscaler Constraint. ' +
+      'Tern costs 0.7 ms more than Halcyon on Meridian today; Tomasz Brandt expects to recover most of that.\n\n' +
+      'Owning the code matters more for saltglass than raw quality. Refraction moves light independently of geometry motion vectors, and the caustics change every frame. ' +
+      'Both need upscaler changes the team can make the same week, not vendor tickets. There is no license to negotiate.\n\n' +
+      'Other Efforts may pick a Tern preset per platform, but no Effort may add a second upscaler without reopening this Decision. ' +
+      "Tern's history buffer is stored as 16-bit float per channel, and every preset shares it.",
+  },
+  {
+    at: d('2025-10-28 14:00'),
+    key: 'dec-vendor',
+    type: 'WriteDecision',
+    title: 'Ship the Halcyon vendor upscaler on PC and Meridian',
+    created_by: PRIYA,
+    derives_from: ['iss-upscaler-q', 'fnd-halcyon-eval'],
+    body: 'Use Halcyon on PC and Meridian, where it is 0.7 ms cheaper than Tern and cleaner on disocclusions. Skiff would need something else. Priya Natarajan thinks platform holders will favor the vendor SDK.',
+  },
+  {
+    at: d('2025-10-28 15:00'),
+    key: 'dec-split-upscaler',
+    type: 'WriteDecision',
+    title: 'Ship Halcyon on PC and Meridian and Tern on Skiff',
+    created_by: YUSUF,
+    derives_from: ['iss-upscaler-q'],
+    body: 'Use each upscaler where it is strongest: Halcyon on PC and Meridian, Tern on Skiff. Two upscalers to tune for saltglass, but the best image on each platform.',
+  },
+  {
+    at: d('2025-10-28 16:00'),
+    key: 'dec-tern-dup',
+    type: 'WriteDecision',
+    title: 'Ship Tern as the only upscaler in Lantern',
+    created_by: TOMASZ,
+    derives_from: ['iss-upscaler-q'],
+    body: 'Tern is the only upscaler. Draft.',
+  },
+  {
+    at: d('2025-11-10 10:00'),
+    type: 'Retract',
+    recordId: 'dec-tern-dup',
+    reason:
+      'Draft of the upscaler Decision saved by mistake; the full Decision was written three hours earlier.',
+  },
+  { at: d('2025-11-12 10:00'), type: 'AcceptDecision', decisionId: 'dec-tern' },
+  {
+    at: d('2025-11-12 10:05'),
+    type: 'ResolveIssue',
+    issueId: 'iss-upscaler-q',
+    resolution: 'resolved',
+    resolvedBy: ['dec-tern'],
+  },
+  {
+    at: d('2025-12-10 10:00'),
+    key: 'fnd-tern-cost-2',
+    type: 'WriteFinding',
+    kind: 'measurement',
+    title: 'Tern cost at 4K output on Meridian after FP16 packing',
+    created_by: TOMASZ,
+    supersedes: ['fnd-tern-cost-1'],
+    body: 'Packing the reprojection inputs as FP16 and merging two passes brings Tern at 4K output on Meridian to 1.4 ms on the dunes benchmark, down from 1.9 ms.',
+  },
+  {
+    at: d('2026-02-20 10:00'),
+    key: 'iss-presets-q',
+    type: 'WriteIssue',
+    kind: 'question',
+    title: 'Which Tern quality presets should ship?',
+    created_by: INES,
+    body: 'Players and the ports team need named Tern presets. How many, and at what render scale? Fewer presets means less tuning of saltglass and caustics per preset.',
+  },
+  {
+    at: d('2026-02-23 15:00'),
+    key: 'blb-tern-presets',
+    type: 'WriteBlob',
+    kind: 'json',
+    title: 'Tern preset table: render scale and cost per platform',
+    created_by: TOMASZ,
+    body: json({
+      build: 'lantern-2026.02.22-r5990',
+      output: '4K on PC and Meridian, 720p on Skiff',
+      presets: {
+        quality: { scale: 0.67, meridian_ms: 1.4, skiff_ms: 3.9 },
+        balanced: { scale: 0.58, meridian_ms: 1.3, skiff_ms: 3.0 },
+        performance: { scale: 0.5, meridian_ms: 1.2, skiff_ms: 2.1 },
+        ultra_performance: { scale: 0.33, meridian_ms: 1.0, skiff_ms: null },
+      },
+      notes: 'Ultra Performance is untested on Skiff.',
+    }),
+  },
+  {
+    at: d('2026-02-23 15:05'),
+    key: 'cit-tern-presets',
+    type: 'WriteCitation',
+    role: 'evidence',
+    title: 'Tern preset table',
+    created_by: TOMASZ,
+    blob: 'blb-tern-presets',
+    body: 'https://captures.tidewater.example/lantern/r5990/tern_presets',
+  },
+  {
+    at: d('2026-02-24 10:00'),
+    key: 'fnd-tern-presets',
+    type: 'WriteFinding',
+    kind: 'measurement',
+    title: 'Tern preset render scales and costs',
+    created_by: TOMASZ,
+    derives_from: ['iss-presets-q', 'dec-tern'],
+    cites: ['cit-tern-presets'],
+    body:
+      'Tomasz Brandt measured four candidate Tern presets on Meridian and Skiff. Cost falls slowly with render scale because reprojection runs at output resolution. ' +
+      'Saltglass edges hold up to Performance; below that, refraction detail turns to mush. The table is attached.',
+  },
+  {
+    at: d('2026-02-25 10:00'),
+    key: 'dec-presets-3',
+    type: 'WriteDecision',
+    title: 'Ship three Tern quality presets',
+    created_by: INES,
+    derives_from: ['iss-presets-q', 'fnd-tern-presets'],
+    body: 'Ship Quality, Balanced and Performance. Three presets keep saltglass tuning manageable, and every one keeps refraction edges readable.',
+  },
+  {
+    at: d('2026-02-25 11:00'),
+    key: 'dec-presets-4',
+    type: 'WriteDecision',
+    title: 'Ship four Tern quality presets',
+    created_by: YUSUF,
+    derives_from: ['iss-presets-q'],
+    body: 'Ship Quality, Balanced, Performance and an Ultra Performance preset for players on low-end PCs. More choice for players, one more preset to tune.',
+  },
+  {
+    at: d('2026-03-02 10:00'),
+    type: 'AcceptDecision',
+    decisionId: 'dec-presets-3',
+  },
+  {
+    at: d('2026-03-02 10:05'),
+    type: 'ResolveIssue',
+    issueId: 'iss-presets-q',
+    resolution: 'resolved',
+    resolvedBy: ['dec-presets-3'],
+  },
+  {
+    at: d('2026-04-02 10:00'),
+    key: 'fnd-tern-ghost',
+    type: 'WriteFinding',
+    kind: 'measurement',
+    title: 'Tern ghosts behind moving saltglass',
+    created_by: YUSUF,
+    derives_from: ['dec-tern'],
+    body:
+      'When saltglass moves across the background, or the camera orbits a glass cliff, the refracted image carries no motion vectors of its own. ' +
+      'Tern reprojects the old refracted image and leaves trails up to 14 frames long. Press previews have already shown it.',
+  },
+  {
+    at: d('2026-04-03 10:00'),
+    key: 'rsk-tern-ghost',
+    type: 'WriteRisk',
+    likelihood: 'high',
+    severity: 'medium',
+    title: 'Tern ghosting on saltglass draws reviewer complaints',
+    created_by: INES,
+    derives_from: ['fnd-tern-ghost'],
+    body: 'Saltglass is in every marketing shot. If reviewers notice trails behind it, the signature feature looks broken.',
+  },
+  {
+    at: d('2026-04-03 11:00'),
+    key: 'iss-tern-ghost',
+    type: 'WriteIssue',
+    kind: 'defect',
+    title: 'Tern ghosting on moving saltglass',
+    created_by: YUSUF,
+    derives_from: ['fnd-tern-ghost'],
+    body: 'Trails behind moving saltglass and orbiting cameras, up to 14 frames long. Reproduces on every platform and every preset.',
+  },
+  {
+    at: d('2026-04-20 10:00'),
+    type: 'ReopenDecision',
+    decisionId: 'dec-vendor',
+    reason:
+      'Dara Whitlock asked to weigh Halcyon again after the saltglass ghosting reports, since Halcyon ships its own reactive mask for transparency.',
+  },
+  {
+    at: d('2026-05-14 10:00'),
+    key: 'fnd-tern-ghost-fix',
+    type: 'WriteFinding',
+    kind: 'measurement',
+    title: 'A saltglass reactive mask removes 90 percent of Tern ghosting',
+    created_by: TOMASZ,
+    derives_from: ['iss-tern-ghost'],
+    body: 'Saltglass writes a reactive mask that tells Tern to trust the current frame where refraction moves. In the glass-cliff orbit test the trail length drops from 14 frames to one or two, a 90 percent cut in ghosting energy. Cost: 0.2 ms.',
+  },
+  {
+    at: d('2026-05-18 10:00'),
+    key: 'dec-tern-reactive',
+    type: 'WriteDecision',
+    title: 'Feed a saltglass reactive mask into Tern',
+    created_by: TOMASZ,
+    derives_from: ['iss-tern-ghost', 'fnd-tern-ghost-fix'],
+    body: 'Saltglass writes a reactive mask each frame and Tern trusts the current frame where the mask is set. This fixes the ghosting inside Tern, so there is no case for switching to Halcyon; the reopened Halcyon proposal is rejected again.',
+  },
+  {
+    at: d('2026-05-20 10:00'),
+    type: 'AcceptDecision',
+    decisionId: 'dec-tern-reactive',
+    rejects: ['dec-vendor'],
+  },
+  {
+    at: d('2026-05-20 10:05'),
+    type: 'MitigateRisk',
+    riskId: 'rsk-tern-ghost',
+    decisionId: 'dec-tern-reactive',
+  },
+  {
+    at: d('2026-05-20 10:10'),
+    type: 'ResolveIssue',
+    issueId: 'iss-tern-ghost',
+    resolution: 'resolved',
+    resolvedBy: ['dec-tern-reactive'],
+  },
+  {
+    at: d('2026-05-22 10:00'),
+    key: 'fnd-tern-cost-3',
+    type: 'WriteFinding',
+    kind: 'measurement',
+    title: 'Tern cost at 4K output on Meridian with the reactive mask',
+    created_by: TOMASZ,
+    supersedes: ['fnd-tern-cost-2'],
+    body: 'With the saltglass reactive mask, Tern at 4K output on Meridian costs 1.6 ms on the dunes benchmark, up from 1.4 ms.',
+  },
+  {
+    at: d('2026-06-08 10:00'),
+    key: 'fnd-tern-ghost-recheck',
+    type: 'WriteFinding',
+    kind: 'measurement',
+    title:
+      'Reactive mask removes 61 percent of saltglass ghosting with a moving camera',
+    created_by: YUSUF,
+    derives_from: ['dec-tern-reactive'],
+    body:
+      'The 90 percent figure came from the orbit test with a fixed orbit speed, which the mask was tuned on. On the free-camera dunes route the mask removes 61 percent of ghosting energy, and trails of five or six frames remain behind fast glass. ' +
+      'The mask helps but the earlier number overstated it.',
+  },
+  {
+    at: d('2026-06-09 10:00'),
+    type: 'Invalidate',
+    findingId: 'fnd-tern-ghost-recheck',
+    targetId: 'fnd-tern-ghost-fix',
+  },
+  {
+    at: d('2026-06-10 10:00'),
+    key: 'dec-presets-4b',
+    type: 'WriteDecision',
+    title:
+      'Ship four Tern quality presets, adding Ultra Performance for 120 Hz mode',
+    created_by: INES,
+    supersedes: ['dec-presets-3'],
+    derives_from: ['iss-presets-q', 'con-120-2', 'fnd-tern-presets'],
+    body:
+      'The 120 Hz performance mode on Meridian needs a cheaper preset than Performance, so Tern ships four presets: Quality, Balanced, Performance and Ultra Performance. ' +
+      'Ultra Performance is offered only in the 120 Hz mode, not as a general menu option, which keeps saltglass tuning to the one mode that needs it.',
+  },
+  {
+    at: d('2026-06-11 10:00'),
+    type: 'AcceptDecision',
+    decisionId: 'dec-presets-4b',
+  },
+];
