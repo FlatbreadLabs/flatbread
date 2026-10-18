@@ -48,12 +48,41 @@ function score(graph, q, effort, given) {
     )
       ? 1
       : 0;
-  if (
-    kind === 'value' &&
-    accept?.some((alt) => sameAnswer(kind, alt, given, effort))
-  )
-    return 1;
-  return sameAnswer(kind, value, given, effort) ? 1 : 0;
+  if (kind === 'boolean') {
+    const parsed =
+      typeof given === 'string' ? given.trim().toLowerCase() : given;
+    if (parsed === 'true' || parsed === true) return value === true ? 1 : 0;
+    if (parsed === 'false' || parsed === false) return value === false ? 1 : 0;
+    return 0;
+  }
+  if (kind === 'count')
+    return firstNumber(String(given)) === Number(value) ? 1 : 0;
+  return [value, ...(accept ?? [])].some((gold) => looseValue(gold, given))
+    ? 1
+    : 0;
+}
+
+function firstNumber(text) {
+  const match = /-?\d[\d,]*(?:\.\d+)?/.exec(text);
+  return match ? Number(match[0].replace(/,/g, '')) : NaN;
+}
+
+/**
+ * Agents add detail to short answers: "46 player-proximity reads" for "46",
+ * "textures (3,184 MB)" for "textures". Accept an answer that equals the gold
+ * value, starts with it, or carries the same leading number and unit.
+ */
+function looseValue(gold, given) {
+  const want = String(gold).trim().toLowerCase();
+  const got = String(given).trim().toLowerCase();
+  if (got === want) return true;
+  if (got.startsWith(want) && !/[a-z0-9.]/.test(got[want.length] ?? ''))
+    return true;
+  const number = firstNumber(want);
+  if (Number.isNaN(number) || firstNumber(got) !== number) return false;
+  const unit = (text) =>
+    /-?\d[\d,]*(?:\.\d+)?\s*([a-z%/]+)?/.exec(text)?.[1] ?? '';
+  return !unit(want) || unit(want) === unit(got);
 }
 
 function summarize(rows, by) {
