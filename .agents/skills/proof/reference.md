@@ -150,7 +150,10 @@ written. It is not a hard delete and not a fold into a survivor:
   and strips its id from every other record in the same Effort in the same
   journal transaction.
 - Browse reads (`list`, `records`, `blocking-decisions`) omit retracted
-  records. `proof get` still returns them. `relations` follows stored edges
+  records. `proof get` still returns them, and `records --retracted include|only` lists them on request. Every digest marks a retracted
+  record: its index line ends in `(retracted)`, a **RETRACTED** banner with
+  the date and reason sits under its heading, and the envelope summary
+  counts `retracted N`. `relations` follows stored edges
   that remain; after a successful Retract, survivors should have none.
 - Efforts cannot be retracted. Set status to `abandoned` instead.
 - Later creates, `Supersede`, `Invalidate`, and lifecycle mutations reject
@@ -239,7 +242,7 @@ digest or `summary` as a data feed.
 ```bash
 flatbread proof get <id> [--resolve exact|head] [consistency flags]
 flatbread proof list [--status active,paused,...] [--limit n] [--cursor c] [consistency flags]
-flatbread proof records <effortId> [--kinds k1,k2] [--state s1,s2] [--status s1,s2] [--kind k1,k2] [--since iso] [--until iso] [--limit n] [--cursor c] [consistency flags]
+flatbread proof records <effortId> [--kinds k1,k2] [--state s1,s2] [--status s1,s2] [--kind k1,k2] [--since iso] [--until iso] [--retracted exclude|include|only] [--limit n] [--cursor c] [consistency flags]
 flatbread proof relations <effortId> <fromId> --relations r1,r2 [--limit n] [--cursor c] [consistency flags]
 flatbread proof blocking-decisions <effortId> [consistency flags]
 flatbread proof brief <effortId> [consistency flags]

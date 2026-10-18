@@ -1,0 +1,77 @@
+{
+  "run": {
+    "name": "retracted-haiku-brief",
+    "protocol": "one fresh session per question",
+    "models": ["claude-haiku-5-5"]
+  },
+  "answers": {
+    "cross-003": {
+      "answer": 2,
+      "tokens": 22230,
+      "fixed_tokens": 1231,
+      "processed_tokens": 138666,
+      "tool_calls": 14,
+      "turns": 9
+    },
+    "cross-017": {
+      "answer": "unknown",
+      "tokens": 15972,
+      "fixed_tokens": 1238,
+      "processed_tokens": 159973,
+      "tool_calls": 11,
+      "turns": 12
+    },
+    "ports-032": {
+      "answer": 2,
+      "tokens": 11275,
+      "fixed_tokens": 5942,
+      "processed_tokens": 52120,
+      "tool_calls": 5,
+      "turns": 6
+    },
+    "render-011": {
+      "answer": "fnd-sdf-gi-costs-2-4-ms-on-meridian--2w6c2pc5zmcsyjre",
+      "tokens": 26429,
+      "fixed_tokens": 1234,
+      "processed_tokens": 134141,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "render-074": {
+      "answer": 5,
+      "tokens": 12261,
+      "fixed_tokens": 1231,
+      "processed_tokens": 89379,
+      "tool_calls": 7,
+      "turns": 8
+    },
+    "world-010": {
+      "answer": "29 GB/s",
+      "tokens": 14100,
+      "fixed_tokens": 1229,
+      "processed_tokens": 111091,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "world-074": {
+      "answer": 7,
+      "tokens": 14622,
+      "fixed_tokens": 5926,
+      "processed_tokens": 72668,
+      "tool_calls": 6,
+      "turns": 7
+    },
+    "world-075": {
+      "answer": [
+        "dec-store-components-in-archetype-tables-and-volatil--8679sjn071ycsbpv",
+        "dec-partition-the-world-into-192-meter-cells--q62ddwdv2n8wxay6",
+        "dec-return-engine-jobs-to-the-thread-pool-with-conti--547qbweqvrp1j5g3"
+      ],
+      "tokens": 6930,
+      "fixed_tokens": 1230,
+      "processed_tokens": 52577,
+      "tool_calls": 5,
+      "turns": 6
+    }
+  }
+}

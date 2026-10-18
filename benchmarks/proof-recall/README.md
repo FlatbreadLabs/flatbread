@@ -450,16 +450,28 @@ What it showed:
    learn. Every run in every pilot answered "unknown" to all eight
    (`cross-003`, `cross-017`, `ports-032`, `render-011`, `render-074`,
    `world-010`, `world-074`, `world-075`). They do not separate the
-   strategies, but they hold the retraction category at 38 percent. Either
-   Proof should offer a read that lists retracted records, or these
-   questions should test the raw files instead.
+   strategies, but they hold the retraction category at 38 percent. Proof
+   now lists them on request (see below).
 4. **The runner ran every `brief` session first.** It now alternates
    strategies question by question, so a change in API speed over a run
    falls on both alike.
 
+### Retracted records become readable
+
+`proof records <effortId> --retracted only` now lists an Effort's retracted
+records, and `--retracted include` lists them beside live ones. Every digest
+marks each one: its index line ends in `(retracted)`, and a **RETRACTED**
+banner with the date and reason sits under its heading. The task text tells
+agents about the flag.
+
+A rerun of the eight retraction questions (`runs/retracted-haiku-*.json`)
+scored 7 of 8 in each strategy, up from 0 of 8. Each strategy missed a
+different question: `brief` answered "unknown" to `cross-017`, and no
+`brief` did the same on `world-010`.
+
 Next steps, in order:
 
-1. Decide whether Proof should list retracted records, and fix the eight
-   retraction questions to match.
-2. Look at the nine questions `brief` agents gave up on, to see whether the
+1. Look at the nine questions `brief` agents gave up on, to see whether the
    summary steers agents away from records they should read.
+2. Grow the graph until an Effort no longer fits one agent's reading, where
+   `brief` should matter most.

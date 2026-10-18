@@ -92,7 +92,8 @@ express.
 `Retract` hides a record that should not have been journaled. The file stays
 on disk with `retracted: true` so ids remain resolvable and
 `PROOF_DANGLING_RELATION` does not fire. Browse reads omit retracted
-records. `proof get` still returns the body and the reason. This is not
+records unless asked: `proof records --retracted only` lists them, each
+marked as retracted. `proof get` still returns the body and the reason. This is not
 supersession (a better same-kind claim) and not invalidation (a Finding that
 the target was wrong). Git is the undo path for Retract; `ReopenDecision` only returns a rejected
 Decision to proposed. There is no generic Restore mutation.

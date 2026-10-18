@@ -25,7 +25,7 @@ Run from the folder. Each prints a JSON envelope; its \`artifact_path\` names a 
 - \`./flatbread proof list --status active,paused,completed,abandoned\` lists Efforts (the default shows only active ones).
 ${
   brief ? BRIEF_LINE + '\n' : ''
-}- \`./flatbread proof records <effortId> [--kinds issue,finding,decision,constraint,risk,citation,blob] [--state s] [--status s] [--kind k] [--limit 25] [--cursor c]\` browses records. Bodies are cut at 600 characters or 12 lines; Blob bodies are left out.
+}- \`./flatbread proof records <effortId> [--kinds issue,finding,decision,constraint,risk,citation,blob] [--state s] [--status s] [--kind k] [--retracted include|only] [--limit 25] [--cursor c]\` browses records. Bodies are cut at 600 characters or 12 lines; Blob bodies are left out. Retracted records are left out unless you pass \`--retracted\`, and are marked RETRACTED when shown.
 - \`./flatbread proof get <id> [--resolve head]\` shows one record in full, Blob payloads included. \`--resolve head\` follows replacements to the newest version.
 - \`./flatbread proof relations <effortId> <fromId> --relations derives_from,supersedes,superseded_by,invalidates,invalidated_by,resolved_by,rejected_by,mitigated_by,evidence,cites\` follows one hop of links.
 - \`./flatbread proof blocking-decisions <effortId>\`.
@@ -34,7 +34,7 @@ ${
     ? ''
     : '\nDo not use `proof brief`. Findings with `kind: compaction` are summaries; check what they claim.\n'
 }
-Records can be superseded (replaced), invalidated (shown wrong), rejected, reopened, or retracted (hidden from browse reads; \`get\` still shows them). Titles repeat on purpose. Efforts never link to each other; one may name another's record by title in prose. A summary can be out of date; check its claims against the records.
+Records can be superseded (replaced), invalidated (shown wrong), rejected, reopened, or retracted (noise, hidden from browse reads unless asked; \`get\` still shows them). Titles repeat on purpose. Efforts never link to each other; one may name another's record by title in prose. A summary can be out of date; check its claims against the records.
 
 ## The question
 ${question}

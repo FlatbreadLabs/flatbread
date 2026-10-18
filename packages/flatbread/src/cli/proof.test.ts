@@ -1249,7 +1249,7 @@ export default { source: source(), transformer: transformer(), content: proofCon
 );
 
 test.serial(
-  'Retract drops a record from browse reads and keeps get',
+  'Retract hides a record from default browse reads, keeps get, and lists it, marked, on request',
   async (t) => {
     const cwd = await createTempProject('flatbread-effort-retract-', t);
     for (const directory of [
@@ -1328,6 +1328,41 @@ export default {
     const gotDigest = await readFile(got.artifact_path, 'utf8');
     t.true(gotDigest.includes('retracted: true'));
     t.true(gotDigest.includes('temporary review note'));
+    t.true(gotDigest.includes('> **RETRACTED** on '));
+    t.true(gotDigest.includes(': session noise; not a turning point.'));
+    // Retracted records can be listed on request, always marked as such.
+    const only = await handleEffortRecords(effortId, {
+      cwd,
+      kinds: ['finding', 'decision'],
+      retracted: 'only',
+      strictMinGeneration: retracted.generation,
+    });
+    const onlyDigest = await readFile(only.artifact_path, 'utf8');
+    t.is(only.page.returned, 1);
+    t.regex(only.summary, /retracted 1/);
+    t.true(
+      onlyDigest.includes(`- [\`${findingId}\`](#${findingId}) (retracted)`)
+    );
+    t.true(onlyDigest.includes('This record is not live.'));
+    t.false(onlyDigest.includes(decisionId));
+    const both = await handleEffortRecords(effortId, {
+      cwd,
+      kinds: ['finding', 'decision'],
+      retracted: 'include',
+      strictMinGeneration: retracted.generation,
+    });
+    const bothDigest = await readFile(both.artifact_path, 'utf8');
+    t.is(both.page.returned, 2);
+    t.true(bothDigest.includes(`- [\`${decisionId}\`](#${decisionId})\n`));
+    t.is(bothDigest.split('> **RETRACTED**').length - 1, 1);
+    t.not(both.artifact_path, listed.artifact_path);
+    await t.throwsAsync(
+      handleEffortRecords(effortId, {
+        cwd,
+        retracted: 'hidden' as never,
+      }),
+      { message: /Invalid retracted mode: hidden/ }
+    );
     const neighbors = await handleEffortRelations(effortId, decisionId, {
       cwd,
       relations: ['derives_from'],

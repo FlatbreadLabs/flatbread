@@ -109,8 +109,10 @@ Critical semantics:
   Pass a reason. The writer strips that id from other records in the same
   Effort so reads do not fail closed. Use it for session noise that should
   never have been journaled. Do not `git rm` records or hand-edit
-  frontmatter. `proof get` still returns a retracted record. Efforts cannot
-  be retracted; abandon them instead.
+  frontmatter. `proof get` still returns a retracted record, and
+  `proof records <effortId> --retracted only` lists an Effort's retracted
+  records, each marked **RETRACTED** with its date and reason. Efforts
+  cannot be retracted; abandon them instead.
 - `AcceptDecision` defaults `rejectSiblings: true`, which rejects only
   proposed Decisions derived from the same `question` Issue, even if the
   Issue is closed. Use

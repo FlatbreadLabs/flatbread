@@ -19,6 +19,7 @@ import {
   relations,
   getRecord,
   listEfforts,
+  type RetractedMode,
 } from '../proof/read.js';
 import type { PrimitiveKind, ReadRelation } from '@flatbread/proof';
 import { handleEffortInstallSkill } from './installSkill.js';
@@ -37,6 +38,7 @@ export interface EffortCliOptions {
   limit?: number;
   cursor?: string;
   relations?: string[];
+  retracted?: RetractedMode;
   verify?: boolean;
   dryRun?: boolean;
 }
@@ -68,6 +70,10 @@ export function mapEffortCliOptions(
       limit: numberOption(options.limit),
       cursor: typeof options.cursor === 'string' ? options.cursor : undefined,
       relations: split(options.relations),
+      retracted:
+        typeof options.retracted === 'string'
+          ? (options.retracted as RetractedMode)
+          : undefined,
       verify: options.verify === true ? true : undefined,
       dryRun:
         options['dry-run'] === true || options.dryRun === true
@@ -200,6 +206,7 @@ export async function handleEffortRecords(
         ? { created_at: { gte: options.since, lte: options.until } }
         : {}),
     },
+    retracted: options.retracted,
     page: { limit: options.limit, cursor: options.cursor },
   });
 }
@@ -524,6 +531,10 @@ export function registerProofCommands(prog: any): void {
         .option('--kind <values>', 'Comma-separated record kinds')
         .option('--since <iso>', 'Created-at lower bound')
         .option('--until <iso>', 'Created-at upper bound')
+        .option(
+          '--retracted <mode>',
+          'exclude (default), include, or only retracted records'
+        )
     );
   recordsOptions(
     prog.command('proof records <effortId>', 'Read records in an Effort')

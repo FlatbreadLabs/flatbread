@@ -562,6 +562,18 @@ export async function getRecord(
   );
 }
 
+/**
+ * Which records a browse read returns by retraction: live ones only (the
+ * default), live and retracted together, or retracted ones only. Digests mark
+ * every retracted record, so it cannot pass for a live one.
+ */
+export type RetractedMode = 'exclude' | 'include' | 'only';
+const RETRACTED_MODES: readonly RetractedMode[] = [
+  'exclude',
+  'include',
+  'only',
+];
+
 export async function effortRecords(
   effortId: string,
   options: EffortProjectionOptions & {
@@ -572,9 +584,18 @@ export async function effortRecords(
       kind?: string[];
       created_at?: { gte?: string; lte?: string };
     };
+    retracted?: RetractedMode;
     page?: { cursor?: string; limit?: number };
   }
 ): Promise<ReadEnvelope> {
+  const retracted = options.retracted ?? 'exclude';
+  if (!RETRACTED_MODES.includes(retracted))
+    throw new ProofReadValidationError(
+      'PROOF_INVALID_ARGUMENT',
+      `Invalid retracted mode: ${String(
+        retracted
+      )}. Expected exclude, include, or only.`
+    );
   const projection = await makeProjection(options);
   const kinds = options.kinds?.length
     ? [...new Set(options.kinds)].sort()
@@ -610,7 +631,9 @@ export async function effortRecords(
       .flat()
       .filter(
         (record) =>
-          record.frontmatter.effort === effortId && !isRetracted(record)
+          record.frontmatter.effort === effortId &&
+          (retracted === 'include' ||
+            (retracted === 'only') === isRetracted(record))
       )
   );
   return render(
@@ -620,6 +643,8 @@ export async function effortRecords(
       effort_id: effortId,
       kinds,
       ...(Object.keys(where).length ? { where } : {}),
+      // Left out by default, so existing queries keep their hashes.
+      ...(retracted === 'exclude' ? {} : { retracted }),
       page: options.page,
     },
     records,

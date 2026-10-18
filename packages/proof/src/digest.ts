@@ -211,6 +211,33 @@ function renderRecordBody(
   return excerpt(record.body_excerpt);
 }
 
+function isRetracted(record: ReadRecord): boolean {
+  return record.frontmatter.retracted === true;
+}
+
+/**
+ * Printed under a retracted record's heading in every digest, so a reader
+ * who skips the YAML still cannot take it for a live record.
+ */
+function retractedBanner(record: ReadRecord): string {
+  const at = record.frontmatter.retracted_at;
+  const reason = record.frontmatter.retracted_reason;
+  return [
+    `> **RETRACTED**${typeof at === 'string' ? ` on ${at}` : ''}${
+      typeof reason === 'string' && reason.trim()
+        ? `: ${reason.trim().replace(/\s+/g, ' ')}`
+        : ''
+    }.`,
+    'This record is not live. Proof keeps it for audit only; do not treat its claims as current.',
+  ].join(' ');
+}
+
+function indexLine(record: ReadRecord): string {
+  return `- [\`${record.id}\`](#${record.id})${
+    isRetracted(record) ? ' (retracted)' : ''
+  }`;
+}
+
 function renderRecord(
   record: ReadRecord,
   options: { bodyMode?: RecordBodyMode } = {}
@@ -232,6 +259,7 @@ function renderRecord(
     .join('\n');
   return [
     `### ${record.id}`,
+    ...(isRetracted(record) ? [retractedBanner(record), ''] : []),
     '```yaml',
     ...Object.keys(frontmatter)
       .sort()
@@ -252,6 +280,8 @@ function summary(
 ): string {
   const states = new Map<string, number>();
   const statuses = new Map<string, number>();
+  const retracted = records.filter(isRetracted).length;
+  if (retracted) states.set('retracted', retracted);
   for (const record of records) {
     for (const [map, key] of [
       [states, 'state'],
@@ -331,7 +361,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
     ...(input.anomaly ? [`> anomaly: ${input.anomaly}`, ''] : []),
     '# Proof read',
     '## Index',
-    ...visible.map((record) => `- [\`${record.id}\`](#${record.id})`),
+    ...visible.map(indexLine),
     '## Records',
     ...visible.map((record) => renderPrimary(record)),
     ...(input.relatedRecords?.length
@@ -366,7 +396,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
       ...(anomaly ? [`> anomaly: ${anomaly}`, ''] : []),
       '# Proof read',
       '## Index',
-      ...visible.map((record) => `- [\`${record.id}\`](#${record.id})`),
+      ...visible.map(indexLine),
       '## Records',
     ];
     const sections: string[] = [];
