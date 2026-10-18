@@ -14,6 +14,8 @@ derives_from:
   - dec-route-agent-reads-through-the-flatbread-query-en--476qb9qk878yfg62
   - dec-use-semantic-mutations-and-a-standalone-writer--2d0m3tkqhad4yyhr
   - iss-skill-scoped-records-filter-example-over-constra--vd0gcnpc9cm6jzjh
+superseded_by:
+  - fnd-where-agent-memory-stands-three-gaps-open--ywyw5wet9abt1ggp
 covers:
   - con-mutation-enum-stays-deliberately-small--3hw451bsedfj6khs@live
   - con-packaged-proof-skill-markdown-must-not-contain-m--a9gse08fkv7zcrxq@live
