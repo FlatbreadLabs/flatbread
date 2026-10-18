@@ -3,6 +3,7 @@
 // and the question text, with no answers, specs, or key map.
 //
 //   node scripts/prepare-run.mjs <out-dir> [--only render,world] [--ids a,b]
+//        [--graph <built-graph-dir>]
 //
 // The answering agent works only inside <out-dir>, running
 // `./flatbread proof …` there.
@@ -36,14 +37,32 @@ export async function publicQuestions({ only = [], ids = [] } = {}) {
     }));
 }
 
-/** Empties `out` and fills it with the graph, config, and questions. */
-export async function prepareFolder(out, questions) {
-  await rm(out, { recursive: true, force: true });
-  await mkdir(out, { recursive: true });
-  await cp(join(BENCH, '.flatbread-proof'), join(out, '.flatbread-proof'), {
+/** Copies a built graph without its key map, which holds the answers. */
+export async function copyPublicGraph(
+  to,
+  graph = join(BENCH, '.flatbread-proof')
+) {
+  await cp(graph, to, {
     recursive: true,
     filter: (src) => !src.endsWith('keymap.json'),
   });
+}
+
+/**
+ * Empties `out` and fills it with a graph, the config, and the questions.
+ * The graph is the committed one unless `graph` names another build. With
+ * `linkTo`, the folder links to a public graph copy instead of copying one.
+ */
+export async function prepareFolder(
+  out,
+  questions,
+  graph = join(BENCH, '.flatbread-proof'),
+  { linkTo } = {}
+) {
+  await rm(out, { recursive: true, force: true });
+  await mkdir(out, { recursive: true });
+  if (linkTo) await symlink(linkTo, join(out, '.flatbread-proof'), 'junction');
+  else await copyPublicGraph(join(out, '.flatbread-proof'), graph);
   await cp(
     join(BENCH, 'flatbread.config.js'),
     join(out, 'flatbread.config.js')
@@ -85,7 +104,8 @@ async function main() {
     only: pick('--only'),
     ids: pick('--ids'),
   });
-  await prepareFolder(out, questions);
+  const graph = pick('--graph')[0];
+  await prepareFolder(out, questions, graph ? resolve(graph) : undefined);
   console.log(`${questions.length} questions ready in ${out}`);
 }
 

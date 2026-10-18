@@ -6,9 +6,13 @@
 //   node scripts/build.mjs                 build every Effort into .flatbread-proof/
 //   node scripts/build.mjs --only render   build one Effort (for authoring)
 //   node scripts/build.mjs --out /tmp/x    write somewhere else
+//   node scripts/build.mjs --scale 10 --out /tmp/x10
+//                                          add filler until each Effort is
+//                                          about 10 times its size; every
+//                                          question keeps its answer
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
@@ -16,6 +20,7 @@ import {
   generateArtifactId,
   ProofMutationSchema,
 } from '@flatbread/proof';
+import { fillerEvents, fillerTerms, mergeEvents } from '../spec/_filler.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SPEC_DIR = join(BENCH, 'spec');
@@ -64,13 +69,35 @@ const GRAPH_DIRS = [
 ];
 
 function args(argv) {
-  const out = { only: [], out: join(BENCH, '.flatbread-proof') };
+  const out = { only: [], out: join(BENCH, '.flatbread-proof'), scale: 1 };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--only') out.only.push(...argv[++i].split(','));
     else if (argv[i] === '--out') out.out = resolve(argv[++i]);
+    else if (argv[i] === '--scale') out.scale = Number(argv[++i]);
     else throw new Error(`Unknown argument ${argv[i]}`);
   }
+  if (!(out.scale >= 1)) throw new Error('--scale must be 1 or more');
+  // The committed graph is the unscaled one.
+  if (out.scale > 1 && out.out === join(BENCH, '.flatbread-proof'))
+    throw new Error('A scaled build needs --out');
   return out;
+}
+
+/** Filler may never name a subsystem a spec or question talks about. */
+async function assertFillerIsDisjoint(specs) {
+  const questions = await readdir(join(BENCH, 'questions'));
+  const text = [
+    ...specs.map((spec) => JSON.stringify(spec)),
+    ...(await Promise.all(
+      questions.map((name) => readFile(join(BENCH, 'questions', name), 'utf8'))
+    )),
+  ]
+    .join('\n')
+    .toLowerCase();
+  for (const spec of specs)
+    for (const term of fillerTerms(spec.key))
+      if (text.includes(term.toLowerCase()))
+        throw new Error(`Filler subsystem "${term}" appears in real content`);
 }
 
 /** Fixed id: the writer's own format, with a suffix hashed from the key. */
@@ -164,18 +191,33 @@ async function main() {
   const options = args(process.argv.slice(2));
   const specs = await loadSpecs(options.only);
   if (!specs.length) throw new Error('No specs matched');
+  if (options.scale > 1) {
+    await assertFillerIsDisjoint(specs);
+    for (const spec of specs)
+      spec.events = mergeEvents(spec.events, fillerEvents(spec, options.scale));
+  }
   await mkdir(options.out, { recursive: true });
   for (const dir of GRAPH_DIRS)
     await rm(join(options.out, dir), { recursive: true, force: true });
   const keymap = {};
+  // Each Effort builds in a folder of its own, then moves into place. The
+  // writer reads every record under its root on each mutation, so a shared
+  // root would make every Effort pay for the ones built before it.
+  const parts = join(options.out, '.parts');
+  await rm(parts, { recursive: true, force: true });
   for (const spec of specs) {
     const started = Date.now();
-    const events = await buildEffort(spec, options.out, keymap);
+    const root = join(parts, spec.key);
+    const events = await buildEffort(spec, root, keymap);
+    for (const dir of GRAPH_DIRS.filter((d) => d !== '.journal'))
+      if (existsSync(join(root, dir)))
+        await cp(join(root, dir), join(options.out, dir), { recursive: true });
     console.log(
       `${spec.key}: ${events} mutations in ${Date.now() - started} ms`
     );
   }
   // The journal is writer state, not benchmark content.
+  await rm(parts, { recursive: true, force: true });
   await rm(join(options.out, '.journal'), { recursive: true, force: true });
   const sorted = Object.fromEntries(
     Object.entries(keymap).sort(([a], [b]) => a.localeCompare(b))

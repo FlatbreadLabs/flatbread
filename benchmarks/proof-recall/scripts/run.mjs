@@ -4,9 +4,10 @@
 //
 //   node scripts/run.mjs <work-dir> --name <run> [--model haiku]
 //        [--strategies brief,nobrief] [--only render] [--ids a,b]
-//        [--jobs 8] [--timeout 600]
+//        [--jobs 8] [--timeout 600] [--graph <built-graph-dir>]
 //
-// Each session works in <work-dir>/<strategy>/<id>/, which holds the graph,
+// Each session works in <work-dir>/<strategy>/<id>/, which holds a link to
+// one shared copy of the graph (<work-dir>/graph, without the key map),
 // TASK.md, the agent's answer.json, and transcript.jsonl. A rerun skips
 // sessions that already have both an answer and a transcript, so an
 // interrupted run picks up where it stopped. Keep <work-dir> outside the
@@ -15,13 +16,17 @@
 // Sessions get only the Bash, Read, and Write tools, no MCP servers, and no
 // settings files, so an agent cannot reach other sessions or services.
 import { spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { createWriteStream, existsSync } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { collect } from './collect.mjs';
-import { prepareFolder, publicQuestions } from './prepare-run.mjs';
+import {
+  copyPublicGraph,
+  prepareFolder,
+  publicQuestions,
+} from './prepare-run.mjs';
 import { STRATEGIES, taskText } from './task.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -52,6 +57,7 @@ function args(argv) {
     ids: [],
     jobs: 8,
     timeout: 600,
+    graph: undefined,
   };
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
@@ -63,6 +69,7 @@ function args(argv) {
     else if (flag === '--ids') out.ids = next().split(',');
     else if (flag === '--jobs') out.jobs = Number(next());
     else if (flag === '--timeout') out.timeout = Number(next());
+    else if (flag === '--graph') out.graph = resolve(next());
     else if (!flag.startsWith('--') && !out.dir) out.dir = resolve(flag);
     else throw new Error(`Unknown argument ${flag}`);
   }
@@ -71,6 +78,33 @@ function args(argv) {
   if (out.dir.startsWith(resolve(BENCH, '..', '..') + '/'))
     throw new Error('Keep <work-dir> outside the repository');
   return out;
+}
+
+/** One hash over every file's path and bytes under `dir`. */
+async function treeHash(dir) {
+  const hash = createHash('sha256');
+  const walk = async (path) => {
+    const entries = (await readdir(path, { withFileTypes: true })).sort(
+      (a, b) => a.name.localeCompare(b.name)
+    );
+    for (const entry of entries) {
+      const child = join(path, entry.name);
+      if (entry.isDirectory()) await walk(child);
+      else hash.update(child).update(await readFile(child));
+    }
+  };
+  await walk(dir);
+  return hash.digest('hex');
+}
+
+/** Makes a folder tree read-only, so no session can change what others read. */
+async function chmodTree(dir) {
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) await chmodTree(path);
+    else await chmod(path, 0o444);
+  }
+  await chmod(dir, 0o555);
 }
 
 function sessionEnv() {
@@ -146,11 +180,21 @@ async function main() {
   console.log(
     `${sessions.length} sessions, ${todo.length} to run, ${options.jobs} at a time`
   );
+  // One read-only copy of the graph, without its key map, that every
+  // session folder links to. Copying a large graph per session would fill
+  // the disk.
+  const shared = join(options.dir, 'graph');
+  if (!existsSync(shared)) {
+    await copyPublicGraph(shared, options.graph);
+    await chmodTree(shared);
+  }
+  // Root ignores file modes, so also check afterwards that nothing changed.
+  const before = await treeHash(shared);
   let done = 0;
   const failures = [];
   const worker = async () => {
     for (let s = todo.shift(); s; s = todo.shift()) {
-      await prepareFolder(s.folder, [s.q]);
+      await prepareFolder(s.folder, [s.q], options.graph, { linkTo: shared });
       await writeFile(
         join(s.folder, 'TASK.md'),
         taskText({ folder: s.folder, strategy: s.strategy, ...s.q })
@@ -163,6 +207,8 @@ async function main() {
   };
   await Promise.all(Array.from({ length: options.jobs }, worker));
   if (failures.length) console.warn(`Failed:\n${failures.join('\n')}`);
+  if ((await treeHash(shared)) !== before)
+    console.warn(`The shared graph in ${shared} changed during the run`);
   await mkdir(join(BENCH, 'runs'), { recursive: true });
   for (const strategy of options.strategies)
     await collect(
