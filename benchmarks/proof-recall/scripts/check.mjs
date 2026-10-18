@@ -78,6 +78,11 @@ function validate(graph, set, q, errors, seen, warnings = []) {
   if (!Number.isInteger(q.hops) || q.hops < 0)
     err('hops must be a whole number');
   if (!q.question?.trim()) err('empty question');
+  // Runs show each question alone, so it must name its Effort.
+  if (/\bthis Effort\b/i.test(q.question ?? ''))
+    err(
+      'says "this Effort"; name the Effort, since runs show a question alone'
+    );
   for (const c of q.categories ?? [])
     if (!CATEGORIES.includes(c)) err(`unknown category ${c}`);
   if (!q.categories?.length) err('needs categories');

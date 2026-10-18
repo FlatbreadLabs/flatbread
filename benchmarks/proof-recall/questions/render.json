@@ -1229,7 +1229,7 @@
       "tier": 2,
       "hops": 2,
       "categories": ["distractor", "supersession", "current-state"],
-      "question": "This Effort holds several Constraints titled Frame budget. Which one is current?",
+      "question": "The \"Lantern renderer overhaul\" Effort holds several Constraints titled Frame budget. Which one is current?",
       "answer": {
         "kind": "record",
         "value": "con-budget-3"
@@ -1786,7 +1786,7 @@
       "tier": 4,
       "hops": 1,
       "categories": ["aggregate", "blocker"],
-      "question": "How many blocker Issues are open in this Effort now?",
+      "question": "How many blocker Issues are open in the \"Lantern renderer overhaul\" Effort now?",
       "answer": {
         "kind": "count",
         "value": 4
@@ -1910,7 +1910,7 @@
       "tier": 4,
       "hops": 1,
       "categories": ["aggregate", "lifecycle"],
-      "question": "How many Risks in this Effort are mitigated?",
+      "question": "How many Risks in the \"Lantern renderer overhaul\" Effort are mitigated?",
       "answer": {
         "kind": "count",
         "value": 3
@@ -1984,7 +1984,7 @@
       "tier": 4,
       "hops": 1,
       "categories": ["retraction", "aggregate"],
-      "question": "How many records in this Effort have been retracted?",
+      "question": "How many records in the \"Lantern renderer overhaul\" Effort have been retracted?",
       "answer": {
         "kind": "count",
         "value": 5
@@ -2012,7 +2012,7 @@
       "tier": 4,
       "hops": 1,
       "categories": ["reopened", "aggregate"],
-      "question": "How many Decisions in this Effort have been reopened at least once?",
+      "question": "How many Decisions in the \"Lantern renderer overhaul\" Effort have been reopened at least once?",
       "answer": {
         "kind": "value",
         "value": "3",
