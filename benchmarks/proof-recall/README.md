@@ -177,7 +177,12 @@ When the graph does not answer a question, its answer is the `value`
 
 The **entry record** is the record a reader reaches first: one the question
 names, or one a single filtered `proof records` listing turns up. `hops`
-counts the edges from there to the answer.
+counts the edges from there to the answer, along the shortest route a reader
+can follow. A reader sees only the links stored on the record in hand:
+supersession and invalidation links run both ways, but `derives_from`,
+`rejected_by`, `resolved_by`, and `cites` run only from the record that
+stores them. `check.mjs` warns when a shorter route exists than the stated
+path; treat that warning as a mistake to fix.
 
 | Tier | Meaning                                                                                       |
 | ---- | --------------------------------------------------------------------------------------------- |

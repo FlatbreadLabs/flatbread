@@ -91,6 +91,60 @@ const PATH_RELATIONS = new Set([
 ]);
 
 /** True when the stored graph holds this edge. */
+const LINK_FIELDS = [
+  'derives_from',
+  'supersedes',
+  'superseded_by',
+  'invalidates',
+  'invalidated_by',
+  'resolved_by',
+  'rejected_by',
+  'mitigated_by',
+  'evidence',
+  'cites',
+  'blob',
+];
+
+/**
+ * Fewest edges between two records, following only links stored on the
+ * record being read (what a reader can see), and never the Effort link every
+ * record shares. A route shorter than a question's `hops` means the question
+ * is easier than its tier claims.
+ */
+export function shortestHops(graph, effort, fromKey, toKey, max = 8) {
+  if (!graph.adjacency) {
+    graph.adjacency = new Map();
+    const link = (a, b) => {
+      if (!graph.adjacency.has(a)) graph.adjacency.set(a, new Set());
+      graph.adjacency.get(a).add(b);
+    };
+    for (const rec of graph.records.values()) {
+      const targets = LINK_FIELDS.flatMap((field) =>
+        list(rec.frontmatter[field])
+      );
+      for (const entry of list(rec.frontmatter.reopen_history))
+        targets.push(...list(entry?.rejected_by));
+      for (const target of targets) link(rec.id, target);
+    }
+  }
+  const start = idFor(graph, effort, fromKey);
+  const goal = idFor(graph, effort, toKey);
+  let frontier = [start];
+  const seen = new Set(frontier);
+  for (let hops = 0; hops <= max; hops++) {
+    if (frontier.includes(goal)) return hops;
+    const next = [];
+    for (const id of frontier)
+      for (const neighbor of graph.adjacency.get(id) ?? [])
+        if (!seen.has(neighbor)) {
+          seen.add(neighbor);
+          next.push(neighbor);
+        }
+    frontier = next;
+  }
+  return Infinity;
+}
+
 export function hasEdge(graph, effort, [fromKey, relation, toKey]) {
   if (!PATH_RELATIONS.has(relation))
     throw new Error(`bad relation ${relation}`);

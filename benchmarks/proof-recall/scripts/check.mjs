@@ -15,6 +15,7 @@ import {
   qualify,
   runCheck,
   sameAnswer,
+  shortestHops,
   standing,
 } from './graph.mjs';
 
@@ -67,7 +68,7 @@ export async function loadQuestions(only = []) {
   return sets;
 }
 
-function validate(graph, set, q, errors, seen) {
+function validate(graph, set, q, errors, seen, warnings = []) {
   const err = (message) =>
     errors.push(`${set.file} ${q.id ?? '?'}: ${message}`);
   if (!q.id || seen.has(q.id)) return err('missing or duplicate id');
@@ -107,6 +108,23 @@ function validate(graph, set, q, errors, seen) {
       err(`hops ${q.hops} but path has ${path.length} edges`);
   }
   if (q.tier === 0 && q.hops !== 0) err('tier 0 means 0 hops');
+  // A shortcut makes the question easier than its tier says. Joined
+  // branches have no single start and end, so this is a warning only.
+  if (q.tier >= 1 && q.tier <= 3 && path.length > 1) {
+    const [start] = path[0];
+    // Measure to the answer itself when there is one; a reversed last edge
+    // would otherwise end on the record before it.
+    const end = answer.kind === 'record' ? answer.value : path.at(-1)[2];
+    try {
+      const shortest = shortestHops(graph, set.effort, start, end);
+      if (start !== end && shortest < q.hops)
+        warnings.push(
+          `${set.file} ${q.id}: a ${shortest}-edge route joins ${start} and ${end}; the path has ${q.hops}`
+        );
+    } catch {
+      // Unknown keys are already reported as errors.
+    }
+  }
   for (const edge of path) {
     try {
       if (!hasEdge(graph, set.effort, edge)) err(`no edge ${edge.join(' ')}`);
@@ -209,11 +227,12 @@ async function main() {
   const graph = await loadGraph(options.graph);
   const sets = await loadQuestions(options.only);
   const errors = [];
+  const warnings = [];
   const seen = new Set();
   const all = [];
   for (const set of sets)
     for (const q of set.questions ?? []) {
-      validate(graph, set, q, errors, seen);
+      validate(graph, set, q, errors, seen, warnings);
       all.push({ ...q, effort: set.effort });
     }
   const efforts = [
@@ -236,6 +255,10 @@ async function main() {
   const other = all.filter((q) => !efforts.includes(q.effort));
   if (other.length)
     console.log(JSON.stringify({ effort: 'cross', questions: other.length }));
+  if (warnings.length) {
+    console.warn(warnings.join('\n'));
+    console.warn(`${warnings.length} warning(s)`);
+  }
   if (errors.length) {
     console.error(errors.join('\n'));
     console.error(`${errors.length} error(s)`);

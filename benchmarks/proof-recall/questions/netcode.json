@@ -1,0 +1,487 @@
+{
+  "effort": "netcode",
+  "questions": [
+    {
+      "id": "netcode-001",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["lifecycle", "current-state"],
+      "question": "What is the status of the Effort that prototyped rollback netcode for co-op?",
+      "answer": {
+        "kind": "value",
+        "value": "abandoned"
+      },
+      "evidence": ["effort"],
+      "checks": [
+        {
+          "type": "field",
+          "record": "effort",
+          "field": "status"
+        }
+      ],
+      "traps": [
+        "A plain `proof list` shows only active Efforts, so a reader who stops there may say the Effort does not exist or still call it active."
+      ]
+    },
+    {
+      "id": "netcode-002",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "Where was the rollback prototype code kept after the team stopped work on it?",
+      "answer": {
+        "kind": "value",
+        "value": "netcode/rollback-archive",
+        "accept": [
+          "branch netcode/rollback-archive",
+          "the netcode/rollback-archive branch"
+        ]
+      },
+      "evidence": ["dec-abandon"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "dec-abandon",
+          "includes": "netcode/rollback-archive",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The branch name sits at the end of a long Decision body, past the 600-character excerpt that list and records digests show."
+      ]
+    },
+    {
+      "id": "netcode-003",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["lookup", "retraction", "distractor"],
+      "question": "How large is one player's rollback snapshot for a single frame?",
+      "answer": {
+        "kind": "value",
+        "value": "38 KB",
+        "accept": ["38", "38 kilobytes"]
+      },
+      "evidence": ["fnd-snapshot", "fnd-noise"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-snapshot",
+          "includes": "38 KB per frame",
+          "expect": true
+        },
+        {
+          "type": "field",
+          "record": "fnd-noise",
+          "field": "standing",
+          "expect": "retracted"
+        }
+      ],
+      "traps": [
+        "A retracted Finding gives 14 KB per player; it measured save-game snapshots and was filed here by mistake.",
+        "About 600 KB is the whole 4-frame ring for four players, not one player's frame."
+      ]
+    },
+    {
+      "id": "netcode-004",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["rationale", "lookup"],
+      "question": "Why did the team abandon rollback netcode for co-op, and which world Decision does the reason depend on?",
+      "answer": {
+        "kind": "text",
+        "rubric": [
+          ["4.8 ms"],
+          ["Skiff"],
+          [
+            "every frame",
+            "each frame",
+            "every rolled-back frame",
+            "re-run tides",
+            "re-running tides",
+            "re-simulate tides"
+          ],
+          [
+            "Run the tide simulation in 32.32 fixed point",
+            "32.32 fixed point",
+            "32.32 fixed-point"
+          ]
+        ]
+      },
+      "evidence": ["dec-abandon"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "dec-abandon",
+          "includes": [
+            "4.8 ms on Skiff",
+            "Run the tide simulation in 32.32 fixed point",
+            "re-run tides every frame"
+          ],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "Lockstep's input delay was the reason lockstep lost, not rollback.",
+        "The world Decision is named only by title; Proof forbids links between Efforts."
+      ]
+    },
+    {
+      "id": "netcode-005",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["negative"],
+      "question": "What snapshot send rate did the team choose for host-authoritative co-op?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": ["dec-host"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "dec-host",
+          "includes": "send rate is not chosen yet",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The checksum Decision sends hashes every 30 frames; that is not a snapshot send rate.",
+        "Lockstep's 1.2 KB/s per peer is network traffic for a rejected model."
+      ]
+    },
+    {
+      "id": "netcode-006",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["rejected-alternative"],
+      "question": "Which Decision rejected deterministic lockstep for co-op?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-rollback"
+      },
+      "evidence": ["dec-lockstep", "dec-rollback"],
+      "path": [["dec-lockstep", "rejected_by", "dec-rollback"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "superseded"
+          },
+          "derivesFrom": "iss-sync"
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-lockstep", "rejected_by", "dec-rollback"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The host-authoritative Decision is today's answer to the sync question, but it rejected nothing; lockstep was already rejected.",
+        "The lockstep playtest Finding explains the loss but is not a Decision."
+      ]
+    },
+    {
+      "id": "netcode-007",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["supersession", "current-state"],
+      "question": "Which Decision replaced the plan to prototype rollback netcode for co-op?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-abandon"
+      },
+      "evidence": ["dec-rollback", "dec-abandon"],
+      "path": [["dec-rollback", "superseded_by", "dec-abandon"]],
+      "checks": [
+        {
+          "type": "head",
+          "start": "dec-rollback"
+        }
+      ],
+      "traps": [
+        "The host-authoritative Decision came next and derives from the abandonment, but it does not supersede the rollback Decision."
+      ]
+    },
+    {
+      "id": "netcode-008",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["temporal", "supersession"],
+      "question": "Which rollback window Decision was in force at the vertical slice on 15 December 2025?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-window-v1"
+      },
+      "evidence": ["dec-window-v3", "dec-window-v2", "dec-window-v1"],
+      "path": [
+        ["dec-window-v3", "supersedes", "dec-window-v2"],
+        ["dec-window-v2", "supersedes", "dec-window-v1"]
+      ],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-window-v3",
+          "at": "2025-12-15T00:00:00Z"
+        }
+      ],
+      "traps": [
+        "The current head is the 6-frame window with 1 frame of input delay, adopted in February 2026.",
+        "The 7-frame window came in January 2026, after the Skiff Wi-Fi measurements."
+      ]
+    },
+    {
+      "id": "netcode-009",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["blob"],
+      "question": "In the Skiff profile capture behind the decision to abandon rollback, how long did physics re-simulation take per rollback?",
+      "answer": {
+        "kind": "value",
+        "value": "1.9 ms",
+        "accept": ["1.9", "1.9 milliseconds"]
+      },
+      "evidence": [
+        "dec-abandon",
+        "fnd-tide-cost",
+        "cit-capture",
+        "blb-capture"
+      ],
+      "path": [
+        ["dec-abandon", "derives_from", "fnd-tide-cost"],
+        ["fnd-tide-cost", "cites", "cit-capture"],
+        ["cit-capture", "blob", "blb-capture"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blb-capture",
+          "includes": "\"physics_resim\": 1.9",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "4.8 ms is the tide re-simulation, not physics.",
+        "0.8 ms is one tide step.",
+        "Blob bodies are left out of list and records digests; only `proof get` on the Blob shows the numbers."
+      ]
+    },
+    {
+      "id": "netcode-010",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["dead-evidence", "invalidation"],
+      "question": "Which accepted Decision in the co-op netcode Effort still rests on a cost measurement that was later shown to be wrong?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-window-v3"
+      },
+      "evidence": ["dec-window-v3", "fnd-prototype-cost", "fnd-tide-cost"],
+      "path": [
+        ["dec-window-v3", "derives_from", "fnd-prototype-cost"],
+        ["fnd-prototype-cost", "invalidated_by", "fnd-tide-cost"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "accepted"
+          },
+          "restsOn": ["invalidated"]
+        }
+      ],
+      "traps": [
+        "The 4-frame window also rests on the 1.1 ms measurement, but it is superseded, not accepted.",
+        "The realized re-simulation Risk rests on the same measurement but is a Risk, not a Decision."
+      ]
+    },
+    {
+      "id": "netcode-011",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["rejected-alternative", "rationale"],
+      "question": "The quarter-resolution tide re-simulation proposal was disproved by one Finding and rejected by one Decision. Which Constraint do both that Finding and that Decision rest on?",
+      "answer": {
+        "kind": "record",
+        "value": "con-determinism"
+      },
+      "evidence": [
+        "dec-tide-lod",
+        "fnd-lod-desync",
+        "dec-abandon",
+        "con-determinism"
+      ],
+      "path": [
+        ["dec-tide-lod", "rejected_by", "dec-abandon"],
+        ["dec-abandon", "derives_from", "con-determinism"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["constraint"],
+          "bodyIncludes": "single cell"
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-abandon", "derives_from", "con-determinism"],
+          "expect": true
+        },
+        {
+          "type": "edge",
+          "edge": ["fnd-lod-desync", "derives_from", "con-determinism"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The 150 ms round-trip Constraint feeds the rollback and host-authoritative Decisions, not the abandonment or the desync Finding.",
+        "The 25 ms Skiff frame appears in prose but is not a Constraint record in this Effort."
+      ]
+    },
+    {
+      "id": "netcode-012",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["rejected-alternative", "supersession"],
+      "question": "Start from the lockstep playtest. The option it tested lost to another Decision, and that winner was later replaced. Which proposal did the replacing Decision reject?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-tide-lod"
+      },
+      "evidence": [
+        "fnd-lockstep-test",
+        "dec-lockstep",
+        "dec-rollback",
+        "dec-abandon",
+        "dec-tide-lod"
+      ],
+      "path": [
+        ["fnd-lockstep-test", "derives_from", "dec-lockstep"],
+        ["dec-lockstep", "rejected_by", "dec-rollback"],
+        ["dec-rollback", "superseded_by", "dec-abandon"],
+        ["dec-tide-lod", "rejected_by", "dec-abandon"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "rejected"
+          },
+          "derivesFrom": "fnd-tide-cost"
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-tide-lod", "rejected_by", "dec-abandon"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "Lockstep is also rejected, but by the rollback Decision, not by its replacement.",
+        "The host-authoritative Decision rejected nothing."
+      ]
+    },
+    {
+      "id": "netcode-013",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["compaction", "aggregate"],
+      "question": "Which of the records the latest co-op netcode summary rests on have changed standing since that summary was written?",
+      "answer": {
+        "kind": "records",
+        "value": ["dec-rollback", "fnd-prototype-cost", "rsk-resim"]
+      },
+      "evidence": [
+        "cmp-feb",
+        "dec-rollback",
+        "fnd-prototype-cost",
+        "rsk-resim",
+        "dec-abandon",
+        "fnd-tide-cost"
+      ],
+      "path": [
+        ["cmp-feb", "derives_from", "dec-rollback"],
+        ["cmp-feb", "derives_from", "fnd-prototype-cost"],
+        ["cmp-feb", "derives_from", "rsk-resim"]
+      ],
+      "checks": [
+        {
+          "type": "compaction",
+          "field": "staleTargets"
+        },
+        {
+          "type": "compaction",
+          "field": "stale",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The summary still calls rollback the chosen model and gives the disproved 1.1 ms cost; it predates the abandonment.",
+        "The 6-frame window Decision is still accepted, so it has not changed standing even though the Effort was abandoned."
+      ]
+    },
+    {
+      "id": "netcode-014",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["lifecycle", "blocker", "current-state"],
+      "question": "Which Issues were still open when the co-op netcode Effort was abandoned?",
+      "answer": {
+        "kind": "records",
+        "value": ["iss-late-join"]
+      },
+      "evidence": [
+        "iss-late-join",
+        "iss-sync",
+        "iss-skiff-profile",
+        "iss-desync-debug"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["issue"],
+          "where": {
+            "standing": "open"
+          }
+        }
+      ],
+      "traps": [
+        "The sync question was resolved by the host-authoritative Decision.",
+        "The Skiff profiling gap and the desync tooling gap were both resolved."
+      ]
+    },
+    {
+      "id": "netcode-015",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["aggregate", "rejected-alternative"],
+      "question": "How many Decisions in the co-op netcode Effort ended up rejected?",
+      "answer": {
+        "kind": "count",
+        "value": 2
+      },
+      "evidence": [
+        "dec-lockstep",
+        "dec-tide-lod",
+        "dec-rollback",
+        "dec-window-v1",
+        "dec-window-v2"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "rejected"
+          },
+          "count": true
+        }
+      ],
+      "traps": [
+        "The rollback Decision was superseded by the abandonment, not rejected.",
+        "The two older window sizes were superseded, not rejected; counting superseded Decisions gives 5."
+      ]
+    }
+  ]
+}

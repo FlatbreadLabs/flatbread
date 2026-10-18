@@ -1,0 +1,507 @@
+{
+  "effort": "tools",
+  "questions": [
+    {
+      "id": "tools-001",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["lifecycle", "current-state"],
+      "question": "What is the status of the Effort that built the build farm's shader compile cache?",
+      "answer": {
+        "kind": "value",
+        "value": "completed"
+      },
+      "evidence": ["effort"],
+      "checks": [
+        {
+          "type": "field",
+          "record": "effort",
+          "field": "status"
+        }
+      ],
+      "traps": [
+        "A plain `proof list` shows only active Efforts, so a reader who stops there may say the Effort does not exist or still call it active."
+      ]
+    },
+    {
+      "id": "tools-002",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["lookup"],
+      "question": "Before the compile cache existed, how long did a clean rebuild of every shader permutation take on the build farm?",
+      "answer": {
+        "kind": "value",
+        "value": "47 minutes",
+        "accept": ["47", "47 min", "47 minutes"]
+      },
+      "evidence": ["iss-slow"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "iss-slow",
+          "includes": "47 minutes",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The 6 min 40 s figure is the final warm-cache rebuild, not the starting point."
+      ]
+    },
+    {
+      "id": "tools-003",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "According to the retrospective on the shader compile cache, what was the final clean rebuild time with a warm cache?",
+      "answer": {
+        "kind": "value",
+        "value": "6 min 40 s",
+        "accept": ["6 minutes 40 seconds", "6:40", "400 seconds", "6m40s"]
+      },
+      "evidence": ["fnd-retro"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-retro",
+          "includes": "6 min 40 s",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The figure sits at the end of a long body, past the 600-character excerpt that list and records digests show.",
+        "The hit-rate report's 7.2-minute median build time is a different measure."
+      ]
+    },
+    {
+      "id": "tools-004",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["negative", "distractor", "retraction"],
+      "question": "Which Decision in the shader compile cache Effort sets how the on-device pipeline cache warms up on Skiff?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": ["fnd-noise", "effort"],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "bodyIncludes": "pipeline cache",
+          "expect": []
+        },
+        {
+          "type": "field",
+          "record": "fnd-noise",
+          "field": "standing",
+          "expect": "retracted"
+        }
+      ],
+      "traps": [
+        "A retracted Finding about the Skiff pipeline cache warming in 40 seconds was filed here by mistake; it is not a Decision and belongs to the ports Effort.",
+        "Casual prose calls both caches the \"shader cache\"; this Effort owns only the build farm's compile cache."
+      ]
+    },
+    {
+      "id": "tools-005",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["supersession"],
+      "question": "Which Decision directly replaced the first design for the shader cache key?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-key-v2"
+      },
+      "evidence": ["dec-key-v1", "dec-key-v2"],
+      "path": [["dec-key-v1", "superseded_by", "dec-key-v2"]],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-key-v1",
+          "at": "2025-12-01T00:00:00Z"
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-key-v1", "superseded_by", "dec-key-v2"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The current head of the chain is the binary-hash key, which replaced the second design, not the first."
+      ]
+    },
+    {
+      "id": "tools-006",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["rejected-alternative"],
+      "question": "Which Decision rejected the plan to buy more build agents for shader compiles?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-cache"
+      },
+      "evidence": ["dec-agents", "dec-cache"],
+      "path": [["dec-agents", "rejected_by", "dec-cache"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "accepted"
+          },
+          "derivesFrom": "iss-approach"
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-agents", "rejected_by", "dec-cache"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The 12-agent Constraint explains why the plan lost, but a Constraint cannot reject a Decision.",
+        "Remote execution came later and rejected nothing."
+      ]
+    },
+    {
+      "id": "tools-007",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["dead-evidence", "invalidation"],
+      "question": "Which accepted Decision in the shader compile cache Effort still rests on a Finding that was later shown to be wrong?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-timeout"
+      },
+      "evidence": ["dec-timeout", "fnd-flaky-net", "fnd-flaky-oom"],
+      "path": [
+        ["dec-timeout", "derives_from", "fnd-flaky-net"],
+        ["fnd-flaky-net", "invalidated_by", "fnd-flaky-oom"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "accepted"
+          },
+          "restsOn": ["invalidated"]
+        }
+      ],
+      "traps": [
+        "The job cap is the real fix for the flaky builds, but it rests on the correct memory diagnosis.",
+        "The superseded cache keys rest on superseded or live records, not on a disproved Finding."
+      ]
+    },
+    {
+      "id": "tools-008",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["temporal", "supersession"],
+      "question": "Which shader cache key design was in force on 1 October 2025?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-key-v1"
+      },
+      "evidence": ["dec-key-v3", "dec-key-v2", "dec-key-v1"],
+      "path": [
+        ["dec-key-v3", "supersedes", "dec-key-v2"],
+        ["dec-key-v2", "supersedes", "dec-key-v1"]
+      ],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-key-v3",
+          "at": "2025-10-01T00:00:00Z"
+        }
+      ],
+      "traps": [
+        "The current head, the binary-hash key, arrived in January 2026.",
+        "The preprocessed-source key arrived on 16 October 2025, after the stale-header builds.",
+        "The modification-time key was rejected and never in force."
+      ]
+    },
+    {
+      "id": "tools-009",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["blob"],
+      "question": "In the weekly shader cache hit-rate report, what hit rate did the fourth week reach?",
+      "answer": {
+        "kind": "value",
+        "value": "92.4%",
+        "accept": ["92.4", "92.4 percent"]
+      },
+      "evidence": ["fnd-hitrate", "cit-hitrate", "blb-hitrate"],
+      "path": [
+        ["fnd-hitrate", "cites", "cit-hitrate"],
+        ["cit-hitrate", "blob", "blb-hitrate"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blb-hitrate",
+          "includes": "\"hit_rate\": 92.4",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The Finding body gives only week 1 (71%).",
+        "The retrospective's 94% is the later steady-state rate, and the February summary says only \"low 90s\".",
+        "Blob bodies are left out of list and records digests; only `proof get` on the Blob shows the series."
+      ]
+    },
+    {
+      "id": "tools-010",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["compaction", "invalidation", "lifecycle"],
+      "question": "The February summary of the shader compile cache work names a cause for the flaky nightly builds. Which Decision was built on the diagnosis that replaced that cause?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-cap-jobs"
+      },
+      "evidence": [
+        "cmp-feb",
+        "fnd-flaky-net",
+        "fnd-flaky-oom",
+        "dec-cap-jobs",
+        "iss-flaky"
+      ],
+      "path": [
+        ["cmp-feb", "derives_from", "iss-flaky"],
+        ["iss-flaky", "resolved_by", "dec-cap-jobs"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "fnd-flaky-oom"
+        },
+        {
+          "type": "edge",
+          "edge": ["iss-flaky", "resolved_by", "dec-cap-jobs"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The summary names the 30-second fetch timeout as the fix; that Decision rests on the network diagnosis, which was disproved.",
+        "The flaky-build Issue was still open when the summary was written.",
+        "Walking from the summary to the flaky-build Issue and its resolver also lands here, but a reader who trusts the summary stops at the fetch-timeout Decision."
+      ]
+    },
+    {
+      "id": "tools-011",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["rejected-alternative", "supersession"],
+      "question": "The Decision that rejected timestamp-based cache keys was itself replaced twice. Which Finding prompted the second replacement?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-compiler-drift"
+      },
+      "evidence": [
+        "dec-key-mtime",
+        "dec-key-v1",
+        "dec-key-v2",
+        "dec-key-v3",
+        "fnd-compiler-drift",
+        "iss-key"
+      ],
+      "path": [
+        ["dec-key-mtime", "derives_from", "iss-key"],
+        ["iss-key", "resolved_by", "dec-key-v3"],
+        ["dec-key-v3", "derives_from", "fnd-compiler-drift"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "bodyIncludes": "agent 8"
+        },
+        {
+          "type": "edge",
+          "edge": ["fnd-compiler-drift", "supports", "dec-key-v3"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The stale-header Finding prompted the first replacement, not the second.",
+        "The byte-compare sampling Decision caught the mismatches but is not a Finding."
+      ]
+    },
+    {
+      "id": "tools-012",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["aggregate", "rejected-alternative"],
+      "question": "How many Decisions in the shader compile cache Effort ended up rejected?",
+      "answer": {
+        "kind": "count",
+        "value": 3
+      },
+      "evidence": [
+        "dec-agents",
+        "dec-incremental",
+        "dec-key-mtime",
+        "dec-key-v1",
+        "dec-key-v2"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "rejected"
+          },
+          "count": true
+        }
+      ],
+      "traps": [
+        "The two superseded cache keys were replaced, not rejected; counting them gives 5.",
+        "The fetch-timeout Decision rests on a disproved Finding but is still accepted."
+      ]
+    },
+    {
+      "id": "tools-013",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["compaction", "aggregate"],
+      "question": "Since the latest summary of the shader compile cache Effort was written, how many records have entered, left, or changed standing in its live set?",
+      "answer": {
+        "kind": "count",
+        "value": 8
+      },
+      "evidence": [
+        "cmp-feb",
+        "dec-cap-jobs",
+        "dec-ship",
+        "fnd-flaky-net",
+        "fnd-flaky-oom",
+        "fnd-retro",
+        "iss-flaky",
+        "iss-slow",
+        "rsk-storage"
+      ],
+      "checks": [
+        {
+          "type": "compaction",
+          "field": "changes"
+        },
+        {
+          "type": "compaction",
+          "field": "head",
+          "expect": "tools.cmp-feb"
+        }
+      ],
+      "traps": [
+        "The summary predates the end of the Effort; reading it alone suggests nothing has changed.",
+        "The workstation-access Issue was added and deferred after the summary, so it nets out of the change list."
+      ]
+    },
+    {
+      "id": "tools-014",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["compaction", "invalidation"],
+      "question": "Does the latest summary of the shader compile cache Effort still give the right cause for the flaky nightly builds?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": ["cmp-feb", "fnd-flaky-net", "fnd-flaky-oom"],
+      "path": [
+        ["cmp-feb", "derives_from", "fnd-flaky-net"],
+        ["fnd-flaky-net", "invalidated_by", "fnd-flaky-oom"]
+      ],
+      "checks": [
+        {
+          "type": "compaction",
+          "field": "stale",
+          "expect": true
+        },
+        {
+          "type": "field",
+          "record": "fnd-flaky-net",
+          "field": "standing",
+          "expect": "invalidated"
+        }
+      ],
+      "traps": [
+        "The summary blames cache server fetch timeouts. A later Finding showed the cause was compiler memory on agents 7 and 11."
+      ]
+    },
+    {
+      "id": "tools-015",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["lifecycle", "aggregate", "current-state"],
+      "question": "When the shader compile cache Effort was completed, which Issues and Risks were closed out without being fixed or mitigated?",
+      "answer": {
+        "kind": "records",
+        "value": ["iss-devws", "rsk-storage"]
+      },
+      "evidence": [
+        "iss-devws",
+        "rsk-storage",
+        "fnd-retro",
+        "rsk-poison",
+        "iss-flaky",
+        "iss-slow"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["issue", "risk"],
+          "where": {
+            "standing": ["deferred", "accepted", "wontfix"]
+          }
+        }
+      ],
+      "traps": [
+        "The poisoned-entry Risk was mitigated by the byte-compare sample.",
+        "The flaky-build and rebuild-time Issues were resolved, not deferred."
+      ]
+    },
+    {
+      "id": "tools-016",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["supersession", "lifecycle"],
+      "question": "The Risk of a bad cache entry reaching every build was mitigated by a Decision. A Finding that rests on that Decision prompted a new cache key. Which key design did that new key directly replace?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-key-v2"
+      },
+      "evidence": [
+        "rsk-poison",
+        "dec-verify",
+        "fnd-compiler-drift",
+        "dec-key-v3",
+        "dec-key-v2"
+      ],
+      "path": [
+        ["rsk-poison", "mitigated_by", "dec-verify"],
+        ["fnd-compiler-drift", "derives_from", "dec-verify"],
+        ["fnd-compiler-drift", "supports", "dec-key-v3"],
+        ["dec-key-v3", "supersedes", "dec-key-v2"]
+      ],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-key-v3",
+          "at": "2026-01-14T00:00:00Z"
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-key-v3", "supersedes", "dec-key-v2"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The raw-source key is the first design; the binary-hash key replaced the preprocessed-source key, not it.",
+        "The binary-hash key is the new key itself, not the one it replaced."
+      ]
+    }
+  ]
+}
