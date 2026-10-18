@@ -8,12 +8,12 @@
 // `./flatbread proof …` there.
 import { cp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadQuestions } from './check.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // The form an answer takes, never its content.
-const FORMATS = {
+export const FORMATS = {
   record: 'one Proof record id',
   records: 'a list of Proof record ids',
   value: 'a short value, such as a number with its unit or a name',
@@ -23,19 +23,21 @@ const FORMATS = {
 };
 const REPO = resolve(BENCH, '..', '..');
 
-async function main() {
-  const argv = process.argv.slice(2);
-  const out = argv[0] && !argv[0].startsWith('--') ? resolve(argv[0]) : null;
-  if (!out)
-    throw new Error(
-      'usage: prepare-run.mjs <out-dir> [--only e1,e2] [--ids q1,q2]'
-    );
-  const pick = (flag) => {
-    const at = argv.indexOf(flag);
-    return at >= 0 ? argv[at + 1].split(',') : [];
-  };
-  const only = pick('--only');
-  const ids = new Set(pick('--ids'));
+/** Questions as an agent may see them: text and answer form only. */
+export async function publicQuestions({ only = [], ids = [] } = {}) {
+  const wanted = new Set(ids);
+  return (await loadQuestions(only))
+    .flatMap((set) => set.questions)
+    .filter((q) => !wanted.size || wanted.has(q.id))
+    .map((q) => ({
+      id: q.id,
+      question: q.question,
+      format: FORMATS[q.answer.kind],
+    }));
+}
+
+/** Empties `out` and fills it with the graph, config, and questions. */
+export async function prepareFolder(out, questions) {
   await rm(out, { recursive: true, force: true });
   await mkdir(out, { recursive: true });
   await cp(join(BENCH, '.flatbread-proof'), join(out, '.flatbread-proof'), {
@@ -62,22 +64,33 @@ async function main() {
     )}" "$@"\n`,
     { mode: 0o755 }
   );
-  const questions = (await loadQuestions(only))
-    .flatMap((set) => set.questions)
-    .filter((q) => !ids.size || ids.has(q.id))
-    .map((q) => ({
-      id: q.id,
-      question: q.question,
-      format: FORMATS[q.answer.kind],
-    }));
   await writeFile(
     join(out, 'questions.json'),
     `${JSON.stringify(questions, null, 2)}\n`
   );
+}
+
+async function main() {
+  const argv = process.argv.slice(2);
+  const out = argv[0] && !argv[0].startsWith('--') ? resolve(argv[0]) : null;
+  if (!out)
+    throw new Error(
+      'usage: prepare-run.mjs <out-dir> [--only e1,e2] [--ids q1,q2]'
+    );
+  const pick = (flag) => {
+    const at = argv.indexOf(flag);
+    return at >= 0 ? argv[at + 1].split(',') : [];
+  };
+  const questions = await publicQuestions({
+    only: pick('--only'),
+    ids: pick('--ids'),
+  });
+  await prepareFolder(out, questions);
   console.log(`${questions.length} questions ready in ${out}`);
 }
 
-main().catch((error) => {
-  console.error(error.message);
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  main().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });

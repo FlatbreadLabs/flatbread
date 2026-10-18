@@ -245,19 +245,44 @@ support of that standing.
 
 A benchmark agent must never see `spec/`, `questions/`, or `keymap.json`.
 
-1. Run `node scripts/prepare-run.mjs <folder> [--ids q1,q2]`. The folder gets
-   the graph without the key map, the config, a `./flatbread` wrapper, and
-   `questions.json` with each question's text and answer format only.
-2. Start a fresh agent session for each question. A session that answers many
-   questions loads the graph once and spreads that cost across all of them,
-   which hides both the cost and the difficulty (see the pilot below).
-3. Give the agent the folder and one read strategy: `brief` first, `records`
-   without `brief`, or raw files. Allow one graph command per tool call; a
-   shell loop that dumps every Effort turns a recall test into a reading test.
-4. Take tokens and tool calls from the agent harness, not from the agent. In
-   the pilot, agents' own tallies were 2.4 and 4.5 times the harness counts.
-5. Save answers in `runs/<name>.json`, in the shape `scripts/grade.mjs`
-   describes, and run `node scripts/grade.mjs runs/<name>.json`.
+1. Build the workspace (`pnpm build` at the repository root), so the
+   `flatbread` binary exists.
+2. Run the benchmark:
+
+   ```bash
+   node scripts/run.mjs /tmp/recall --name <run> --model haiku --jobs 12
+   ```
+
+   `run.mjs` gives every question its own folder and its own fresh,
+   headless `claude -p` session, once per strategy (`brief` first, or
+   no `brief`). Each folder holds the graph without the key map, the
+   config, a `./flatbread` wrapper, `TASK.md`, and, afterwards, the
+   agent's `answer.json` and `transcript.jsonl`. Sessions get only the
+   Bash, Read, and Write tools, no MCP servers, and no settings files.
+   Keep the work folder outside the repository. A rerun skips finished
+   sessions. When every session ends, `run.mjs` writes
+   `runs/<run>-brief.json` and `runs/<run>-nobrief.json`, taking tokens
+   and tool calls from the transcripts.
+
+3. Score each run with `node scripts/grade.mjs runs/<run>-brief.json`.
+4. Compare the two strategies question by question with
+   `node scripts/compare.mjs runs/<run>-brief.json runs/<run>-nobrief.json`.
+   It reports both scores, the questions only one got right, a sign test
+   on those, and read tokens, which leave out each session's fixed first
+   turn.
+
+Three rules shaped this protocol, each learned from a pilot below:
+
+- **One session per question.** A session that answers many questions
+  loads the graph once and spreads that cost across all of them, which
+  hides both the cost and the difficulty.
+- **One graph command per tool call.** A shell loop that dumps every
+  Effort turns a recall test into a reading test.
+- **Cost from the harness, never from the agent.** In pilot 1, agents'
+  own tallies were 2.4 and 4.5 times the harness counts.
+
+`scripts/prepare-run.mjs` and `scripts/collect.mjs` remain for runs
+driven by hand.
 
 ## Pilot results
 

@@ -7,14 +7,18 @@
 // The manifest lists one entry per session:
 //   [{ "id": "render-001", "folder": "/tmp/.../render-001", "transcript": "/tmp/.../<agent>.output" }]
 // Each folder holds the agent's `answer.json`: { "answer": ... }. Transcripts
-// are Claude Code agent logs (JSON lines); each assistant turn carries usage.
+// are Claude Code agent logs or `claude -p --output-format stream-json`
+// output (JSON lines); each assistant turn carries usage.
 import { readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 /**
  * `context_tokens` counts what entered the context once (new input, cache
  * writes, output): how much the agent had to read. `processed_tokens` adds
  * cache reads, which grow with every turn the context is re-read.
+ * `fixed_tokens` is the first turn alone: the system prompt and task, paid
+ * before any graph read.
  */
 export async function sessionCost(transcriptPath) {
   const lines = (await readFile(transcriptPath, 'utf8')).split('\n');
@@ -25,6 +29,7 @@ export async function sessionCost(transcriptPath) {
     tool_calls: 0,
     context_tokens: 0,
     processed_tokens: 0,
+    fixed_tokens: 0,
   };
   for (const line of lines) {
     let entry;
@@ -46,6 +51,7 @@ export async function sessionCost(transcriptPath) {
       (u.input_tokens ?? 0) +
       (u.cache_creation_input_tokens ?? 0) +
       (u.output_tokens ?? 0);
+    if (cost.turns === 0) cost.fixed_tokens = fresh;
     cost.turns++;
     cost.context_tokens += fresh;
     cost.processed_tokens += fresh + (u.cache_read_input_tokens ?? 0);
@@ -53,11 +59,8 @@ export async function sessionCost(transcriptPath) {
   return { ...cost, models: [...models] };
 }
 
-async function main() {
-  const [manifestPath, name, outPath] = process.argv.slice(2);
-  if (!outPath)
-    throw new Error('usage: collect.mjs <manifest.json> <run-name> <out.json>');
-  const manifest = JSON.parse(await readFile(resolve(manifestPath), 'utf8'));
+/** Reads each session's answer and cost, and writes one run file. */
+export async function collect(manifest, name, outPath) {
   const answers = {};
   const models = new Set();
   for (const session of manifest) {
@@ -74,6 +77,7 @@ async function main() {
     answers[session.id] = {
       answer,
       tokens: cost.context_tokens,
+      fixed_tokens: cost.fixed_tokens,
       processed_tokens: cost.processed_tokens,
       tool_calls: cost.tool_calls,
       turns: cost.turns,
@@ -93,7 +97,16 @@ async function main() {
   );
 }
 
-main().catch((error) => {
-  console.error(error.message);
-  process.exitCode = 1;
-});
+async function main() {
+  const [manifestPath, name, outPath] = process.argv.slice(2);
+  if (!outPath)
+    throw new Error('usage: collect.mjs <manifest.json> <run-name> <out.json>');
+  const manifest = JSON.parse(await readFile(resolve(manifestPath), 'utf8'));
+  await collect(manifest, name, outPath);
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  main().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });

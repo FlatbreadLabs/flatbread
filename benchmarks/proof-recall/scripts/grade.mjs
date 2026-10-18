@@ -11,7 +11,7 @@
 // counts when the answer contains any one of them.
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadQuestions } from './check.mjs';
 import { loadGraph, qualify, sameAnswer } from './graph.mjs';
 
@@ -23,7 +23,7 @@ function toKey(graph, effort, value) {
   return key ?? qualify(effort, value.trim());
 }
 
-function score(graph, q, effort, given) {
+export function score(graph, q, effort, given) {
   if (given === undefined || given === null) return 0;
   const { kind, value, rubric, accept } = q.answer;
   if (kind === 'text') {
@@ -147,7 +147,8 @@ async function main() {
   );
 }
 
-main().catch((error) => {
-  console.error(error.message);
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  main().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });
