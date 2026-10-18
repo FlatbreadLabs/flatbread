@@ -631,7 +631,7 @@ export default {
       type: 'WriteFinding',
       kind: 'measurement',
       title: 'Skiff microSD sustains 92 MB/s',
-      body: 'Kenji Arakawa read 4 GB of packed world tiles from three new microSD cards on a cold Skiff. Sustained read was 92 MB/s on all three. Internal storage reads at 180 MB/s, but most players will install to microSD.',
+      body: 'Kenji Arakawa read 4 GB of packed world tiles from three new microSD cards on a cold Skiff. Sustained read was 92 MB/s on all three. Internal storage reads at about 200 MB/s, but most players will install to microSD.',
       cites: ['cit-sd-bench'],
       created_by: KENJI,
     },
