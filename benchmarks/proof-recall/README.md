@@ -478,9 +478,60 @@ scored 7 of 8 in each strategy, up from 0 of 8. Each strategy missed a
 different question: `brief` answered "unknown" to `cross-017`, and no
 `brief` did the same on `world-010`.
 
+### A graph ten times larger
+
+If the original graph were small enough to read whole, `brief` could only
+save reading. A graph too large to read should let it help agents answer.
+The 10x run (`runs/x10-haiku-*.json`) tested that.
+
+`node scripts/build.mjs --scale 10 --out <dir>` grew the graph from 498
+records to 4,980. The filler is routine measurements, captures, and small
+question-to-decision threads about subsystems no question names. It never
+links to a real record, and the head compaction of each Effort covers it.
+`check.mjs --graph <dir>` showed every answer unchanged but one:
+`world-077` counts question Issues, and filler adds 242. The run asked all
+246 questions on Haiku, once per strategy, through one read server.
+
+On the 237 questions comparable with the full run (all but `world-077` and
+the eight retraction questions, whose task text changed between runs):
+
+| Graph | Strategy      | Correct | Read tokens, mean | Tool calls, mean | "unknown" |
+| ----- | ------------- | ------- | ----------------- | ---------------- | --------- |
+| 1x    | `brief` first | 220.4   | 25,699            | 13               | 27        |
+| 1x    | no `brief`    | 225.3   | 33,728            | 13               | 22        |
+| 10x   | `brief` first | 197.4   | 26,050            | 17               | 49        |
+| 10x   | no `brief`    | 198.7   | 36,238            | 21               | 43        |
+
+What it showed:
+
+1. **A larger graph costs both strategies about ten points.** Accuracy fell
+   from 93 to 83 percent with `brief` and from 95 to 84 percent without. Most
+   new misses were give-ups: "unknown" answers nearly doubled. Agents named a
+   filler record once in 474 sessions, so noise hid answers rather than
+   misled agents.
+2. **`brief` still does not raise accuracy.** Its deficit shrank from 4.8
+   questions to 1.3, but per question it held up better on 26 and worse on
+   22 (sign test p = 0.67). On render, the largest Effort, `brief` fell from
+   75 to 69 against 77 to 66; on ports it fell further. The first theory,
+   that the graph was small enough to read whole, does not explain the
+   missing gain.
+3. **Agents read about the same amount whatever the graph's size.** Read
+   tokens barely moved (26,000 and 36,000); tool calls rose from 13 to 17
+   and 21. With roughly fixed reading, more noise means more misses. The
+   limit is finding a record by what it says, which neither a summary nor
+   paging through records does well.
+4. **`brief` keeps its saving.** It read 28 percent less than no `brief`,
+   used 17 tool calls against 21, and was cheaper on 166 of 237.
+5. **Reads were slow at this size.** Each read built the whole graph: 6 to
+   9 seconds. `flatbread proof serve` now keeps it loaded, and a later read
+   takes 0.2 to 0.4 seconds. The first 29 sessions ran before the server
+   existed; that changes speed, not what an agent sees. A rebuild during the
+   run broke 22 sessions' reads; their answers were discarded and rerun.
+
 Next steps, in order:
 
-1. Look at the nine questions `brief` agents gave up on, to see whether the
+1. Test a read that finds records by their text, such as
+   `proof search <effortId> <words>`, against both strategies on the 10x
+   graph. Give-ups, not wrong answers, are what grew.
+2. Look at the questions `brief` agents gave up on, to see whether the
    summary steers agents away from records they should read.
-2. Grow the graph until an Effort no longer fits one agent's reading, where
-   `brief` should matter most.
