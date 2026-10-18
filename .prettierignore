@@ -5,3 +5,5 @@
 **/node_modules/**
 **/pnpm-lock.yaml
 examples/**
+# Built by benchmarks/proof-recall/scripts/build.mjs; must match the writer byte for byte.
+benchmarks/proof-recall/.flatbread-proof/**
