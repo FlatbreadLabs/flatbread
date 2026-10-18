@@ -49,8 +49,12 @@ export function score(graph, q, effort, given) {
       ? 1
       : 0;
   if (kind === 'boolean') {
+    // Agents add evidence after the verdict: "false, fnd-...". Read the
+    // leading word.
     const parsed =
-      typeof given === 'string' ? given.trim().toLowerCase() : given;
+      typeof given === 'string'
+        ? /^(true|false)\b/.exec(given.trim().toLowerCase())?.[1]
+        : given;
     if (parsed === 'true' || parsed === true) return value === true ? 1 : 0;
     if (parsed === 'false' || parsed === false) return value === false ? 1 : 0;
     return 0;
