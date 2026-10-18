@@ -127,9 +127,11 @@ function runSession(folder, model, timeoutSeconds) {
 async function main() {
   const options = args(process.argv.slice(2));
   const questions = await publicQuestions(options);
+  // Alternate strategies question by question, so a change in API speed or
+  // load over the run falls on both strategies alike.
   const sessions = [];
-  for (const strategy of options.strategies)
-    for (const q of questions)
+  for (const q of questions)
+    for (const strategy of options.strategies)
       sessions.push({
         id: q.id,
         strategy,

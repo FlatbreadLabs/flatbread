@@ -7,6 +7,8 @@ created_at: '2026-10-18T17:56:17.706Z'
 derives_from:
   - dec-compact-an-effort-with-writer-built-superseding--v37k0ef5evtrd59a
   - fnd-per-question-runs-show-brief-saves-reads-but-not--8js7ncer2qh9tf5h
+superseded_by:
+  - fnd-on-every-question-brief-cuts-reading-but-not-mis--9r1f6caywmytjr0w
 ---
 
 The recall benchmark's third pilot repeated the second on Haiku: the same 46 questions, one fresh session per question, once starting from `proof brief` and once without it. Two questions proved flawed and are left out.

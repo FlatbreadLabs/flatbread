@@ -20,6 +20,10 @@ Each question has a known answer and a stated path through the graph.
 | `scripts/build.mjs`       | Replays every spec through the Proof writer              |
 | `scripts/check.mjs`       | Proves each answer against the built graph               |
 | `scripts/grade.mjs`       | Scores one run                                           |
+| `scripts/run.mjs`         | Runs one headless agent session per question             |
+| `scripts/task.mjs`        | The task text each session reads                         |
+| `scripts/compare.mjs`     | Compares two runs question by question                   |
+| `runs/`                   | Answers and costs from each pilot and full run           |
 | `.flatbread-proof/`       | The built graph, committed so runs need no build         |
 | `flatbread.config.js`     | Lets `flatbread proof …` read the graph from this folder |
 
@@ -403,10 +407,59 @@ What it showed:
    38 to 25 of 54, but did not stop them. Future runs should start agents
    without session-control tools at all.
 
+All three steps this pilot called for are done: the scope warning covers
+single-record checks, `run.mjs` starts agents without session-control
+tools, and the full run below asks every question.
+
+### Full run: every question on Haiku
+
+The full run (`runs/full-haiku-*.json`) asked all 246 questions, one fresh
+headless session per question and per strategy, through `run.mjs`: 492
+sessions, all on Haiku, all of which wrote an answer. No session could call
+anything but Bash, Read, and Write.
+
+| Strategy      | Correct      | Read tokens, mean | Read tokens, median | Tool calls, mean |
+| ------------- | ------------ | ----------------- | ------------------- | ---------------- |
+| `brief` first | 221.4 of 246 | 25,949            | 20,848              | 13.0             |
+| no `brief`    | 226.3 of 246 | 33,703            | 29,233              | 13.0             |
+
+Fractions come from the rubric scores of text answers. Read tokens leave
+out each session's first turn, about 1,200 tokens here: a headless session
+carries a much smaller system prompt than the subagents of pilots 2 and 3.
+That also changes how hard agents try, so accuracy here should not be
+compared with the earlier pilots; compare the two strategies within a run.
+
+What it showed:
+
+1. **`brief` does not raise accuracy.** Twelve questions were right only
+   without `brief` and six only with it (two-sided sign test p = 0.24). Nine
+   of the twelve were "unknown" answers, where the `brief` agent gave up on
+   a fact the other agent found. Pilot 3's 3-to-0 edge for `brief` came
+   from which 46 questions it drew. On the 44 sound questions both runs
+   asked, each strategy changed its result on only 1 or 2, so the reversal
+   comes from the 200 questions pilot 3 left out, not from run-to-run
+   noise.
+2. **`brief` cuts reading, reliably.** Read tokens fell by 23 percent on
+   average and 5,300 on the median question, and `brief` was cheaper on 157
+   of 246. The gain is largest where `brief` was built to help: on the 20
+   compaction questions it read 13,100 tokens against 44,000 and answered
+   all 20, against 19.
+3. **Eight questions ask what no read command can show.** They ask about
+   retracted records: how many there are, or what one said. Browse reads
+   hide retracted records, and `get` needs an id the agent has no way to
+   learn. Every run in every pilot answered "unknown" to all eight
+   (`cross-003`, `cross-017`, `ports-032`, `render-011`, `render-074`,
+   `world-010`, `world-074`, `world-075`). They do not separate the
+   strategies, but they hold the retraction category at 38 percent. Either
+   Proof should offer a read that lists retracted records, or these
+   questions should test the raw files instead.
+4. **The runner ran every `brief` session first.** It now alternates
+   strategies question by question, so a change in API speed over a run
+   falls on both alike.
+
 Next steps, in order:
 
-1. Run every question, not a sample of 46, on Haiku, so a gap of a few
-   points can reach significance.
-2. Run agents without session-control tools, so stray calls cannot happen.
-3. Extend the scope warning in `check.mjs` to questions whose checks start
-   from one record, such as `asof` checks.
+1. Decide whether Proof should list retracted records, and fix the eight
+   retraction questions to match.
+2. Look at the nine questions `brief` agents gave up on, to see whether the
+   summary steers agents away from records they should read.
