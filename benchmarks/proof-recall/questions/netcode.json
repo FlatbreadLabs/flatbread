@@ -104,7 +104,8 @@
           [
             "Run the tide simulation in 32.32 fixed point",
             "32.32 fixed point",
-            "32.32 fixed-point"
+            "32.32 fixed-point",
+            "32-32-fixed-point"
           ]
         ]
       },
@@ -295,7 +296,8 @@
       "traps": [
         "The 4-frame window also rests on the 1.1 ms measurement, but it is superseded, not accepted.",
         "The realized re-simulation Risk rests on the same measurement but is a Risk, not a Decision."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "netcode-011",
@@ -419,7 +421,8 @@
       "traps": [
         "The summary still calls rollback the chosen model and gives the disproved 1.1 ms cost; it predates the abandonment.",
         "The 6-frame window Decision is still accepted, so it has not changed standing even though the Effort was abandoned."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "netcode-014",
@@ -449,7 +452,8 @@
       "traps": [
         "The sync question was resolved by the host-authoritative Decision.",
         "The Skiff profiling gap and the desync tooling gap were both resolved."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "netcode-015",
@@ -481,7 +485,8 @@
       "traps": [
         "The rollback Decision was superseded by the abandonment, not rejected.",
         "The two older window sizes were superseded, not rejected; counting superseded Decisions gives 5."
-      ]
+      ],
+      "scoped": true
     }
   ]
 }

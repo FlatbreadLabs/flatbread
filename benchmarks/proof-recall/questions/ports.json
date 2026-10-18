@@ -266,7 +266,8 @@
       "traps": [
         "The same Finding also invalidates the 92 MB/s Finding, but that is a Finding, not a Decision.",
         "The 2 MB streaming read Decision rests on the bad number but was never invalidated."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "ports-010",
@@ -521,7 +522,8 @@
       ],
       "traps": [
         "The summary says 576p; it was written before the July 2026 change to 504p and is stale."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "ports-019",
@@ -856,7 +858,8 @@
       "traps": [
         "The seamless fast travel Decision was itself invalidated, so it is not live.",
         "The prebuilt blob Decision rested on a disproved Finding but was superseded."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "ports-028",
@@ -889,7 +892,8 @@
       ],
       "traps": [
         "The out-of-memory risk is realized, which is live but not open."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "ports-029",
@@ -921,7 +925,8 @@
       ],
       "traps": [
         "The summary's own text reads as current; only the changes since it was taken show how far it has drifted."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "ports-030",
@@ -961,7 +966,8 @@
       "traps": [
         "The dev kit blocker was resolved in March 2026 and no Decision waits on it.",
         "The prototype test of the particle cap is a Finding, not a Decision, and settles nothing."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "ports-031",
@@ -992,7 +998,8 @@
       ],
       "traps": [
         "The autosave, HUD, and Meridian suspend defects were all resolved with fixes."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "ports-032",
@@ -1015,7 +1022,8 @@
       ],
       "traps": [
         "Superseded and invalidated records are not retracted; they stay on the live browse reads with their history."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "ports-033",

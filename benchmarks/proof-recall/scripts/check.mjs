@@ -113,6 +113,42 @@ function validate(graph, set, q, errors, seen, warnings = []) {
       err(`hops ${q.hops} but path has ${path.length} edges`);
   }
   if (q.tier === 0 && q.hops !== 0) err('tier 0 means 0 hops');
+  // Runs show a question alone. If an Effort-wide check would also find
+  // answers in another Effort, the question must name its own, or carry
+  // `"scoped": true` once an author confirms the wording pins it down.
+  if (set.effort !== 'cross' && !q.scoped) {
+    const title = graph.records.get(graph.keymap[`${set.effort}.effort`])
+      ?.frontmatter.title;
+    const named =
+      title && q.question.toLowerCase().includes(title.toLowerCase());
+    const others = Object.keys(graph.keymap)
+      .filter((key) => key.endsWith('.effort'))
+      .map((key) => key.split('.')[0])
+      .filter((name) => name !== set.effort);
+    const wide = (q.checks ?? []).filter(
+      (c) => (c.type === 'select' || c.type === 'compaction') && !c.effort
+    );
+    const elsewhere = others.filter((name) =>
+      wide.some((c) => {
+        try {
+          const r = runCheck(graph, name, { ...c, effort: name });
+          return Array.isArray(r)
+            ? r.length > 0
+            : r !== null && r !== 0 && r !== false;
+        } catch {
+          return false;
+        }
+      })
+    );
+    if (!named && elsewhere.length)
+      warnings.push(
+        `${set.file} ${
+          q.id
+        }: an Effort-wide check also answers in ${elsewhere.join(
+          ', '
+        )}; name the Effort, or set "scoped": true if the wording pins it down`
+      );
+  }
   // A shortcut makes the question easier than its tier says. Joined
   // branches have no single start and end, so this is a warning only.
   if (q.tier >= 1 && q.tier <= 3 && path.length > 1) {

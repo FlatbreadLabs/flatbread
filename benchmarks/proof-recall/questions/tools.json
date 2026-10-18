@@ -101,7 +101,8 @@
       "traps": [
         "A retracted Finding about the Skiff pipeline cache warming in 40 seconds was filed here by mistake; it is not a Decision and belongs to the ports Effort.",
         "Casual prose calls both caches the \"shader cache\"; this Effort owns only the build farm's compile cache."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "tools-005",
@@ -191,7 +192,8 @@
       "traps": [
         "The job cap is the real fix for the flaky builds, but it rests on the correct memory diagnosis.",
         "The superseded cache keys rest on superseded or live records, not on a disproved Finding."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "tools-008",
@@ -360,7 +362,8 @@
       "traps": [
         "The two superseded cache keys were replaced, not rejected; counting them gives 5.",
         "The fetch-timeout Decision rests on a disproved Finding but is still accepted."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "tools-013",
@@ -397,7 +400,8 @@
       "traps": [
         "The summary predates the end of the Effort; reading it alone suggests nothing has changed.",
         "The workstation-access Issue was added and deferred after the summary, so it nets out of the change list."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "tools-014",
@@ -429,7 +433,8 @@
       ],
       "traps": [
         "The summary blames cache server fetch timeouts. A later Finding showed the cause was compiler memory on agents 7 and 11."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "tools-015",
@@ -461,7 +466,8 @@
       "traps": [
         "The poisoned-entry Risk was mitigated by the byte-compare sample.",
         "The flaky-build and rebuild-time Issues were resolved, not deferred."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "tools-016",

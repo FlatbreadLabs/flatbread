@@ -1,0 +1,350 @@
+{
+  "run": {
+    "name": "pilot-2-brief",
+    "protocol": "one fresh session per question",
+    "models": ["claude-sonnet-5-5"]
+  },
+  "answers": {
+    "cross-009": {
+      "answer": "con-skiff-memory-budget--nf7qbhsnmcn6v479",
+      "tokens": 78005,
+      "processed_tokens": 1428923,
+      "tool_calls": 23,
+      "turns": 22
+    },
+    "cross-011": {
+      "answer": false,
+      "tokens": 64468,
+      "processed_tokens": 761883,
+      "tool_calls": 14,
+      "turns": 13
+    },
+    "cross-012": {
+      "answer": "61 MB/s",
+      "tokens": 63084,
+      "processed_tokens": 624523,
+      "tool_calls": 12,
+      "turns": 11
+    },
+    "cross-013": {
+      "answer": "The Skiff port runs Tern at the Performance preset (not the lowest preset, Ultra Performance, which is the Meridian 120 Hz mode's), saving 1.8 ms over Quality (2.1 ms vs 3.9 ms); see dec-run-tern-on-skiff-at-the-performance-preset--74eqayfa83ybqpe3.",
+      "tokens": 69961,
+      "processed_tokens": 838139,
+      "tool_calls": 15,
+      "turns": 14
+    },
+    "cross-015": {
+      "answer": "Two Efforts are no longer active. \"Shader compile cache and build farm\" (eff-shader-compile-cache-and-build-farm--6xeac11zxvwwarkn) is completed: it ended when dec-turn-the-shader-compile-cache-on-for-every-farm--4rr3b12b4sasdmaj turned the cache on for every farm build, as its end condition required. \"Co-op rollback netcode prototype\" (eff-co-op-rollback-netcode-prototype--n5ejm416kfcfap49) is abandoned via dec-abandon-rollback-netcode-for-co-op--46envrg0v4pdwv7b, because re-running tides on every rolled-back frame costs 4.8 ms on Skiff.",
+      "tokens": 65913,
+      "processed_tokens": 519987,
+      "tool_calls": 12,
+      "turns": 9
+    },
+    "cross-017": {
+      "answer": true,
+      "tokens": 62514,
+      "processed_tokens": 730932,
+      "tool_calls": 15,
+      "turns": 13
+    },
+    "netcode-004": {
+      "answer": "The team abandoned rollback because rollback must re-run the tide simulation on every rolled-back frame, which costs 4.8 ms on Skiff (a fifth of the 25 ms frame), while co-op needs tides to stay bit-for-bit deterministic (shrinking the window, quarter-resolution tides, and leaving tides out of the snapshot all failed); the reason depends on the world Decision dec-run-the-tide-simulation-in-32-32-fixed-point--c5rjfcnmhne4h05e (accepted, not superseded), recorded in dec-abandon-rollback-netcode-for-co-op--46envrg0v4pdwv7b.",
+      "tokens": 63674,
+      "processed_tokens": 683835,
+      "tool_calls": 13,
+      "turns": 12
+    },
+    "netcode-006": {
+      "answer": "dec-prototype-rollback-netcode-for-co-op--2tx2s2p3sfbwj8x4",
+      "tokens": 62147,
+      "processed_tokens": 443186,
+      "tool_calls": 8,
+      "turns": 8
+    },
+    "netcode-010": {
+      "answer": "dec-use-a-6-frame-rollback-window-with-1-frame-of-in--s53944zhkw103frk",
+      "tokens": 30084,
+      "processed_tokens": 570800,
+      "tool_calls": 10,
+      "turns": 10
+    },
+    "netcode-012": {
+      "answer": "dec-re-simulate-tides-at-quarter-resolution-during-r--7ah25p0r0xt9719f",
+      "tokens": 26026,
+      "processed_tokens": 499915,
+      "tool_calls": 10,
+      "turns": 9
+    },
+    "netcode-015": {
+      "answer": 2,
+      "tokens": 23038,
+      "processed_tokens": 375791,
+      "tool_calls": 7,
+      "turns": 7
+    },
+    "ports-001": {
+      "answer": "25 ms",
+      "tokens": 22026,
+      "processed_tokens": 377041,
+      "tool_calls": 8,
+      "turns": 7
+    },
+    "ports-012": {
+      "answer": "Because saltglass caustics shimmered badly at the 540p floor (visible in 7 of 10 dune views, versus 2 of 10 at 576p), recorded in fnd-saltglass-caustics-shimmer-at-the-540p-floor--0aa8sts89vhq1s6q; this drove dec-raise-the-skiff-dynamic-resolution-floor-to-576p--fep9q7m08pp9f0bb (later superseded by the 504p-behind-Tern decision).",
+      "tokens": 23934,
+      "processed_tokens": 554646,
+      "tool_calls": 10,
+      "turns": 10
+    },
+    "ports-013": {
+      "answer": "dec-ship-tern-as-lantern-s-only-upscaler--fmreq35nzyjc7k4e",
+      "tokens": 30118,
+      "processed_tokens": 800240,
+      "tool_calls": 15,
+      "turns": 14
+    },
+    "ports-015": {
+      "answer": "textures (3184 MB)",
+      "tokens": 29053,
+      "processed_tokens": 685342,
+      "tool_calls": 14,
+      "turns": 12
+    },
+    "ports-016": {
+      "answer": "dec-ship-prebuilt-pipeline-blobs-in-the-skiff-packag--3vjysjgy9qkvzebn",
+      "tokens": 27760,
+      "processed_tokens": 625691,
+      "tool_calls": 12,
+      "turns": 11
+    },
+    "ports-022": {
+      "answer": "cit-skiff-sdk-1-2-release-notes--7gwwn8xxffrx6npe",
+      "tokens": 29041,
+      "processed_tokens": 510431,
+      "tool_calls": 10,
+      "turns": 9
+    },
+    "ports-026": {
+      "answer": "912 MB",
+      "tokens": 27186,
+      "processed_tokens": 800013,
+      "tool_calls": 16,
+      "turns": 14
+    },
+    "ports-030": {
+      "answer": [
+        "dec-cap-tide-storm-particles-at-6-000-on-skiff--resze52afjxyxys1",
+        "dec-drop-skiff-to-30-hz-while-a-tide-storm-is-on-scr--72vx1c8s4jrs6axc"
+      ],
+      "tokens": 21654,
+      "processed_tokens": 486085,
+      "tool_calls": 10,
+      "turns": 9
+    },
+    "ports-033": {
+      "answer": "unknown",
+      "tokens": 26101,
+      "processed_tokens": 503027,
+      "tool_calls": 10,
+      "turns": 9
+    },
+    "ports-034": {
+      "answer": "6 weeks",
+      "tokens": 29367,
+      "processed_tokens": 750550,
+      "tool_calls": 16,
+      "turns": 13
+    },
+    "render-002": {
+      "answer": "3.4x",
+      "tokens": 26381,
+      "processed_tokens": 742238,
+      "tool_calls": 14,
+      "turns": 13
+    },
+    "render-005": {
+      "answer": true,
+      "tokens": 27454,
+      "processed_tokens": 738893,
+      "tool_calls": 14,
+      "turns": 13
+    },
+    "render-021": {
+      "answer": "dec-adopt-a-visibility-buffer-for-all-opaque-geometr--68vchzqgd1avw8q4",
+      "tokens": 23035,
+      "processed_tokens": 542704,
+      "tool_calls": 11,
+      "turns": 10
+    },
+    "render-033": {
+      "answer": "128 MB",
+      "tokens": 23156,
+      "processed_tokens": 435847,
+      "tool_calls": 9,
+      "turns": 8
+    },
+    "render-040": {
+      "answer": "fnd-ports-status-after-alpha--yaqm024j41anp4vn",
+      "tokens": 32930,
+      "processed_tokens": 770236,
+      "tool_calls": 16,
+      "turns": 13
+    },
+    "render-050": {
+      "answer": "con-frame-budget--fzdrbxns6dmrrmy3",
+      "tokens": 24214,
+      "processed_tokens": 376611,
+      "tool_calls": 8,
+      "turns": 7
+    },
+    "render-056": {
+      "answer": "208,000 meshlets",
+      "tokens": 34182,
+      "processed_tokens": 1037159,
+      "tool_calls": 17,
+      "turns": 17
+    },
+    "render-059": {
+      "answer": "fnd-sdf-gi-costs-4-7-ms-on-meridian--sm19rt2f274ajsvr",
+      "tokens": 33565,
+      "processed_tokens": 769680,
+      "tool_calls": 15,
+      "turns": 13
+    },
+    "render-070": {
+      "answer": [
+        "dec-store-components-in-archetype-tables-and-volatil--yxsjd26wcaz6fgx9",
+        "dec-compress-streamed-assets-with-kelp--ezwc5p1tgsgm7v8m",
+        "dec-evict-cells-by-distance-and-tide-forecast--fyp1jp366pjjzxcg",
+        "dec-hot-reload-gull-functions-by-swapping-bytecode-a--8dxnkg6h8vmcsr42",
+        "dec-stamp-each-save-with-a-schema-version-and-upgrad--nbg1h8g1bhn2ks8w",
+        "dec-use-signed-distance-field-gi--yn366zmp3k7snd9w",
+        "dec-enable-meshlet-cone-culling-on-all-platforms--cpyweprmzcqhqsv2",
+        "dec-feed-a-saltglass-reactive-mask-into-tern--xezjs7v3vq3r8e6k",
+        "dec-raise-the-shader-cache-fetch-timeout-from-5-seco--4sgdf42ajyct6gt6",
+        "dec-load-skiff-fast-travel-without-a-loading-screen--v4qft5znysjv5f24",
+        "dec-stream-skiff-world-tiles-in-2-mb-reads--3jz9w9gvhhc7eppw",
+        "dec-use-a-6-frame-rollback-window-with-1-frame-of-in--s53944zhkw103frk"
+      ],
+      "tokens": 51680,
+      "processed_tokens": 3033067,
+      "tool_calls": 44,
+      "turns": 43
+    },
+    "render-075": {
+      "answer": "unknown",
+      "tokens": 25394,
+      "processed_tokens": 668684,
+      "tool_calls": 15,
+      "turns": 12
+    },
+    "tools-002": {
+      "answer": "47 minutes",
+      "tokens": 24169,
+      "processed_tokens": 497705,
+      "tool_calls": 10,
+      "turns": 9
+    },
+    "tools-006": {
+      "answer": "dec-build-a-content-addressed-shader-compile-cache-s--e65rq9439k7xz5zh",
+      "tokens": 24434,
+      "processed_tokens": 498658,
+      "tool_calls": 10,
+      "turns": 9
+    },
+    "tools-014": {
+      "answer": false,
+      "tokens": 22348,
+      "processed_tokens": 377677,
+      "tool_calls": 8,
+      "turns": 7
+    },
+    "tools-015": {
+      "answer": [
+        "iss-developer-workstations-cannot-read-the-farm-shad--q2xw0f7fze6z55nj",
+        "rsk-shader-cache-storage-could-outgrow-the-4-tb-farm--76y9649mwrx7aavd"
+      ],
+      "tokens": 27115,
+      "processed_tokens": 565858,
+      "tool_calls": 11,
+      "turns": 10
+    },
+    "tools-016": {
+      "answer": "dec-key-the-shader-cache-on-preprocessed-source-defi--qx2da8e4cbkx0drp",
+      "tokens": 34231,
+      "processed_tokens": 522384,
+      "tool_calls": 10,
+      "turns": 9
+    },
+    "world-014": {
+      "answer": "25 ms",
+      "tokens": 24179,
+      "processed_tokens": 444866,
+      "tool_calls": 9,
+      "turns": 8
+    },
+    "world-016": {
+      "answer": "unknown",
+      "tokens": 22919,
+      "processed_tokens": 547532,
+      "tool_calls": 11,
+      "turns": 10
+    },
+    "world-022": {
+      "answer": "fnd-41-of-alpha-crash-reports-have-no-usable-stack--35a50b07ferhf13m",
+      "tokens": 21829,
+      "processed_tokens": 487734,
+      "tool_calls": 9,
+      "turns": 9
+    },
+    "world-035": {
+      "answer": false,
+      "tokens": 26342,
+      "processed_tokens": 562079,
+      "tool_calls": 11,
+      "turns": 10
+    },
+    "world-046": {
+      "answer": "con-streaming-pool-budget--632bkbs79bwj4cr5",
+      "tokens": 26578,
+      "processed_tokens": 510837,
+      "tool_calls": 10,
+      "turns": 9
+    },
+    "world-053": {
+      "answer": "1.9 ms",
+      "tokens": 29815,
+      "processed_tokens": 1057733,
+      "tool_calls": 19,
+      "turns": 18
+    },
+    "world-059": {
+      "answer": "dec-derive-the-missing-harmonic-phase-from-each-save--gbqrvvgyq2gy2gnw",
+      "tokens": 32019,
+      "processed_tokens": 892826,
+      "tool_calls": 15,
+      "turns": 15
+    },
+    "world-066": {
+      "answer": 46,
+      "tokens": 30732,
+      "processed_tokens": 884551,
+      "tool_calls": 16,
+      "turns": 15
+    },
+    "world-069": {
+      "answer": "unknown",
+      "tokens": 24033,
+      "processed_tokens": 440904,
+      "tool_calls": 9,
+      "turns": 8
+    },
+    "world-077": {
+      "answer": "unknown",
+      "tokens": 22028,
+      "processed_tokens": 432057,
+      "tool_calls": 11,
+      "turns": 8
+    }
+  }
+}

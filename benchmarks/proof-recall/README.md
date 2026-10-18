@@ -154,6 +154,7 @@ Each question file holds one Effort's questions:
 | `path`       | The edges walked, as `[from, relation, to]`; tiers 1-3 need one |
 | `checks`     | Machine checks that compute or confirm the answer               |
 | `traps`      | The wrong answers a careless reader gives, and why              |
+| `scoped`     | `true` when wording other than the title pins the Effort down   |
 
 ### Answer kinds
 
@@ -283,9 +284,45 @@ What it showed:
 4. **One run per strategy proves nothing about strategies.** The token gap is
    a single pair of runs.
 
+### Pilot 2: one session per question
+
+The second pilot (`runs/pilot-2-*.json`) asked the same 46 questions, one
+fresh Sonnet session per question and per strategy: 92 sessions. Costs come
+from each session's transcript (`scripts/collect.mjs`). Every session ran on
+Sonnet and wrote its answer.
+
+Five questions did not name their Effort, so agents could not tell which
+Effort they meant, and both strategies missed all five. They now name it, and
+`check.mjs` warns when an Effort-wide check would also find answers in
+another Effort. Results on the other 41:
+
+| Strategy      | Correct  | Read tokens, mean | Read tokens, median | Tool calls, mean |
+| ------------- | -------- | ----------------- | ------------------- | ---------------- |
+| `brief` first | 38 of 41 | 15,365            | 14,786              | 12.3             |
+| no `brief`    | 39 of 41 | 18,624            | 18,014              | 12.1             |
+
+Read tokens leave out the roughly 19,300 tokens each session spent before
+its first read.
+
+What it showed:
+
+1. **One session per question moves the benchmark off its ceiling, but not
+   far.** Accuracy fell from 98 to 100 percent in pilot 1 to 93 to 95
+   percent. Tier 4 questions used about two-thirds more context tokens than
+   the rest. Both strategies fell for the same two traps: a near-identical
+   retracted title (`cross-017`) and which summary was newest on a given day
+   (`render-040`).
+2. **`brief` did not change accuracy.** Its one extra miss gave the right
+   record's id where the question asked for the title.
+3. **`brief` cut read tokens by 17.5 percent on average, but not reliably.**
+   The median question saved about 1,000 tokens, and `brief` was cheaper on
+   only 22 of 41.
+
 Next steps, in order:
 
-1. Run each sampled question in its own session, for both strategies, with
-   harness token counts.
-2. If accuracy is still at the ceiling, cap tool calls per question, or grow
-   the graph past what one agent can read whole.
+1. Run the same sample with a model that misses more, such as Haiku, to see
+   whether `brief` helps where accuracy is not near the ceiling.
+2. Grow the sample to every question, so a strategy gap of a few points can
+   show.
+3. If both models still score near the ceiling, cap tool calls per question
+   or grow the graph past what one agent can read whole.

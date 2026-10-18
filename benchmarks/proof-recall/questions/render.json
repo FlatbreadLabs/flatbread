@@ -258,7 +258,8 @@
           "retracted": "only"
         }
       ],
-      "traps": ["The 2.2 ms Finding was invalidated, not retracted."]
+      "traps": ["The 2.2 ms Finding was invalidated, not retracted."],
+      "scoped": true
     },
     {
       "id": "render-012",
@@ -543,7 +544,10 @@
           }
         }
       ],
-      "traps": ["The Skiff timings gap is a different gap, closed as deferred."]
+      "traps": [
+        "The Skiff timings gap is a different gap, closed as deferred."
+      ],
+      "scoped": true
     },
     {
       "id": "render-024",
@@ -1818,7 +1822,7 @@
       "tier": 4,
       "hops": 1,
       "categories": ["aggregate", "blocker"],
-      "question": "Which proposed Decisions derive directly from an open blocker?",
+      "question": "In the \"Lantern renderer overhaul\" Effort, which proposed Decisions derive directly from an open blocker?",
       "answer": {
         "kind": "records",
         "value": [
@@ -1855,7 +1859,7 @@
       "tier": 4,
       "hops": 1,
       "categories": ["blocker", "aggregate"],
-      "question": "Which open blocker has no proposed Decision deriving from it?",
+      "question": "In the \"Lantern renderer overhaul\" Effort, which open blocker has no proposed Decision deriving from it?",
       "answer": {
         "kind": "record",
         "value": "iss-vsm-tide"
@@ -1886,7 +1890,7 @@
       "tier": 4,
       "hops": 2,
       "categories": ["dead-evidence", "aggregate"],
-      "question": "Which live Decisions rest directly on a record that has since been invalidated?",
+      "question": "In the \"Lantern renderer overhaul\" Effort, which live Decisions rest directly on a record that has since been invalidated?",
       "answer": {
         "kind": "records",
         "value": ["dec-gi-sdf", "dec-meshlet-cone", "dec-tern-reactive"]
@@ -1935,7 +1939,7 @@
       "tier": 4,
       "hops": 1,
       "categories": ["aggregate", "lifecycle"],
-      "question": "Which Risks were accepted as they stand rather than mitigated or left open?",
+      "question": "In the \"Lantern renderer overhaul\" Effort, which Risks were accepted as they stand rather than mitigated or left open?",
       "answer": {
         "kind": "records",
         "value": ["rsk-brine-match", "rsk-sdf-memory"]
@@ -1960,7 +1964,7 @@
       "tier": 4,
       "hops": 1,
       "categories": ["aggregate", "lifecycle"],
-      "question": "Which Risks came true?",
+      "question": "In the \"Lantern renderer overhaul\" Effort, which Risks came true?",
       "answer": {
         "kind": "records",
         "value": ["rsk-120-gi", "rsk-hdr-cert", "rsk-vsm-overflow"]
@@ -2084,7 +2088,7 @@
       "tier": 4,
       "hops": 1,
       "categories": ["compaction"],
-      "question": "Is the newest compaction stale?",
+      "question": "In the \"Lantern renderer overhaul\" Effort, is the newest compaction stale?",
       "answer": {
         "kind": "boolean",
         "value": true
@@ -2105,7 +2109,7 @@
       "tier": 4,
       "hops": 1,
       "categories": ["compaction", "aggregate"],
-      "question": "Which records that the newest compaction rests on have changed standing since it was written?",
+      "question": "In the \"Lantern renderer overhaul\" Effort, which records that the newest compaction rests on have changed standing since it was written?",
       "answer": {
         "kind": "records",
         "value": ["dec-brine-2", "rsk-hdr-cert"]
@@ -2132,7 +2136,7 @@
       "tier": 4,
       "hops": 1,
       "categories": ["compaction", "aggregate"],
-      "question": "How many records were added to, changed in, or left the live set since the newest compaction was written?",
+      "question": "In the \"Lantern renderer overhaul\" Effort, how many records were added to, changed in, or left the live set since the newest compaction was written?",
       "answer": {
         "kind": "count",
         "value": 6
@@ -2257,14 +2261,15 @@
       ],
       "traps": [
         "The stock filmic curve was invalidated; each Brine version was superseded, never invalidated."
-      ]
+      ],
+      "scoped": true
     },
     {
       "id": "render-083",
       "tier": 4,
       "hops": 2,
       "categories": ["dead-evidence", "aggregate"],
-      "question": "How many live records of any kind rest directly on a record that has since been invalidated?",
+      "question": "In the \"Lantern renderer overhaul\" Effort, how many live records of any kind rest directly on a record that has since been invalidated?",
       "answer": {
         "kind": "count",
         "value": 4

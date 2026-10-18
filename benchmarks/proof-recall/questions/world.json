@@ -1904,7 +1904,7 @@
       "tier": 4,
       "hops": 0,
       "categories": ["compaction", "lifecycle"],
-      "question": "Is the head compaction stale?",
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, is the head compaction stale?",
       "answer": {
         "kind": "boolean",
         "value": false
@@ -1931,7 +1931,7 @@
       "tier": 4,
       "hops": 0,
       "categories": ["compaction", "aggregate"],
-      "question": "How many records have joined, left, or changed standing in the live set since the head compaction was written?",
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, how many records have joined, left, or changed standing in the live set since the head compaction was written?",
       "answer": {
         "kind": "count",
         "value": 7
@@ -1961,7 +1961,7 @@
       "tier": 4,
       "hops": 0,
       "categories": ["blocker", "compaction", "aggregate"],
-      "question": "How many blocker Issues are open now?",
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, how many blocker Issues are open now?",
       "answer": {
         "kind": "count",
         "value": 3
@@ -1993,7 +1993,7 @@
       "tier": 4,
       "hops": 0,
       "categories": ["dead-evidence", "aggregate"],
-      "question": "Which live Decisions still derive from a support that has been invalidated?",
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, which live Decisions still derive from a support that has been invalidated?",
       "answer": {
         "kind": "records",
         "value": [
@@ -2211,7 +2211,7 @@
       "tier": 4,
       "hops": 0,
       "categories": ["lifecycle", "aggregate"],
-      "question": "Which Risks are still open?",
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, which Risks are still open?",
       "answer": {
         "kind": "records",
         "value": ["rsk-gull-reload-state", "rsk-io-rework"]
@@ -2236,7 +2236,7 @@
       "tier": 4,
       "hops": 0,
       "categories": ["current-state", "aggregate", "distractor"],
-      "question": "Which hard Constraints are in force now?",
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, which hard Constraints are in force now?",
       "answer": {
         "kind": "records",
         "value": [
@@ -2275,7 +2275,7 @@
       "tier": 4,
       "hops": 0,
       "categories": ["lifecycle", "aggregate"],
-      "question": "Which Issues were closed as deferred?",
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, which Issues were closed as deferred?",
       "answer": {
         "kind": "records",
         "value": [
