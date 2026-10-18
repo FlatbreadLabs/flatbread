@@ -429,7 +429,7 @@
       "tier": 4,
       "hops": 0,
       "categories": ["cross-effort", "retraction", "distractor"],
-      "question": "Is \"Ship Tern as the only upscaler in Lantern\" the Decision that the Skiff port names as its reason for using Tern?",
+      "question": "Is the record titled exactly \"Ship Tern as the only upscaler in Lantern\" the Decision that the Skiff port names as its reason for using Tern?",
       "answer": { "kind": "boolean", "value": false },
       "evidence": [
         "render.dec-tern",

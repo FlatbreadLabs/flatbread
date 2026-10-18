@@ -1108,7 +1108,7 @@ export default {
         'What went well: the Kelp high-ratio switch took one week end to end and saved 900 MB, just as predicted. The 40 Hz mode cost less than feared because dynamic resolution already existed. The cert pre-check caught both failures early enough to fix them before beta.',
         'What went badly: twice we trusted a test that ran on a better setup than players have. The December pipeline blob test ran on the same firmware the blobs were built for. The March storage test ran on new, empty cards on a cold Skiff. Both looked fine and both were wrong.',
         'We also sized memory against the 9 GB figure for four months after the platform holder had hinted at a bigger system reserve. Priya Natarajan now checks the SDK release notes every Monday.',
-        'Cost: the wrong pipeline choice cost 6 weeks of schedule, from the December pick to the cache working on firmware 1.2 kits. Rule from here: run every platform test on retail firmware and on the worst hardware a player can buy.'
+        'Cost: the wrong pipeline choice cost 6 weeks of schedule: the beta slipped 6 weeks past its planned date while the team rebuilt pipelines as an on-device cache. Rule from here: run every platform test on retail firmware and on the worst hardware a player can buy.'
       ),
       derives_from: ['fnd-driver-keyed', 'fnd-sd-speed-2', 'fnd-mem-kelp'],
       created_by: PRIYA,

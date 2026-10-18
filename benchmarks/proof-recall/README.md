@@ -309,20 +309,79 @@ What it showed:
 1. **One session per question moves the benchmark off its ceiling, but not
    far.** Accuracy fell from 98 to 100 percent in pilot 1 to 93 to 95
    percent. Tier 4 questions used about two-thirds more context tokens than
-   the rest. Both strategies fell for the same two traps: a near-identical
-   retracted title (`cross-017`) and which summary was newest on a given day
-   (`render-040`).
+   the rest. Both strategies missed the same two questions, `cross-017` and
+   `render-040`. Pilot 3 showed that both were flawed questions, not fair
+   traps (see below). Without them, `brief` scored 38 of 39 and no `brief`
+   39 of 39.
 2. **`brief` did not change accuracy.** Its one extra miss gave the right
    record's id where the question asked for the title.
 3. **`brief` cut read tokens by 17.5 percent on average, but not reliably.**
    The median question saved about 1,000 tokens, and `brief` was cheaper on
    only 22 of 41.
 
+### Pilot 3: Haiku
+
+The third pilot (`runs/pilot-3-*.json`) repeated pilot 2 on Haiku: the same
+46 questions, one fresh session per question and per strategy. Every session
+ran on Haiku and wrote its answer.
+
+Two questions were flawed, and are left out of the results below:
+
+- `render-040` did not name its Effort. Across all Efforts, the ports
+  compaction of 2026-03-10 really was newer than "Lantern at alpha" on beta
+  day, so that answer was a fair reading. `check.mjs` missed it because its
+  scope warning only tests Effort-wide checks, and this question's check
+  starts from one record.
+- `cross-017` asked whether a quoted title was the Decision another Effort
+  names. Browse reads hide the retracted record with that exact title, so a
+  reader can fairly take the quote as a paraphrase of the live title. All
+  four runs across pilots 2 and 3 answered `true`.
+
+Both questions now say what they mean. One graph fact was wrong too: the
+Skiff beta retrospective put the 6-week cost on a span the record dates make
+about 18 weeks. It now says the beta slipped 6 weeks, and the answer is
+unchanged.
+
+| Strategy      | Correct  | Read tokens, mean | Read tokens, median | Tool calls, mean |
+| ------------- | -------- | ----------------- | ------------------- | ---------------- |
+| `brief` first | 44 of 44 | 31,918            | 29,250              | 15.0             |
+| no `brief`    | 41 of 44 | 43,391            | 30,548              | 15.0             |
+
+Read tokens here leave out each session's own first turn, which varied more
+on Haiku (median 12,200, mean 19,800) than the fixed 19,300 used for pilot 2.
+
+What it showed:
+
+1. **`brief` helped where the model was weaker.** The three questions that
+   only the no-`brief` arm missed were:
+
+   - `world-069`, which asks how many records changed since the head
+     compaction. The agent counted 6; there are 7. It said itself that a
+     record changed in place leaves no dated trace in browse reads. The
+     `brief` envelope reports this count directly, and pilot 1 missed the
+     same question the same way.
+   - `tools-015` and `world-053`, where the agent gave up and answered
+     "unknown". On `world-053` it did so after 37 tool calls.
+
+   That is 3 to 0 on the paired questions, still too few to rule out chance
+   (a two-sided sign test gives p = 0.25).
+
+2. **`brief` cut read tokens by 26 percent on average.** The median question
+   saved about 4,000 tokens, and `brief` was cheaper on 25 of 44. The mean
+   gap is larger than the median because the no-`brief` arm had a few very
+   long sessions, which is the cost `brief` is meant to remove.
+3. **Haiku agents called tools they had no reason to call.** Most were
+   `send_message` calls to sessions that do not exist. One created an empty
+   cloud session and one scheduled a reminder, then deleted it. Midway
+   through the run, task files began to say "Use only the Bash, Read, and
+   Write tools". That cut the share of sessions making such calls from 24 of
+   38 to 25 of 54, but did not stop them. Future runs should start agents
+   without session-control tools at all.
+
 Next steps, in order:
 
-1. Run the same sample with a model that misses more, such as Haiku, to see
-   whether `brief` helps where accuracy is not near the ceiling.
-2. Grow the sample to every question, so a strategy gap of a few points can
-   show.
-3. If both models still score near the ceiling, cap tool calls per question
-   or grow the graph past what one agent can read whole.
+1. Run every question, not a sample of 46, on Haiku, so a gap of a few
+   points can reach significance.
+2. Run agents without session-control tools, so stray calls cannot happen.
+3. Extend the scope warning in `check.mjs` to questions whose checks start
+   from one record, such as `asof` checks.

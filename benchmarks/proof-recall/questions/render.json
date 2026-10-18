@@ -966,7 +966,7 @@
       "tier": 2,
       "hops": 2,
       "categories": ["temporal", "compaction"],
-      "question": "Which compaction was the newest on beta day, 2026-06-01?",
+      "question": "In the \"Lantern renderer overhaul\" Effort, which compaction was the newest on beta day, 2026-06-01?",
       "answer": {
         "kind": "record",
         "value": "cmp-2"

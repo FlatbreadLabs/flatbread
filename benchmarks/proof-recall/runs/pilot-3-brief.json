@@ -1,0 +1,341 @@
+{
+  "run": {
+    "name": "pilot-3-brief",
+    "protocol": "one fresh session per question",
+    "models": ["claude-haiku-5-5"]
+  },
+  "answers": {
+    "cross-009": {
+      "answer": "con-skiff-memory-budget--nf7qbhsnmcn6v479",
+      "tokens": 69093,
+      "processed_tokens": 844465,
+      "tool_calls": 14,
+      "turns": 14
+    },
+    "cross-011": {
+      "answer": false,
+      "tokens": 91395,
+      "processed_tokens": 1418625,
+      "tool_calls": 19,
+      "turns": 19
+    },
+    "cross-012": {
+      "answer": "61 MB/s",
+      "tokens": 81527,
+      "processed_tokens": 1084187,
+      "tool_calls": 16,
+      "turns": 16
+    },
+    "cross-013": {
+      "answer": "Skiff runs Tern at the Performance preset, which saves 1.8 ms over Quality (2.1 ms against 3.9 ms of GPU time on the Skiff dev kit). Records: dec-run-tern-on-skiff-at-the-performance-preset--74eqayfa83ybqpe3 and fnd-tern-costs-3-9-ms-at-quality-and-2-1-ms-at-perfo--dkbskbqfgfwtryq0.",
+      "tokens": 103676,
+      "processed_tokens": 1698341,
+      "tool_calls": 21,
+      "turns": 21
+    },
+    "cross-015": {
+      "answer": "The shader compile cache and build farm Effort is completed: the cache now runs on every farm build, as the retrospective fnd-retrospective-on-the-shader-compile-cache--9rpv2a60ach04cx6 records. The co-op rollback netcode prototype Effort is abandoned: decision dec-abandon-rollback-netcode-for-co-op--46envrg0v4pdwv7b stopped it because re-running tides on every rolled-back frame costs 4.8 ms on Skiff.",
+      "tokens": 70657,
+      "processed_tokens": 791779,
+      "tool_calls": 13,
+      "turns": 13
+    },
+    "cross-017": {
+      "answer": true,
+      "tokens": 86776,
+      "processed_tokens": 1487784,
+      "tool_calls": 21,
+      "turns": 21
+    },
+    "netcode-004": {
+      "answer": "The team abandoned rollback netcode for co-op because rollback must re-run the tide simulation on every rolled-back frame, which costs 4.8 ms on Skiff, a fifth of the frame budget, while co-op needs tide state to stay bit-identical on all peers. The reason depends on the world Decision dec-run-the-tide-simulation-in-32-32-fixed-point--c5rjfcnmhne4h05e (Run the tide simulation in 32.32 fixed point).",
+      "tokens": 67984,
+      "processed_tokens": 780519,
+      "tool_calls": 13,
+      "turns": 13
+    },
+    "netcode-006": {
+      "answer": "dec-prototype-rollback-netcode-for-co-op--2tx2s2p3sfbwj8x4",
+      "tokens": 70567,
+      "processed_tokens": 736662,
+      "tool_calls": 12,
+      "turns": 12
+    },
+    "netcode-010": {
+      "answer": "dec-use-a-6-frame-rollback-window-with-1-frame-of-in--s53944zhkw103frk",
+      "tokens": 69015,
+      "processed_tokens": 664940,
+      "tool_calls": 11,
+      "turns": 11
+    },
+    "netcode-012": {
+      "answer": "dec-re-simulate-tides-at-quarter-resolution-during-r--7ah25p0r0xt9719f",
+      "tokens": 85184,
+      "processed_tokens": 945972,
+      "tool_calls": 14,
+      "turns": 14
+    },
+    "netcode-015": {
+      "answer": 2,
+      "tokens": 31151,
+      "processed_tokens": 596833,
+      "tool_calls": 10,
+      "turns": 10
+    },
+    "ports-001": {
+      "answer": "25 ms",
+      "tokens": 23650,
+      "processed_tokens": 510111,
+      "tool_calls": 9,
+      "turns": 9
+    },
+    "ports-012": {
+      "answer": "The ports team raised the Skiff dynamic resolution floor to 576p because caustic patterns under saltglass shimmered badly at the 540p floor, even after Tern: visible shimmer appeared in 7 of 10 dune views, versus 2 of 10 at 576p (fnd-saltglass-caustics-shimmer-at-the-540p-floor--0aa8sts89vhq1s6q). The 576p decision is dec-raise-the-skiff-dynamic-resolution-floor-to-576p--fep9q7m08pp9f0bb.",
+      "tokens": 26358,
+      "processed_tokens": 575082,
+      "tool_calls": 10,
+      "turns": 10
+    },
+    "ports-013": {
+      "answer": "Ship Tern as Lantern's only upscaler",
+      "tokens": 44721,
+      "processed_tokens": 951217,
+      "tool_calls": 14,
+      "turns": 14
+    },
+    "ports-015": {
+      "answer": "textures",
+      "tokens": 41250,
+      "processed_tokens": 942749,
+      "tool_calls": 14,
+      "turns": 14
+    },
+    "ports-016": {
+      "answer": "dec-ship-prebuilt-pipeline-blobs-in-the-skiff-packag--3vjysjgy9qkvzebn",
+      "tokens": 37357,
+      "processed_tokens": 631409,
+      "tool_calls": 10,
+      "turns": 10
+    },
+    "ports-022": {
+      "answer": "cit-skiff-sdk-1-2-release-notes--7gwwn8xxffrx6npe",
+      "tokens": 41181,
+      "processed_tokens": 834559,
+      "tool_calls": 13,
+      "turns": 13
+    },
+    "ports-026": {
+      "answer": "912 MB",
+      "tokens": 34172,
+      "processed_tokens": 1462955,
+      "tool_calls": 24,
+      "turns": 24
+    },
+    "ports-030": {
+      "answer": [
+        "dec-cap-tide-storm-particles-at-6-000-on-skiff--resze52afjxyxys1",
+        "dec-drop-skiff-to-30-hz-while-a-tide-storm-is-on-scr--72vx1c8s4jrs6axc"
+      ],
+      "tokens": 41924,
+      "processed_tokens": 988909,
+      "tool_calls": 15,
+      "turns": 15
+    },
+    "ports-033": {
+      "answer": "unknown",
+      "tokens": 44491,
+      "processed_tokens": 954771,
+      "tool_calls": 15,
+      "turns": 15
+    },
+    "ports-034": {
+      "answer": "6 weeks",
+      "tokens": 69958,
+      "processed_tokens": 1152216,
+      "tool_calls": 15,
+      "turns": 15
+    },
+    "render-002": {
+      "answer": "3.4x",
+      "tokens": 44882,
+      "processed_tokens": 1139911,
+      "tool_calls": 17,
+      "turns": 17
+    },
+    "render-005": {
+      "answer": true,
+      "tokens": 50550,
+      "processed_tokens": 969996,
+      "tool_calls": 14,
+      "turns": 14
+    },
+    "render-021": {
+      "answer": "dec-adopt-a-visibility-buffer-for-all-opaque-geometr--68vchzqgd1avw8q4",
+      "tokens": 28155,
+      "processed_tokens": 877984,
+      "tool_calls": 15,
+      "turns": 15
+    },
+    "render-033": {
+      "answer": "128 MB",
+      "tokens": 35208,
+      "processed_tokens": 865499,
+      "tool_calls": 14,
+      "turns": 14
+    },
+    "render-040": {
+      "answer": "fnd-ports-status-after-alpha--yaqm024j41anp4vn",
+      "tokens": 46164,
+      "processed_tokens": 1141677,
+      "tool_calls": 17,
+      "turns": 17
+    },
+    "render-050": {
+      "answer": "con-frame-budget--fzdrbxns6dmrrmy3",
+      "tokens": 29760,
+      "processed_tokens": 656125,
+      "tool_calls": 11,
+      "turns": 11
+    },
+    "render-056": {
+      "answer": "208,000 meshlets",
+      "tokens": 48586,
+      "processed_tokens": 1751139,
+      "tool_calls": 24,
+      "turns": 24
+    },
+    "render-059": {
+      "answer": "fnd-sdf-gi-costs-4-7-ms-on-meridian--sm19rt2f274ajsvr",
+      "tokens": 60800,
+      "processed_tokens": 1740873,
+      "tool_calls": 23,
+      "turns": 23
+    },
+    "render-070": {
+      "answer": [
+        "dec-use-signed-distance-field-gi--yn366zmp3k7snd9w",
+        "dec-feed-a-saltglass-reactive-mask-into-tern--xezjs7v3vq3r8e6k",
+        "dec-enable-meshlet-cone-culling-on-all-platforms--cpyweprmzcqhqsv2"
+      ],
+      "tokens": 118817,
+      "processed_tokens": 2449486,
+      "tool_calls": 25,
+      "turns": 25
+    },
+    "render-075": {
+      "answer": "3 decisions",
+      "tokens": 57129,
+      "processed_tokens": 937611,
+      "tool_calls": 13,
+      "turns": 13
+    },
+    "tools-002": {
+      "answer": "47 minutes",
+      "tokens": 48440,
+      "processed_tokens": 987762,
+      "tool_calls": 15,
+      "turns": 15
+    },
+    "tools-006": {
+      "answer": "dec-build-a-content-addressed-shader-compile-cache-s--e65rq9439k7xz5zh",
+      "tokens": 33610,
+      "processed_tokens": 674293,
+      "tool_calls": 11,
+      "turns": 11
+    },
+    "tools-014": {
+      "answer": false,
+      "tokens": 25754,
+      "processed_tokens": 636050,
+      "tool_calls": 11,
+      "turns": 11
+    },
+    "tools-015": {
+      "answer": [
+        "rsk-shader-cache-storage-could-outgrow-the-4-tb-farm--76y9649mwrx7aavd",
+        "iss-developer-workstations-cannot-read-the-farm-shad--q2xw0f7fze6z55nj"
+      ],
+      "tokens": 52934,
+      "processed_tokens": 1250050,
+      "tool_calls": 17,
+      "turns": 17
+    },
+    "tools-016": {
+      "answer": "dec-key-the-shader-cache-on-preprocessed-source-defi--qx2da8e4cbkx0drp",
+      "tokens": 41990,
+      "processed_tokens": 779287,
+      "tool_calls": 12,
+      "turns": 12
+    },
+    "world-014": {
+      "answer": "unknown",
+      "tokens": 63873,
+      "processed_tokens": 2442800,
+      "tool_calls": 30,
+      "turns": 30
+    },
+    "world-016": {
+      "answer": "unknown",
+      "tokens": 40444,
+      "processed_tokens": 698588,
+      "tool_calls": 11,
+      "turns": 11
+    },
+    "world-022": {
+      "answer": "fnd-41-of-alpha-crash-reports-have-no-usable-stack--35a50b07ferhf13m",
+      "tokens": 62092,
+      "processed_tokens": 2166025,
+      "tool_calls": 28,
+      "turns": 28
+    },
+    "world-035": {
+      "answer": false,
+      "tokens": 53145,
+      "processed_tokens": 786612,
+      "tool_calls": 12,
+      "turns": 12
+    },
+    "world-046": {
+      "answer": "con-streaming-pool-budget--632bkbs79bwj4cr5",
+      "tokens": 33325,
+      "processed_tokens": 735124,
+      "tool_calls": 12,
+      "turns": 12
+    },
+    "world-053": {
+      "answer": "1.9 ms",
+      "tokens": 60110,
+      "processed_tokens": 2439256,
+      "tool_calls": 31,
+      "turns": 31
+    },
+    "world-059": {
+      "answer": "dec-derive-the-missing-harmonic-phase-from-each-save--gbqrvvgyq2gy2gnw",
+      "tokens": 34925,
+      "processed_tokens": 874084,
+      "tool_calls": 14,
+      "turns": 14
+    },
+    "world-066": {
+      "answer": "46 proximity reads",
+      "tokens": 30505,
+      "processed_tokens": 973002,
+      "tool_calls": 16,
+      "turns": 16
+    },
+    "world-069": {
+      "answer": 7,
+      "tokens": 41794,
+      "processed_tokens": 634375,
+      "tool_calls": 10,
+      "turns": 10
+    },
+    "world-077": {
+      "answer": 9,
+      "tokens": 35325,
+      "processed_tokens": 675878,
+      "tool_calls": 11,
+      "turns": 11
+    }
+  }
+}

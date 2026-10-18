@@ -16,4 +16,4 @@ What went badly: twice we trusted a test that ran on a better setup than players
 
 We also sized memory against the 9 GB figure for four months after the platform holder had hinted at a bigger system reserve. Priya Natarajan now checks the SDK release notes every Monday.
 
-Cost: the wrong pipeline choice cost 6 weeks of schedule, from the December pick to the cache working on firmware 1.2 kits. Rule from here: run every platform test on retail firmware and on the worst hardware a player can buy.
+Cost: the wrong pipeline choice cost 6 weeks of schedule: the beta slipped 6 weeks past its planned date while the team rebuilt pipelines as an on-device cache. Rule from here: run every platform test on retail firmware and on the worst hardware a player can buy.
