@@ -1,0 +1,458 @@
+{
+  "effort": "cross",
+  "questions": [
+    {
+      "id": "cross-001",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "distractor", "current-state"],
+      "question": "Which record sets the current per-frame budget for Skiff's 40 Hz mode?",
+      "answer": { "kind": "record", "value": "ports.con-frame-2" },
+      "evidence": [
+        "ports.con-frame-2",
+        "ports.con-frame-1",
+        "render.con-budget-3",
+        "render.con-budget-noise",
+        "ports.con-noise-frame"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["constraint"],
+          "where": { "title": "Frame budget" },
+          "live": true,
+          "bodyIncludes": "40 Hz mode: 25 ms"
+        },
+        {
+          "type": "head",
+          "start": "ports.con-frame-1",
+          "expect": "ports.con-frame-2"
+        }
+      ],
+      "traps": [
+        "Four Constraints share the title \"Frame budget\". The render Effort's live one covers Meridian at 16.6 ms.",
+        "The render Effort holds a retracted \"Frame budget\" with the 25 ms Skiff figure; retracted records are not current."
+      ]
+    },
+    {
+      "id": "cross-002",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "aggregate", "distractor"],
+      "question": "Across every Effort, how many live Constraints are titled \"Frame budget\"?",
+      "answer": { "kind": "count", "value": 2 },
+      "evidence": ["render.con-budget-3", "ports.con-frame-2"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["constraint"],
+          "where": { "title": "Frame budget" },
+          "live": true,
+          "count": true
+        }
+      ],
+      "traps": [
+        "Counting superseded or retracted versions gives 7.",
+        "Reading one Effort gives 1."
+      ]
+    },
+    {
+      "id": "cross-003",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "aggregate", "retraction"],
+      "question": "Across every Effort, how many retracted records are titled exactly \"Frame budget\"?",
+      "answer": { "kind": "count", "value": 2 },
+      "evidence": ["render.con-budget-noise", "ports.con-noise-frame"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "where": { "title": "Frame budget" },
+          "retracted": "only",
+          "count": true
+        }
+      ],
+      "traps": [
+        "Browse reads omit retracted records, so a reader using only `records` finds none."
+      ]
+    },
+    {
+      "id": "cross-004",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "lookup", "lifecycle"],
+      "question": "The co-op rollback prototype was abandoned because of a Decision made in a different Effort. Which Decision?",
+      "answer": { "kind": "record", "value": "world.dec-tide-fixed" },
+      "evidence": ["netcode.dec-abandon", "world.dec-tide-fixed"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "world",
+          "kinds": ["decision"],
+          "where": { "title": "Run the tide simulation in 32.32 fixed point" }
+        },
+        {
+          "type": "body",
+          "record": "netcode.dec-abandon",
+          "includes": "Run the tide simulation in 32.32 fixed point",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The netcode Effort is abandoned, so `proof list` with its default status hides it.",
+        "The answer is named only by title in prose; no edge links the two Efforts."
+      ]
+    },
+    {
+      "id": "cross-005",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "lookup"],
+      "question": "Who wrote the Decision that the netcode Effort cites as the reason it abandoned rollback?",
+      "answer": {
+        "kind": "value",
+        "value": "Rhea Valdés",
+        "accept": ["Rhea Valdes"]
+      },
+      "evidence": ["netcode.dec-abandon", "world.dec-tide-fixed"],
+      "checks": [
+        {
+          "type": "field",
+          "record": "world.dec-tide-fixed",
+          "field": "created_by"
+        }
+      ],
+      "traps": [
+        "Sofia Marchetti wrote the abandonment Decision, not the Decision it cites."
+      ]
+    },
+    {
+      "id": "cross-006",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "lookup"],
+      "question": "Rollback had to re-run the tides every frame on Skiff. Roughly what share of the Skiff 40 Hz frame budget did that cost?",
+      "answer": {
+        "kind": "value",
+        "value": "a fifth",
+        "accept": ["one fifth", "1/5", "19.2%", "19%", "about 20%", "20%"]
+      },
+      "evidence": ["netcode.dec-abandon", "ports.con-frame-2"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "netcode.dec-abandon",
+          "includes": ["4.8 ms", "a fifth of the 25 ms frame"],
+          "expect": true
+        },
+        {
+          "type": "body",
+          "record": "ports.con-frame-2",
+          "includes": "40 Hz mode: 25 ms",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "Using the 33.3 ms 30 Hz frame gives about 14 percent.",
+        "Using the render Effort's 16.6 ms Frame budget gives about 29 percent."
+      ]
+    },
+    {
+      "id": "cross-007",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "current-state", "supersession"],
+      "question": "The streaming pool's last size cut names a Skiff memory limit from another Effort as its reason. What is that Skiff limit today?",
+      "answer": { "kind": "value", "value": "8 GB", "accept": ["8GB"] },
+      "evidence": [
+        "world.con-pool-2",
+        "world.con-pool-3",
+        "ports.con-skiff-mem-9",
+        "ports.con-skiff-mem-8"
+      ],
+      "checks": [
+        {
+          "type": "head",
+          "start": "ports.con-skiff-mem-9",
+          "expect": "ports.con-skiff-mem-8"
+        },
+        {
+          "type": "body",
+          "record": "ports.con-skiff-mem-8",
+          "includes": "at most 8 GB on Skiff",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "Both versions of \"Skiff memory budget\" share a title; the 9 GB one is superseded.",
+        "The streaming pool's own figure, 1.6 GB, is not the Skiff limit."
+      ]
+    },
+    {
+      "id": "cross-008",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "temporal", "negative"],
+      "question": "What Skiff memory budget was in force when the world Effort first set the streaming pool budget?",
+      "answer": { "kind": "value", "value": "unknown" },
+      "evidence": ["world.con-pool-1", "ports.con-skiff-mem-9"],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "ports.con-skiff-mem-8",
+          "at": "2025-09-12T23:59:59Z",
+          "expect": null
+        },
+        {
+          "type": "field",
+          "record": "world.con-pool-1",
+          "field": "created_at",
+          "expect": "2025-09-12T10:00:00Z"
+        }
+      ],
+      "traps": [
+        "The first streaming pool budget dates from September 2025; the first Skiff memory budget was written in late October 2025. Answering 9 GB assumes a record that did not yet exist."
+      ]
+    },
+    {
+      "id": "cross-009",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "temporal", "supersession"],
+      "question": "When the world Effort cut the streaming pool to 1.6 GB, which version of the Skiff memory budget was current?",
+      "answer": { "kind": "record", "value": "ports.con-skiff-mem-8" },
+      "evidence": [
+        "world.con-pool-2",
+        "ports.con-skiff-mem-9",
+        "ports.con-skiff-mem-8"
+      ],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "ports.con-skiff-mem-9",
+          "at": "2026-06-04T09:00:00Z"
+        }
+      ],
+      "traps": [
+        "The cut was made in June, four months after the 8 GB version replaced the 9 GB one in February."
+      ]
+    },
+    {
+      "id": "cross-010",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "distractor", "lookup"],
+      "question": "Skiff players stop hitching on their second visit to a district because of a shader cache. Which Decision created that cache?",
+      "answer": { "kind": "record", "value": "ports.dec-pso-ondevice" },
+      "evidence": [
+        "ports.dec-pso-ondevice",
+        "ports.fnd-cache-warm",
+        "tools.dec-cache"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": ["ports", "tools"],
+          "kinds": ["decision"],
+          "where": { "state": "accepted" },
+          "bodyIncludes": "Everyone on the team calls this the shader cache"
+        }
+      ],
+      "traps": [
+        "The tools Effort's content-addressed shader compile cache speeds up the build farm and never reaches players."
+      ]
+    },
+    {
+      "id": "cross-011",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "distractor", "negative"],
+      "question": "Does the build farm's shader compile cache ship to players on Skiff?",
+      "answer": { "kind": "boolean", "value": false },
+      "evidence": ["ports.dec-pso-ondevice", "tools.dec-cache"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "ports.dec-pso-ondevice",
+          "includes": "never ships to players",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "Both caches are called \"shader cache\" in casual prose; only the on-device pipeline cache runs on Skiff."
+      ]
+    },
+    {
+      "id": "cross-012",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "truncation", "invalidation"],
+      "question": "Streaming on Skiff must also work for players who install to budget microSD cards. What is the worst sustained read rate measured on those cards when full and warm?",
+      "answer": { "kind": "value", "value": "61 MB/s", "accept": ["61"] },
+      "evidence": [
+        "ports.fnd-sd-speed-2",
+        "ports.fnd-sd-speed",
+        "world.fnd-io-trace-2"
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "ports.fnd-sd-speed-2",
+          "includes": "61 MB/s",
+          "afterExcerpt": true,
+          "expect": true
+        },
+        {
+          "type": "field",
+          "record": "ports.fnd-sd-speed",
+          "field": "standing",
+          "expect": "invalidated"
+        }
+      ],
+      "traps": [
+        "The world Effort's 190 MB/s is internal storage on retail units.",
+        "The ports Finding of 92 MB/s used new, empty cards on a cold Skiff and was invalidated.",
+        "The 61 MB/s figure sits past the browse excerpt."
+      ]
+    },
+    {
+      "id": "cross-013",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "lookup"],
+      "question": "The Meridian 120 Hz mode lets Tern drop to its lowest preset. Which preset does the Skiff port run Tern at, and how many milliseconds does it save over Quality?",
+      "answer": {
+        "kind": "text",
+        "rubric": [["Performance"], ["1.8 ms", "1.8ms"]]
+      },
+      "evidence": [
+        "ports.dec-tern-skiff",
+        "render.con-120-2",
+        "render.dec-tern"
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "ports.dec-tern-skiff",
+          "includes": ["Performance preset", "The 1.8 ms saved"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The render Effort owns Tern, but the Skiff preset choice lives in the ports Effort."
+      ]
+    },
+    {
+      "id": "cross-014",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "aggregate", "lifecycle"],
+      "question": "How many Efforts are still active?",
+      "answer": { "kind": "count", "value": 3 },
+      "evidence": [
+        "render.effort",
+        "world.effort",
+        "ports.effort",
+        "tools.effort",
+        "netcode.effort"
+      ],
+      "checks": [
+        { "type": "efforts", "where": { "status": "active" }, "count": true }
+      ],
+      "traps": [
+        "Counting every Effort gives 5; the tools Effort is completed and the netcode Effort abandoned."
+      ]
+    },
+    {
+      "id": "cross-015",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "lifecycle"],
+      "question": "Which Efforts are no longer active, and how did each one end?",
+      "answer": {
+        "kind": "text",
+        "rubric": [
+          ["shader compile cache", "build farm", "tools"],
+          ["completed"],
+          ["rollback", "netcode"],
+          ["abandoned"]
+        ]
+      },
+      "evidence": ["tools.effort", "netcode.effort"],
+      "checks": [
+        {
+          "type": "efforts",
+          "where": { "status": ["completed", "abandoned"] },
+          "expect": ["netcode.effort", "tools.effort"]
+        }
+      ],
+      "traps": [
+        "`proof list` shows only active Efforts unless asked for other statuses."
+      ]
+    },
+    {
+      "id": "cross-016",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "distractor", "current-state"],
+      "question": "How many milliseconds per frame separate the Meridian 120 Hz mode's budget from the Skiff 40 Hz mode's budget?",
+      "answer": {
+        "kind": "value",
+        "value": "16.7 ms",
+        "accept": ["16.7", "16.7ms"]
+      },
+      "evidence": ["render.con-120-2", "ports.con-frame-2"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "render.con-120-2",
+          "includes": "Each frame gets 8.3 ms",
+          "expect": true
+        },
+        {
+          "type": "body",
+          "record": "ports.con-frame-2",
+          "includes": "40 Hz mode: 25 ms",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "Using the render Effort's \"Frame budget\" of 16.6 ms gives 8.4 ms.",
+        "The 120 Hz budget's first version was soft and superseded; the current one is hard at 8.3 ms."
+      ]
+    },
+    {
+      "id": "cross-017",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["cross-effort", "retraction", "distractor"],
+      "question": "Is \"Ship Tern as the only upscaler in Lantern\" the Decision that the Skiff port names as its reason for using Tern?",
+      "answer": { "kind": "boolean", "value": false },
+      "evidence": [
+        "render.dec-tern",
+        "render.dec-tern-dup",
+        "ports.dec-tern-skiff"
+      ],
+      "checks": [
+        {
+          "type": "field",
+          "record": "render.dec-tern-dup",
+          "field": "standing",
+          "expect": "retracted"
+        },
+        {
+          "type": "body",
+          "record": "ports.dec-tern-skiff",
+          "includes": "\"Ship Tern as Lantern's only upscaler\"",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The near-identical title is a retracted duplicate; the ports Decision names \"Ship Tern as Lantern's only upscaler\"."
+      ]
+    }
+  ]
+}

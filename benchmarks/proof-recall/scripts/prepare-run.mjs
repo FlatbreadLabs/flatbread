@@ -12,6 +12,15 @@ import { fileURLToPath } from 'node:url';
 import { loadQuestions } from './check.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// The form an answer takes, never its content.
+const FORMATS = {
+  record: 'one Proof record id',
+  records: 'a list of Proof record ids',
+  value: 'a short value, such as a number with its unit or a name',
+  boolean: 'true or false',
+  count: 'a whole number',
+  text: 'one or two sentences',
+};
 const REPO = resolve(BENCH, '..', '..');
 
 async function main() {
@@ -56,7 +65,11 @@ async function main() {
   const questions = (await loadQuestions(only))
     .flatMap((set) => set.questions)
     .filter((q) => !ids.size || ids.has(q.id))
-    .map((q) => ({ id: q.id, question: q.question }));
+    .map((q) => ({
+      id: q.id,
+      question: q.question,
+      format: FORMATS[q.answer.kind],
+    }));
   await writeFile(
     join(out, 'questions.json'),
     `${JSON.stringify(questions, null, 2)}\n`

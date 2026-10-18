@@ -200,7 +200,7 @@ three reverse readings: `supports` (the next record derives from this one),
 
 ### Checks
 
-A check without `expect` must compute the answer itself. A check with
+A check without `expect` must compute the answer itself. A `select` scans the question file's Effort; set its `effort` to a list of Effort keys, or to `"*"`, to scan several. A check with
 `expect` must return exactly that value. `record`, `records`, and `count`
 answers need at least one computing check.
 
@@ -211,6 +211,7 @@ answers need at least one computing check.
 | `chain`      | `start`                                                                                            | every version's key, oldest first                  |
 | `asof`       | `start`, `at`                                                                                      | the version current at `at`                        |
 | `select`     | `kinds`, `where`, `live`, `retracted`, `derivesFrom`, `restsOn`, `bodyIncludes`, `count`, `effort` | matching keys, or their count                      |
+| `efforts`    | `where`, `count`                                                                                   | matching Efforts' keys, or their count             |
 | `compaction` | `field`: `head`, `heads`, `stale`, `changes`, `changed`, `staleTargets`                            | the Effort's compaction state                      |
 | `body`       | `record`, `includes`, `afterExcerpt`                                                               | whether the text is present (and past the excerpt) |
 | `edge`       | `edge`                                                                                             | whether the edge exists                            |

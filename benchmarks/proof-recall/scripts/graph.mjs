@@ -251,7 +251,20 @@ export function runCheck(graph, effort, check) {
       return versions.length ? keyOf(versions.at(-1)) : null;
     }
     case 'select': {
-      let recs = effortRecords(graph, effortId());
+      // `effort` may list several Efforts, or be "*" for all of them.
+      const scope =
+        check.effort === '*'
+          ? Object.keys(graph.keymap)
+              .filter((key) => key.endsWith('.effort'))
+              .map((key) => key.split('.')[0])
+          : Array.isArray(check.effort)
+          ? check.effort
+          : null;
+      let recs = scope
+        ? scope.flatMap((name) =>
+            effortRecords(graph, idFor(graph, name, 'effort'))
+          )
+        : effortRecords(graph, effortId());
       if (check.kinds)
         recs = recs.filter((rec) => check.kinds.includes(rec.kind));
       const retracted = check.retracted ?? 'exclude';
@@ -284,6 +297,14 @@ export function runCheck(graph, effort, check) {
           rec.body.toLowerCase().includes(check.bodyIncludes.toLowerCase())
         );
       const keys = recs.map(keyOf).sort();
+      return check.count ? keys.length : keys;
+    }
+    case 'efforts': {
+      // Efforts themselves, filtered by frontmatter such as `status`.
+      const efforts = [...graph.records.values()].filter(
+        (rec) => rec.kind === 'effort' && matches(rec, check.where)
+      );
+      const keys = efforts.map(keyOf).sort();
       return check.count ? keys.length : keys;
     }
     case 'compaction': {

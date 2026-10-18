@@ -204,7 +204,7 @@ The decision stands, because 22% is still a gain and the tide protection matters
     derives_from: ['fnd-pool-cut-notice'],
     supersedes: ['con-pool-1'],
     title: 'Streaming pool budget',
-    body: `The streaming pool may use at most 1.6 GB on every platform, down from 2.0 GB. The reason is the ports Constraint "Skiff memory budget", which fell from 9 GB to 8 GB when Skiff became a launch platform; streaming's share of that cut is 400 MB. One budget for all platforms keeps content tuning in one place, so PC and Meridian take the same 1.6 GB.
+    body: `The streaming pool may use at most 1.6 GB on every platform, down from 2.0 GB. The reason is the ports Constraint "Skiff memory budget", which fell from 9 GB to 8 GB in February and now binds the world because Skiff became a launch platform; streaming's share of that cut is 400 MB. One budget for all platforms keeps content tuning in one place, so PC and Meridian take the same 1.6 GB.
 
 How the 400 MB comes back: Kenji Arakawa lowers texture mip residency in the outer ring, compacts audio banks per cell, and drops navigation detail for cells the player cannot reach until the tide falls.
 
