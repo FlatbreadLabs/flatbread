@@ -767,3 +767,60 @@ lookups, though, so they are easier than the full set, and they test
 subsystem names cost the gate one point of evidence and no answers, so the
 10x result is not only a sign that filler is easy to tell apart. The paid
 runs (Runs A to C in the plan) still have to show that agents gain from it.
+
+### `proof find` against no-brief on the 10x graph
+
+The plan's Run A and Run B, on Haiku, twice: `run.mjs --strategies find,nobrief --only default,ambiguous --graph <x10 build>`, 540 sessions per
+run. The `find` arm's task text starts with `proof find`, then `get` for a
+hit's full text, and `records` only to count. Both runs used the cards above
+(`find_hash` `e5be6532…`). Run files: `runs/x10-find-r1-*.json` and
+`runs/x10-find-r2-*.json`.
+
+On the 245 original questions (all but `world-077`, whose count includes
+filler), pooled over both runs:
+
+| Measure                                    | `find` | no-brief |
+| ------------------------------------------ | ------ | -------- |
+| Correct, run 1                             | 231.1  | 210.9    |
+| Correct, run 2                             | 229.1  | 210.7    |
+| Runs of a question only this arm got right | 48     | 12       |
+| Mean read tokens                           | 13,019 | 33,839   |
+| Median read tokens                         | 8,888  | 29,680   |
+| Mean tool calls                            | 9      | 21       |
+
+The sign test over the pooled disagreements gives p < 0.0001. Counting each
+question once, `find` did better on 37 and worse on 10 (p = 0.0001). It read
+fewer tokens than no-brief in 447 of 490 sessions.
+
+Against the plan's pass marks, on its 232 comparable questions (the 245
+less the 13 retraction questions):
+
+| Mark                                       | Result                                             | Pass |
+| ------------------------------------------ | -------------------------------------------------- | ---- |
+| (a) Pooled sign test p < 0.05              | 46 wins, 9 losses, p = 4e-7                        | yes  |
+| (b) Read tokens at most 0.65 of no-brief's | 13,260 against 34,313: 0.39                        | yes  |
+| (c) "Unknown" falls by at least 10 per run | 32 to 14 and 35 to 12                              | yes  |
+| No category loses more than 2 questions    | No category loses any; `negative` 30 of 32 in both | yes  |
+
+Seven sessions hit the 10-minute limit, six of them in the no-brief arm.
+Setting those questions aside leaves the result in place: 45 wins, 9
+losses. The gain also holds on the questions the cards were not tuned on:
+26 wins and 6 losses on the holdout half (p = 0.0005), against 23 and 6 on
+the tune half. The largest gains are in `lookup` (+13.8 over two runs) and
+`truncation` (+13), where the fact sits past the 600-character cut that
+`records` applies; the smallest are in `temporal`, `negative`, `rationale`,
+and `dead-evidence` (0 to +1).
+
+**The ambiguous-Effort set (Run B).** On the 24 questions that name no
+Effort, pooled: `find` 46 of 48, no-brief 31 of 48. `find` did better on 10
+questions and worse on none (p = 0.002), and read 9,914 tokens to
+no-brief's 42,017.
+
+What this does not show:
+
+- The `brief` arm was not run, so this says nothing new about compaction.
+- Haiku only, and on a fictional graph whose filler is easier to tell apart
+  than real records. Run C, on the `--filler-overlap 0.3` graph, tests that.
+- The ambiguous questions come from tiers 0 to 2. They show that search
+  finds the right Effort, not that agents handle a hard question without a
+  named Effort.
