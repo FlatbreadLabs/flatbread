@@ -203,3 +203,43 @@ export function staleDerivations(
     return before === now ? [] : [change('changed', id, record, before)];
   });
 }
+
+/** What makes a compaction stale, in the words every read prints beside its verdict. */
+export const COMPACTION_STALE_RULE =
+  'A compaction is stale when a record it derives from changed standing after it was written, or when a Finding invalidated it.';
+
+export interface CompactionReport {
+  /** Records whose standing moved since the compaction's `covers` snapshot. */
+  readonly changes: CompactionChange[];
+  /** `derives_from` targets whose standing moved. */
+  readonly stale: CompactionChange[];
+  /** True when a Finding invalidated the compaction. */
+  readonly invalidated: boolean;
+  /** True when any `derives_from` target moved or the compaction was invalidated. */
+  readonly isStale: boolean;
+}
+
+/**
+ * How a compaction stands against the Effort's records now: what changed
+ * since its `covers` snapshot, and whether it is stale. `brief`, `get`, and
+ * `state` all read it here, so they give one answer.
+ */
+export function compactionReport(
+  compaction: CompactionRecord,
+  effortRecords: readonly CompactionRecord[]
+): CompactionReport {
+  const covers = parseCovers(compaction.frontmatter.covers);
+  const changes = compactionChanges(covers, effortRecords);
+  const stale = staleDerivations(
+    covers,
+    ids(compaction.frontmatter.derives_from),
+    effortRecords
+  );
+  const invalidated = ids(compaction.frontmatter.invalidated_by).length > 0;
+  return {
+    changes,
+    stale,
+    invalidated,
+    isStale: stale.length > 0 || invalidated,
+  };
+}

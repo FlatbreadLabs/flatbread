@@ -17,9 +17,10 @@
 // answer.json, and transcript.jsonl. A rerun skips sessions that already
 // have both an answer and a transcript, so an interrupted run picks up where
 // it stopped. Keep <work-dir> outside the repository, so no CLAUDE.md or
-// AGENTS.md reaches the agent. Each run file records `find_hash` and
-// `state_hash`, hashes of the `proof find` and `proof state` sources, to
-// match against the offline gates' output.
+// AGENTS.md reaches the agent. Each run file records `find_hash`,
+// `state_hash`, and `read_hash`, hashes of the `proof find`, `proof state`,
+// and `get`/`records`/`brief` sources, to match against the offline gates'
+// output.
 //
 // Runs share two things, kept under <tmp>/flatbread-proof-recall/:
 //
@@ -52,7 +53,7 @@ import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { collect, findHash, stateHash } from './collect.mjs';
+import { collect, findHash, readHash, stateHash } from './collect.mjs';
 import {
   copyPublicGraph,
   prepareFolder,
@@ -338,6 +339,7 @@ async function main() {
   const questions = await publicQuestions(options);
   const find_hash = await findHash();
   const state_hash = await stateHash();
+  const read_hash = await readHash();
   // Alternate strategies question by question, so a change in API speed or
   // load over the run falls on every strategy alike.
   const sessions = [];
@@ -398,7 +400,7 @@ async function main() {
         })),
       `${options.name}-${strategy}`,
       join(RUNS_DIR, `${options.name}-${strategy}.json`),
-      { find_hash, state_hash }
+      { find_hash, state_hash, read_hash }
     );
 }
 

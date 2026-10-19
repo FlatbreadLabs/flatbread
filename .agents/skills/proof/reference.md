@@ -249,7 +249,7 @@ digest or `summary` as a data feed.
 ```bash
 flatbread proof get <id> [--resolve exact|head] [consistency flags]
 flatbread proof list [--status active,paused,...] [--limit n] [--cursor c] [consistency flags]
-flatbread proof records <effortId> [--kinds k1,k2] [--state s1,s2] [--status s1,s2] [--kind k1,k2] [--since iso] [--until iso] [--retracted exclude|include|only] [--limit n] [--cursor c] [consistency flags]
+flatbread proof records <effortId> [--kinds k1,k2] [--state s1,s2] [--status s1,s2] [--standing s1,s2] [--rests-on s1,s2] [--kind k1,k2] [--since iso] [--until iso] [--retracted exclude|include|only] [--limit n] [--cursor c] [consistency flags]
 flatbread proof relations <effortId> <fromId> --relations r1,r2 [--limit n] [--cursor c] [consistency flags]
 flatbread proof blocking-decisions <effortId> [consistency flags]
 flatbread proof brief <effortId> [consistency flags]
@@ -276,6 +276,20 @@ flatbread proof serve [--socket .flatbread/proof/serve.sock]
   ordered by `created_at` ascending, then `id`.
 - Filter semantics: AND across different flags, OR within a comma list.
   `--since`/`--until` bound `created_at` (gte/lte, ISO strings).
+- `--state` and `--status` match the stored field only. `--state` takes
+  `proposed`, `accepted`, `rejected`, `superseded`, `deprecated`, `open`,
+  `mitigated`, `realized`; `--status` takes `open`, `resolved`, `deferred`,
+  `wontfix`. Any other value is refused with `PROOF_INVALID_ARGUMENT`,
+  never answered with an empty page.
+- `--standing` matches the standing cards and `proof state` print, which
+  links decide before the stored field: `retracted`, then `superseded`,
+  then `invalidated`, else the Issue's status, the Decision's or Risk's
+  state, or `live`. Asking for `retracted` shows retracted records.
+- `--rests-on` takes `superseded`, `invalidated`, `rejected`, `retracted`.
+  It lists live records, compactions left out, that derive from, cite, or
+  give as evidence a record in one of those standings, in any Effort. The
+  record that overturned it does not count. This is the rule behind the
+  count in `proof state`'s Dead evidence.
 - `--relations` values: `derives_from`, `supersedes`, `superseded_by`,
   `invalidates`, `invalidated_by`, `rejected_by`, `mitigated_by`,
   `resolved_by`, `evidence`, `cites` (one hop, explicit only). Missing targets
@@ -293,6 +307,13 @@ flatbread proof serve [--socket .flatbread/proof/serve.sock]
   Decision to mitigate the Risk.
 - `--resolve head`: follow `superseded_by` to the current tip; ancestors
   render as checkpoint lines (max 5, then a count).
+- `get` on a compaction adds `## Compaction`: whether it is its Effort's
+  head (or what superseded it), `Stale: yes|no` with the reason and the
+  rule, and the exact number of records that differ from the live set it
+  covers. `## Changes since compaction` then lists them as `brief` does,
+  up to 25 lines; past that, `- … N more` ends the list, and nothing pages
+  the rest (on the head, `brief` lists up to 50). For the head, these match
+  `brief`'s `compaction` field.
 - `blocking-decisions` membership (frozen): Decision in the effort with
   `state: proposed` whose `derives_from` directly contains an Issue in the
   same effort with `kind: blocker` and `status: open`. For "what blockers
@@ -436,8 +457,13 @@ The Markdown has these sections, in order:
   record that live records still derive from, cite, or give as evidence,
   with those live records and, for every dead record but a replaced
   version, the live records one link further. The record that overturned it is not counted as
-  resting on it. The first line reports the head compaction: how many
-  records changed since it was written, and which of its supports moved.
+  resting on it.
+- **Head compaction:** shown when the Effort has one. Whether it is stale
+  and why, with the rule, and the exact number of records that differ from
+  the live set it covers, then up to 10 of them as `id (new)` or
+  `id (before -> now)`. A large Effort cuts that list first, to 5 and then
+  none; the count stays, and the line names `proof get <id>`, which lists
+  up to 25 of them.
 - **Lifecycle:** dated changes no section above shows, the most recently
   changed first:
   closed Issues other than settled questions, proposed or reopened
@@ -452,7 +478,8 @@ that date. Records with nothing to report, such
 as a question Issue resolved by its one accepted Decision, appear only in
 the counts. Citations and Blobs have no live or dead standing, so the live
 total leaves them out. On a large Effort the lists shrink to fit, cutting
-lifecycle and retractions first and counts never. Any cut list, a whole
+lifecycle, retractions, and the head compaction's list first and counts
+never. Any cut list, a whole
 section's or one inside an entry, ends with `… N more` or `and N more`,
 and then `cap_reasons` holds `state_limit`. In `state.sections`, `total`
 counts a section's entries in full and `shown` those it prints; for

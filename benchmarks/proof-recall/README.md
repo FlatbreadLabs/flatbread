@@ -26,6 +26,7 @@ Each question has a known answer and a stated path through the graph.
 | `scripts/compare.mjs`      | Compares two runs question by question                   |
 | `scripts/find-recall.mjs`  | Checks offline whether `proof find` reaches the evidence |
 | `scripts/state-recall.mjs` | Checks offline whether `proof state` shows the answer    |
+| `scripts/read-recall.mjs`  | Checks offline what `get` and `records` add for a reader |
 | `runs/`                    | Answers and costs from each pilot and full run           |
 | `.flatbread-proof/`        | The built graph, committed so runs need no build         |
 | `flatbread.config.js`      | Lets `flatbread proof …` read the graph from this folder |
@@ -311,11 +312,38 @@ A benchmark agent must never see `spec/`, `questions/`, or `keymap.json`.
    both rates, the rates for value and record answers apart, and the mean
    and largest output in characters, measured with the temporary folder's
    path removed so the size does not depend on the machine. It writes
-   `state_hash`, a hash of the `state` source. Its bar for the paid Run D:
+   `state_hash`, a hash of the `state` source (`state.ts` and
+   `compaction.ts`). Its bar for the paid Run D:
    on holdout, the strict rule finds the answer for at least 60% of the
    aggregate, lifecycle, blocker, and dead-evidence questions taken
    together, and the mean output is at most 16,000 characters. `--split`
    works as above.
+
+   After a change to `get` or `records`, run the third free check:
+   `node scripts/read-recall.mjs --graph <x10 build> --split tune`. It first
+   checks three invariants on every Effort and fails if any does not hold:
+   each `records --standing <s>` total equals that standing's total in
+   `state`'s Counts; the `records --rests-on` total over all four dead
+   standings equals `state`'s "N live records rest directly on"; and `get`
+   on the head compaction gives the same count and stale verdict as
+   `brief`'s `compaction` field. It then scores two groups of questions.
+   For `compaction` questions it runs `get` on each evidence record that
+   is a compaction: a count answer scores when it is the number on the
+   "differ" line, a boolean when it matches the `Stale:` line, and a record
+   answer when every id is in the change list. A boolean question with the
+   word "stale" wants the verdict, one with "still" ("does that still
+   hold?") wants its opposite, and any other boolean question is not
+   scored. For
+   `dead-evidence` and `invalidation` questions with record or count
+   answers it pages through `records --rests-on` with each dead standing
+   and with all four, and `records --standing invalidated`: a record answer
+   scores when all its ids fall inside one read's set, a count when it
+   equals one read's total. It prints how often a count matches a total
+   for another Effort by chance. `--split` works as above, and questions
+   outside the split are not read. Run files record `read_hash`, a hash of
+   `read.ts`, `state.ts`, and `compaction.ts`, the sources of `get`,
+   `records`, and `brief`. From this change on, `state_hash` covers
+   `state.ts` and `compaction.ts`; older run files hash `state.ts` alone.
 
 3. Run the benchmark:
 
@@ -1069,3 +1097,123 @@ So the search gain carries over to real memory at about half the reading.
 The gain from `state` on the 10x graph's counts and blockers does not show
 on graphs a twenty-fifth
 that size or less, where paging `records` is cheap.
+
+### `get` on a compaction, and `records` by standing
+
+The tune failures of Runs A, C, D and the Sonnet run fell mostly into two
+groups. In 16 failed runs the agent could not tell whether a compaction
+(the Finding that sums up an Effort) was stale or how many records had
+changed since it was written: only `brief` printed that, and the `find`
+arms never call `brief`. In 8 more the agent asked for
+`records --state invalidated`, which no record stores, and got an empty,
+complete page. Two reads changed; the task texts and `find` did not, so
+`find_hash` is unchanged.
+
+- `proof get` on a compaction adds `## Compaction`: whether it is its
+  Effort's head or what superseded it, `Stale: yes|no` with the records
+  that moved and the rule ("A compaction is stale when a record it derives
+  from changed standing after it was written, or when a Finding
+  invalidated it."), and the exact number of records that differ from the
+  live set it covers. `## Changes since compaction` lists them, up to 25;
+  past that, `- … N more; the count above is exact` ends the list, and on
+  the head it points to `brief`, which lists up to 50.
+  `brief`, `get`, and `state` all take these from one function,
+  `compactionReport`. `get` on any other record prints what it printed
+  before.
+- `proof state` moves the compaction line out of Dead evidence into its own
+  section, `Head compaction`, with the same verdict and count and up to 10
+  changed records. A large Effort cuts that list to 5 along with lifecycle
+  and retractions, and to none along with the replaced-support lists; the
+  count stays.
+- `proof records` takes `--standing <s>` (the standing cards print, links
+  included, so `invalidated` and `retracted` work) and `--rests-on <dead standings>` (live records that derive from, cite, or give as evidence a
+  record in that standing, by the rule `state` uses for Dead evidence). A
+  `--state` or `--status` value that no record stores is refused with an
+  error that names both new flags.
+
+`scripts/read-recall.mjs` checks these reads offline. On every Effort of
+the 10x graph, all 85 invariants hold: each `--standing` total matches
+`state`'s Counts, the `--rests-on` total matches Dead evidence, and `get`
+on the head compaction matches `brief`.
+
+Free gates on the 10x graph, before and after. `find` output is the same
+on every question (`find_hash` `e5be6532…`):
+
+| `find-recall.mjs`, stripped set | Tune, before | Tune, after | Holdout, before | Holdout, after |
+| ------------------------------- | ------------ | ----------- | --------------- | -------------- |
+| Evidence in the top 5           | 79%          | 79%         | 85%             | 85%            |
+| Answer on a card                | 59%          | 59%         | 66%             | 66%            |
+| Mean reply, characters          | 6,369        | 6,369       | 6,365           | 6,365          |
+
+| `state-recall.mjs`      | Tune, before | Tune, after | Holdout, before | Holdout, after |
+| ----------------------- | ------------ | ----------- | --------------- | -------------- |
+| Bar categories, strict  | 53% (18/34)  | 53% (18/34) | 55% (17/31)     | 55% (17/31)    |
+| Bar categories, loose   | 65% (22/34)  | 65% (22/34) | 61% (19/31)     | 61% (19/31)    |
+| Every question, strict  | 50% (47/95)  | 50% (47/95) | 44% (38/86)     | 44% (38/86)    |
+| Mean output, characters | 15,171       | 15,652      | 14,981          | 15,474         |
+| Largest output          | 28,058       | 29,130      | 58,681          | 61,797         |
+
+The new section finds no answer `state` did not already find, and costs
+about 3% more output (`state_hash` `be19faeb…`, which now covers
+`state.ts` and `compaction.ts`). The mean stays under the 16,000 bar. Every
+"after" figure in this section comes from the final build.
+
+`read-recall.mjs` on the 10x graph. Before this change no read printed the
+count or the verdict, so the baseline is 0 by construction for counts and
+booleans; it was not run. The boolean rule was changed once after reading
+tune rows: a question with "still" ("does that still hold?") wants the
+opposite of the `Stale:` verdict. That raised tune booleans from 2/4 to
+4/4, so the tune boolean figure measures the scorer as much as the read.
+Holdout has no boolean compaction questions. Holdout was scored from the
+script totals only.
+
+| Group                                                         | Tune        | Holdout    |
+| ------------------------------------------------------------- | ----------- | ---------- |
+| Compaction, all                                               | 92% (12/13) | 14% (1/7)  |
+| Compaction, counts                                            | 3/3         | 1/2        |
+| Compaction, booleans (after the scorer change)                | 4/4         | none       |
+| Compaction, records                                           | 3/4         | 0/3        |
+| Compaction, values                                            | 2/2         | 0/2        |
+| Dead evidence and invalidation, `--rests-on` and `--standing` | 39% (5/13)  | 30% (3/10) |
+
+The holdout result is weak, and its totals do not say why. On tune, the
+one compaction miss asks which compaction was the newest on a past date.
+Of the 8 tune misses with `--rests-on` and `--standing`, 3 ask for the
+Finding that overturned a support, which neither flag lists, and 5 need a
+second hop or a date past the record that rests on dead evidence (for
+example, the open Risk that derives from a Decision that rests on an
+invalidated Finding). The paid run, not this check, has to show whether the agents who failed
+on staleness and on `--state invalidated` now get them right.
+
+Read size. Every `proof` read in the tune transcripts of
+`x10-find-r{1,2}`, `x10adv-find-r1`, `x10-sonnet-r1` and `x10-rund-r{1,2}`
+(`find` and `findstate` arms, 3,807 reads) was replayed against the old
+and the new build, each from its own `proof serve`, measuring the JSON
+envelope plus the digest:
+
+| Read      | Calls | Old mean | New mean | Old max | New max | Output changed |
+| --------- | ----- | -------- | -------- | ------- | ------- | -------------- |
+| All       | 3,807 | 9,201    | 9,243    | 32,503  | 32,503  | 216            |
+| `find`    | 1,201 | 14,752   | 14,752   | 32,503  | 32,503  | 0              |
+| `get`     | 1,346 | 2,154    | 2,259    | 3,435   | 7,120   | 68             |
+| `records` | 774   | 13,533   | 13,456   | 24,683  | 24,683  | 72             |
+| `state`   | 76    | 24,825   | 25,851   | 31,292  | 31,757  | 76             |
+| Other     | 410   | same     | same     | same    | same    | 0              |
+
+The new mean is 1.005 times the old (the new sizes are from the final
+build, replayed on its own `proof serve`). Every changed `get` is on a
+compaction (2,898 to 4,974 characters on average); every changed
+`records` call is a refused value: `invalidated` as a state or status
+in 42 calls, `reopened` in 26, and 4 others. Each of those calls used to
+get an empty, complete page; the error that replaces it is shorter (569
+characters against 1,396). No read reaches `reopen_history` yet, so the
+`reopened` calls learn only that the value is not stored. `brief` prints the same bytes on all
+ten Efforts of both 10x graphs, and `get` on each of their 24 compactions
+prints the old digest once the two new sections are taken out. The
+`state` calls grow by the new section, about 1,000 characters.
+
+On the two private graphs (totals only), the find and state gates give the
+same figures before and after on graph A and graph B, neither graph holds a
+compaction question, and the read invariants hold on every Effort (165 on
+A, 90 on B). The `--rests-on` reads hold the answer for 1 of 3 scored
+questions on A and 1 of 1 on B.

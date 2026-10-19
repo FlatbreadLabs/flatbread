@@ -191,9 +191,16 @@ Pick the read by what you need, in this order:
    live records that rest on superseded, disproved, rejected, or retracted
    ones; dated lifecycles; and retractions. It holds no facts from record
    bodies: use `find` for those.
-3. **Read one record in full: `proof get <id>`.**
+3. **Read one record in full: `proof get <id>`.** On a compaction, `get`
+   also says whether it is stale, and why, gives the exact number of
+   records that changed since it was written, and lists up to 25 of them.
 4. **Page through records: `proof records`.** `find` shows only the top
-   hits, so never count from it; count from `state`.
+   hits, so never count from it; count from `state`. `--state` and
+   `--status` match only the stored field. `--standing invalidated` (or
+   `superseded`, `retracted`, any standing a card prints) lists records by
+   where they stand, links included. `--rests-on invalidated` lists the live
+   records that derive from, cite, or give as evidence a record in that
+   standing.
 
 Browse digests (`list`, `records`, `relations`, `blocking-decisions`) excerpt
 each body at 600 chars / 12 lines (`[…truncated]`). **`proof get` digests

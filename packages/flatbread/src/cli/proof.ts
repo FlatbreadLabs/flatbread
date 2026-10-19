@@ -43,6 +43,8 @@ export interface EffortCliOptions {
   cursor?: string;
   relations?: string[];
   retracted?: RetractedMode;
+  standing?: string[];
+  restsOn?: string[];
   effort?: string;
   all?: boolean;
   asOf?: string;
@@ -81,6 +83,8 @@ export function mapEffortCliOptions(
         typeof options.retracted === 'string'
           ? (options.retracted as RetractedMode)
           : undefined,
+      standing: split(options.standing),
+      restsOn: split(options['rests-on']),
       effort: typeof options.effort === 'string' ? options.effort : undefined,
       all: options.all === true || options.all === 'true' ? true : undefined,
       // The option parser turns `--as-of 2026` into a number; keep it as
@@ -223,6 +227,8 @@ export async function handleEffortRecords(
         : {}),
     },
     retracted: options.retracted,
+    standing: options.standing,
+    restsOn: options.restsOn,
     page: { limit: options.limit, cursor: options.cursor },
   });
 }
@@ -589,6 +595,14 @@ export function registerProofCommands(prog: any): void {
         .option(
           '--retracted <mode>',
           'exclude (default), include, or only retracted records'
+        )
+        .option(
+          '--standing <values>',
+          'Comma-separated standings, as cards and proof state print them, links included: superseded, invalidated, retracted, …'
+        )
+        .option(
+          '--rests-on <values>',
+          'Live records that derive from, cite, or give as evidence a record in these dead standings: superseded, invalidated, rejected, retracted'
         )
     );
   recordsOptions(
