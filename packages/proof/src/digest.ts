@@ -34,12 +34,15 @@ export interface ReadEdge {
 /**
  * Why a read is not complete. `find_limit` means `proof find` matched more
  * records than it shows; it pages no further, so narrow the query instead.
+ * `state_limit` means `proof state` cut at least one list short; each cut
+ * list says how many entries it left out.
  */
 export type ReadCapReason =
   | 'primary_records'
   | 'displayed_edges'
   | 'bytes'
-  | 'find_limit';
+  | 'find_limit'
+  | 'state_limit';
 
 /** Machine-readable state of an Effort's head compaction (`brief` only). */
 export interface CompactionStatus {

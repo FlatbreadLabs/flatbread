@@ -3,7 +3,7 @@
 // and per strategy, then collects answers and cost into run files.
 //
 //   node scripts/run.mjs <work-dir> --name <run> [--model haiku]
-//        [--strategies brief,nobrief,find] [--only render] [--ids a,b]
+//        [--strategies brief,nobrief,find,findstate] [--only render] [--ids a,b]
 //        [--jobs 8] [--timeout 600] [--graph <built-graph-dir>]
 //        [--server <socket>] [--no-serve]
 //   node scripts/run.mjs --stop-server [--server <socket>]
@@ -17,8 +17,9 @@
 // answer.json, and transcript.jsonl. A rerun skips sessions that already
 // have both an answer and a transcript, so an interrupted run picks up where
 // it stopped. Keep <work-dir> outside the repository, so no CLAUDE.md or
-// AGENTS.md reaches the agent. Each run file records `find_hash`, a hash of
-// the `proof find` source, to match against the offline gate's output.
+// AGENTS.md reaches the agent. Each run file records `find_hash` and
+// `state_hash`, hashes of the `proof find` and `proof state` sources, to
+// match against the offline gates' output.
 //
 // Runs share two things, kept under <tmp>/flatbread-proof-recall/:
 //
@@ -51,7 +52,7 @@ import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { collect, findHash } from './collect.mjs';
+import { collect, findHash, stateHash } from './collect.mjs';
 import {
   copyPublicGraph,
   prepareFolder,
@@ -336,6 +337,7 @@ async function main() {
   if (options.stopServer) return stopServer(options.server);
   const questions = await publicQuestions(options);
   const find_hash = await findHash();
+  const state_hash = await stateHash();
   // Alternate strategies question by question, so a change in API speed or
   // load over the run falls on every strategy alike.
   const sessions = [];
@@ -395,8 +397,8 @@ async function main() {
           transcript: join(s.folder, 'transcript.jsonl'),
         })),
       `${options.name}-${strategy}`,
-      join(BENCH, 'runs', `${options.name}-${strategy}.json`),
-      { find_hash }
+      join(RUNS_DIR, `${options.name}-${strategy}.json`),
+      { find_hash, state_hash }
     );
 }
 

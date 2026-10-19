@@ -183,9 +183,17 @@ Pick the read by what you need, in this order:
    terms name query words no hit contains. Ordinary words often land there;
    a missing distinctive term, such as a name, a number, or a code
    reference, is the cue that the answer may not be recorded.
-2. **Read one record in full: `proof get <id>`.**
-3. **Count or page through records: `proof records`.** `find` shows only
-   the top hits, so never count from it.
+2. **Counts, lists, and status history: `proof state <effortId>`.** One
+   read, built from frontmatter and links, that shows exact counts by kind
+   and standing; open blockers and what they gate; Risks with their
+   mitigation; contested topics, with each rejected or replaced alternative,
+   what rejected or replaced it, and when; Issues closed without a fix;
+   live records that rest on superseded, disproved, rejected, or retracted
+   ones; dated lifecycles; and retractions. It holds no facts from record
+   bodies: use `find` for those.
+3. **Read one record in full: `proof get <id>`.**
+4. **Page through records: `proof records`.** `find` shows only the top
+   hits, so never count from it; count from `state`.
 
 Browse digests (`list`, `records`, `relations`, `blocking-decisions`) excerpt
 each body at 600 chars / 12 lines (`[…truncated]`). **`proof get` digests
@@ -197,6 +205,9 @@ byte cap). Zoom in with `get`, then Read/grep that digest — do not open
 # Find records by what they say (one Effort, or all when --effort is left out)
 flatbread proof find "tern history buffer precision" --effort <effortId>
 flatbread proof find "shadow pool overflow" --as-of 2026-03-01T00:00:00Z
+
+# Counts, open blockers, Risks, contested topics, dead evidence, lifecycles
+flatbread proof state <effortId>
 
 # What's gating this effort? (proposed Decisions deriving from open blocker Issues)
 flatbread proof blocking-decisions <effortId>
@@ -255,7 +266,9 @@ server-side.
    `dec-adopt-a-bounded-status-briefing-fast-path-for-ef--kcw0rw39g3b2ym2h`).
 2. **When you need a particular record or fact:** run `proof find` first,
    then `proof get` the hit whose card fits. Do not page through `records`
-   to look for it.
+   to look for it. **When you need a count, a list of open, closed, or
+   rejected records, a status history, the blockers, or what rests on dead
+   evidence:** run `proof state <effortId>` instead.
 3. **When a browse digest shows `[…truncated]` and you need the body:** run
    `flatbread proof get <id>`, then Read/grep that digest (`artifact_path`)
    for the full body. Reserve opening `.flatbread-proof/**/*.md` for rare

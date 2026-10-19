@@ -25,6 +25,7 @@ Each question has a known answer and a stated path through the graph.
 | `scripts/task.mjs`         | The task text each session reads                         |
 | `scripts/compare.mjs`      | Compares two runs question by question                   |
 | `scripts/find-recall.mjs`  | Checks offline whether `proof find` reaches the evidence |
+| `scripts/state-recall.mjs` | Checks offline whether `proof state` shows the answer    |
 | `runs/`                    | Answers and costs from each pilot and full run           |
 | `.flatbread-proof/`        | The built graph, committed so runs need no build         |
 | `flatbread.config.js`      | Lets `flatbread proof …` read the graph from this folder |
@@ -289,6 +290,33 @@ A benchmark agent must never see `spec/`, `questions/`, or `keymap.json`.
    questions, chosen by a hash of each id. Read tune misses to decide what
    to change in `find`; run holdout once the change is done.
 
+   Before a paid run of the `findstate` strategy, run the free gate for
+   `proof state` too:
+   `node scripts/state-recall.mjs --graph <x10 build> --split holdout [--out <json>]`.
+   For each question it reads `proof state` for the question's Effort, or,
+   for a cross-Effort question, for every Effort its evidence and answer
+   records belong to, joined. It scores the answer in that output two ways.
+   The loose rule is the card rule above: every answer id appears anywhere,
+   or the value appears as a whole token. The strict rule scores values the
+   same way, but a record answer counts only when a reader could pick it
+   out: each answer id shares a list entry with an evidence id that is not
+   an answer, or some section that lists it lists no other record of the
+   same kind, standing, and Issue or Constraint kind. The strict rule
+   exists because `state` prints about 90 ids on a large Effort, so an id
+   somewhere in it is not yet the answer. Count, boolean, text, and
+   "unknown" answers are not scored. A value is set aside when it appears
+   in more than 10% of the outputs for questions about other Efforts,
+   since `state` takes no query and prints the same text for every
+   question about one Effort. The script prints a table by category, with
+   both rates, the rates for value and record answers apart, and the mean
+   and largest output in characters, measured with the temporary folder's
+   path removed so the size does not depend on the machine. It writes
+   `state_hash`, a hash of the `state` source. Its bar for the paid Run D:
+   on holdout, the strict rule finds the answer for at least 60% of the
+   aggregate, lifecycle, blocker, and dead-evidence questions taken
+   together, and the mean output is at most 16,000 characters. `--split`
+   works as above.
+
 3. Run the benchmark:
 
    ```bash
@@ -297,8 +325,14 @@ A benchmark agent must never see `spec/`, `questions/`, or `keymap.json`.
 
    `run.mjs` gives every question its own folder and its own fresh,
    headless `claude -p` session, once per strategy. `--strategies` picks
-   them from `brief` (start from `proof brief`), `nobrief`, and `find`
-   (start from `proof find`); the default is `brief,nobrief`. Each folder
+   them from `brief` (start from `proof brief`), `nobrief`, `find`
+   (start from `proof find`), and `findstate` (the `find` text plus one line
+   that says what `proof state` holds: exact counts, open Issues and
+   blockers, Risks, Constraints in force, contested topics, Issues closed
+   without a fix, dead evidence, other dated changes, and retractions, with
+   long lists cut); the default is `brief,nobrief`. A server started before
+   `proof state` existed refuses it, so stop the server and let the run
+   start a new one after rebuilding. Each folder
    holds the graph without the key map, the config, a `./flatbread`
    wrapper, `TASK.md`, and, afterwards, the agent's `answer.json` and
    `transcript.jsonl`. Sessions get only the
@@ -316,14 +350,19 @@ A benchmark agent must never see `spec/`, `questions/`, or `keymap.json`.
    sessions. When every session ends, `run.mjs` writes
    `runs/<run>-<strategy>.json` for each strategy, taking tokens and tool
    calls from the transcripts. Each run file records the same `find_hash`
-   as the gate, so you can check that both used the same search.
+   as the gate, so you can check that both used the same search, and the
+   same `state_hash` as the `state` gate.
 
 4. Score each run with `node scripts/grade.mjs runs/<run>-brief.json`.
+   Its `bySplit` field scores the tune and holdout halves apart, and
+   `--split holdout` scores only holdout.
 5. Compare two strategies question by question with
    `node scripts/compare.mjs runs/<run>-brief.json runs/<run>-nobrief.json`.
    It reports both scores, the questions only one got right, a sign test
    on those, and read tokens, which leave out each session's fixed first
-   turn.
+   turn. `--split holdout` compares only holdout questions. Judge a read
+   that was changed after reading tune misses, such as `proof state`, on
+   holdout.
 6. To pool repeated runs, give each side a comma-separated list of run
    files, in the same order:
    `node scripts/compare.mjs runs/r1-find.json,runs/r2-find.json runs/r1-nobrief.json,runs/r2-nobrief.json`.
@@ -832,3 +871,99 @@ What this does not show:
 - The ambiguous questions come from tiers 0 to 2. They show that search
   finds the right Effort, not that agents handle a hard question without a
   named Effort.
+
+### The offline gate for `proof state`
+
+`proof state <effortId>` is one read, built from frontmatter and links,
+that shows what search cannot: exact counts by kind and standing, open
+blockers with the Decisions they gate, Risks and their mitigation,
+Constraints in force, contested topics with each rejected or replaced
+alternative, Issues closed without a fix, live records that rest on dead
+ones, dated lifecycles, and retractions. Settled records, such as the
+filler's question Issues and their one accepted Decision, show only in the
+counts. `scripts/state-recall.mjs` scores it as the find gate scores cards,
+and adds the strict rule described under "Running the benchmark".
+
+Only tune misses were read. On the 10x graph, 12 tune questions in the
+four bar categories missed the answer. Why:
+
+| Where the answer was                                           | Misses |
+| -------------------------------------------------------------- | ------ |
+| A value in a record body, or worked out from two body values   | 5      |
+| A value in a Blob payload                                      | 4      |
+| A record's author                                              | 1      |
+| A record three or more links from any record `state` lists     | 1      |
+| A list of the Constraints in force, which `state` only counted | 1      |
+
+`state` reads no bodies by design, so 10 of the 12 are `find`'s to answer.
+One change came from this list: a `Constraints in force` section, made for
+the tune question that asks which hard Constraints are in force. Two came
+from reading the output for size, before the gate: a live record that
+overturned a support (by replacing, disproving, or rejecting it) no longer
+counts as resting on it, and dead evidence is grouped by the dead record,
+so the record that overturned it is named once. On a large Effort the
+lists shrink to fit 15,000 characters of Markdown, cutting lifecycle and
+retractions first and counts never.
+
+Tune questions shaped `state` in two more ways. The Constraints section
+answers that tune question outright. The head-compaction line first used
+the exact words of a tune count question about records that joined or
+left the live set; it now says "differ from the live set it covers" in
+the code's own terms, but it still prints that count. A paid Run D asks
+every question, tune ones included, so judge it with
+`grade.mjs --split holdout` and `compare.mjs --split holdout`.
+
+How the strict rule came about. A review found that the loose rule's
+holdout pass rested on record ids appearing anywhere: of 19 holdout hits,
+18 were record answers. The strict rule was first written as "shares an
+entry with a non-answer evidence id" alone. On holdout that gave 52% of
+27 scored. On tune it rejected three answers that `state` plainly gives,
+such as the `hard 4:` line that lists exactly the hard Constraints a
+question asks for, because those questions' other evidence ids are
+distractors, not the record the question is about. The "set apart" test
+was added after reading those tune cases, and holdout was then scored
+once more. The four tune answers it still rejects are real misses: in
+each, the id shows only in a role the question does not ask about.
+
+Answer in the output, 10x graph (`state_hash`
+`b73c82ecb0649c1db200b189b827c76250569b75327ba5847d9939352dcf1679`).
+Count, boolean, text, and "unknown" answers are not scored; 18 of the 98
+bar-category questions are counts.
+
+| Group                                 | Tune        | Holdout     | All          |
+| ------------------------------------- | ----------- | ----------- | ------------ |
+| Bar categories, strict rule           | 53% (18/34) | 55% (17/31) | 54% (35/65)  |
+| Bar categories, loose rule            | 65% (22/34) | 61% (19/31) | 63% (41/65)  |
+| Bar categories, record answers strict | 74% (17/23) | 67% (16/24) | 70% (33/47)  |
+| Bar categories, record answers loose  | 91% (21/23) | 75% (18/24) | 83% (39/47)  |
+| Bar categories, value answers         | 9% (1/11)   | 14% (1/7)   | 11% (2/18)   |
+| aggregate, strict                     | 88% (7/8)   | 67% (6/9)   | 76% (13/17)  |
+| lifecycle, strict                     | 50% (9/18)  | 56% (10/18) | 53% (19/36)  |
+| blocker, strict                       | 38% (3/8)   | 44% (4/9)   | 41% (7/17)   |
+| dead-evidence, strict                 | 75% (6/8)   | 80% (4/5)   | 77% (10/13)  |
+| Every question, strict                | 49% (47/95) | 44% (38/86) | 47% (85/181) |
+| Mean output, characters               | 15,171      | 14,981      | 15,081       |
+| Largest output                        | 28,058      | 58,681      | 58,681       |
+
+**The holdout does not clear the Run D bar.** The strict rule finds the
+answer for 55% against the 60% bar; the mean output, 14,981 characters,
+is within its 16,000. The loose rule's 61% is one question above the bar,
+and two of its 19 holdout hits fail the strict rule. One Effort's output runs from 6,876
+characters (tools) to 16,127 (world), so a single read of the world
+Effort is above 16,000; the bar is on the mean. The largest outputs are
+cross-Effort questions, which join two to five Efforts.
+
+The value hits in the bar categories are Effort status answers. The
+chance check sets aside standing words that `state` prints in the right
+place and short numbers, so for values it errs toward missing hits, not
+toward finding them.
+
+On the bar-category questions both gates score, the stripped `find` cards
+hold the answer for 15 of 31 holdout questions, `state` for 17 by the
+strict rule (19 by the loose one), and one of the two for 24 (25 loose).
+The find gate, rerun with the same `find_hash` (`e5be6532…`), still gives
+81% evidence in the top 5 and 62% answers on a card on the stripped set.
+
+The paid Run D compares `findstate` against `find` on these questions.
+Before paying for it, decide whether a read that fails its own bar is
+worth a paid run.

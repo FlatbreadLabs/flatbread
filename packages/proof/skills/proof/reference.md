@@ -182,7 +182,7 @@ survivor (score 4/4 if it adds claims) plus `Retract` on the rest.
 
 `generation` is a durable, monotonic journal token — the input to strict reads.
 
-## The 7 read queries
+## The 8 read queries
 
 All reads execute through Flatbread's query engine (in-process GraphQL over
 the generated schema) and return a `ReadEnvelope`:
@@ -211,6 +211,8 @@ lists), one-hop related records, and an edge table. Body policy:
   record appears as one line.
 - **`proof find`:** the hit cards (below) under `## Find hits`, and each hit's
   record with the browse excerpt. The envelope also carries the cards inline.
+- **`proof state`:** no bodies at all. The state (below) under
+  `## Effort state`; the envelope also carries it inline as `markdown`.
 - **`list` / `records` / `relations` / `blocking-decisions`:** body excerpt
   capped at 600 chars / 12 lines (`[…truncated]`). **Blob bodies are omitted**
   from these digests — use `proof get` for the payload. Citation bodies
@@ -233,8 +235,9 @@ order:
    error; do not retry the same page.
 3. If `cap_reasons` is not empty, narrow the query or fail closed. It can hold
    several sorted, duplicate-free values from `primary_records`,
-   `displayed_edges`, `bytes`, and `find_limit` (`proof find` matched more
-   records than it shows).
+   `displayed_edges`, `bytes`, `find_limit` (`proof find` matched more
+   records than it shows), and `state_limit` (`proof state` cut at least one
+   list short; each cut list says how many it left out).
 4. A hard cap alone leaves `page.has_more: false` and `next_cursor: null`.
    Paging and hard caps can occur together, but caps never create a cursor.
 
@@ -251,13 +254,14 @@ flatbread proof relations <effortId> <fromId> --relations r1,r2 [--limit n] [--c
 flatbread proof blocking-decisions <effortId> [consistency flags]
 flatbread proof brief <effortId> [consistency flags]
 flatbread proof find "<words>" [--effort <effortId> | --all] [--kinds k1,k2] [--as-of iso] [--retracted exclude|include|only] [--limit n] [consistency flags]
+flatbread proof state <effortId> [consistency flags]
 flatbread proof cache prune
 flatbread proof serve [--socket .flatbread/proof/serve.sock]
 ```
 
-- `proof serve` keeps the graph loaded in one process and answers the seven
+- `proof serve` keeps the graph loaded in one process and answers the eight
   reads above (`list`, `records`, `get`, `relations`, `blocking-decisions`,
-  `brief`, `find`); it keeps the `find` index with the graph and serves nothing that writes. Set `FLATBREAD_PROOF_SERVER` to its
+  `brief`, `find`, `state`); it keeps the `find` index with the graph and serves nothing that writes. Set `FLATBREAD_PROOF_SERVER` to its
   socket and those read commands go to it, in any folder whose graph root
   resolves to the same files. Each later read then takes a fraction of a
   second instead of rebuilding the graph. A write bumps the journal
@@ -396,7 +400,64 @@ Each card has these lines:
 
 The card header reads `find "<words>" in <effortId|all Efforts> (<searched> records searched, <matched> matched, <shown> shown)`, then `matched: … | missing: …`. The envelope adds `cards` (that Markdown) and `find`:
 `{"query","effort_id","searched","matched","shown","terms":{"matched","missing"},"efforts"?,"hits":[{"id","matched_id"?,"score"}]}`.
-`find` shows only the top hits; use `records` to count.
+`find` shows only the top hits; use `state` or `records` to count.
+
+### `proof state`
+
+`state` shows where one Effort stands, in one read of at most about 4,000
+tokens. It is built from frontmatter and links only, never from body text,
+so it holds no facts or measurements: use `find` for those. It takes no
+query and no `--as-of` (it refuses one); its lines date each change, and
+`find --as-of` shows the version current at a date.
+
+The envelope adds `markdown` (the state, read it inline) and `state`:
+`{"effort_id","records","live","sections":[{"heading","total","shown"}],"capped"}`.
+The Markdown has these sections, in order:
+
+- **Counts:** every record in the Effort by kind and standing, with Issues,
+  Findings, and Constraints also by their own `kind` (`blocker`, `question`,
+  `hard`, …), how many Decisions were ever reopened, and how many records
+  are live or retracted. Exact numbers, never cut.
+- **Open Issues and blockers:** each open Issue, blockers first, with the
+  live Decisions that derive from it (`gates`), other live records built on
+  it, and what it comes from.
+- **Risks:** realized and open Risks with their evidence, mitigation, and
+  source; then mitigated and accepted ones, one line each.
+- **Constraints in force:** the live Constraints, by kind.
+- **Contested topics:** one entry per question Issue with more than one
+  Decision (every version counted, retracted ones left out), and per record
+  with more than one version. Letters (`[a]`, `[b]`) name the records
+  shown: the live ones (`now`), then each replaced, rejected, or disproved
+  one with what did it and when, and any reopening, each group newest
+  first. Open contests come first, then the most recently changed.
+- **Closed without a fix:** Issues closed `deferred` or `wontfix`, or
+  resolved by no Decision or Finding.
+- **Dead evidence:** each superseded, invalidated, rejected, or retracted
+  record that live records still derive from, cite, or give as evidence,
+  with those live records and, for every dead record but a replaced
+  version, the live records one link further. The record that overturned it is not counted as
+  resting on it. The first line reports the head compaction: how many
+  records changed since it was written, and which of its supports moved.
+- **Lifecycle:** dated changes no section above shows, the most recently
+  changed first:
+  closed Issues other than settled questions, proposed or reopened
+  Decisions, and records shown wrong or replaced.
+- **Retractions:** each retracted record with its date and reason. None is
+  live.
+
+A date on a change is the `created_at` of the record that made it, since
+standings carry no dates of their own. When that record already existed,
+as when a Supersede links two old records, the change came on or after
+that date. Records with nothing to report, such
+as a question Issue resolved by its one accepted Decision, appear only in
+the counts. Citations and Blobs have no live or dead standing, so the live
+total leaves them out. On a large Effort the lists shrink to fit, cutting
+lifecycle and retractions first and counts never. Any cut list, a whole
+section's or one inside an entry, ends with `… N more` or `and N more`,
+and then `cap_reasons` holds `state_limit`. In `state.sections`, `total`
+counts a section's entries in full and `shown` those it prints; for
+Constraints in force and Dead evidence an entry is one Constraint or one
+dead record.
 
 ### Consistency flags
 
