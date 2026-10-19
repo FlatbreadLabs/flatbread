@@ -175,13 +175,14 @@ Pick the read by what you need, in this order:
    records by their title, full body, and Blob payload, and prints the hit
    cards inline in the JSON, so you need no second Read. Each card shows the
    newest version of the record (or, with `--as-of`, the version current
-   then), its standing, the passage that matched, its supersession chain
-   with dates, and its links in both directions. Leave out `--effort` when
-   you do not know the Effort: hits then group by Effort, at most 3 each
-   unless one Effort clearly leads. The `missing` terms name query words no
-   hit contains. Ordinary words often land there; a missing distinctive
-   term, such as a name, a number, or a code reference, is the cue that the
-   answer may not be recorded.
+   then), its standing, the passages that matched (up to two, plus one
+   from an attached Blob payload such as a capture or table), its
+   supersession chain with dates, and its links in both directions. Leave
+   out `--effort` when you do not know the Effort: hits then group by
+   Effort, at most 3 each unless one Effort clearly leads. The `missing`
+   terms name query words no hit contains. Ordinary words often land there;
+   a missing distinctive term, such as a name, a number, or a code
+   reference, is the cue that the answer may not be recorded.
 2. **Read one record in full: `proof get <id>`.**
 3. **Count or page through records: `proof records`.** `find` shows only
    the top hits, so never count from it.

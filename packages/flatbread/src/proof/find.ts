@@ -21,6 +21,14 @@ const TITLE_WEIGHT = 2;
 /** Extra weight for entity terms: numbers with units, people, code refs. */
 const ENTITY_BOOST = 1.5;
 const SNIPPET_CHARS = 160;
+/**
+ * A passage runs on to finish the word after its last match only when that
+ * word starts within NEXT_WORD_GAP characters of the match and ends within
+ * NEXT_WORD_CHARS of the window's end. A long token, such as a hash, or a run
+ * of table rules after a match keeps the plain end instead.
+ */
+const NEXT_WORD_GAP = 24;
+const NEXT_WORD_CHARS = 32;
 const LINKS_PER_RELATION = 3;
 const LINK_TITLE_CHARS = 60;
 const HITS_PER_EFFORT = 3;
@@ -33,16 +41,20 @@ const EFFORTS_SHOWN = 5;
 const CHAIN_VERSIONS_SHOWN = 4;
 const CODE_REFS_SHOWN = 6;
 /**
- * Characters the cards aim for: a header share plus a share per hit, so five
- * hits aim for about 4,000 characters (near 1,000 tokens at 4 characters a
- * token). The renderer shrinks link titles, the Effort ranking line, chain
- * lines, and link lists to fit, in that order. Titles, snippets, and code
- * lines are never cut further, so a card set can still run past the aim. On
- * the 10x benchmark graph the whole JSON envelope for five hits ran about
- * 5,700 characters at the median and up to about 6,900.
+ * Characters the cards aim for. The aim has a header share, a share per hit
+ * for the card's frame (its header, title, chain, and links), and the length
+ * of every passage the card quotes. Passages count apart because they are
+ * what matched and are never cut, so a longer or an extra passage never
+ * pushes out a chain or a link. The frame share was 750 when it also held
+ * the one passage, about 150 characters; it is 600 now that passages count
+ * apart. Five frames with one passage each still aim for about 4,000
+ * characters (near 1,000 tokens at 4 characters a token). The renderer
+ * shrinks link titles, the Effort ranking line, chain lines, and link lists
+ * to fit, in that order. Titles, passages, and code lines are never cut
+ * further, so a card set can still run past the aim.
  */
 const CARDS_HEADER_CHARS = 300;
-const CARD_CHARS = 750;
+const CARD_CHARS = 600;
 
 const STOPWORDS = new Set(
   (
@@ -294,15 +306,21 @@ interface FindDoc {
   readonly length: number;
 }
 
-/** Relations whose stored ids, read backward, give a record's inbound links. */
+/**
+ * Relations whose stored ids, read backward, give a record's inbound links,
+ * in the order a card lists them. The links that pass a verdict on a record
+ * (it resolves, rejects, or mitigates another) come first. `derived_by`
+ * comes last: a much-used record collects dozens of derived records, and
+ * listed first they would fill the line's few entries.
+ */
 const INBOUND_LABELS: Readonly<Record<string, string>> = {
-  derives_from: 'derived_by',
-  cites: 'cited_by',
   resolved_by: 'resolves',
   rejected_by: 'rejects',
   mitigated_by: 'mitigates',
   evidence: 'evidence_for',
+  cites: 'cited_by',
   blob: 'blob_of',
+  derives_from: 'derived_by',
 };
 /** Outbound links a card lists. Supersession shows on the chain line instead. */
 const OUTBOUND_RELATIONS: readonly ReadRelation[] = [
@@ -457,15 +475,37 @@ export interface FindHit {
   readonly chain: readonly ReadRecord[];
   readonly score: number;
   readonly effort: string | null;
-  readonly snippet: {
-    readonly text: string;
-    readonly start: number;
-    readonly end: number;
-    readonly length: number;
+  /**
+   * Passages of the matched version's body: the best one, then a second
+   * when another part of the body holds query words the first lacks. The
+   * second may come from earlier in the body; the offsets say where. Empty
+   * when the body is.
+   */
+  readonly passages: readonly FindPassage[];
+  /**
+   * The best passage of a Blob attached to the shown version: its own `blob`
+   * (a Citation), or the `blob` of a Citation it `cites`. Only when that
+   * payload holds a query word, and the Blob is neither a hit itself nor
+   * quoted on an earlier card. `retracted` is set when the Blob, or the
+   * Citation that leads to it, is retracted, which only `--retracted
+   * include` or `only` lets through.
+   */
+  readonly attached?: {
+    readonly id: string;
+    readonly passage: FindPassage;
+    readonly retracted?: true;
   };
   readonly outbound: readonly FindLink[];
   readonly inbound: readonly FindLink[];
   readonly code: readonly string[];
+}
+
+/** A window of a body, with its offsets in the normalized body. */
+export interface FindPassage {
+  readonly text: string;
+  readonly start: number;
+  readonly end: number;
+  readonly length: number;
 }
 
 export interface FindEffortMass {
@@ -485,9 +525,12 @@ export interface FindResult {
    * mass, the summed scores of each one's best 3 hits.
    */
   readonly efforts?: readonly FindEffortMass[];
-  /** Query words found in at least one shown hit, as written. */
+  /**
+   * Query words found in at least one shown hit or a Blob a card quotes, as
+   * written.
+   */
   readonly found: readonly string[];
-  /** Query words that no shown hit contains. */
+  /** Query words that no shown hit, nor a Blob a card quotes, contains. */
   readonly missing: readonly string[];
 }
 
@@ -515,62 +558,158 @@ export function queryTerms(query: string): QueryTerm[] {
   return terms;
 }
 
+/** BM25's inverse document frequency: rare terms weigh more. */
+function idf(index: FindIndex, term: string): number {
+  const n = index.docs.size;
+  const df = index.df.get(term) ?? 0;
+  return Math.log(1 + (n - df + 0.5) / (df + 0.5));
+}
+
 function bm25(
   index: FindIndex,
   doc: FindDoc,
   terms: readonly string[]
 ): number {
   let score = 0;
-  const n = index.docs.size;
   for (const term of terms) {
     const tf = doc.tf.get(term);
     if (!tf) continue;
-    const df = index.df.get(term) ?? 0;
-    const idf = Math.log(1 + (n - df + 0.5) / (df + 0.5));
     score +=
-      (idf * tf * (K1 + 1)) /
+      (idf(index, term) * tf * (K1 + 1)) /
       (tf + K1 * (1 - B + (B * doc.length) / (index.averageLength || 1)));
   }
   return score;
 }
 
-/**
- * The 160-character window of `body` that holds the most distinct matched
- * terms (then the most matches, then the earliest), with its offsets.
- */
-export function bestSnippet(
-  body: string,
-  terms: ReadonlySet<string>
-): FindHit['snippet'] {
-  const source = normalizeBody(body);
-  const hits = [...wordSpans(source), ...entitySpans(source)]
+export interface PassageOptions {
+  /** Weight of each term, such as its IDF; 1 for a term left out. */
+  readonly weights?: ReadonlyMap<string, number>;
+  /**
+   * Terms the card already shows, such as its title's. A window scores by
+   * the terms it adds first; these only break ties.
+   */
+  readonly shown?: ReadonlySet<string>;
+}
+
+interface Window {
+  /** Summed weight of distinct terms not already shown. */
+  readonly fresh: number;
+  /** Summed weight of all distinct terms. */
+  readonly weight: number;
+  /**
+   * The matches the passage centers on: the window's matches, less repeats
+   * at either end whose term also appears further in.
+   */
+  readonly inside: readonly Span[];
+  /** Characters from the first of `inside` to the end of the last. */
+  readonly spread: number;
+}
+
+/** Matched spans of a normalized body, in text order. */
+function matchSpans(source: string, terms: ReadonlySet<string>): Span[] {
+  return [...wordSpans(source), ...entitySpans(source)]
     .filter((span) => terms.has(span.term))
     .sort((a, b) => a.start - b.start || a.end - b.end);
-  let start = 0;
-  if (hits.length) {
-    let best = { distinct: -1, count: -1, start: 0 };
-    for (const anchor of hits) {
-      const from = Math.max(0, anchor.start - 20);
-      const inside = hits.filter(
+}
+
+/** Drops matches at either end whose term the rest still holds. */
+function tighten(spans: readonly Span[]): Span[] {
+  const kept = [...spans];
+  const repeated = (i: number) =>
+    kept.some((span, j) => j !== i && span.term === kept[i].term);
+  while (kept.length > 1 && repeated(0)) kept.shift();
+  while (kept.length > 1 && repeated(kept.length - 1)) kept.pop();
+  return kept;
+}
+
+/**
+ * The best 160-character window over `spans`: the most weight of terms not
+ * yet shown, then the most weight in all, then the matches set closest
+ * together, then the earliest. Undefined when no span is given.
+ */
+function bestWindow(
+  spans: readonly Span[],
+  options: PassageOptions
+): Window | undefined {
+  const weight = (term: string) => options.weights?.get(term) ?? 1;
+  let best: Window | undefined;
+  for (const anchor of spans) {
+    const from = Math.max(0, anchor.start - 20);
+    const inside = tighten(
+      spans.filter(
         (span) => span.start >= from && span.end <= from + SNIPPET_CHARS
-      );
-      const distinct = new Set(inside.map((span) => span.term)).size;
-      if (
-        distinct > best.distinct ||
-        (distinct === best.distinct && inside.length > best.count)
       )
-        best = { distinct, count: inside.length, start: from };
+    );
+    // A match longer than the window, such as a long path, fits no window.
+    if (!inside.length) continue;
+    const terms = new Set(inside.map((span) => span.term));
+    let fresh = 0;
+    let all = 0;
+    for (const term of terms) {
+      all += weight(term);
+      if (!options.shown?.has(term)) fresh += weight(term);
     }
-    // Start at the top when that drops only a word or two.
-    start = best.start <= 20 ? 0 : best.start;
-    // Start on a word boundary, without skipping past the first match.
-    const first = hits.find((span) => span.start >= start)?.start ?? start;
-    while (start > 0 && start < first && /\S/.test(source[start - 1])) start++;
+    const spread =
+      Math.max(...inside.map((span) => span.end)) - inside[0].start;
+    if (
+      !best ||
+      fresh > best.fresh ||
+      (fresh === best.fresh &&
+        (all > best.weight || (all === best.weight && spread < best.spread)))
+    )
+      best = { fresh, weight: all, inside, spread };
   }
-  let end = Math.min(source.length, start + SNIPPET_CHARS);
+  return best;
+}
+
+/**
+ * Cuts the passage around a window's matches. The matches sit in the middle
+ * of the 160 characters, and the passage runs to the end of the short word
+ * after the last match, so the value a matched word names (`"fuse_ms": 42`)
+ * is not cut off. `floor` and `ceiling` keep the passage clear of another
+ * passage.
+ */
+function passageAround(
+  source: string,
+  inside: readonly Span[],
+  floor = 0,
+  ceiling = source.length
+): FindPassage {
+  const last = inside.length
+    ? Math.max(...inside.map((span) => span.end))
+    : floor;
+  let start = floor;
+  if (inside.length) {
+    const first = inside[0].start;
+    const slack = SNIPPET_CHARS - (last - first);
+    start = Math.max(floor, first - Math.floor(slack / 2));
+    // Start at the top when that drops only a word or two and keeps them all.
+    if (floor === 0 && start <= 20 && last <= SNIPPET_CHARS) start = 0;
+    // Start on a word boundary, without skipping past the first match.
+    while (start > floor && start < first && /\S/.test(source[start - 1]))
+      start++;
+  }
+  // Against a ceiling, give up words before the matches, not after them.
+  if (ceiling < source.length)
+    start = Math.max(floor, Math.min(start, ceiling - SNIPPET_CHARS));
+  let end = Math.min(ceiling, start + SNIPPET_CHARS);
   if (end < source.length) {
     const space = source.lastIndexOf(' ', end);
-    if (space > start + SNIPPET_CHARS * 0.75) end = space;
+    if (space > Math.max(last - 1, start + SNIPPET_CHARS * 0.75)) end = space;
+  }
+  if (inside.length) {
+    // A copy, so the shared pattern keeps lastIndex 0 for matchAll.
+    const word = new RegExp(WORD.source, WORD.flags);
+    word.lastIndex = last;
+    const next = word.exec(source);
+    const after = next ? next.index + next[0].length : 0;
+    if (
+      next &&
+      after > end &&
+      next.index - last <= NEXT_WORD_GAP &&
+      after - end <= NEXT_WORD_CHARS
+    )
+      end = Math.min(ceiling, after);
   }
   const window = source.slice(start, end).replace(/\s+/g, ' ').trim();
   return {
@@ -579,6 +718,61 @@ export function bestSnippet(
     end,
     length: source.length,
   };
+}
+
+/**
+ * The 160-character window of `body` that best covers the matched terms,
+ * with its offsets. Without weights or shown terms, that is the window with
+ * the most distinct matched terms, then the closest-set matches, then the
+ * earliest.
+ */
+export function bestSnippet(
+  body: string,
+  terms: ReadonlySet<string>,
+  options: PassageOptions = {}
+): FindPassage {
+  const source = normalizeBody(body);
+  const best = bestWindow(matchSpans(source, terms), options);
+  return passageAround(source, best?.inside ?? []);
+}
+
+/**
+ * Up to two passages of `body`, the best one first. The second comes from
+ * text outside the first and must hold a matched term that neither the first
+ * passage nor the shown terms hold, so it only appears when the body matches
+ * in two places.
+ */
+export function bestPassages(
+  body: string,
+  terms: ReadonlySet<string>,
+  options: PassageOptions = {}
+): FindPassage[] {
+  const source = normalizeBody(body);
+  if (!source.trim()) return [];
+  const spans = matchSpans(source, terms);
+  const best = bestWindow(spans, options);
+  const first = passageAround(source, best?.inside ?? []);
+  if (!best) return [first];
+  const seen = new Set([
+    ...(options.shown ?? []),
+    ...spans
+      .filter((span) => span.start >= first.start && span.end <= first.end)
+      .map((span) => span.term),
+  ]);
+  const rest = spans.filter(
+    (span) => span.end <= first.start || span.start >= first.end
+  );
+  const second = bestWindow(rest, { ...options, shown: seen });
+  if (!second || second.fresh <= 0) return [first];
+  // Keep the second window on its side of the first, so they never overlap.
+  const before = second.inside[0].start < first.start;
+  const inside = second.inside.filter((span) =>
+    before ? span.end <= first.start : span.start >= first.end
+  );
+  const passage = before
+    ? passageAround(source, inside, 0, first.start)
+    : passageAround(source, inside, first.end);
+  return [first, passage];
 }
 
 function inScope(record: ReadRecord, options: FindOptions): boolean {
@@ -616,6 +810,62 @@ function inboundLinks(index: FindIndex, record: ReadRecord): FindLink[] {
     const ids = links.get(relation) ?? [];
     return ids.length ? [{ relation, ids: [...ids].sort(compareIds) }] : [];
   });
+}
+
+/**
+ * The best passage among the Blobs attached to a record: its own `blob`, as
+ * a Citation has, and the `blob` of each Citation it `cites`. Only a Citation
+ * and a Blob that `usable` accepts count. A Blob in `skip` is left out: one
+ * that is a hit, since its own card quotes it, or one an earlier card quotes.
+ * So is one whose payload holds no query term. Ties go to the earlier Blob
+ * id.
+ */
+function attachedPassage(
+  index: FindIndex,
+  record: ReadRecord,
+  terms: ReadonlySet<string>,
+  options: PassageOptions,
+  skip: ReadonlySet<string>,
+  usable: (target: ReadRecord) => boolean
+): FindHit['attached'] {
+  // Each Blob id, with whether it or the Citation leading to it is retracted.
+  const blobs = new Map<string, boolean>();
+  const add = (via: ReadRecord | undefined) => {
+    const id = via?.frontmatter.blob;
+    if (!via || typeof id !== 'string' || !usable(via)) return;
+    const blob = index.records.get(id);
+    if (!blob || !usable(blob) || skip.has(id)) return;
+    const retracted =
+      via.frontmatter.retracted === true || blob.frontmatter.retracted === true;
+    blobs.set(id, (blobs.get(id) ?? true) && retracted);
+  };
+  add(record);
+  for (const id of record.relations.cites ?? []) add(index.records.get(id));
+  let best:
+    | { id: string; window: Window; source: string; retracted: boolean }
+    | undefined;
+  for (const [id, retracted] of [...blobs].sort(([a], [b]) =>
+    compareIds(a, b)
+  )) {
+    const blob = index.records.get(id) as ReadRecord;
+    const source = normalizeBody(blob.body_excerpt);
+    const window = bestWindow(matchSpans(source, terms), options);
+    if (
+      window &&
+      (!best ||
+        window.fresh > best.window.fresh ||
+        (window.fresh === best.window.fresh &&
+          window.weight > best.window.weight))
+    )
+      best = { id, window, source, retracted };
+  }
+  return best
+    ? {
+        id: best.id,
+        passage: passageAround(best.source, best.window.inside),
+        ...(best.retracted ? { retracted: true as const } : {}),
+      }
+    : undefined;
 }
 
 /**
@@ -719,6 +969,25 @@ export function findRecords(
     );
   } else selected = selected.slice(0, limit);
   const querySet = new Set(termList);
+  const weights = new Map(termList.map((term) => [term, idf(index, term)]));
+  // A Citation or Blob a card quotes through must be live at the query's
+  // time: not retracted unless the retracted mode lets retracted records in,
+  // not superseded by a version written by then, and written by then itself.
+  // The kind and Effort filters do not apply to it.
+  const mode = options.retracted ?? 'exclude';
+  const usable = (target: ReadRecord) => {
+    if (mode === 'exclude' && target.frontmatter.retracted === true)
+      return false;
+    if (asOf !== undefined && time(target) > asOf) return false;
+    const chain = index.chains.get(index.chainOf.get(target.id) ?? '');
+    if (!chain || chain.length < 2) return true;
+    const written =
+      asOf === undefined ? chain : chain.filter((m) => time(m) <= asOf);
+    return headsOf(written).some((member) => member.id === target.id);
+  };
+  // Blobs not to quote: hits, which quote themselves, and, card by card,
+  // Blobs an earlier card already quotes.
+  const skipBlobs = new Set(selected.map((hit) => hit.record.id));
   const foundTerms = new Set<string>();
   const hits: FindHit[] = selected.map((hit) => {
     for (const member of hit.versions)
@@ -731,6 +1000,35 @@ export function findRecords(
       ))
         if (!code.some((seen) => seen.toLowerCase() === ref.toLowerCase()))
           code.push(ref);
+    // The card prints the shown version's title, so the passages lead with
+    // the query words the title does not already show.
+    const titleText = text(hit.record.frontmatter.title);
+    const title = new Set(
+      [...wordSpans(titleText), ...entitySpans(titleText)].map(
+        (span) => span.term
+      )
+    );
+    const passages = bestPassages(hit.matched.body_excerpt, querySet, {
+      weights,
+      shown: title,
+    });
+    const onCard = new Set(title);
+    for (const passage of passages)
+      for (const span of matchSpans(passage.text, querySet))
+        onCard.add(span.term);
+    const attached = attachedPassage(
+      index,
+      hit.record,
+      querySet,
+      { weights, shown: onCard },
+      skipBlobs,
+      usable
+    );
+    if (attached) {
+      skipBlobs.add(attached.id);
+      for (const term of termList)
+        if (index.docs.get(attached.id)?.tf.has(term)) foundTerms.add(term);
+    }
     return {
       record: hit.record,
       head: hit.head,
@@ -738,7 +1036,8 @@ export function findRecords(
       chain: hit.chain,
       score: hit.score,
       effort: effortOf(hit.record),
-      snippet: bestSnippet(hit.matched.body_excerpt, querySet),
+      passages,
+      ...(attached ? { attached } : {}),
       outbound: outboundLinks(hit.record),
       inbound: inboundLinks(index, hit.record),
       code,
@@ -869,6 +1168,26 @@ function chainLine(hit: FindHit, shape: CardShape): string | undefined {
   return `   chain: ${parts.join(' -> ')}`;
 }
 
+function passageLine(passage: FindPassage): string {
+  return `   "${passage.text}" [chars ${passage.start}-${passage.end} of ${passage.length}]`;
+}
+
+function attachedLine(attached: NonNullable<FindHit['attached']>): string {
+  const { id, passage } = attached;
+  return `   blob ${id}${attached.retracted ? ' (retracted)' : ''}: "${
+    passage.text
+  }" [chars ${passage.start}-${passage.end} of ${passage.length}]`;
+}
+
+/** Characters of a card's passage lines, with their line breaks. */
+function passageChars(hit: FindHit): number {
+  const lines = [
+    ...hit.passages.map(passageLine),
+    ...(hit.attached ? [attachedLine(hit.attached)] : []),
+  ];
+  return lines.reduce((sum, line) => sum + line.length + 1, 0);
+}
+
 function renderCard(
   index: FindIndex,
   hit: FindHit,
@@ -901,11 +1220,8 @@ function renderCard(
     ...(hit.matched.id !== record.id
       ? [`   matched: v${version + 1} ${hit.matched.id}`]
       : []),
-    ...(hit.snippet.length
-      ? [
-          `   "${hit.snippet.text}" [chars ${hit.snippet.start}-${hit.snippet.end} of ${hit.snippet.length}]`,
-        ]
-      : []),
+    ...hit.passages.map(passageLine),
+    ...(hit.attached ? [attachedLine(hit.attached)] : []),
   ];
   for (const line of [
     chainLine(hit, shape),
@@ -984,7 +1300,10 @@ export function renderFindCards(index: FindIndex, result: FindResult): string {
     if (!result.hits.length) lines.push('no records matched');
     return lines.join('\n');
   };
-  const limit = CARDS_HEADER_CHARS + CARD_CHARS * result.hits.length;
+  const limit =
+    CARDS_HEADER_CHARS +
+    CARD_CHARS * result.hits.length +
+    result.hits.reduce((sum, hit) => sum + passageChars(hit), 0);
   let markdown = '';
   for (const shape of SHRINK_STEPS) {
     markdown = render(shape);

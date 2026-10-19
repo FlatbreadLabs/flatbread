@@ -411,7 +411,7 @@ test('as-of scores and quotes only versions written by then', (t) => {
   const [hit] = result.hits;
   t.is(hit.record.id, 'dec-v1');
   t.is(hit.matched.id, 'dec-v1');
-  t.false(hit.snippet.text.includes('zeta'));
+  t.false(hit.passages[0].text.includes('zeta'));
   t.deepEqual(result.missing, ['zeta']);
 });
 
@@ -468,7 +468,7 @@ test('long chains keep the head and the matched version, and snippets near the t
     ),
   ]);
   const result = findRecords(index, 'narwhal beta', { effort: 'eff-a' });
-  t.is(result.hits[0].snippet.start, 0);
+  t.is(result.hits[0].passages[0].start, 0);
   const cards = renderFindCards(index, result);
   t.regex(cards, /"As of beta the narwhal/);
   t.regex(
@@ -507,4 +507,296 @@ test('five dense cards stay within the inline budget', (t) => {
   t.true(cards.length / 4 <= 1000, `${cards.length / 4} tokens`);
   // A relation with no entry left still names itself, with its count.
   t.false(cards.includes('in other relations'));
+});
+
+test('the passage leads with query words the title does not already show', (t) => {
+  const filler = 'Nothing else to note in this sentence. '.repeat(6);
+  const body = `The walrus kiln layout sets the firing order. ${filler}Past the ridge the kiln stops at 40 m.`;
+  const index = buildFindIndex([
+    rec('eff-a'),
+    rec('dec-kiln', { title: 'Walrus kiln layout', body }),
+  ]);
+  const [hit] = findRecords(index, 'walrus kiln ridge', {
+    effort: 'eff-a',
+  }).hits;
+  // The title shows walrus and kiln, so the passage goes where ridge is.
+  t.regex(hit.passages[0].text, /ridge the kiln stops at 40 m/);
+  t.is(hit.passages.length, 1);
+});
+
+test('the passage centers its matches and keeps the word after the last one', (t) => {
+  const before = 'Earlier words that set the scene for the reader. '.repeat(6);
+  const body = `${before}The kiln ridge sits high. ${'Later words. '.repeat(
+    20
+  )}`;
+  const at = body.indexOf('kiln');
+  const centered = bestSnippet(body, new Set(['kiln', 'ridg']));
+  t.true(centered.start < at - 40, `starts at ${centered.start}`);
+  t.true(centered.end > at + 60, `ends at ${centered.end}`);
+  // A label right at the window's edge keeps the value after it.
+  const edge = `kiln ${'a'.repeat(140)} ridge: 4242 and more text after it`;
+  const snippet = bestSnippet(edge, new Set(['kiln', 'ridg']));
+  t.regex(snippet.text, /ridge: 4242/);
+});
+
+test('a body that matches in two places gets a second passage', (t) => {
+  const filler = 'Nothing else to note in this sentence. '.repeat(10);
+  const body = `The kiln fires at dawn. ${filler}The ridge vent closes at noon.`;
+  const index = buildFindIndex([
+    rec('eff-a'),
+    rec('fnd-two', { title: 'Firing notes', body }),
+    rec('fnd-one', { title: 'Short notes', body: 'The kiln fires again.' }),
+  ]);
+  const result = findRecords(index, 'kiln ridge', { effort: 'eff-a' });
+  const two = result.hits.find((hit) => hit.record.id === 'fnd-two');
+  const one = result.hits.find((hit) => hit.record.id === 'fnd-one');
+  // Ridge is the rarer word, so its passage is the best one and comes first.
+  t.is(two?.passages.length, 2);
+  t.regex(two?.passages[0].text ?? '', /ridge vent closes/);
+  t.regex(two?.passages[1].text ?? '', /kiln fires at dawn/);
+  t.true((two?.passages[1].end ?? 0) <= (two?.passages[0].start ?? 0));
+  // No second place to quote, no second passage.
+  t.is(one?.passages.length, 1);
+  const cards = renderFindCards(index, result);
+  t.regex(
+    cards,
+    /"…[^"\n]*The ridge vent closes at noon\." \[chars \d+-\d+ of \d+\]/
+  );
+});
+
+test('a card quotes the best passage of a Blob its Citation carries', (t) => {
+  const index = buildFindIndex([
+    rec('eff-a'),
+    rec('fnd-cost', {
+      title: 'Kiln firing cost',
+      body: 'The full table is in the attached capture.',
+      relations: { cites: ['cit-cap'] },
+    }),
+    {
+      ...rec('cit-cap', { title: 'Capture', body: 'https://example.test/c' }),
+      frontmatter: {
+        title: 'Capture',
+        effort: 'eff-a',
+        created_at: '2026-01-01T00:00:00.000Z',
+        blob: 'blb-cap',
+      },
+    },
+    rec('blb-cap', {
+      title: 'Capture payload',
+      body: '{ "firing": { "glaze_ms": 3.1, "quench_ms": 1.9 } }',
+    }),
+  ]);
+  // Findings only, so the Blob is not a hit and the finding's card quotes it.
+  const findings = findRecords(index, 'kiln firing quench', {
+    effort: 'eff-a',
+    kinds: ['finding'],
+  });
+  t.is(findings.hits[0].attached?.id, 'blb-cap');
+  t.regex(
+    renderFindCards(index, findings),
+    /blob blb-cap: "\{[^\n]*"quench_ms": 1\.9[^\n]*\[chars 0-51 of 51\]/
+  );
+  // A query word found only in the quoted Blob is not reported missing.
+  t.deepEqual(findings.missing, []);
+  // When the Blob is a hit, its own card quotes it instead.
+  const all = findRecords(index, 'kiln firing quench', { effort: 'eff-a' });
+  t.true(all.hits.some((hit) => hit.record.id === 'blb-cap'));
+  t.true(all.hits.every((hit) => hit.attached === undefined));
+});
+
+test('a quoted Blob must be live: not retracted, superseded, or written after as-of', (t) => {
+  const cit = (
+    id: string,
+    blob: string,
+    extra: Record<string, unknown> = {},
+    relations: ReadRecord['relations'] = {}
+  ): ReadRecord => {
+    const base = rec(id, { title: `Capture ${id}`, body: 'https://x.test' });
+    return {
+      ...base,
+      frontmatter: { ...base.frontmatter, blob, ...extra },
+      relations,
+    };
+  };
+  const index = buildFindIndex([
+    rec('eff-a'),
+    rec('fnd-cost', {
+      title: 'Kiln firing cost',
+      created_at: '2026-01-05T00:00:00.000Z',
+      body: 'The full table is in the attached capture.',
+      relations: { cites: ['cit-old', 'cit-new', 'cit-v1'] },
+    }),
+    cit('cit-old', 'blb-old', {
+      retracted: true,
+      retracted_reason: 'wrong build',
+    }),
+    rec('blb-old', { title: 'payload', body: '{ "quench_ms": 9.9 }' }),
+    cit('cit-new', 'blb-new', { created_at: '2026-03-01T00:00:00.000Z' }),
+    rec('blb-new', {
+      title: 'payload',
+      created_at: '2026-03-01T00:00:00.000Z',
+      body: '{ "quench_ms": 1.9 }',
+    }),
+    cit('cit-v1', 'blb-v1', {}, { superseded_by: ['cit-v2'] }),
+    cit(
+      'cit-v2',
+      'blb-v2',
+      { created_at: '2026-04-01T00:00:00.000Z' },
+      { supersedes: ['cit-v1'] }
+    ),
+    rec('blb-v1', { title: 'payload', body: '{ "quench_ms": 5.5 }' }),
+    rec('blb-v2', {
+      title: 'payload',
+      created_at: '2026-04-01T00:00:00.000Z',
+      body: '{ "quench": "see v2" }',
+    }),
+  ]);
+  const findings = { effort: 'eff-a', kinds: ['finding' as PrimitiveKind] };
+  // The retracted Citation and the superseded one are not quoted.
+  const now = findRecords(index, 'kiln firing quench', findings);
+  t.is(now.hits[0].attached?.id, 'blb-new');
+  // Before cit-new was written, cit-v1 was still the newest version.
+  const then = findRecords(index, 'kiln firing quench', {
+    ...findings,
+    asOf: '2026-02-01',
+  });
+  t.is(then.hits[0].attached?.id, 'blb-v1');
+  // With retracted records let in, a retracted source is marked.
+  const index2 = buildFindIndex(
+    [...index.records.values()].filter(
+      (record) => !['cit-new', 'cit-v1', 'cit-v2'].includes(record.id)
+    )
+  );
+  const hidden = findRecords(index2, 'kiln firing quench', findings);
+  t.is(hidden.hits[0].attached, undefined);
+  t.deepEqual(hidden.missing, ['quench']);
+  const shown = findRecords(index2, 'kiln firing quench', {
+    ...findings,
+    retracted: 'include',
+  });
+  t.is(shown.hits[0].attached?.retracted, true);
+  t.regex(renderFindCards(index2, shown), /blob blb-old \(retracted\): /);
+});
+
+test('a Blob quoted on one card is not quoted again on a later card', (t) => {
+  const index = buildFindIndex([
+    rec('eff-a'),
+    ...['fnd-a', 'fnd-b'].map((id) =>
+      rec(id, {
+        title: `Kiln firing ${id}`,
+        body: 'See the capture.',
+        relations: { cites: ['cit-cap'] },
+      })
+    ),
+    {
+      ...rec('cit-cap'),
+      frontmatter: { ...rec('cit-cap').frontmatter, blob: 'blb-cap' },
+    },
+    rec('blb-cap', { body: '{ "quench_ms": 1.9 }' }),
+  ]);
+  const result = findRecords(index, 'kiln firing quench', {
+    effort: 'eff-a',
+    kinds: ['finding'],
+  });
+  t.deepEqual(
+    result.hits.map((hit) => hit.attached?.id),
+    ['blb-cap', undefined]
+  );
+  t.deepEqual(result.missing, []);
+});
+
+test('a passage finishes a short word after its last match, not a long token', (t) => {
+  const short = bestSnippet(
+    `kiln ${'a'.repeat(148)} ridge 42 tail`,
+    new Set(['kiln', 'ridg'])
+  );
+  t.regex(short.text, /ridge 42/);
+  const token = bestSnippet(
+    `kiln ridge ${'x'.repeat(3000)} tail`,
+    new Set(['kiln', 'ridg'])
+  );
+  t.true(token.end - token.start <= 160, `${token.end - token.start}`);
+  const rules = bestSnippet(
+    `kiln ridge ${'| --- | --- | '.repeat(100)}zeta`,
+    new Set(['kiln', 'ridg'])
+  );
+  t.true(rules.end - rules.start <= 160, `${rules.end - rules.start}`);
+});
+
+test('the best passage comes first, even when the second sits earlier', (t) => {
+  const filler = 'Nothing else to note in this sentence. '.repeat(8);
+  const body = `The ridge vent closes at noon. ${filler}The kiln and the glaze fire at dawn.`;
+  const index = buildFindIndex([
+    rec('eff-a'),
+    rec('fnd-two', { title: 'Notes', body }),
+  ]);
+  const [hit] = findRecords(index, 'kiln glaze ridge', {
+    effort: 'eff-a',
+  }).hits;
+  t.is(hit.passages.length, 2);
+  t.regex(hit.passages[0].text, /kiln and the glaze/);
+  t.regex(hit.passages[1].text, /ridge vent/);
+  t.true(hit.passages[1].end <= hit.passages[0].start);
+});
+
+test('reverse links list verdicts before derived records', (t) => {
+  const index = buildFindIndex([
+    rec('eff-a'),
+    rec('dec-pick', { title: 'Pick the yak kiln', state: 'accepted' }),
+    ...[1, 2, 3, 4].map((n) =>
+      rec(`fnd-use-${n}`, { relations: { derives_from: ['dec-pick'] } })
+    ),
+    ...[1, 2].map((n) =>
+      rec(`dec-alt-${n}`, {
+        state: 'rejected',
+        relations: { rejected_by: ['dec-pick'] },
+      })
+    ),
+  ]);
+  const result = findRecords(index, 'yak kiln', { effort: 'eff-a' });
+  t.deepEqual(
+    result.hits[0].inbound.map((link) => link.relation),
+    ['rejects', 'derived_by']
+  );
+  t.regex(
+    renderFindCards(index, result),
+    /in: rejects dec-alt-1 [^;]*dec-alt-2 [^;]*; derived_by /
+  );
+});
+
+test('quoting a second passage never pushes out a chain or a link', (t) => {
+  const ids = [1, 2, 3, 4, 5, 6].map((n) => `dec-c${n}`);
+  const records: ReadRecord[] = [rec('eff-a')];
+  for (let h = 0; h < 5; h++)
+    ids.forEach((id, i) =>
+      records.push(
+        rec(`${id}-${h}`, {
+          title: `Kiln schedule ${h} version ${i} with a long enough title`,
+          body: `The kiln schedule fires at dawn. ${'Filler words here. '.repeat(
+            20
+          )}The ridge vent opens at noon.`,
+          created_at: `2026-0${i + 1}-01T00:00:00.000Z`,
+          relations: {
+            ...(i ? { supersedes: [`${ids[i - 1]}-${h}`] } : {}),
+            ...(i < 5 ? { superseded_by: [`${ids[i + 1]}-${h}`] } : {}),
+            derives_from: [`fnd-base-${h}`],
+          },
+        })
+      )
+    );
+  for (let h = 0; h < 5; h++) records.push(rec(`fnd-base-${h}`));
+  const index = buildFindIndex(records);
+  const frame = (query: string) =>
+    renderFindCards(index, findRecords(index, query, { effort: 'eff-a' }))
+      .split('\n')
+      .filter((line) => /^ {3}(chain|out|in):/.test(line));
+  const one = frame('kiln schedule');
+  const two = frame('kiln schedule ridge');
+  t.true(
+    renderFindCards(
+      index,
+      findRecords(index, 'kiln schedule ridge', { effort: 'eff-a' })
+    ).includes('The ridge vent opens at noon.')
+  );
+  t.deepEqual(two, one);
 });
