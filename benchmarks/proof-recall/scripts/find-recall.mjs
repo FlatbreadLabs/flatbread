@@ -80,7 +80,7 @@ import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { MULTI_EFFORT_SETS, pickQuestions } from './check.mjs';
+import { MULTI_EFFORT_SETS, RUNS_DIR, pickQuestions } from './check.mjs';
 import { findHash } from './collect.mjs';
 import { loadGraph, qualify } from './graph.mjs';
 import { prepareFolder } from './prepare-run.mjs';
@@ -111,7 +111,7 @@ function args(argv) {
     graph: join(BENCH, '.flatbread-proof'),
     ids: [],
     only: [],
-    out: join(BENCH, 'runs', 'find-recall.json'),
+    out: join(RUNS_DIR, 'find-recall.json'),
     jobs: 8,
     split: 'all',
   };
