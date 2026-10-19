@@ -11,7 +11,7 @@ Generated as `<prefix>-<slug>--<16-char-crockford>` with prefixes `eff`,
 identity. Let the writer generate ids; capture them from mutation results
 (`artifacts[0].id` for creates).
 
-## The 17 mutations (`flatbread proof write '<json>'`)
+## The 18 mutations (`flatbread proof write '<json>'`)
 
 Common optional fields on all creates: `id`, `created_at` (ISO with offset),
 `produced_in`, `created_by` (opaque provenance strings). Forward edge fields
@@ -52,6 +52,48 @@ Initial states: Issue `status: open`; Decision `state: proposed`; Risk
 A Citation body alone is valid (commonly a URL). `blob` is optional; use it
 only when you need to attach stored content such as a document or JSON. When
 provided, `blob` must be the id of a Blob in the same Effort as the Citation.
+
+### Compaction
+
+```json
+{
+  "type": "WriteCompaction",
+  "effort": "<eff-id>",
+  "title": "...",
+  "body": "...",
+  "derives_from": ["<id>"],
+  "cites": ["<cit-id>"]
+}
+```
+
+A compaction is a Finding with `kind: compaction`: one short, current account
+of where an Effort stands. Only `WriteCompaction` creates one; `WriteFinding`
+rejects `kind: compaction`. The writer does two things the payload cannot:
+
+- It stores `covers`, a sorted list of `<id>@<standing>` entries for every
+  live Issue, Finding, Decision, Constraint, and Risk in the Effort, plus each
+  `derives_from` target. A standing is a Decision's or Risk's `state`, an
+  Issue's `status`, or `live` for a Finding or Constraint. `retracted`,
+  `superseded`, and `invalidated` take precedence over all of these. Live means
+  an open Issue, a proposed or accepted Decision, an open or realized Risk,
+  or a Finding or Constraint that nothing has superseded or invalidated.
+  Compactions are never live records.
+- It sets `supersedes` to every head compaction (a live compaction that
+  nothing supersedes) and adds the new id to each head's `superseded_by`. A
+  Git merge can bring in two heads, one from each branch; the next
+  `WriteCompaction` supersedes both.
+
+The payload rejects `supersedes`, `invalidates`, `covers`, and `kind`.
+`derives_from` holds at most 10 ids from the same Effort: the records the
+body's sentences rest on. None may be another compaction; compactions link to
+earlier compactions only through `supersedes`. `Supersede` can neither start
+from nor target a compaction, and a compaction cannot `Invalidate` anything.
+A Finding may `Invalidate` a compaction that was wrong.
+
+Write the body from the live records, never from the previous compaction, and
+make it complete on its own. To correct a compaction, write a new one. Edit
+its body by hand only to fix wording, or while the branch is unmerged: a hand
+edit cannot update `covers` and does not advance `generation`.
 
 ### Add links between existing records
 
@@ -109,7 +151,10 @@ written. It is not a hard delete and not a fold into a survivor:
   and strips its id from every other record across all Efforts in the same
   journal transaction.
 - Browse reads (`list`, `records`, `blocking-decisions`) omit retracted
-  records. `proof get` still returns them. `relations` follows stored edges
+  records. `proof get` still returns them, and `records --retracted include|only` lists them on request. Every digest marks a retracted
+  record: its index line ends in `(retracted)`, a **RETRACTED** banner with
+  the date and reason sits under its heading, and the envelope summary
+  counts `retracted N`. `relations` follows stored edges
   that remain; after a successful Retract, survivors should have none.
 - Efforts cannot be retracted. Set status to `abandoned` instead.
 - Later creates, `Supersede`, `Invalidate`, and lifecycle mutations reject
@@ -137,7 +182,7 @@ survivor (score 4/4 if it adds claims) plus `Retract` on the rest.
 
 `generation` is a durable, monotonic journal token — the input to strict reads.
 
-## The 5 read queries
+## The 6 read queries
 
 All reads execute through Flatbread's query engine (in-process GraphQL over
 the generated schema) and return a `ReadEnvelope`:
@@ -162,6 +207,8 @@ lists), one-hop related records, and an edge table. Body policy:
 
 - **`proof get`:** full record body (the normal zoom-in path), including
   Blob payloads and Citation bodies (URLs / short notes).
+- **`proof brief`:** full body of the head compaction only. Every other
+  record appears as one line.
 - **`list` / `records` / `relations` / `blocking-decisions`:** body excerpt
   capped at 600 chars / 12 lines (`[…truncated]`). **Blob bodies are omitted**
   from these digests — use `proof get` for the payload. Citation bodies
@@ -196,11 +243,22 @@ digest or `summary` as a data feed.
 ```bash
 flatbread proof get <id> [--resolve exact|head] [consistency flags]
 flatbread proof list [--status active,paused,...] [--limit n] [--cursor c] [consistency flags]
-flatbread proof records <effortId> [--kinds k1,k2] [--state s1,s2] [--status s1,s2] [--kind k1,k2] [--since iso] [--until iso] [--limit n] [--cursor c] [consistency flags]
+flatbread proof records <effortId> [--kinds k1,k2] [--state s1,s2] [--status s1,s2] [--kind k1,k2] [--since iso] [--until iso] [--retracted exclude|include|only] [--limit n] [--cursor c] [consistency flags]
 flatbread proof relations <effortId> <fromId> --relations r1,r2 [--limit n] [--cursor c] [consistency flags]
 flatbread proof blocking-decisions <effortId> [consistency flags]
+flatbread proof brief <effortId> [consistency flags]
 flatbread proof cache prune
+flatbread proof serve [--socket .flatbread/proof/serve.sock]
 ```
+
+- `proof serve` keeps the graph loaded in one process and answers the six
+  reads above (`list`, `records`, `get`, `relations`, `blocking-decisions`,
+  `brief`); it serves nothing that writes. Set `FLATBREAD_PROOF_SERVER` to its
+  socket and those read commands go to it, in any folder whose graph root
+  resolves to the same files. Each later read then takes a fraction of a
+  second instead of rebuilding the graph. A write bumps the journal
+  generation, and the next served read rebuilds from disk. If the socket is
+  unreachable, reads run locally as before.
 
 - `--kinds`: `effort|issue|finding|decision|constraint|risk|citation|blob`.
   `records` includes every non-Effort kind except Blob by default. Add
@@ -232,6 +290,20 @@ flatbread proof cache prune
   same effort with `kind: blocker` and `status: open`. For "what blockers
   are open at all", use
   `records <effortId> --kinds issue --kind blocker --status open`.
+- `brief`: where an Effort stands. The digest holds the head compaction with
+  its full body, then up to 5 older compactions as one-line
+  `## Lineage checkpoints`, then `## Changes since compaction`: one line per
+  record that was `added` to the live set, `changed` standing, or `left` it
+  since `covers` was taken, written as
+  `- <change> | <id> | <kind> | <before> -> <now> | <title>`.
+  `## Stale derivations` lists `derives_from` targets whose standing moved.
+  With no compaction yet, `## Live records (no compaction yet)` lists every
+  live record instead. Digests never print `covers`. The envelope adds
+  `compaction`: `{"head_id","heads","stale","changes","recompact"}`.
+  `stale` is true when a `derives_from` target moved or a Finding invalidated
+  the head. `recompact` is true when there is no head, more than one head, a
+  stale head, or at least 5 changes. Programs read these fields, not the
+  digest.
 
 ### Consistency flags
 

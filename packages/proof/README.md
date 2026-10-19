@@ -146,14 +146,16 @@ An agent resuming work follows the same bounded loop each time.
    `flatbread proof records <effortId> --kinds issue,decision --limit 10`
    summarizes its state, and
    `flatbread proof blocking-decisions <effortId>` narrows to proposed
-   Decisions that derive from open blocker Issues.
+   Decisions that derive from open blocker Issues. When an Effort has a
+   compaction, `flatbread proof brief <effortId>` gives its current account
+   and every record that changed since, in one digest.
 2. **Zoom in only when needed.** Browse digests excerpt record bodies. Read
    one full body with `flatbread proof get <id>`, or follow a superseded
    record to its current head with `flatbread proof get <id> --resolve head`.
    Reads cap at 25 primary records, one relation hop, 50 displayed edges,
    and a 64 KiB digest; check `complete`, `page.has_more`, and `cap_reasons`
    in the envelope before treating a digest as the whole story.
-3. **Write only durable knowledge.** All 17 typed mutations go through one
+3. **Write only durable knowledge.** All 18 typed mutations go through one
    command: `flatbread proof write '<json>'`. Before a create or a body edit
    adds a claim, the packaged skill applies a four-part gate — future need,
    durable effect, causal value, and unique signal — and writes only when
@@ -164,7 +166,11 @@ An agent resuming work follows the same bounded loop each time.
    `--strict-min-generation <generation>` to get data at or after that
    generation; Proof waits up to 3000 ms by default, then fails with
    `PROOF_GENERATION_WAIT_TIMEOUT`. Do not build a polling loop.
-5. **Close the loop.** Use lifecycle mutations when the team commits to a
+5. **Compact when `brief` asks.** When `brief` reports
+   `compaction.recompact: true`, write a fresh account of the Effort with
+   `WriteCompaction`. The writer records which records were live and
+   supersedes the previous compaction, so older accounts stay one read away.
+6. **Close the loop.** Use lifecycle mutations when the team commits to a
    choice or resolves an Issue. `AcceptDecision` rejects only proposed
    Decisions tied to the same `question` Issue, even after it closes. Pass `rejects` to name
    other alternatives and `dryRun: true` to preview the changes. Its result
@@ -229,12 +235,13 @@ service; your normal Git workflow decides when records are shared.
 | Read one full record          | `flatbread proof get <id>`                                          |
 | Follow selected links         | `flatbread proof relations <effortId> <fromId> --relations <names>` |
 | Find choices tied to blockers | `flatbread proof blocking-decisions <effortId>`                     |
+| See where an Effort stands    | `flatbread proof brief <effortId>`                                  |
 | Apply a typed mutation        | `flatbread proof write '<json>'`                                    |
 | Prune old derived digests     | `flatbread proof cache prune`                                       |
 
 Every command prints one JSON object to standard output; errors print JSON
 to standard error and exit with status 1. The
-[full API reference](./skills/proof/reference.md) lists all 17 mutations,
+[full API reference](./skills/proof/reference.md) lists all 18 mutations,
 read flags, lifecycle states, relation names, paging rules, and error codes.
 
 ## Optional explorer

@@ -8,6 +8,7 @@ import orchestrateProcesses from './runner';
 import initConfig from './initConfig';
 import { createCodegenCommand } from '@flatbread/codegen';
 import { registerProofCommands } from './proof';
+import { registerProofServe } from './serve';
 import {
   EXPLORER_ENDPOINT,
   GRAPHQL_ENDPOINT,
@@ -138,6 +139,7 @@ prog
   });
 
 registerProofCommands(prog);
+registerProofServe(prog);
 
 prog.parse(process.argv, { unknown: (arg) => `Unknown option: ${arg}` });
 

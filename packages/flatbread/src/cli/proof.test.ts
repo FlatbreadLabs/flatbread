@@ -27,6 +27,7 @@ import {
   handleEffortGet,
   handleEffortList,
   handleEffortRecords,
+  handleEffortBrief,
   handleEffortRelations,
   handleEffortWrite,
   inspectEffortBootstrap,
@@ -1367,7 +1368,7 @@ export default { source: source(), transformer: transformer(), content: proofCon
 );
 
 test.serial(
-  'Retract drops a record from browse reads and keeps get',
+  'Retract hides a record from default browse reads, keeps get, and lists it, marked, on request',
   async (t) => {
     const cwd = await createTempProject('flatbread-effort-retract-', t);
     for (const directory of [
@@ -1446,6 +1447,41 @@ export default {
     const gotDigest = await readFile(got.artifact_path, 'utf8');
     t.true(gotDigest.includes('retracted: true'));
     t.true(gotDigest.includes('temporary review note'));
+    t.true(gotDigest.includes('> **RETRACTED** on '));
+    t.true(gotDigest.includes(': session noise; not a turning point.'));
+    // Retracted records can be listed on request, always marked as such.
+    const only = await handleEffortRecords(effortId, {
+      cwd,
+      kinds: ['finding', 'decision'],
+      retracted: 'only',
+      strictMinGeneration: retracted.generation,
+    });
+    const onlyDigest = await readFile(only.artifact_path, 'utf8');
+    t.is(only.page.returned, 1);
+    t.regex(only.summary, /retracted 1/);
+    t.true(
+      onlyDigest.includes(`- [\`${findingId}\`](#${findingId}) (retracted)`)
+    );
+    t.true(onlyDigest.includes('This record is not live.'));
+    t.false(onlyDigest.includes(decisionId));
+    const both = await handleEffortRecords(effortId, {
+      cwd,
+      kinds: ['finding', 'decision'],
+      retracted: 'include',
+      strictMinGeneration: retracted.generation,
+    });
+    const bothDigest = await readFile(both.artifact_path, 'utf8');
+    t.is(both.page.returned, 2);
+    t.true(bothDigest.includes(`- [\`${decisionId}\`](#${decisionId})\n`));
+    t.is(bothDigest.split('> **RETRACTED**').length - 1, 1);
+    t.not(both.artifact_path, listed.artifact_path);
+    await t.throwsAsync(
+      handleEffortRecords(effortId, {
+        cwd,
+        retracted: 'hidden' as never,
+      }),
+      { message: /Invalid retracted mode: hidden/ }
+    );
     const neighbors = await handleEffortRelations(effortId, decisionId, {
       cwd,
       relations: ['derives_from'],
@@ -1530,5 +1566,151 @@ export default { source: source(), transformer: transformer(), content: proofCon
     t.regex(reopenedText, /reopen_history:/);
     t.regex(reopenedText, /Wrong choice/);
     t.true(reopenedText.includes(id));
+  }
+);
+
+test.serial(
+  'brief reports the head compaction, its changes, and staleness',
+  async (t) => {
+    const cwd = await createTempProject('flatbread-effort-brief-', t);
+    await writeFile(
+      join(cwd, 'flatbread.config.js'),
+      `import { source } from '@flatbread/source-filesystem';
+import { transformer } from '@flatbread/transformer-markdown';
+import { proofContent } from '@flatbread/proof';
+export default {
+  source: source(),
+  transformer: transformer(),
+  content: proofContent('.flatbread-proof'),
+};`
+    );
+    const write = async (payload: Record<string, unknown>) =>
+      handleEffortWrite(JSON.stringify(payload), { cwd });
+    const effortId = (
+      await write({ type: 'CreateEffort', title: 'Brief', body: '' })
+    ).artifacts[0].id;
+    const decisionId = (
+      await write({
+        type: 'WriteDecision',
+        effort: effortId,
+        title: 'Pick the index',
+        body: 'Use the sorted index.',
+      })
+    ).artifacts[0].id;
+
+    const empty = await handleEffortBrief(effortId, { cwd });
+    t.deepEqual(empty.compaction, {
+      head_id: null,
+      heads: 0,
+      stale: false,
+      changes: 1,
+      recompact: true,
+    });
+
+    const citationId = (
+      await write({
+        type: 'WriteCitation',
+        effort: effortId,
+        title: 'Index benchmark',
+        body: 'https://example.com/benchmark',
+      })
+    ).artifacts[0].id;
+    const first = await write({
+      type: 'WriteCompaction',
+      effort: effortId,
+      title: 'Index choice pending',
+      body: 'One proposed Decision: the sorted index.',
+      // A Citation is never live, so it must not read as a moved target.
+      derives_from: [decisionId, citationId],
+    });
+    const firstId = first.artifacts[0].id;
+    const fresh = await handleEffortBrief(effortId, {
+      cwd,
+      strictMinGeneration: first.generation,
+    });
+    t.deepEqual(fresh.compaction, {
+      head_id: firstId,
+      heads: 1,
+      stale: false,
+      changes: 0,
+      recompact: false,
+    });
+    const freshDigest = await readFile(fresh.artifact_path, 'utf8');
+    t.true(freshDigest.includes('One proposed Decision: the sorted index.'));
+    t.false(freshDigest.includes('covers'));
+
+    const accepted = await write({
+      type: 'AcceptDecision',
+      decisionId,
+    });
+    const stale = await handleEffortBrief(effortId, {
+      cwd,
+      strictMinGeneration: accepted.generation,
+    });
+    t.like(stale.compaction, { head_id: firstId, stale: true, changes: 1 });
+    t.true(stale.compaction?.recompact);
+    const staleDigest = await readFile(stale.artifact_path, 'utf8');
+    t.true(
+      staleDigest.includes(
+        `- changed | ${decisionId} | decision | proposed -> accepted | Pick the index`
+      )
+    );
+    t.true(staleDigest.includes('## Stale derivations'));
+
+    const second = await write({
+      type: 'WriteCompaction',
+      effort: effortId,
+      title: 'Index chosen',
+      body: 'Accepted: the sorted index.',
+      derives_from: [decisionId],
+    });
+    const secondId = second.artifacts[0].id;
+    t.deepEqual(
+      second.touched.map((touched) => touched.id).sort(),
+      [firstId, secondId].sort()
+    );
+    const result = await runCli(
+      cwd,
+      'proof',
+      'brief',
+      effortId,
+      '--strict-min-generation',
+      second.generation
+    );
+    t.is(result.code, 0, result.stderr);
+    const renewed = JSON.parse(result.stdout);
+    t.like(renewed.compaction, {
+      head_id: secondId,
+      heads: 1,
+      stale: false,
+      changes: 0,
+      recompact: false,
+    });
+    const renewedDigest = await readFile(renewed.artifact_path, 'utf8');
+    t.true(renewedDigest.includes('## Lineage checkpoints'));
+    t.true(renewedDigest.includes(`${firstId} | Index choice pending`));
+    t.false(renewedDigest.includes('One proposed Decision'));
+
+    const head = await handleEffortGet(firstId, {
+      cwd,
+      resolve: 'head',
+      strictMinGeneration: second.generation,
+    });
+    t.true(
+      (await readFile(head.artifact_path, 'utf8')).includes(
+        'Accepted: the sorted index.'
+      )
+    );
+
+    await t.throwsAsync(
+      write({
+        type: 'WriteFinding',
+        effort: effortId,
+        title: 'Hand-made',
+        body: '',
+        kind: 'compaction',
+      }),
+      { message: /WriteCompaction/ }
+    );
   }
 );

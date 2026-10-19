@@ -34,6 +34,13 @@ const validMutations: Record<string, Record<string, unknown>> = {
     kind: 'measurement',
     supersedes: [fnd],
   },
+  WriteCompaction: {
+    type: 'WriteCompaction',
+    effort: eff,
+    title: 'Where the work stands',
+    body: 'b',
+    derives_from: [dec],
+  },
   WriteDecision: {
     type: 'WriteDecision',
     effort: eff,
@@ -98,9 +105,9 @@ const validMutations: Record<string, Record<string, unknown>> = {
   },
 };
 
-test('each of the 17 mutation schemas accepts a valid input', (t) => {
+test('each of the 18 mutation schemas accepts a valid input', (t) => {
   const types = Object.keys(validMutations);
-  t.is(types.length, 17);
+  t.is(types.length, 18);
   for (const type of types) {
     t.notThrows(() => ProofMutationSchema.parse(validMutations[type]), type);
   }
@@ -279,4 +286,32 @@ test('serialized documents round-trip through @flatbread/transformer-markdown pa
   t.deepEqual(node.supersedes, [`dec-older--${suffix}`]);
   t.is(node.hand_authored, 'still here');
   t.is((node._content as { raw: string }).raw.trim(), body.trim());
+});
+
+test('WriteCompaction rejects writer-owned fields and long derives_from', (t) => {
+  for (const extra of [
+    { supersedes: [fnd] },
+    { invalidates: [fnd] },
+    { covers: [`${dec}@accepted`] },
+    { kind: 'compaction' },
+  ])
+    t.throws(() =>
+      ProofMutationSchema.parse({ ...validMutations.WriteCompaction, ...extra })
+    );
+  const derives_from = Array.from(
+    { length: 11 },
+    (_, index) => `dec-choice-${index}--${suffix}`
+  );
+  t.throws(() =>
+    ProofMutationSchema.parse({
+      ...validMutations.WriteCompaction,
+      derives_from,
+    })
+  );
+  t.notThrows(() =>
+    ProofMutationSchema.parse({
+      ...validMutations.WriteCompaction,
+      derives_from: derives_from.slice(0, 10),
+    })
+  );
 });

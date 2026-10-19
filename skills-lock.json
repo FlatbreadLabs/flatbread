@@ -7,6 +7,12 @@
       "skillPath": "skills/agent-browser/SKILL.md",
       "computedHash": "c19a532a3777698b80b35270939a1dc559da451381971b3e1e78174d1ab54863"
     },
+    "gh-stack": {
+      "source": "github/gh-stack",
+      "sourceType": "github",
+      "skillPath": "skills/gh-stack/SKILL.md",
+      "computedHash": "6a5289601eedbeedc2d79c2d8627277afb9b9a3fbd78b4da3399a46dd788ae0a"
+    },
     "mergify-ci": {
       "source": "Mergifyio/mergify-cli",
       "sourceType": "github",
@@ -30,12 +36,6 @@
       "sourceType": "github",
       "skillPath": "skills/mergify-merge-queue/SKILL.md",
       "computedHash": "d9d872f9c44842f890d03579e80d3dab99ce312467a6e988a5d2488cf407f344"
-    },
-    "mergify-stack": {
-      "source": "Mergifyio/mergify-cli",
-      "sourceType": "github",
-      "skillPath": "skills/mergify-stack/SKILL.md",
-      "computedHash": "425f34041a676c1559f0da81f0953aa1c6b7446349a0a89d821db58d2bba6928"
     }
   }
 }

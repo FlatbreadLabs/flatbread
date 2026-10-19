@@ -30,6 +30,13 @@ Findings cite evidence, resolve Issues, inform Decisions, surface Risks, and
 may invalidate past Findings or Decisions. A retrospective Finding is evidence
 gathered after a decision shipped.
 
+A **compaction** is a Finding with `kind: compaction`, written only through
+`WriteCompaction`. It gives one short, current account of an Effort and links
+to the records behind it through `derives_from`. Its `covers` field, set by
+the writer, records which records were live and where each stood, so a later
+read can list exactly what changed. Each compaction supersedes the one before
+it.
+
 ### Decision
 
 A commitment among alternatives. A proposed Decision is an active alternative;
@@ -87,8 +94,9 @@ express.
 on disk with `retracted: true` so ids remain resolvable and
 `PROOF_DANGLING_RELATION` does not fire. The writer strips inbound relation
 ids across every Effort in one transaction, including foreign `derives_from`
-references. Browse reads omit retracted records. `proof get` still returns
-the body and the reason. This is not
+references. Browse reads omit retracted records unless asked:
+`proof records --retracted only` lists them, each marked as retracted.
+`proof get` still returns the body and the reason. This is not
 supersession (a better same-kind claim) and not invalidation (a Finding that
 the target was wrong). Git is the undo path for Retract; `ReopenDecision` only returns a rejected
 Decision to proposed. There is no generic Restore mutation.

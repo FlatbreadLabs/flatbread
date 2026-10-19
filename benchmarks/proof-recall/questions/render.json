@@ -1,0 +1,2296 @@
+{
+  "effort": "render",
+  "questions": [
+    {
+      "id": "render-001",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["lookup", "current-state"],
+      "question": "How many milliseconds of each frame do Lantern's GPU passes get in the Meridian 120 Hz performance mode?",
+      "answer": {
+        "kind": "value",
+        "value": "7.4",
+        "accept": ["7.4 ms"]
+      },
+      "evidence": ["con-120-2"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "con-120-2",
+          "includes": "Lantern GPU passes get 7.4 ms",
+          "expect": true
+        }
+      ],
+      "traps": ["8.3 ms is the whole 120 Hz frame, not the GPU share."]
+    },
+    {
+      "id": "render-002",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["lookup"],
+      "question": "What average quad overdraw did the forward+ capture of the cliffs benchmark show?",
+      "answer": {
+        "kind": "value",
+        "value": "3.4x",
+        "accept": ["3.4", "3.4 times"]
+      },
+      "evidence": ["fnd-fplus-overdraw"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-fplus-overdraw",
+          "includes": "Quad overdraw averages 3.4x",
+          "expect": true
+        }
+      ],
+      "traps": ["7.9 ms is the shading time, not the overdraw."]
+    },
+    {
+      "id": "render-003",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["lookup", "rejected-alternative"],
+      "question": "Who proposed keeping clustered forward+ and tuning light culling instead of a visibility buffer?",
+      "answer": {
+        "kind": "value",
+        "value": "Tomasz Brandt"
+      },
+      "evidence": ["dec-fplus-tune"],
+      "checks": [
+        {
+          "type": "field",
+          "record": "dec-fplus-tune",
+          "field": "created_by"
+        }
+      ],
+      "traps": [
+        "Ines Okafor wrote the winning visibility buffer Decision; Yusuf Demir proposed the G-buffer."
+      ]
+    },
+    {
+      "id": "render-004",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["current-state", "reopened"],
+      "question": "What state is the Decision to ship the Halcyon vendor upscaler on PC and Meridian in now?",
+      "answer": {
+        "kind": "value",
+        "value": "rejected"
+      },
+      "evidence": ["dec-vendor"],
+      "checks": [
+        {
+          "type": "field",
+          "record": "dec-vendor",
+          "field": "standing"
+        }
+      ],
+      "traps": [
+        "It was reopened in April 2026, so a reader who stops at the reopen history answers proposed."
+      ]
+    },
+    {
+      "id": "render-005",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["lifecycle", "blocker"],
+      "question": "Is the blocker about shadow pages running out at spring low tide still open?",
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "evidence": ["iss-vsm-tide"],
+      "checks": [
+        {
+          "type": "field",
+          "record": "iss-vsm-tide",
+          "field": "status",
+          "expect": "open"
+        }
+      ],
+      "traps": [
+        "The overflow Risk was set to realized, which a reader may confuse with the blocker being closed."
+      ]
+    },
+    {
+      "id": "render-006",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["negative"],
+      "question": "What did the team measure as the cost of the Halcyon vendor upscaler on Skiff?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": ["fnd-halcyon-eval"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-halcyon-eval",
+          "includes": "there is no Skiff build",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "1.2 ms is the Meridian cost at 4K. Halcyon has no Skiff build, so nobody measured it there."
+      ]
+    },
+    {
+      "id": "render-007",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "On what date is the Skiff forward+ path to be deleted from the codebase?",
+      "answer": {
+        "kind": "value",
+        "value": "2026-07-24",
+        "accept": ["July 24, 2026", "24 July 2026"]
+      },
+      "evidence": ["dec-vb-6"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "dec-vb-6",
+          "includes": "deleted from the codebase on 2026-07-24",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The date sits past the browse excerpt; a reader who does not open the record says unknown."
+      ]
+    },
+    {
+      "id": "render-008",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "How many times may the game fail the Meridian HDR certification pass in one release candidate before the whole submission goes back for a full re-review?",
+      "answer": {
+        "kind": "value",
+        "value": "2",
+        "accept": ["two", "twice", "at most twice"]
+      },
+      "evidence": ["con-hdr-cert"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "con-hdr-cert",
+          "includes": "at most twice per release candidate",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The limit sits past the browse excerpt of the certification Constraint."
+      ]
+    },
+    {
+      "id": "render-009",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "current-state"],
+      "question": "At how many steps is the ray-marched fallback capped in the refraction Decision now in force?",
+      "answer": {
+        "kind": "value",
+        "value": "32",
+        "accept": ["32 steps"]
+      },
+      "evidence": ["dec-refr-hybrid"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "dec-refr-hybrid",
+          "includes": "capped at 32 steps",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "64 steps is what the October cost Finding and the rejected full ray-march used."
+      ]
+    },
+    {
+      "id": "render-010",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["negative", "distractor", "retraction"],
+      "question": "What frame budget does the render Effort set for the Skiff 40 Hz mode?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": ["con-budget-3", "con-budget-noise"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "con-budget-3",
+          "includes": "Skiff budgets belong to the ports Effort",
+          "expect": true
+        },
+        {
+          "type": "field",
+          "record": "con-budget-noise",
+          "field": "standing",
+          "expect": "retracted"
+        }
+      ],
+      "traps": [
+        "A retracted Constraint titled Frame budget says 25 ms; it was written to this Effort by mistake.",
+        "The ports Effort has its own Frame budget; this Effort does not own Skiff numbers."
+      ]
+    },
+    {
+      "id": "render-011",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["retraction", "distractor"],
+      "question": "Two Findings report an SDF GI cost on Meridian under 3 ms. Which one was retracted as noise?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-gi-sdf-cost-noise"
+      },
+      "evidence": ["fnd-gi-sdf-cost-noise", "fnd-gi-sdf-cost"],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "retracted": "only"
+        }
+      ],
+      "traps": ["The 2.2 ms Finding was invalidated, not retracted."],
+      "scoped": true
+    },
+    {
+      "id": "render-012",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["lifecycle"],
+      "question": "How was the gap about missing Skiff GPU timings for Lantern passes closed: resolved, deferred, or wontfix?",
+      "answer": {
+        "kind": "value",
+        "value": "deferred"
+      },
+      "evidence": ["iss-gap-skiff-profiles"],
+      "checks": [
+        {
+          "type": "field",
+          "record": "iss-gap-skiff-profiles",
+          "field": "standing"
+        }
+      ],
+      "traps": [
+        "Skiff numbers did arrive in April, but the gap itself was closed as deferred."
+      ]
+    },
+    {
+      "id": "render-013",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "What precision does Tern's history buffer use?",
+      "answer": {
+        "kind": "value",
+        "value": "16-bit float",
+        "accept": ["FP16", "16-bit float per channel", "half float"]
+      },
+      "evidence": ["dec-tern"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "dec-tern",
+          "includes": "stored as 16-bit float per channel",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "FP16 packing of reprojection inputs is a different change, in a Tern cost Finding."
+      ]
+    },
+    {
+      "id": "render-014",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "invalidation"],
+      "question": "In the Finding that put SDF GI at 4.7 ms on Meridian, what L2 hit rate did the trace pass fall to on the devkit?",
+      "answer": {
+        "kind": "value",
+        "value": "52 percent",
+        "accept": ["52%", "52", "0.52"]
+      },
+      "evidence": ["fnd-gi-sdf-recapture"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-gi-sdf-recapture",
+          "includes": "to 52 percent on the devkit",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": ["81 percent is the rate in the October capture."]
+    },
+    {
+      "id": "render-015",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "With caustic photon jitter locked to the tide phase, for about how many minutes of each tide cycle does the caustic pattern freeze?",
+      "answer": {
+        "kind": "value",
+        "value": "4",
+        "accept": ["4 minutes", "about 4 minutes", "four"]
+      },
+      "evidence": ["fnd-caustic-seed-test"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-caustic-seed-test",
+          "includes": "freezes for about 4 minutes",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": ["40 minutes is the whole tide cycle."]
+    },
+    {
+      "id": "render-016",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "Beyond what distance does the sun virtual shadow map Decision stop allocating pages?",
+      "answer": {
+        "kind": "value",
+        "value": "1.2 km",
+        "accept": ["1.2 kilometres", "1.2 kilometers", "1200 m"]
+      },
+      "evidence": ["dec-vsm"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "dec-vsm",
+          "includes": "Beyond 1.2 km, VSM pages are not allocated",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": ["2 km is how far shadows must reach in total."]
+    },
+    {
+      "id": "render-017",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["negative"],
+      "question": "How much memory do the SDF GI volumes use on Skiff?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": ["fnd-sdf-memory"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-sdf-memory",
+          "includes": "410 MB of the 1.8 GB render-target budget",
+          "expect": true
+        }
+      ],
+      "traps": ["410 MB is the Meridian figure; no record measures Skiff."]
+    },
+    {
+      "id": "render-018",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["negative", "reopened"],
+      "question": "What did ray-traced sun shadows cost on Meridian?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": ["dec-rt-shadows"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "dec-rt-shadows",
+          "includes": "Skiff has no ray-tracing hardware",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "3.1 ms and 1.4 ms are virtual shadow map costs; 1.6 ms is the cascade cost. Nobody measured ray-traced shadows."
+      ]
+    },
+    {
+      "id": "render-019",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["supersession"],
+      "question": "Which Decision directly replaced the stock filmic tonemapping curve?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-brine-1"
+      },
+      "evidence": ["dec-filmic", "dec-brine-1"],
+      "path": [["dec-filmic", "superseded_by", "dec-brine-1"]],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-filmic",
+          "at": "2026-03-01T00:00:00Z"
+        }
+      ],
+      "traps": [
+        "The current head is the 800-nit version; the question asks for the direct replacement."
+      ]
+    },
+    {
+      "id": "render-020",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["invalidation"],
+      "question": "Which Finding showed that screen-space refraction on its own was wrong for saltglass?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-refr-offscreen"
+      },
+      "evidence": ["dec-refr-ss", "fnd-refr-offscreen"],
+      "path": [["dec-refr-ss", "invalidated_by", "fnd-refr-offscreen"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "bodyIncludes": "refracted rays leave the screen"
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-refr-ss", "invalidated_by", "fnd-refr-offscreen"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The halo Finding describes an artifact but did not invalidate the Decision."
+      ]
+    },
+    {
+      "id": "render-021",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["rejected-alternative"],
+      "question": "Which Decision rejected the proposal to move to a deferred G-buffer?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-vb-1"
+      },
+      "evidence": ["dec-deferred", "dec-vb-1"],
+      "path": [["dec-deferred", "rejected_by", "dec-vb-1"]],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-vb-6",
+          "at": "2025-10-05T00:00:00Z"
+        }
+      ],
+      "traps": [
+        "The current visibility buffer head is a much later version; the rejecter is the first one."
+      ]
+    },
+    {
+      "id": "render-022",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["reopened", "rejected-alternative"],
+      "question": "Before it was reopened, which Decision had rejected virtual shadow maps for the sun?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-csm"
+      },
+      "evidence": ["dec-vsm", "dec-csm"],
+      "path": [["dec-vsm", "reopen_history", "dec-csm"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "bodyIncludes": "four cascaded shadow maps out to 2 km"
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-vsm", "reopen_history", "dec-csm"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The reopened Decision has no live rejected_by link any more; the rejecter lives in its reopen history."
+      ]
+    },
+    {
+      "id": "render-023",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["lifecycle"],
+      "question": "What resolved the gap about missing automated GPU captures on nightly builds?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-nightly-capture"
+      },
+      "evidence": ["iss-gap-capture", "dec-nightly-capture"],
+      "path": [["iss-gap-capture", "resolved_by", "dec-nightly-capture"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "where": {
+            "created_by": "Liam O'Connell"
+          }
+        }
+      ],
+      "traps": [
+        "The Skiff timings gap is a different gap, closed as deferred."
+      ],
+      "scoped": true
+    },
+    {
+      "id": "render-024",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["lifecycle"],
+      "question": "Which Decision mitigates the risk that visibility buffer material resolve multiplies shader permutations?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-uber-resolve"
+      },
+      "evidence": ["rsk-shader-perm", "dec-uber-resolve"],
+      "path": [["rsk-shader-perm", "mitigated_by", "dec-uber-resolve"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "bodyIncludes": "one uber shader per tile class"
+        }
+      ],
+      "traps": [
+        "The compute-resolve visibility buffer version builds on the uber shader but is not the mitigation."
+      ]
+    },
+    {
+      "id": "render-025",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["temporal", "supersession"],
+      "question": "Tern's cost at 4K output on Meridian was measured in a chain of Findings, each replacing the one before. Which version of that measurement was current on alpha day, 2026-03-02?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-tern-cost-2"
+      },
+      "evidence": ["fnd-tern-cost-3", "fnd-tern-cost-2"],
+      "path": [["fnd-tern-cost-3", "supersedes", "fnd-tern-cost-2"]],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "fnd-tern-cost-1",
+          "at": "2026-03-02T23:59:00Z"
+        }
+      ],
+      "traps": [
+        "The 1.6 ms Finding is current today but was written in May 2026."
+      ]
+    },
+    {
+      "id": "render-026",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["rejected-alternative", "distractor"],
+      "question": "Two Decisions propose shipping four Tern quality presets. Which of them was rejected?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-presets-4"
+      },
+      "evidence": ["iss-presets-q", "dec-presets-4"],
+      "path": [["iss-presets-q", "supports", "dec-presets-4"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "iss-presets-q",
+          "where": {
+            "standing": "rejected"
+          }
+        }
+      ],
+      "traps": [
+        "The other four-preset Decision, adding Ultra Performance for 120 Hz mode, is accepted."
+      ]
+    },
+    {
+      "id": "render-027",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["temporal", "supersession"],
+      "question": "In the \"Lantern renderer overhaul\" Effort, which version of the Frame budget Constraint was current on alpha day, 2026-03-02?",
+      "answer": {
+        "kind": "record",
+        "value": "con-budget-2"
+      },
+      "evidence": ["con-budget-3", "con-budget-2"],
+      "path": [["con-budget-3", "supersedes", "con-budget-2"]],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "con-budget-1",
+          "at": "2026-03-02T23:59:00Z"
+        }
+      ],
+      "traps": ["The 15.0 ms version was written in April 2026."]
+    },
+    {
+      "id": "render-028",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["rejected-alternative"],
+      "question": "Which Decision rejected the proposal to keep CPU frustum culling with software occlusion?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-cull-gpu"
+      },
+      "evidence": ["dec-cull-cpu", "dec-cull-gpu"],
+      "path": [["dec-cull-cpu", "rejected_by", "dec-cull-gpu"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "iss-cull-q",
+          "where": {
+            "standing": "accepted"
+          }
+        }
+      ],
+      "traps": [
+        "The tide-hint Decision later patched GPU culling but rejected nothing."
+      ]
+    },
+    {
+      "id": "render-029",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["lifecycle"],
+      "question": "Which Finding is the evidence that the VSM page pool overflow Risk came true?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-vsm-overflow"
+      },
+      "evidence": ["rsk-vsm-overflow", "fnd-vsm-overflow"],
+      "path": [["rsk-vsm-overflow", "evidence", "fnd-vsm-overflow"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "derivesFrom": "rsk-vsm-overflow"
+        }
+      ],
+      "traps": [
+        "The spring-tide blocker derives from the evidence; it is an Issue, not the evidence."
+      ]
+    },
+    {
+      "id": "render-030",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["temporal", "invalidation"],
+      "question": "Which saltglass refraction Decision was the accepted one on the day of the vertical slice, 2025-12-15?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-refr-ss"
+      },
+      "evidence": ["dec-refr-hybrid", "dec-refr-ss"],
+      "path": [["dec-refr-hybrid", "supersedes", "dec-refr-ss"]],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-refr-ss",
+          "at": "2025-12-15T23:59:00Z"
+        }
+      ],
+      "traps": [
+        "The hybrid Decision came in January 2026.",
+        "The screen-space Decision had already been invalidated on 2025-12-04, but no replacement existed yet."
+      ]
+    },
+    {
+      "id": "render-031",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["rationale"],
+      "question": "Why did the third version of the visibility buffer Decision move foliage and saltglass out of the buffer?",
+      "answer": {
+        "kind": "text",
+        "rubric": [
+          ["alpha-test", "alpha test", "alpha-tested"],
+          ["2.1 ms"],
+          ["refract"]
+        ]
+      },
+      "evidence": ["dec-vb-3", "fnd-vb-foliage"],
+      "path": [["dec-vb-3", "derives_from", "fnd-vb-foliage"]],
+      "checks": [],
+      "traps": ["Meshlet alpha masks came later and moved foliage back."]
+    },
+    {
+      "id": "render-032",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["rationale", "rejected-alternative"],
+      "question": "Why did the team choose Tern over the Halcyon vendor upscaler?",
+      "answer": {
+        "kind": "text",
+        "rubric": [
+          ["Skiff"],
+          [
+            "one upscaler",
+            "one-upscaler",
+            "single upscaler",
+            "second upscaler"
+          ],
+          ["vendor ticket", "owning the code", "own the code", "license"]
+        ]
+      },
+      "evidence": ["iss-upscaler-q", "dec-tern"],
+      "path": [["iss-upscaler-q", "resolved_by", "dec-tern"]],
+      "checks": [],
+      "traps": ["Halcyon was cheaper on Meridian, so cost was not the reason."]
+    },
+    {
+      "id": "render-033",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["truncation", "lifecycle"],
+      "question": "The VSM page pool overflow Risk came true. According to its evidence, how much more memory would it cost to raise the pool to 6,144 pages?",
+      "answer": {
+        "kind": "value",
+        "value": "128 MB",
+        "accept": ["128", "128 megabytes"]
+      },
+      "evidence": ["rsk-vsm-overflow", "fnd-vsm-overflow"],
+      "path": [["rsk-vsm-overflow", "evidence", "fnd-vsm-overflow"]],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-vsm-overflow",
+          "includes": "cost another 128 MB",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "256 MB is what the existing 4,096-page pool takes, from the VSM Decision."
+      ]
+    },
+    {
+      "id": "render-034",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["blob", "invalidation"],
+      "question": "On what kind of machine was the original 2.2 ms SDF GI capture actually taken?",
+      "answer": {
+        "kind": "value",
+        "value": "PC workstation",
+        "accept": [
+          "a PC workstation",
+          "PC workstation (Meridian clock profile)",
+          "a PC workstation with the Meridian clock profile"
+        ]
+      },
+      "evidence": ["fnd-gi-sdf-cost", "cit-gi-sdf", "blb-gi-sdf"],
+      "path": [
+        ["fnd-gi-sdf-cost", "cites", "cit-gi-sdf"],
+        ["cit-gi-sdf", "blob", "blb-gi-sdf"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blb-gi-sdf",
+          "includes": "PC workstation (Meridian clock profile)",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The Finding title says Meridian; only the attached capture names the real machine."
+      ]
+    },
+    {
+      "id": "render-035",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["blob", "lifecycle"],
+      "question": "The VSM page pool overflow Risk came true. At its peak, how many shadow pages did the trace behind that evidence request?",
+      "answer": {
+        "kind": "value",
+        "value": "5912",
+        "accept": ["5,912"]
+      },
+      "evidence": [
+        "rsk-vsm-overflow",
+        "fnd-vsm-overflow",
+        "cit-vsm-pages",
+        "blb-vsm-pages"
+      ],
+      "path": [
+        ["rsk-vsm-overflow", "evidence", "fnd-vsm-overflow"],
+        ["fnd-vsm-overflow", "cites", "cit-vsm-pages"],
+        ["cit-vsm-pages", "blob", "blb-vsm-pages"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blb-vsm-pages",
+          "includes": "\"peak_pages_requested\": 5912",
+          "expect": true
+        }
+      ],
+      "traps": ["4,096 is the pool size, not the peak request."]
+    },
+    {
+      "id": "render-036",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["blob", "blocker"],
+      "question": "Which numbered certification test did the first Meridian HDR pre-check fail?",
+      "answer": {
+        "kind": "value",
+        "value": "HDR-07"
+      },
+      "evidence": ["fnd-hdr-precheck", "cit-hdr-precheck", "blb-hdr-precheck"],
+      "path": [
+        ["fnd-hdr-precheck", "cites", "cit-hdr-precheck"],
+        ["cit-hdr-precheck", "blob", "blb-hdr-precheck"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blb-hdr-precheck",
+          "includes": "| HDR-07 | Paper white follows system setting and range | FAIL |",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The Finding names the paper-white failure but not the test number."
+      ]
+    },
+    {
+      "id": "render-037",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["blob", "current-state"],
+      "question": "What render scale does the Ultra Performance preset use in the measurements behind the Tern preset Decision now in force?",
+      "answer": {
+        "kind": "value",
+        "value": "0.33",
+        "accept": ["33%", "33 percent", "one third"]
+      },
+      "evidence": [
+        "dec-presets-4b",
+        "fnd-tern-presets",
+        "cit-tern-presets",
+        "blb-tern-presets"
+      ],
+      "path": [
+        ["dec-presets-4b", "derives_from", "fnd-tern-presets"],
+        ["fnd-tern-presets", "cites", "cit-tern-presets"],
+        ["cit-tern-presets", "blob", "blb-tern-presets"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blb-tern-presets",
+          "includes": "\"scale\": 0.33",
+          "expect": true
+        }
+      ],
+      "traps": ["0.5 is the Performance preset."]
+    },
+    {
+      "id": "render-038",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["temporal", "supersession"],
+      "question": "Which version of the visibility buffer Decision was the newest on the day of the vertical slice, 2025-12-15?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-vb-3"
+      },
+      "evidence": ["dec-vb-6", "dec-vb-5", "dec-vb-4", "dec-vb-3"],
+      "path": [
+        ["dec-vb-6", "supersedes", "dec-vb-5"],
+        ["dec-vb-5", "supersedes", "dec-vb-4"],
+        ["dec-vb-4", "supersedes", "dec-vb-3"]
+      ],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-vb-1",
+          "at": "2025-12-15T23:59:00Z"
+        }
+      ],
+      "traps": [
+        "The current head runs the buffer on every platform; at the slice foliage and saltglass were still forward."
+      ]
+    },
+    {
+      "id": "render-039",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["temporal", "supersession"],
+      "question": "Which tonemapping curve Decision was current on beta day, 2026-06-01?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-brine-2"
+      },
+      "evidence": ["iss-tonemap-q", "dec-filmic", "dec-brine-1", "dec-brine-2"],
+      "path": [
+        ["iss-tonemap-q", "resolved_by", "dec-filmic"],
+        ["dec-filmic", "superseded_by", "dec-brine-1"],
+        ["dec-brine-1", "superseded_by", "dec-brine-2"]
+      ],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-filmic",
+          "at": "2026-06-01T23:59:00Z"
+        }
+      ],
+      "traps": [
+        "The question Issue was resolved by the stock filmic curve; the 800-nit version came in September."
+      ]
+    },
+    {
+      "id": "render-040",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["temporal", "compaction"],
+      "question": "In the \"Lantern renderer overhaul\" Effort, which compaction was the newest on beta day, 2026-06-01?",
+      "answer": {
+        "kind": "record",
+        "value": "cmp-2"
+      },
+      "evidence": ["cmp-4", "cmp-3", "cmp-2"],
+      "path": [
+        ["cmp-4", "supersedes", "cmp-3"],
+        ["cmp-3", "supersedes", "cmp-2"]
+      ],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "cmp-1",
+          "at": "2026-06-01T23:59:00Z"
+        }
+      ],
+      "traps": [
+        "The compaction titled \"Lantern at beta\" was written three days after beta."
+      ]
+    },
+    {
+      "id": "render-041",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["invalidation", "dead-evidence"],
+      "question": "The accepted GI Decision rests on a cost Finding that was later overturned. What does SDF GI cost on Meridian according to the Finding that overturned it?",
+      "answer": {
+        "kind": "value",
+        "value": "4.7 ms",
+        "accept": ["4.7"]
+      },
+      "evidence": ["dec-gi-sdf", "fnd-gi-sdf-cost", "fnd-gi-sdf-recapture"],
+      "path": [
+        ["dec-gi-sdf", "derives_from", "fnd-gi-sdf-cost"],
+        ["fnd-gi-sdf-cost", "invalidated_by", "fnd-gi-sdf-recapture"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-gi-sdf-recapture",
+          "includes": "puts SDF GI at 4.7 ms",
+          "expect": true
+        }
+      ],
+      "traps": ["2.2 ms is the overturned number; 2.4 ms is retracted noise."]
+    },
+    {
+      "id": "render-042",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["lifecycle", "supersession"],
+      "question": "The Risk that visibility buffer bandwidth is too high for Skiff names a mitigating Decision. Which Decision now heads that Decision’s chain?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-vb-6"
+      },
+      "evidence": ["rsk-vb-skiff", "dec-vb-5", "dec-vb-6"],
+      "path": [
+        ["rsk-vb-skiff", "mitigated_by", "dec-vb-5"],
+        ["dec-vb-5", "superseded_by", "dec-vb-6"]
+      ],
+      "checks": [
+        {
+          "type": "head",
+          "start": "dec-vb-5"
+        }
+      ],
+      "traps": [
+        "The mitigating Decision is superseded, and its replacement undid the Skiff fallback the mitigation relied on."
+      ]
+    },
+    {
+      "id": "render-043",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["dead-evidence", "invalidation"],
+      "question": "Which Finding showed that the evidence for enabling meshlet cone culling on all platforms was wrong?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-meshlet-cone-recount"
+      },
+      "evidence": [
+        "dec-meshlet-cone",
+        "fnd-meshlet-cone",
+        "fnd-meshlet-cone-recount"
+      ],
+      "path": [
+        ["dec-meshlet-cone", "derives_from", "fnd-meshlet-cone"],
+        ["fnd-meshlet-cone", "invalidated_by", "fnd-meshlet-cone-recount"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "bodyIncludes": "counted twice"
+        }
+      ],
+      "traps": [
+        "The cone-culling Decision is still accepted, so it looks sound unless its evidence is opened."
+      ]
+    },
+    {
+      "id": "render-044",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["rejected-alternative", "supersession"],
+      "question": "The Decision that rejected ray-marching refraction through the saltglass distance field has itself been replaced. By which Decision?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-refr-hybrid"
+      },
+      "evidence": ["dec-refr-rm", "dec-refr-ss", "dec-refr-hybrid"],
+      "path": [
+        ["dec-refr-rm", "rejected_by", "dec-refr-ss"],
+        ["dec-refr-ss", "superseded_by", "dec-refr-hybrid"]
+      ],
+      "checks": [
+        {
+          "type": "head",
+          "start": "dec-refr-ss"
+        }
+      ],
+      "traps": [
+        "The ray-march proposal was never reopened; the hybrid uses a march only as a fallback."
+      ]
+    },
+    {
+      "id": "render-045",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["compaction", "negative"],
+      "question": "The newest compaction says the Brine curve's HDR shoulder starts at 1,000 nits. Does that still hold?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": ["cmp-4", "dec-brine-2", "dec-brine-3"],
+      "path": [
+        ["cmp-4", "derives_from", "dec-brine-2"],
+        ["dec-brine-2", "superseded_by", "dec-brine-3"]
+      ],
+      "checks": [
+        {
+          "type": "head",
+          "start": "dec-brine-2",
+          "expect": "render.dec-brine-3"
+        },
+        {
+          "type": "body",
+          "record": "dec-brine-3",
+          "includes": "start at 800 nits",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The compaction was right when written; the shoulder moved to 800 nits in September."
+      ]
+    },
+    {
+      "id": "render-046",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["rationale", "reopened"],
+      "question": "Why were virtual shadow maps for the sun reopened after being rejected?",
+      "answer": {
+        "kind": "text",
+        "rubric": [
+          ["capture error", "debug flag", "whole pool", "every frame"],
+          ["1.4 ms"],
+          ["seam"]
+        ]
+      },
+      "evidence": ["dec-vsm", "dec-csm", "fnd-vsm-cost", "fnd-vsm-recapture"],
+      "path": [
+        ["dec-vsm", "reopen_history", "dec-csm"],
+        ["dec-csm", "derives_from", "fnd-vsm-cost"],
+        ["fnd-vsm-cost", "invalidated_by", "fnd-vsm-recapture"]
+      ],
+      "checks": [],
+      "traps": [
+        "Cost was the reason for rejection, and the cost turned out to be wrong."
+      ]
+    },
+    {
+      "id": "render-047",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["rationale", "invalidation"],
+      "question": "Why did the newest visibility buffer Decision bring the buffer back to Skiff?",
+      "answer": {
+        "kind": "text",
+        "rubric": [
+          ["validation"],
+          ["7.4 ms"],
+          ["half rate", "half-rate", "every other pixel"]
+        ]
+      },
+      "evidence": ["dec-vb-6", "fnd-skiff-vb-recapture", "fnd-skiff-vb-cost"],
+      "path": [
+        ["dec-vb-6", "derives_from", "fnd-skiff-vb-recapture"],
+        ["fnd-skiff-vb-recapture", "invalidates", "fnd-skiff-vb-cost"]
+      ],
+      "checks": [],
+      "traps": ["11.2 ms came from a build with GPU validation on."]
+    },
+    {
+      "id": "render-048",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["blocker"],
+      "question": "Which proposed fix for the open caustic flicker blocker has a test showing it makes caustics ghost?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-caustic-clamp"
+      },
+      "evidence": [
+        "iss-caustic-flicker",
+        "dec-caustic-clamp",
+        "fnd-caustic-clamp-test"
+      ],
+      "path": [
+        ["iss-caustic-flicker", "supports", "dec-caustic-clamp"],
+        ["dec-caustic-clamp", "supports", "fnd-caustic-clamp-test"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "iss-caustic-flicker",
+          "bodyIncludes": "clamp"
+        }
+      ],
+      "traps": [
+        "The tide-locked seed test found frozen caustics, not ghosting."
+      ]
+    },
+    {
+      "id": "render-049",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["reopened", "supersession"],
+      "question": "The reopened ray-traced sun shadow proposal was first rejected by a Decision that has since been replaced. Which Decision replaced it?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-vsm"
+      },
+      "evidence": ["dec-rt-shadows", "dec-csm", "dec-vsm"],
+      "path": [
+        ["dec-rt-shadows", "reopen_history", "dec-csm"],
+        ["dec-csm", "superseded_by", "dec-vsm"]
+      ],
+      "checks": [
+        {
+          "type": "head",
+          "start": "dec-csm"
+        }
+      ],
+      "traps": [
+        "The replacement was itself a rejected alternative that was reopened first."
+      ]
+    },
+    {
+      "id": "render-050",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["distractor", "supersession", "current-state"],
+      "question": "The \"Lantern renderer overhaul\" Effort holds several Constraints titled Frame budget. Which one is current?",
+      "answer": {
+        "kind": "record",
+        "value": "con-budget-3"
+      },
+      "evidence": ["con-budget-1", "con-budget-2", "con-budget-3"],
+      "path": [
+        ["con-budget-1", "superseded_by", "con-budget-2"],
+        ["con-budget-2", "superseded_by", "con-budget-3"]
+      ],
+      "checks": [
+        {
+          "type": "head",
+          "start": "con-budget-1"
+        }
+      ],
+      "traps": [
+        "A retracted Frame budget holds the Skiff 40 Hz number and belongs to ports.",
+        "The ports Effort has its own Frame budget."
+      ]
+    },
+    {
+      "id": "render-051",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["reopened", "rejected-alternative"],
+      "question": "The Halcyon vendor upscaler was rejected a second time. Which defect Issue does the Decision that rejected it the second time derive from?",
+      "answer": {
+        "kind": "record",
+        "value": "iss-tern-ghost"
+      },
+      "evidence": ["dec-vendor", "dec-tern-reactive", "iss-tern-ghost"],
+      "path": [
+        ["dec-vendor", "rejected_by", "dec-tern-reactive"],
+        ["dec-tern-reactive", "derives_from", "iss-tern-ghost"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["issue"],
+          "where": {
+            "kind": "defect"
+          },
+          "derivesFrom": "fnd-tern-ghost"
+        }
+      ],
+      "traps": [
+        "The first rejecter answered the upscaler question Issue, not a defect."
+      ]
+    },
+    {
+      "id": "render-052",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["compaction", "invalidation"],
+      "question": "The beta compaction rests on the reactive mask Decision and repeats its ghosting figure. What share of ghosting does the mask actually remove, according to the Finding that overturned that figure?",
+      "answer": {
+        "kind": "value",
+        "value": "61 percent",
+        "accept": ["61%", "61"]
+      },
+      "evidence": [
+        "cmp-3",
+        "dec-tern-reactive",
+        "fnd-tern-ghost-fix",
+        "fnd-tern-ghost-recheck"
+      ],
+      "path": [
+        ["cmp-3", "derives_from", "dec-tern-reactive"],
+        ["dec-tern-reactive", "derives_from", "fnd-tern-ghost-fix"],
+        ["fnd-tern-ghost-fix", "invalidated_by", "fnd-tern-ghost-recheck"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-tern-ghost-recheck",
+          "includes": "removes 61 percent of ghosting energy",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "90 percent is the overturned figure that the compaction repeats."
+      ]
+    },
+    {
+      "id": "render-053",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["blob", "supersession", "invalidation"],
+      "question": "Virtual shadow maps replaced a sun-shadow Decision that had rested on a cost Finding. According to the capture attached to that Finding, how often was the shadow page pool cleared?",
+      "answer": {
+        "kind": "value",
+        "value": "every frame",
+        "accept": ["every_frame", "each frame"]
+      },
+      "evidence": [
+        "dec-vsm",
+        "dec-csm",
+        "fnd-vsm-cost",
+        "cit-vsm-cost",
+        "blb-vsm-cost"
+      ],
+      "path": [
+        ["dec-vsm", "supersedes", "dec-csm"],
+        ["dec-csm", "derives_from", "fnd-vsm-cost"],
+        ["fnd-vsm-cost", "cites", "cit-vsm-cost"],
+        ["cit-vsm-cost", "blob", "blb-vsm-cost"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blb-vsm-cost",
+          "includes": "\"page_pool_clear\": \"every_frame\"",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The recapture clears on invalidation only; the question asks about the capture behind the rejected Decision."
+      ]
+    },
+    {
+      "id": "render-054",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["blob", "supersession", "invalidation"],
+      "question": "The newest visibility buffer Decision replaced a version with a forward+ fallback on Skiff. What build configuration was the Skiff capture behind that fallback taken with?",
+      "answer": {
+        "kind": "value",
+        "value": "debug-gpu-validation",
+        "accept": ["debug with GPU validation", "GPU validation"]
+      },
+      "evidence": [
+        "dec-vb-6",
+        "dec-vb-5",
+        "fnd-skiff-vb-cost",
+        "cit-skiff-capture",
+        "blb-skiff-capture"
+      ],
+      "path": [
+        ["dec-vb-6", "supersedes", "dec-vb-5"],
+        ["dec-vb-5", "derives_from", "fnd-skiff-vb-cost"],
+        ["fnd-skiff-vb-cost", "cites", "cit-skiff-capture"],
+        ["cit-skiff-capture", "blob", "blb-skiff-capture"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blb-skiff-capture",
+          "includes": "\"build_config\": \"debug-gpu-validation\"",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The 11.2 ms Finding does not name the build configuration; only its capture does."
+      ]
+    },
+    {
+      "id": "render-055",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["reopened", "supersession"],
+      "question": "The Halcyon vendor upscaler has been rejected twice. The Decision that rejected it first rested on a measurement of Tern's 4K cost on Meridian. Which Finding is the newest version of that measurement?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-tern-cost-3"
+      },
+      "evidence": [
+        "dec-vendor",
+        "dec-tern",
+        "fnd-tern-cost-1",
+        "fnd-tern-cost-2",
+        "fnd-tern-cost-3"
+      ],
+      "path": [
+        ["dec-vendor", "reopen_history", "dec-tern"],
+        ["dec-tern", "derives_from", "fnd-tern-cost-1"],
+        ["fnd-tern-cost-1", "superseded_by", "fnd-tern-cost-2"],
+        ["fnd-tern-cost-2", "superseded_by", "fnd-tern-cost-3"]
+      ],
+      "checks": [
+        {
+          "type": "head",
+          "start": "fnd-tern-cost-1"
+        }
+      ],
+      "traps": [
+        "The live rejected_by link names the reactive mask Decision, the second rejecter.",
+        "The 1.9 ms Finding is the version the Decision cites, not the newest."
+      ]
+    },
+    {
+      "id": "render-056",
+      "tier": 3,
+      "hops": 5,
+      "categories": ["blob", "supersession"],
+      "question": "The visibility buffer version that brought foliage back into the buffer rests on a Finding about meshlet alpha masks, which rests on a meshlet size Decision. According to the sweep behind that Decision, how many meshlets does the cliffs benchmark have at the chosen size?",
+      "answer": {
+        "kind": "value",
+        "value": "208,000",
+        "accept": ["208000", "208k"]
+      },
+      "evidence": [
+        "dec-vb-4",
+        "fnd-foliage-meshlet",
+        "dec-meshlet-64",
+        "fnd-meshlet-sweep",
+        "cit-meshlet-sweep",
+        "blb-meshlet-sweep"
+      ],
+      "path": [
+        ["dec-vb-4", "derives_from", "fnd-foliage-meshlet"],
+        ["fnd-foliage-meshlet", "derives_from", "dec-meshlet-64"],
+        ["dec-meshlet-64", "derives_from", "fnd-meshlet-sweep"],
+        ["fnd-meshlet-sweep", "cites", "cit-meshlet-sweep"],
+        ["cit-meshlet-sweep", "blob", "blb-meshlet-sweep"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blb-meshlet-sweep",
+          "includes": "| 64 | 124 | 208,000 |",
+          "expect": true
+        }
+      ],
+      "traps": ["104,000 is the 128-vertex row, the rejected size."]
+    },
+    {
+      "id": "render-057",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["compaction", "supersession"],
+      "question": "The vertical-slice compaction rests on one version of the visibility buffer Decision. Which Decision now heads that version’s chain?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-vb-6"
+      },
+      "evidence": ["cmp-1", "dec-vb-3", "dec-vb-4", "dec-vb-5", "dec-vb-6"],
+      "path": [
+        ["cmp-1", "derives_from", "dec-vb-3"],
+        ["dec-vb-3", "superseded_by", "dec-vb-4"],
+        ["dec-vb-4", "superseded_by", "dec-vb-5"],
+        ["dec-vb-5", "superseded_by", "dec-vb-6"]
+      ],
+      "checks": [
+        {
+          "type": "head",
+          "start": "dec-vb-3"
+        }
+      ],
+      "traps": [
+        "The Skiff forward+ fallback version looks final but was replaced in July 2026."
+      ]
+    },
+    {
+      "id": "render-058",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["lifecycle", "rejected-alternative"],
+      "question": "The reactive mask Decision resolved a defect. That defect came from a ghosting Finding, which derives from an earlier Decision. Which question Issue did that earlier Decision derive from?",
+      "answer": {
+        "kind": "record",
+        "value": "iss-upscaler-q"
+      },
+      "evidence": [
+        "dec-tern-reactive",
+        "iss-tern-ghost",
+        "fnd-tern-ghost",
+        "dec-tern",
+        "iss-upscaler-q"
+      ],
+      "path": [
+        ["dec-tern-reactive", "derives_from", "iss-tern-ghost"],
+        ["iss-tern-ghost", "derives_from", "fnd-tern-ghost"],
+        ["fnd-tern-ghost", "derives_from", "dec-tern"],
+        ["dec-tern", "derives_from", "iss-upscaler-q"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["issue"],
+          "where": {
+            "kind": "question"
+          },
+          "bodyIncludes": "Halcyon"
+        }
+      ],
+      "traps": [
+        "The Tern presets question also concerns Tern but is not where the upscaler Decision came from."
+      ]
+    },
+    {
+      "id": "render-059",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["invalidation", "lifecycle", "temporal"],
+      "question": "The vertical-slice frame-time blocker was resolved by a Decision that cut part of the accepted GI Decision. Which Finding later showed that the GI cost that GI Decision was accepted on was wrong?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-gi-sdf-recapture"
+      },
+      "evidence": [
+        "iss-slice-budget",
+        "dec-slice-cut",
+        "dec-gi-sdf",
+        "fnd-gi-sdf-cost",
+        "fnd-gi-sdf-recapture"
+      ],
+      "path": [
+        ["iss-slice-budget", "resolved_by", "dec-slice-cut"],
+        ["dec-slice-cut", "derives_from", "dec-gi-sdf"],
+        ["dec-gi-sdf", "derives_from", "fnd-gi-sdf-cost"],
+        ["fnd-gi-sdf-cost", "invalidated_by", "fnd-gi-sdf-recapture"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "bodyIncludes": "more than twice the 2.2 ms"
+        }
+      ],
+      "traps": ["The retracted 2.4 ms draft is noise, not the correction."]
+    },
+    {
+      "id": "render-060",
+      "tier": 3,
+      "hops": 5,
+      "categories": ["blob", "blocker"],
+      "question": "A test Finding shows that tide-locked caustic jitter stalls caustic motion. Trace that proposal back through the blocker it answers to the capture behind the blocker. What is the largest frame-to-frame luminance change in that capture?",
+      "answer": {
+        "kind": "value",
+        "value": "0.31"
+      },
+      "evidence": [
+        "fnd-caustic-seed-test",
+        "dec-caustic-seed",
+        "iss-caustic-flicker",
+        "fnd-caustic-flicker",
+        "cit-caustic-trace",
+        "blb-caustic-trace"
+      ],
+      "path": [
+        ["fnd-caustic-seed-test", "derives_from", "dec-caustic-seed"],
+        ["dec-caustic-seed", "derives_from", "iss-caustic-flicker"],
+        ["iss-caustic-flicker", "derives_from", "fnd-caustic-flicker"],
+        ["fnd-caustic-flicker", "cites", "cit-caustic-trace"],
+        ["cit-caustic-trace", "blob", "blb-caustic-trace"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blb-caustic-trace",
+          "includes": "\"max_luma_delta\": 0.31",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "4.7 is the peak flicker frequency in hertz, not the luminance change."
+      ]
+    },
+    {
+      "id": "render-061",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["invalidation", "blocker", "lifecycle"],
+      "question": "The Risk that HDR certification slips the release candidate traces back, through its blocker and the pre-check behind that blocker, to an accepted Decision that was shown wrong. Which Constraint did that Decision rest on?",
+      "answer": {
+        "kind": "record",
+        "value": "con-ui-nits"
+      },
+      "evidence": [
+        "rsk-hdr-cert",
+        "iss-hdr-cert",
+        "fnd-hdr-precheck",
+        "dec-hdr-fixed-pw",
+        "con-ui-nits"
+      ],
+      "path": [
+        ["rsk-hdr-cert", "derives_from", "iss-hdr-cert"],
+        ["iss-hdr-cert", "derives_from", "fnd-hdr-precheck"],
+        ["fnd-hdr-precheck", "invalidates", "dec-hdr-fixed-pw"],
+        ["dec-hdr-fixed-pw", "derives_from", "con-ui-nits"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["constraint"],
+          "bodyIncludes": "composite at a fixed 203 nits"
+        }
+      ],
+      "traps": [
+        "The blocker also derives from the certification requirements Constraint, but the invalidated Decision did not."
+      ]
+    },
+    {
+      "id": "render-062",
+      "tier": 3,
+      "hops": 2,
+      "categories": ["temporal", "supersession", "distractor"],
+      "question": "In the \"Lantern renderer overhaul\" Effort, when the Meridian 120 Hz performance mode budget was first recorded, which version of the Frame budget Constraint was current?",
+      "answer": {
+        "kind": "record",
+        "value": "con-budget-2"
+      },
+      "evidence": ["con-120-2", "con-120-1", "con-budget-3", "con-budget-2"],
+      "path": [
+        ["con-120-2", "supersedes", "con-120-1"],
+        ["con-budget-3", "supersedes", "con-budget-2"]
+      ],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "con-budget-1",
+          "at": "2026-03-20T10:00:00Z"
+        }
+      ],
+      "traps": [
+        "The 120 Hz budget is a separate Constraint; its first version dates from 2026-03-20, before the 15.0 ms Frame budget."
+      ]
+    },
+    {
+      "id": "render-063",
+      "tier": 3,
+      "hops": 3,
+      "categories": ["lifecycle", "supersession"],
+      "question": "Two Risks about the visibility buffer are mitigated: Skiff bandwidth and shader permutations. Which of the two mitigating Decisions is still in force?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-uber-resolve"
+      },
+      "evidence": [
+        "rsk-vb-skiff",
+        "dec-vb-5",
+        "dec-vb-6",
+        "rsk-shader-perm",
+        "dec-uber-resolve"
+      ],
+      "path": [
+        ["rsk-vb-skiff", "mitigated_by", "dec-vb-5"],
+        ["dec-vb-5", "superseded_by", "dec-vb-6"],
+        ["rsk-shader-perm", "mitigated_by", "dec-uber-resolve"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "accepted"
+          },
+          "bodyIncludes": "one uber shader per tile class"
+        }
+      ],
+      "traps": [
+        "The Skiff mitigation is superseded, though the Risk still reads mitigated."
+      ]
+    },
+    {
+      "id": "render-064",
+      "tier": 3,
+      "hops": 2,
+      "categories": ["distractor", "reopened", "rejected-alternative"],
+      "question": "Ines Okafor proposed virtual shadow maps twice, for different lights. One was reopened and later accepted. Which Decision rejected the other?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-local-atlas"
+      },
+      "evidence": ["dec-vsm", "dec-csm", "dec-local-vsm", "dec-local-atlas"],
+      "path": [
+        ["dec-vsm", "reopen_history", "dec-csm"],
+        ["dec-local-vsm", "rejected_by", "dec-local-atlas"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "iss-shadow-local-q",
+          "where": {
+            "standing": "accepted"
+          }
+        }
+      ],
+      "traps": [
+        "Cascaded shadow maps rejected the sun proposal, not the local-light one."
+      ]
+    },
+    {
+      "id": "render-065",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["invalidation", "lifecycle"],
+      "question": "The Finding that cut the reactive mask’s ghosting figure to 61 percent overturned an earlier measurement. Follow that measurement back through the defect it addressed to the Finding that first reported the ghosting. Which Decision did that first report derive from?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-tern"
+      },
+      "evidence": [
+        "fnd-tern-ghost-recheck",
+        "fnd-tern-ghost-fix",
+        "iss-tern-ghost",
+        "fnd-tern-ghost",
+        "dec-tern"
+      ],
+      "path": [
+        ["fnd-tern-ghost-recheck", "invalidates", "fnd-tern-ghost-fix"],
+        ["fnd-tern-ghost-fix", "derives_from", "iss-tern-ghost"],
+        ["iss-tern-ghost", "derives_from", "fnd-tern-ghost"],
+        ["fnd-tern-ghost", "derives_from", "dec-tern"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "bodyIncludes": "only temporal upscaler"
+        }
+      ],
+      "traps": [
+        "The recheck derives from the reactive mask Decision, which is not the origin of the ghosting report."
+      ]
+    },
+    {
+      "id": "render-066",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["lifecycle", "supersession", "blocker"],
+      "question": "The blocker about shadow pages at spring low tide derives from a Finding, which derives from a Risk, which derives from a shadow Decision. Which Decision did that shadow Decision replace?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-csm"
+      },
+      "evidence": [
+        "iss-vsm-tide",
+        "fnd-vsm-overflow",
+        "rsk-vsm-overflow",
+        "dec-vsm",
+        "dec-csm"
+      ],
+      "path": [
+        ["iss-vsm-tide", "derives_from", "fnd-vsm-overflow"],
+        ["fnd-vsm-overflow", "derives_from", "rsk-vsm-overflow"],
+        ["rsk-vsm-overflow", "derives_from", "dec-vsm"],
+        ["dec-vsm", "supersedes", "dec-csm"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "bodyIncludes": "four cascaded shadow maps out to 2 km"
+        }
+      ],
+      "traps": [
+        "Ray-traced shadows were rejected by the same Decision, but nothing replaced them."
+      ]
+    },
+    {
+      "id": "render-067",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["aggregate", "blocker"],
+      "question": "How many blocker Issues are open in the \"Lantern renderer overhaul\" Effort now?",
+      "answer": {
+        "kind": "count",
+        "value": 4
+      },
+      "evidence": [
+        "iss-120-gi",
+        "iss-caustic-flicker",
+        "iss-hdr-cert",
+        "iss-vsm-tide"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["issue"],
+          "where": {
+            "kind": "blocker",
+            "standing": "open"
+          },
+          "count": true
+        }
+      ],
+      "traps": [
+        "The vertical-slice blocker was resolved.",
+        "A duplicate caustic flicker blocker was retracted."
+      ]
+    },
+    {
+      "id": "render-068",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["aggregate", "blocker"],
+      "question": "In the \"Lantern renderer overhaul\" Effort, which proposed Decisions derive directly from an open blocker?",
+      "answer": {
+        "kind": "records",
+        "value": [
+          "dec-caustic-clamp",
+          "dec-caustic-seed",
+          "dec-gi-120-probe",
+          "dec-gi-120-quarter",
+          "dec-hdr-pw-slider",
+          "dec-hdr-pw-system"
+        ]
+      },
+      "evidence": [
+        "iss-120-gi",
+        "iss-caustic-flicker",
+        "iss-hdr-cert",
+        "iss-vsm-tide"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "proposed"
+          },
+          "restsOn": ["open"]
+        }
+      ],
+      "traps": [
+        "Ray-traced sun shadows are proposed again but derive from a resolved question, not a blocker."
+      ]
+    },
+    {
+      "id": "render-069",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["blocker", "aggregate"],
+      "question": "In the \"Lantern renderer overhaul\" Effort, which open blocker has no proposed Decision deriving from it?",
+      "answer": {
+        "kind": "record",
+        "value": "iss-vsm-tide"
+      },
+      "evidence": [
+        "iss-120-gi",
+        "iss-caustic-flicker",
+        "iss-hdr-cert",
+        "iss-vsm-tide"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["issue"],
+          "where": {
+            "kind": "blocker",
+            "standing": "open"
+          },
+          "bodyIncludes": "No fix is chosen"
+        }
+      ],
+      "traps": [
+        "The caustic flicker blocker is the oldest, but it has two proposed fixes."
+      ]
+    },
+    {
+      "id": "render-070",
+      "tier": 4,
+      "hops": 2,
+      "categories": ["dead-evidence", "aggregate"],
+      "question": "In the \"Lantern renderer overhaul\" Effort, which live Decisions rest directly on a record that has since been invalidated?",
+      "answer": {
+        "kind": "records",
+        "value": ["dec-gi-sdf", "dec-meshlet-cone", "dec-tern-reactive"]
+      },
+      "evidence": ["fnd-gi-sdf-cost", "fnd-meshlet-cone", "fnd-tern-ghost-fix"],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "live": true,
+          "restsOn": ["invalidated"]
+        }
+      ],
+      "traps": [
+        "The cascaded shadow map and Skiff fallback Decisions also rested on invalidated Findings, but both are superseded.",
+        "A Finding about the GI share of the frame also rests on dead evidence, but it is not a Decision."
+      ]
+    },
+    {
+      "id": "render-071",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["aggregate", "lifecycle"],
+      "question": "How many Risks in the \"Lantern renderer overhaul\" Effort are mitigated?",
+      "answer": {
+        "kind": "count",
+        "value": 3
+      },
+      "evidence": ["rsk-shader-perm", "rsk-tern-ghost", "rsk-vb-skiff"],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["risk"],
+          "where": {
+            "standing": "mitigated"
+          },
+          "count": true
+        }
+      ],
+      "traps": [
+        "Accepted Risks were not mitigated; they were taken on as they are."
+      ]
+    },
+    {
+      "id": "render-072",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["aggregate", "lifecycle"],
+      "question": "In the \"Lantern renderer overhaul\" Effort, which Risks were accepted as they stand rather than mitigated or left open?",
+      "answer": {
+        "kind": "records",
+        "value": ["rsk-brine-match", "rsk-sdf-memory"]
+      },
+      "evidence": ["rsk-brine-match", "rsk-sdf-memory"],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["risk"],
+          "where": {
+            "standing": "accepted"
+          }
+        }
+      ],
+      "traps": [
+        "Both accepted Risks carry Finding evidence, which a reader may mistake for realized.",
+        "Mitigated Risks were handled by a Decision, not accepted."
+      ]
+    },
+    {
+      "id": "render-073",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["aggregate", "lifecycle"],
+      "question": "In the \"Lantern renderer overhaul\" Effort, which Risks came true?",
+      "answer": {
+        "kind": "records",
+        "value": ["rsk-120-gi", "rsk-hdr-cert", "rsk-vsm-overflow"]
+      },
+      "evidence": ["rsk-120-gi", "rsk-hdr-cert", "rsk-vsm-overflow"],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["risk"],
+          "where": {
+            "standing": "realized"
+          }
+        }
+      ],
+      "traps": [
+        "The HDR certification Risk turned realized only after the newest compaction, which still calls it open."
+      ]
+    },
+    {
+      "id": "render-074",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["retraction", "aggregate"],
+      "question": "How many records in the \"Lantern renderer overhaul\" Effort have been retracted?",
+      "answer": {
+        "kind": "count",
+        "value": 5
+      },
+      "evidence": [
+        "con-budget-noise",
+        "dec-tern-dup",
+        "dec-vb-1-dup",
+        "fnd-gi-sdf-cost-noise",
+        "iss-caustic-flicker-dup"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "retracted": "only",
+          "count": true
+        }
+      ],
+      "traps": [
+        "Browse reads omit retracted records, so a reader who only lists records finds none."
+      ]
+    },
+    {
+      "id": "render-075",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["reopened", "aggregate"],
+      "question": "How many Decisions in the \"Lantern renderer overhaul\" Effort have been reopened at least once?",
+      "answer": {
+        "kind": "value",
+        "value": "3",
+        "accept": ["three"]
+      },
+      "evidence": ["dec-vsm", "dec-rt-shadows", "dec-vendor"],
+      "checks": [
+        {
+          "type": "edge",
+          "edge": ["dec-vsm", "reopen_history", "dec-csm"],
+          "expect": true
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-rt-shadows", "reopen_history", "dec-csm"],
+          "expect": true
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-vendor", "reopen_history", "dec-tern"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "Only one of the three is accepted now; one is proposed and one was rejected again."
+      ]
+    },
+    {
+      "id": "render-076",
+      "tier": 4,
+      "hops": 2,
+      "categories": ["reopened", "lifecycle"],
+      "question": "Could the reopened ray-traced sun shadows Decision be accepted today without first superseding another Decision?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": ["dec-rt-shadows", "dec-vsm", "iss-shadow-q", "dec-csm"],
+      "checks": [
+        {
+          "type": "field",
+          "record": "dec-vsm",
+          "field": "standing",
+          "expect": "accepted"
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-rt-shadows", "derives_from", "iss-shadow-q"],
+          "expect": true
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-vsm", "derives_from", "iss-shadow-q"],
+          "expect": true
+        },
+        {
+          "type": "field",
+          "record": "dec-csm",
+          "field": "standing",
+          "expect": "superseded"
+        }
+      ],
+      "traps": [
+        "Its old rejecter is superseded, so the reopen rule does not block it; but the sun-shadow question already has an accepted answer, so acceptance fails."
+      ]
+    },
+    {
+      "id": "render-077",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["compaction"],
+      "question": "In the \"Lantern renderer overhaul\" Effort, is the newest compaction stale?",
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "evidence": ["cmp-4", "dec-brine-2", "rsk-hdr-cert"],
+      "checks": [
+        {
+          "type": "compaction",
+          "field": "stale"
+        }
+      ],
+      "traps": [
+        "Nothing invalidated the compaction itself; two of the records it rests on changed standing."
+      ]
+    },
+    {
+      "id": "render-078",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["compaction", "aggregate"],
+      "question": "In the \"Lantern renderer overhaul\" Effort, which records that the newest compaction rests on have changed standing since it was written?",
+      "answer": {
+        "kind": "records",
+        "value": ["dec-brine-2", "rsk-hdr-cert"]
+      },
+      "evidence": [
+        "cmp-4",
+        "dec-brine-2",
+        "dec-brine-3",
+        "rsk-hdr-cert",
+        "fnd-hdr-precheck-2"
+      ],
+      "checks": [
+        {
+          "type": "compaction",
+          "field": "staleTargets"
+        }
+      ],
+      "traps": [
+        "New Findings written after the compaction are changes, but the compaction does not rest on them."
+      ]
+    },
+    {
+      "id": "render-079",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["compaction", "aggregate"],
+      "question": "In the \"Lantern renderer overhaul\" Effort, how many records were added to, changed in, or left the live set since the newest compaction was written?",
+      "answer": {
+        "kind": "count",
+        "value": 6
+      },
+      "evidence": [
+        "cmp-4",
+        "dec-brine-2",
+        "dec-brine-3",
+        "fnd-hdr-precheck-2",
+        "fnd-rc-capture",
+        "fnd-shoulder-clip",
+        "rsk-hdr-cert"
+      ],
+      "checks": [
+        {
+          "type": "compaction",
+          "field": "changes"
+        }
+      ],
+      "traps": ["Counting only the two stale derivations gives 2."]
+    },
+    {
+      "id": "render-080",
+      "tier": 4,
+      "hops": 5,
+      "categories": ["supersession", "aggregate"],
+      "question": "How many versions has the visibility buffer Decision had, counting the current one?",
+      "answer": {
+        "kind": "value",
+        "value": "6",
+        "accept": ["six"]
+      },
+      "evidence": [
+        "dec-vb-1",
+        "dec-vb-2",
+        "dec-vb-3",
+        "dec-vb-4",
+        "dec-vb-5",
+        "dec-vb-6"
+      ],
+      "checks": [
+        {
+          "type": "chain",
+          "start": "dec-vb-1",
+          "expect": [
+            "render.dec-vb-1",
+            "render.dec-vb-2",
+            "render.dec-vb-3",
+            "render.dec-vb-4",
+            "render.dec-vb-5",
+            "render.dec-vb-6"
+          ]
+        }
+      ],
+      "traps": ["A retracted duplicate of the first version is not a version."]
+    },
+    {
+      "id": "render-081",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["negative", "lifecycle"],
+      "question": "On what date did Lantern pass Meridian HDR certification?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": [
+        "iss-hdr-cert",
+        "rsk-hdr-cert",
+        "fnd-hdr-precheck",
+        "fnd-hdr-precheck-2"
+      ],
+      "checks": [
+        {
+          "type": "field",
+          "record": "rsk-hdr-cert",
+          "field": "standing",
+          "expect": "realized"
+        },
+        {
+          "type": "field",
+          "record": "iss-hdr-cert",
+          "field": "status",
+          "expect": "open"
+        }
+      ],
+      "traps": [
+        "The newest compaction expected the 2026-09-12 resubmission to pass; it failed."
+      ]
+    },
+    {
+      "id": "render-082",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["negative", "invalidation"],
+      "question": "Is it true that a Finding invalidated one of the Brine curve Decisions?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": [
+        "dec-brine-1",
+        "dec-brine-2",
+        "dec-brine-3",
+        "dec-filmic",
+        "fnd-filmic-clip"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "invalidated"
+          },
+          "expect": ["render.dec-caustics-proj", "render.dec-hdr-fixed-pw"]
+        },
+        {
+          "type": "edge",
+          "edge": ["dec-filmic", "invalidated_by", "fnd-filmic-clip"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The stock filmic curve was invalidated; each Brine version was superseded, never invalidated."
+      ],
+      "scoped": true
+    },
+    {
+      "id": "render-083",
+      "tier": 4,
+      "hops": 2,
+      "categories": ["dead-evidence", "aggregate"],
+      "question": "In the \"Lantern renderer overhaul\" Effort, how many live records of any kind rest directly on a record that has since been invalidated?",
+      "answer": {
+        "kind": "count",
+        "value": 4
+      },
+      "evidence": [
+        "dec-gi-sdf",
+        "dec-meshlet-cone",
+        "dec-tern-reactive",
+        "fnd-gi-frame-share"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "live": true,
+          "restsOn": ["invalidated"],
+          "count": true
+        }
+      ],
+      "traps": [
+        "Counting only Decisions gives 3; the GI frame-share Finding also rests on the overturned 2.2 ms figure."
+      ]
+    }
+  ]
+}

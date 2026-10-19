@@ -14,10 +14,12 @@ import {
 } from '@flatbread/proof';
 import {
   blockingDecisions,
+  effortBrief,
   effortRecords,
   relations,
   getRecord,
   listEfforts,
+  type RetractedMode,
 } from '../proof/read.js';
 import type { PrimitiveKind, ReadRelation } from '@flatbread/proof';
 import { handleEffortInstallSkill } from './installSkill.js';
@@ -36,6 +38,7 @@ export interface EffortCliOptions {
   limit?: number;
   cursor?: string;
   relations?: string[];
+  retracted?: RetractedMode;
   verify?: boolean;
   dryRun?: boolean;
 }
@@ -67,6 +70,10 @@ export function mapEffortCliOptions(
       limit: numberOption(options.limit),
       cursor: typeof options.cursor === 'string' ? options.cursor : undefined,
       relations: split(options.relations),
+      retracted:
+        typeof options.retracted === 'string'
+          ? (options.retracted as RetractedMode)
+          : undefined,
       verify: options.verify === true ? true : undefined,
       dryRun:
         options['dry-run'] === true || options.dryRun === true
@@ -199,6 +206,7 @@ export async function handleEffortRecords(
         ? { created_at: { gte: options.since, lte: options.until } }
         : {}),
     },
+    retracted: options.retracted,
     page: { limit: options.limit, cursor: options.cursor },
   });
 }
@@ -230,6 +238,19 @@ export async function handleEffortBlockingDecisions(
 ): Promise<ReadEnvelope> {
   const cwd = options.cwd ?? process.cwd();
   return blockingDecisions(effortId, {
+    cwd,
+    rootDir: await rootFor(cwd),
+    cacheRoot: resolve(cwd, '.flatbread/proof'),
+    consistency: consistency(options),
+  });
+}
+
+export async function handleEffortBrief(
+  effortId: string,
+  options: EffortCliOptions = {}
+): Promise<ReadEnvelope> {
+  const cwd = options.cwd ?? process.cwd();
+  return effortBrief(effortId, {
     cwd,
     rootDir: await rootFor(cwd),
     cacheRoot: resolve(cwd, '.flatbread/proof'),
@@ -412,35 +433,32 @@ function validateLimit(limit: number | undefined): void {
   );
 }
 
+/** The JSON a failed Proof command prints on stderr. */
+export function errorPayload(error: unknown): unknown {
+  if (
+    error !== null &&
+    typeof error === 'object' &&
+    'shape' in error &&
+    typeof (error as { shape: unknown }).shape === 'object' &&
+    (error as { shape: unknown }).shape !== null
+  )
+    return (error as { shape: unknown }).shape;
+  if (error instanceof Error) {
+    try {
+      return JSON.parse(error.message);
+    } catch {
+      return { error: { code: 'PROOF_CLI_ERROR', message: error.message } };
+    }
+  }
+  return { error: { code: 'PROOF_CLI_ERROR', message: String(error) } };
+}
+
 export function registerProofCommands(prog: any): void {
-  const hasShape = (
-    value: unknown
-  ): value is { shape: Record<string, unknown> } => {
-    if (value === null || typeof value !== 'object' || !('shape' in value))
-      return false;
-    const candidate = value as { shape: unknown };
-    return typeof candidate.shape === 'object' && candidate.shape !== null;
-  };
   const printResult = async (result: Promise<unknown>): Promise<void> => {
     try {
       console.log(JSON.stringify(await result));
     } catch (error) {
-      let payload: unknown;
-      if (hasShape(error)) payload = error.shape;
-      else if (error instanceof Error) {
-        try {
-          payload = JSON.parse(error.message);
-        } catch {
-          payload = {
-            error: { code: 'PROOF_CLI_ERROR', message: error.message },
-          };
-        }
-      } else {
-        payload = {
-          error: { code: 'PROOF_CLI_ERROR', message: String(error) },
-        };
-      }
-      console.error(JSON.stringify(payload));
+      console.error(JSON.stringify(errorPayload(error)));
       process.exitCode = 1;
     }
   };
@@ -477,6 +495,19 @@ export function registerProofCommands(prog: any): void {
         handleEffortBlockingDecisions(effortId, mapEffortCliOptions(options))
       )
     );
+  prog
+    .command(
+      'proof brief <effortId>',
+      'Read where an Effort stands: its head compaction and what changed since'
+    )
+    .option(
+      '--strict-min-generation <token>',
+      'Require a durable journal generation'
+    )
+    .option('--timeout-ms <ms>', 'Strict-read wait timeout')
+    .action(async (effortId: string, options: Record<string, unknown>) =>
+      printResult(handleEffortBrief(effortId, mapEffortCliOptions(options)))
+    );
   const consistencyOptions = (command: any) =>
     command
       .option(
@@ -497,6 +528,10 @@ export function registerProofCommands(prog: any): void {
         .option('--kind <values>', 'Comma-separated record kinds')
         .option('--since <iso>', 'Created-at lower bound')
         .option('--until <iso>', 'Created-at upper bound')
+        .option(
+          '--retracted <mode>',
+          'exclude (default), include, or only retracted records'
+        )
     );
   recordsOptions(
     prog.command('proof records <effortId>', 'Read records in an Effort')

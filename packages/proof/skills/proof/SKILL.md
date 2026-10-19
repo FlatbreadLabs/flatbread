@@ -10,8 +10,8 @@ repository. It has eight record types: **Effort**, **Issue**, **Finding**,
 **Decision**, **Constraint**, and **Risk** capture the work and reasoning;
 **Citation** stores a source or reference; and **Blob** stores attached
 content such as a document, JSON, or image. Every record belongs to one
-Effort. Create and update records through 17 typed mutations, and read them
-through 5 bounded queries. Do not hand-edit record frontmatter, although you
+Effort. Create and update records through 18 typed mutations, and read them
+through 6 bounded queries. Do not hand-edit record frontmatter, although you
 may edit record bodies freely.
 
 Read [glossary.md](./glossary.md) for the primitive and edge semantics before
@@ -78,13 +78,16 @@ reasoning:
 4. **Unique signal:** Does it add a reason or link that code, docs, Git, the PR
    or tracker issue, and retained records do not already make clear?
 
+`WriteCompaction` restates claims that live records already hold, so it
+skips the unique-signal test. The other three tests still apply to its body.
+
 Do not create a record or add body claims unless the information scores
 **4/4**. An existing or open record does not bypass this gate; appending
 low-value text still consumes bounded reads. Keep failed candidates in the
 PR, tracker issue, commit, or run artifact. Citations and Blobs persist only
 when they support a 4/4 record.
 
-One command for all 17 mutations — pass the payload as a single JSON argument:
+One command for all 18 mutations — pass the payload as a single JSON argument:
 
 ```bash
 flatbread proof write '{"type":"WriteDecision","effort":"<eff-id>","title":"...","body":"...","derives_from":["<id>"]}'
@@ -94,7 +97,7 @@ flatbread proof write '{"type":"WriteDecision","effort":"<eff-id>","title":"..."
 For creates, **capture `artifacts[0].id`** to wire later edges. Keep the
 returned `generation` for strict read-your-writes.
 
-Full payload shapes for all 17 mutations: read [reference.md](./reference.md).
+Full payload shapes for all 18 mutations: read [reference.md](./reference.md).
 Critical semantics:
 
 - Creates always start in the initial lifecycle state: `WriteDecision` →
@@ -107,8 +110,9 @@ Critical semantics:
   including foreign `derives_from` links, so reads do not fail closed. Use it
   for session noise that should never have been journaled. Do not `git rm`
   records or hand-edit frontmatter. `proof get` still returns a retracted
-  record. Efforts cannot
-  be retracted; abandon them instead.
+  record, and `proof records <effortId> --retracted only` lists an Effort's
+  retracted records, each marked **RETRACTED** with its date and reason.
+  Efforts cannot be retracted; abandon them instead.
 - `AcceptDecision` defaults `rejectSiblings: true`, which rejects only
   proposed Decisions derived from the same `question` Issue, even if the
   Issue is closed. Use
@@ -138,6 +142,25 @@ Critical semantics:
   consequences, and reversal criteria. Do not create a parallel ADR; use
   [effort-modeling](../effort-modeling/SKILL.md) when the decision is still
   being grilled.
+
+### Compactions
+
+A compaction is a Finding that gives one short, current account of an Effort
+and names the records behind it. Write one with `WriteCompaction` when
+`proof brief <effortId>` reports `compaction.recompact: true`. Do not write
+one after every mutation; between compactions, `brief` lists what changed.
+
+1. Read the live records, not the previous compaction, and write a body that
+   stands on its own: what is accepted, what is still open or proposed, and
+   which constraints and risks bind the work.
+2. Put in `derives_from` only the records its sentences rest on, at most 10.
+   Never name another compaction there.
+3. Let the writer do the rest. It records which records were live (`covers`)
+   and supersedes the previous compaction, so the history stays one
+   `--resolve head` or `brief` away.
+
+To correct a compaction, write a new one. Edit its body by hand only to fix
+wording, or while the branch is unmerged.
 
 ## Reading (recall)
 
@@ -170,6 +193,9 @@ flatbread proof relations <effortId> <fromId> --relations derives_from,supersede
 
 # Single record with full body; --resolve head follows supersession to the tip
 flatbread proof get <id> [--resolve head]
+
+# Where an Effort stands: head compaction in full, then what changed since
+flatbread proof brief <effortId>
 ```
 
 Flags shared by reads: `--strict-min-generation <token>` (with optional
@@ -195,7 +221,10 @@ server-side.
    `proof records <effortId> --kinds issue,decision` and read each record's
    status/state from that one digest. Run `proof blocking-decisions <effortId>`
    only for an Effort whose digest shows an open `blocker` Issue — skip it
-   otherwise. Do not open raw `.flatbread-proof/**/*.md` for briefing;
+   otherwise. When `proof brief <effortId>` returns a head compaction that is
+   not stale (`compaction.head_id` set, `compaction.stale` false), its digest
+   can stand in for the `records` read: it holds the current account and
+   every change since. Do not open raw `.flatbread-proof/**/*.md` for briefing;
    browse digests are authoritative for status/state. Budget ≈ (1 + number
    of active Efforts) digest reads. A 12-run experiment across three model
    families showed this roughly halves recall tool calls with no loss of

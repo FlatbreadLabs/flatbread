@@ -1,0 +1,2337 @@
+{
+  "effort": "world",
+  "questions": [
+    {
+      "id": "world-001",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["lookup"],
+      "question": "In the decision that moved engine jobs to fibers, how large was each fiber's stack?",
+      "answer": {
+        "kind": "value",
+        "value": "64 KB",
+        "accept": ["64KB", "64 kilobytes", "64 kB"]
+      },
+      "evidence": ["dec-jobs-3"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "dec-jobs-3",
+          "includes": "64 KB stacks",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The fiber decision is superseded; a reader who looks only at live records will not find the stack size."
+      ]
+    },
+    {
+      "id": "world-002",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "According to the measurement that rechecked archetype iteration on the alpha world, how long does the Skiff join of transforms with the Submerged tag across the crab herd take?",
+      "answer": {
+        "kind": "value",
+        "value": "5.1 ms",
+        "accept": ["5.1", "5.1 milliseconds"]
+      },
+      "evidence": ["fnd-ecs-iter-redo"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-ecs-iter-redo",
+          "includes": "takes 5.1 ms",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The figure sits past the browse excerpt; a reader of the excerpt sees only 3.4 ms and 4.9 ms, which are iteration times, not the join.",
+        "3.2 ms is the later figure after tide-band chunks."
+      ]
+    },
+    {
+      "id": "world-003",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "Measured on the alpha build, how often did Gull scripts crash after fiber migration?",
+      "answer": {
+        "kind": "value",
+        "value": "one crash per 900 script waits",
+        "accept": [
+          "1 in 900",
+          "1 per 900",
+          "one per 900",
+          "1/900",
+          "one in 900 script waits",
+          "1 crash per 900 script waits"
+        ]
+      },
+      "evidence": ["fnd-gull-fiber-tls"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-gull-fiber-tls",
+          "includes": "one crash per 900 script waits",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The rate is in the last paragraph, past the browse excerpt.",
+        "1,400 is the number of native bindings, not a crash rate."
+      ]
+    },
+    {
+      "id": "world-004",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "Over one tide turn, how many file opens did the 128 m cell layout perform?",
+      "answer": {
+        "kind": "value",
+        "value": "4,100",
+        "accept": ["4100", "4,100 file opens"]
+      },
+      "evidence": ["fnd-cell-overhead"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-cell-overhead",
+          "includes": "4,100 file opens",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "600 is the old 256 m layout's figure.",
+        "196 is the number of resident cells."
+      ]
+    },
+    {
+      "id": "world-005",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "In the worst case of the low-tide save bug, how far inland did the terrain solver push a salvage chest?",
+      "answer": {
+        "kind": "value",
+        "value": "11 m",
+        "accept": ["11 metres", "11 meters", "11"]
+      },
+      "evidence": ["fnd-save-tide-mismatch"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-save-tide-mismatch",
+          "includes": "11 m inland",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The distance is in the final paragraph, past the browse excerpt; 31 of 50 is the repro count."
+      ]
+    },
+    {
+      "id": "world-006",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "In the alpha playtest field captures of streaming pool behaviour, how often did players reverse direction on average?",
+      "answer": {
+        "kind": "value",
+        "value": "3.4 times per minute",
+        "accept": ["3.4", "3.4 per minute", "3.4 reversals per minute"]
+      },
+      "evidence": ["fnd-pool-field"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-pool-field",
+          "includes": "3.4 times per minute",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The figure is past the excerpt; 22% and 63% are reload reductions."
+      ]
+    },
+    {
+      "id": "world-007",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "When the streaming pool was cut by 400 MB, how much of that came from texture mips?",
+      "answer": {
+        "kind": "value",
+        "value": "260 MB",
+        "accept": ["260"]
+      },
+      "evidence": ["con-pool-2"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "con-pool-2",
+          "includes": "texture mips give back 260 MB",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The split is in the last paragraph of a superseded constraint; the current constraint does not repeat it.",
+        "320 MB is the tide-band reservation, not part of the cut."
+      ]
+    },
+    {
+      "id": "world-008",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["truncation", "lookup"],
+      "question": "At what rate does the fixed-point tide simulation step?",
+      "answer": {
+        "kind": "value",
+        "value": "10 Hz",
+        "accept": ["10", "10 times a second", "ten times per second"]
+      },
+      "evidence": ["dec-tide-fixed"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "dec-tide-fixed",
+          "includes": "steps at 10 Hz",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The rate is in the last paragraph of the decision, past the excerpt.",
+        "The 10 updates a second in the host-streaming finding describe network updates for a rejected option."
+      ]
+    },
+    {
+      "id": "world-009",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["lookup", "distractor"],
+      "question": "How much does one fixed-point tide step cost on Meridian?",
+      "answer": {
+        "kind": "value",
+        "value": "0.3 ms",
+        "accept": ["0.3", "0.3 milliseconds"]
+      },
+      "evidence": ["fnd-tide-fixed-meridian"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-tide-fixed-meridian",
+          "includes": "0.3 ms on Meridian",
+          "expect": true
+        }
+      ],
+      "traps": ["A near-identical finding gives 0.9 ms, but for Skiff."]
+    },
+    {
+      "id": "world-010",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["retraction", "lookup"],
+      "question": "A finding about Kelp's decode speed was retracted within an hour of being written. What per-core decode rate did the retracted record claim?",
+      "answer": {
+        "kind": "value",
+        "value": "29 GB/s",
+        "accept": ["29", "29 GB/s per core"]
+      },
+      "evidence": ["fnd-codec-1-typo"],
+      "checks": [
+        {
+          "type": "field",
+          "record": "fnd-codec-1-typo",
+          "field": "standing",
+          "expect": "retracted"
+        },
+        {
+          "type": "body",
+          "record": "fnd-codec-1-typo",
+          "includes": "29 GB/s",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "Browse reads omit the retracted record; 2.9 GB/s is the corrected live finding."
+      ]
+    },
+    {
+      "id": "world-011",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["lifecycle"],
+      "question": "How was the gap about missing entity debug names in release builds closed?",
+      "answer": {
+        "kind": "value",
+        "value": "wontfix",
+        "accept": ["won't fix", "wont fix"]
+      },
+      "evidence": ["iss-ecs-names", "fnd-ecs-names-cost"],
+      "checks": [
+        {
+          "type": "field",
+          "record": "iss-ecs-names",
+          "field": "status"
+        }
+      ],
+      "traps": [
+        "It was not resolved or deferred; the 57 MB cost closed it as wontfix."
+      ]
+    },
+    {
+      "id": "world-012",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["current-state"],
+      "question": "Which decision currently defines how engine jobs are scheduled?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-jobs-6"
+      },
+      "evidence": ["dec-jobs-6"],
+      "checks": [
+        {
+          "type": "head",
+          "start": "dec-jobs-1"
+        }
+      ],
+      "traps": [
+        "The April decision that returned jobs to a thread pool is superseded; the current one also folds Gull scripts into the pool.",
+        "A retracted draft has an almost identical title to the April decision."
+      ]
+    },
+    {
+      "id": "world-013",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["negative", "blocker"],
+      "question": "On what date was the deadline-based streaming read scheduler accepted?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": ["dec-io-deadline"],
+      "checks": [
+        {
+          "type": "field",
+          "record": "dec-io-deadline",
+          "field": "state",
+          "expect": "proposed"
+        }
+      ],
+      "traps": [
+        "The premise is false: the deadline scheduler is still proposed. 2026-08-14 is its creation date."
+      ]
+    },
+    {
+      "id": "world-014",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["negative", "distractor"],
+      "question": "What frame budget in milliseconds does the \"Kestrel world streaming and simulation core\" Effort set for Skiff's 40 Hz mode?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": ["con-gull-tick"],
+      "checks": [
+        {
+          "type": "select",
+          "bodyIncludes": "40 Hz",
+          "count": true,
+          "expect": 0
+        }
+      ],
+      "traps": [
+        "The world Effort sets no frame budget; 3.0 ms is the Gull tick budget on Skiff, a share of a frame, not the frame budget."
+      ]
+    },
+    {
+      "id": "world-015",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["lookup"],
+      "question": "What is the Gull script tick budget per frame on Skiff?",
+      "answer": {
+        "kind": "value",
+        "value": "3.0 ms",
+        "accept": ["3 ms", "3.0", "3"]
+      },
+      "evidence": ["con-gull-tick"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "con-gull-tick",
+          "includes": "3.0 ms per frame on Skiff",
+          "expect": true
+        }
+      ],
+      "traps": ["2.0 ms is Meridian's budget."]
+    },
+    {
+      "id": "world-016",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["negative", "lifecycle"],
+      "question": "On what date was the world streaming and simulation Effort paused?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": ["effort"],
+      "checks": [
+        {
+          "type": "field",
+          "record": "effort",
+          "field": "status",
+          "expect": "active"
+        }
+      ],
+      "traps": [
+        "The premise is false: the Effort is active and nothing records a pause."
+      ]
+    },
+    {
+      "id": "world-017",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["temporal", "supersession"],
+      "question": "Which cell size decision was in force at the vertical slice on 2025-12-15?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-cell-128"
+      },
+      "evidence": ["dec-cell-192", "dec-cell-128"],
+      "path": [["dec-cell-192", "supersedes", "dec-cell-128"]],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-cell-192",
+          "at": "2025-12-15T00:00:00Z"
+        }
+      ],
+      "traps": [
+        "192 m cells came in April 2026; 256 m cells were replaced in November 2025."
+      ]
+    },
+    {
+      "id": "world-018",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["rejected-alternative"],
+      "question": "Which decision rejected the proposal to run engine jobs on fibers from the start?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-jobs-1"
+      },
+      "evidence": ["dec-jobs-fibers-early", "dec-jobs-1"],
+      "path": [["dec-jobs-fibers-early", "rejected_by", "dec-jobs-1"]],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-jobs-6",
+          "at": "2025-09-13T00:00:00Z"
+        }
+      ],
+      "traps": [
+        "The later move to fibers did not reopen this proposal; it stays rejected by the first thread-pool decision."
+      ]
+    },
+    {
+      "id": "world-019",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["invalidation"],
+      "question": "Which finding showed that giving reads for tide-exposed cells top priority was wrong?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-io-starve"
+      },
+      "evidence": ["dec-io-tide-priority", "fnd-io-starve"],
+      "path": [["dec-io-tide-priority", "invalidated_by", "fnd-io-starve"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "derivesFrom": "dec-io-tide-priority"
+        }
+      ],
+      "traps": [
+        "The blocker about untextured terrain is an Issue, not the invalidating finding."
+      ]
+    },
+    {
+      "id": "world-020",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["blocker"],
+      "question": "Which proposed decision answers the open blocker about inland terrain staying untextured during tide turns?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-io-deadline"
+      },
+      "evidence": ["iss-blk-io-starve", "dec-io-deadline"],
+      "path": [["iss-blk-io-starve", "supports", "dec-io-deadline"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "iss-blk-io-starve"
+        }
+      ],
+      "traps": [
+        "The tide-priority decision caused the blocker; it does not answer it."
+      ]
+    },
+    {
+      "id": "world-021",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["lifecycle"],
+      "question": "Which decision mitigated the risk that 192 m cells split the navigation tiles?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-nav-64"
+      },
+      "evidence": ["rsk-cell-seams", "dec-nav-64"],
+      "path": [["rsk-cell-seams", "mitigated_by", "dec-nav-64"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "rsk-cell-seams"
+        }
+      ],
+      "traps": [
+        "The 192 m cell decision created the risk; it did not mitigate it."
+      ]
+    },
+    {
+      "id": "world-022",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["lifecycle"],
+      "question": "Which finding was recorded as evidence when the risk that fiber stacks make crash dumps unreadable was realized?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-fiber-crash-stacks"
+      },
+      "evidence": ["rsk-fiber-debug", "fnd-fiber-crash-stacks"],
+      "path": [["rsk-fiber-debug", "evidence", "fnd-fiber-crash-stacks"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "derivesFrom": "rsk-fiber-debug"
+        }
+      ],
+      "traps": [
+        "The Gull thread-local finding is about fibers too, but it is not this risk's evidence."
+      ]
+    },
+    {
+      "id": "world-023",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["reopened", "rejected-alternative"],
+      "question": "Before the Zstandard codec proposal was reopened, which decision had rejected it?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-codec-kelp"
+      },
+      "evidence": ["dec-codec-zstd", "dec-codec-kelp"],
+      "path": [["dec-codec-zstd", "reopen_history", "dec-codec-kelp"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "iss-codec",
+          "where": {
+            "standing": "accepted"
+          }
+        }
+      ],
+      "traps": [
+        "The current rejected_by link names the 1 MB dictionary decision, which rejected it the second time; the first rejecter is only in the reopen history."
+      ]
+    },
+    {
+      "id": "world-024",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["reopened", "rejected-alternative"],
+      "question": "After the Zstandard codec proposal was reopened, which decision rejected it again?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-codec-dict"
+      },
+      "evidence": ["dec-codec-zstd", "dec-codec-dict"],
+      "path": [["dec-codec-zstd", "rejected_by", "dec-codec-dict"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "fnd-codec-3"
+        }
+      ],
+      "traps": [
+        "The original Kelp decision rejected it the first time, before the reopening."
+      ]
+    },
+    {
+      "id": "world-025",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["supersession", "distractor"],
+      "question": "Which constraint directly replaced the original 2.0 GB streaming pool budget?",
+      "answer": {
+        "kind": "record",
+        "value": "con-pool-2"
+      },
+      "evidence": ["con-pool-1", "con-pool-2"],
+      "path": [["con-pool-1", "superseded_by", "con-pool-2"]],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "con-pool-1",
+          "at": "2026-06-30T00:00:00Z"
+        }
+      ],
+      "traps": [
+        "Three live-looking records share the title; the current one adds the tide-band reservation and replaced the June cut, not the original.",
+        "A retracted draft proposed 1.8 GB."
+      ]
+    },
+    {
+      "id": "world-026",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["invalidation", "distractor"],
+      "question": "Which finding showed that the December measurement of sustained Skiff streaming reads was wrong?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-io-trace-2"
+      },
+      "evidence": ["fnd-io-trace-1", "fnd-io-trace-2"],
+      "path": [["fnd-io-trace-1", "invalidated_by", "fnd-io-trace-2"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "derivesFrom": "fnd-io-trace-1"
+        }
+      ],
+      "traps": [
+        "The I/O budget constraint was superseded, not invalidated, and it is not a finding."
+      ]
+    },
+    {
+      "id": "world-027",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["current-state", "distractor"],
+      "question": "What sustained read rate does the current streaming I/O budget allow on Skiff?",
+      "answer": {
+        "kind": "value",
+        "value": "160 MB/s",
+        "accept": ["160"]
+      },
+      "evidence": ["con-io-budget", "con-io-budget-2"],
+      "path": [["con-io-budget", "superseded_by", "con-io-budget-2"]],
+      "checks": [
+        {
+          "type": "body",
+          "record": "con-io-budget-2",
+          "includes": "under 160 MB/s",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "220 MB/s is the superseded December budget.",
+        "The streaming pool budget has a near-identical title but limits memory, not reads."
+      ]
+    },
+    {
+      "id": "world-028",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["rejected-alternative"],
+      "question": "Which finding measured the cost that ruled out having the host stream tide heights to every peer?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-tide-host-bw"
+      },
+      "evidence": ["dec-tide-host", "fnd-tide-host-bw"],
+      "path": [["dec-tide-host", "supports", "fnd-tide-host-bw"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "derivesFrom": "dec-tide-host"
+        }
+      ],
+      "traps": ["The strict-float finding ruled out a different alternative."]
+    },
+    {
+      "id": "world-029",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["blocker", "lifecycle"],
+      "question": "Which decision resolved the blocker about crash triage stalling on unreadable fiber stacks?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-jobs-5"
+      },
+      "evidence": ["iss-blk-crash-triage", "dec-jobs-5"],
+      "path": [["iss-blk-crash-triage", "resolved_by", "dec-jobs-5"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "iss-blk-crash-triage"
+        }
+      ],
+      "traps": [
+        "A retracted draft with a near-identical title is not the resolver.",
+        "The current job decision came later and did not resolve the blocker."
+      ]
+    },
+    {
+      "id": "world-030",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["compaction", "invalidation"],
+      "question": "Which compaction did the finding that hot reload drops suspended Gull coroutines invalidate?",
+      "answer": {
+        "kind": "record",
+        "value": "cmp-2"
+      },
+      "evidence": ["fnd-gull-reload-coro", "cmp-2"],
+      "path": [["fnd-gull-reload-coro", "invalidates", "cmp-2"]],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "compactions": true,
+          "where": {
+            "kind": "compaction"
+          },
+          "bodyIncludes": "94% of edits"
+        }
+      ],
+      "traps": [
+        "The finding also invalidates the reload prototype finding, but that is not a compaction.",
+        "The head compaction is not invalidated."
+      ]
+    },
+    {
+      "id": "world-031",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["current-state", "compaction", "supersession"],
+      "question": "What is the latest measured cold decode rate on Skiff for Kelp with a 1 MB dictionary?",
+      "answer": {
+        "kind": "value",
+        "value": "1.5 GB/s",
+        "accept": ["1.5"]
+      },
+      "evidence": ["fnd-codec-3", "fnd-codec-4", "cmp-4"],
+      "path": [["fnd-codec-3", "superseded_by", "fnd-codec-4"]],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-codec-4",
+          "includes": "now decodes at 1.5 GB/s",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The head compaction and the superseded finding say 2.2 GB/s; firmware 3.2 changed it after the compaction was written."
+      ]
+    },
+    {
+      "id": "world-032",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["temporal", "supersession"],
+      "question": "Which tide drift measurement was the current one on 2025-10-25?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-tide-drift-2"
+      },
+      "evidence": ["fnd-tide-drift-3", "fnd-tide-drift-2"],
+      "path": [["fnd-tide-drift-3", "supersedes", "fnd-tide-drift-2"]],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "fnd-tide-drift-3",
+          "at": "2025-10-25T00:00:00Z"
+        }
+      ],
+      "traps": [
+        "The 6-minute finding came on 2025-10-29; a retracted duplicate of it has a near-identical title."
+      ]
+    },
+    {
+      "id": "world-033",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["temporal", "supersession"],
+      "question": "Which save format decision was in force at the vertical slice on 2025-12-15?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-save-delta"
+      },
+      "evidence": ["dec-save-delta-2", "dec-save-delta"],
+      "path": [["dec-save-delta-2", "supersedes", "dec-save-delta"]],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-save-delta-2",
+          "at": "2025-12-15T00:00:00Z"
+        }
+      ],
+      "traps": [
+        "The tide-phase deltas came in February 2026.",
+        "Full snapshots were rejected; the near-identical title of the current decision differs only in what deltas are keyed to."
+      ]
+    },
+    {
+      "id": "world-034",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["negative", "lifecycle"],
+      "question": "What did the \"Kestrel world streaming and simulation core\" Effort decide about cross-platform cloud saves?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": ["iss-save-cloud", "fnd-save-cloud-scope"],
+      "path": [["iss-save-cloud", "resolved_by", "fnd-save-cloud-scope"]],
+      "checks": [
+        {
+          "type": "field",
+          "record": "iss-save-cloud",
+          "field": "status",
+          "expect": "deferred"
+        }
+      ],
+      "traps": [
+        "No decision exists: the issue was deferred by a survey finding to a post-launch patch."
+      ]
+    },
+    {
+      "id": "world-035",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["negative", "lookup"],
+      "question": "Does the accepted Gull VM compile scripts to machine code at run time?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": ["dec-gull-bytecode", "con-no-jit"],
+      "path": [["dec-gull-bytecode", "derives_from", "con-no-jit"]],
+      "checks": [
+        {
+          "type": "field",
+          "record": "dec-gull-bytecode",
+          "field": "state",
+          "expect": "accepted"
+        }
+      ],
+      "traps": [
+        "The VM runs bytecode with no JIT because consoles forbid runtime code generation; the build-time C++ transpiler was rejected."
+      ]
+    },
+    {
+      "id": "world-036",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["rationale"],
+      "question": "Why did Kestrel retire fibers for engine jobs in April 2026?",
+      "answer": {
+        "kind": "text",
+        "rubric": [
+          ["41%", "41 percent"],
+          ["crash", "stack"],
+          ["continuation"],
+          ["93%", "7%", "idle", "busy"]
+        ]
+      },
+      "evidence": [
+        "dec-jobs-5",
+        "fnd-fiber-crash-stacks",
+        "fnd-jobs-continuations"
+      ],
+      "path": [["dec-jobs-5", "derives_from", "fnd-fiber-crash-stacks"]],
+      "checks": [
+        {
+          "type": "body",
+          "record": "dec-jobs-5",
+          "includes": "41% of alpha crash reports",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The Gull thread-local bug had already been handled by pinning Gull threads; the April reversal was driven by unreadable crash stacks and the continuation prototype."
+      ]
+    },
+    {
+      "id": "world-037",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["dead-evidence", "invalidation"],
+      "question": "The accepted decision to hot-reload Gull functions by swapping bytecode rests on a finding that has since been invalidated. Which finding invalidated that support?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-gull-reload-coro"
+      },
+      "evidence": [
+        "dec-gull-reload",
+        "fnd-gull-reload-proto",
+        "fnd-gull-reload-coro"
+      ],
+      "path": [
+        ["dec-gull-reload", "derives_from", "fnd-gull-reload-proto"],
+        ["fnd-gull-reload-proto", "invalidated_by", "fnd-gull-reload-coro"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "derivesFrom": "fnd-gull-reload-proto"
+        }
+      ],
+      "traps": [
+        "The coroutine defect Issue has a near-identical title but is an Issue, not the invalidating finding.",
+        "The reload decision itself is still accepted, not invalidated."
+      ]
+    },
+    {
+      "id": "world-038",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["blob", "invalidation"],
+      "question": "How many archetypes existed in the world used by the ECS iteration benchmark that the alpha-world recheck invalidated?",
+      "answer": {
+        "kind": "value",
+        "value": "3",
+        "accept": ["three"]
+      },
+      "evidence": [
+        "fnd-ecs-iter-redo",
+        "fnd-ecs-iter-bench",
+        "cit-ecs-profile",
+        "blob-ecs-profile"
+      ],
+      "path": [
+        ["fnd-ecs-iter-redo", "invalidates", "fnd-ecs-iter-bench"],
+        ["fnd-ecs-iter-bench", "cites", "cit-ecs-profile"],
+        ["cit-ecs-profile", "blob", "blob-ecs-profile"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blob-ecs-profile",
+          "includes": "\"archetype_count\": 3",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "912 is the alpha world's archetype count.",
+        "The findings say only that one spawn template was used; the count is only in the attached profile."
+      ]
+    },
+    {
+      "id": "world-039",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["blob"],
+      "question": "In the cold-cache Skiff codec benchmark, how fast did Zstandard decode geometry?",
+      "answer": {
+        "kind": "value",
+        "value": "1.2 GB/s",
+        "accept": ["1.2"]
+      },
+      "evidence": ["fnd-codec-2", "cit-codec-2", "blob-codec-2"],
+      "path": [
+        ["fnd-codec-2", "cites", "cit-codec-2"],
+        ["cit-codec-2", "blob", "blob-codec-2"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blob-codec-2",
+          "includes": "| Geometry | 0.8 | 1.2 |",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "1.3 GB/s is Zstandard's weighted figure for all assets, and also its warm geometry figure in the October table."
+      ]
+    },
+    {
+      "id": "world-040",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["blob", "negative"],
+      "question": "What LZ4 decode rate did the cold-cache Skiff codec benchmark record?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": ["fnd-codec-2", "cit-codec-2", "blob-codec-2"],
+      "path": [
+        ["fnd-codec-2", "cites", "cit-codec-2"],
+        ["cit-codec-2", "blob", "blob-codec-2"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blob-codec-2",
+          "includes": "LZ4 was not rerun",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "3.8 GB/s is LZ4's warm-cache figure from the invalidated October benchmark; LZ4 was not rerun cold."
+      ]
+    },
+    {
+      "id": "world-041",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["blob"],
+      "question": "In the Skiff streaming trace of a falling tide with 256 m cells, what share of the reads were textures?",
+      "answer": {
+        "kind": "value",
+        "value": "61%",
+        "accept": ["0.61", "61 percent"]
+      },
+      "evidence": [
+        "fnd-tide-burst",
+        "cit-trace-tide-turn",
+        "blob-trace-tide-turn"
+      ],
+      "path": [
+        ["fnd-tide-burst", "cites", "cit-trace-tide-turn"],
+        ["cit-trace-tide-turn", "blob", "blob-trace-tide-turn"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blob-trace-tide-turn",
+          "includes": "\"textures\": 0.61",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "30% is the share of a cell that changes when the tide falls, not a read share."
+      ]
+    },
+    {
+      "id": "world-042",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["blob", "lifecycle"],
+      "question": "The risk that delta saves outgrow console save slots was accepted on the strength of one measurement. In the data behind that measurement, how long does an 80-hour save take to load on Skiff?",
+      "answer": {
+        "kind": "value",
+        "value": "5.4 s",
+        "accept": ["5.4", "5.4 seconds"]
+      },
+      "evidence": [
+        "rsk-save-size",
+        "fnd-save-size",
+        "cit-save-sizes",
+        "blob-save-sizes"
+      ],
+      "path": [
+        ["rsk-save-size", "evidence", "fnd-save-size"],
+        ["fnd-save-size", "cites", "cit-save-sizes"],
+        ["cit-save-sizes", "blob", "blob-save-sizes"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blob-save-sizes",
+          "includes": "80,69800,12.3,5.4",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "2.9 s is the 40-hour load time; 12.3 is the 80-hour save size in MB."
+      ]
+    },
+    {
+      "id": "world-043",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["blob"],
+      "question": "According to the log behind the finding that float tides drift apart between machines within 6 minutes, at what minute did the first walkable tile flip?",
+      "answer": {
+        "kind": "value",
+        "value": "5.8",
+        "accept": ["5.8 minutes", "minute 5.8"]
+      },
+      "evidence": ["fnd-tide-drift-3", "cit-tide-drift", "blob-tide-drift"],
+      "path": [
+        ["fnd-tide-drift-3", "cites", "cit-tide-drift"],
+        ["cit-tide-drift", "blob", "blob-tide-drift"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blob-tide-drift",
+          "includes": "\"minute\": 5.8",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "5.6 minutes is when PC and Skiff first passed the 1 cm threshold, not when a tile flipped.",
+        "6 minutes is the rounded headline."
+      ]
+    },
+    {
+      "id": "world-044",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["temporal", "supersession"],
+      "question": "Which job model decision was in force at the vertical slice on 2025-12-15?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-jobs-3"
+      },
+      "evidence": ["dec-jobs-6", "dec-jobs-5", "dec-jobs-4", "dec-jobs-3"],
+      "path": [
+        ["dec-jobs-6", "supersedes", "dec-jobs-5"],
+        ["dec-jobs-5", "supersedes", "dec-jobs-4"],
+        ["dec-jobs-4", "supersedes", "dec-jobs-3"]
+      ],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-jobs-6",
+          "at": "2025-12-15T00:00:00Z"
+        }
+      ],
+      "traps": [
+        "The current decision is a thread pool, so a reader may assume the slice used one; at the slice, jobs ran on fibers.",
+        "The early fiber proposal was rejected and never in force."
+      ]
+    },
+    {
+      "id": "world-045",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["temporal", "supersession"],
+      "question": "Which job model decision was in force at alpha on 2026-03-02?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-jobs-4"
+      },
+      "evidence": ["dec-jobs-6", "dec-jobs-5", "dec-jobs-4"],
+      "path": [
+        ["dec-jobs-6", "supersedes", "dec-jobs-5"],
+        ["dec-jobs-5", "supersedes", "dec-jobs-4"]
+      ],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-jobs-6",
+          "at": "2026-03-02T00:00:00Z"
+        }
+      ],
+      "traps": [
+        "Plain fibers were replaced in February by fibers with Gull pinned to dedicated threads; the return to a thread pool came in April."
+      ]
+    },
+    {
+      "id": "world-046",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["temporal", "supersession", "distractor"],
+      "question": "Which streaming pool budget constraint applied at alpha on 2026-03-02?",
+      "answer": {
+        "kind": "record",
+        "value": "con-pool-1"
+      },
+      "evidence": ["con-pool-3", "con-pool-2", "con-pool-1"],
+      "path": [
+        ["con-pool-3", "supersedes", "con-pool-2"],
+        ["con-pool-2", "supersedes", "con-pool-1"]
+      ],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "con-pool-3",
+          "at": "2026-03-02T00:00:00Z"
+        }
+      ],
+      "traps": [
+        "All three versions share one title; the 1.6 GB cut came in June 2026, after alpha."
+      ]
+    },
+    {
+      "id": "world-047",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["temporal", "compaction"],
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, which compaction was the head compaction when beta started on 2026-06-01?",
+      "answer": {
+        "kind": "record",
+        "value": "cmp-2"
+      },
+      "evidence": ["cmp-4", "cmp-3", "cmp-2"],
+      "path": [
+        ["cmp-4", "supersedes", "cmp-3"],
+        ["cmp-3", "supersedes", "cmp-2"]
+      ],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "cmp-4",
+          "at": "2026-06-01T00:00:00Z"
+        }
+      ],
+      "traps": [
+        "The compaction titled 'after beta' was written on 2026-06-10.",
+        "The head at beta had already been invalidated, but it was still the head."
+      ]
+    },
+    {
+      "id": "world-048",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["rejected-alternative"],
+      "question": "The measurement that alpha content needs 6.2 ms of Gull time per frame prompted a build-time alternative to the VM. Which decision rejected that alternative?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-gull-bytecode"
+      },
+      "evidence": [
+        "fnd-gull-alpha-tick",
+        "dec-gull-transpile",
+        "dec-gull-bytecode"
+      ],
+      "path": [
+        ["fnd-gull-alpha-tick", "supports", "dec-gull-transpile"],
+        ["dec-gull-transpile", "rejected_by", "dec-gull-bytecode"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "con-no-jit"
+        }
+      ],
+      "traps": [
+        "The transpiler did not answer the Gull VM question, so no sibling rule rejected it; the bytecode decision named it explicitly when accepted.",
+        "The tree-walking interpreter decision was superseded, not the rejecter."
+      ]
+    },
+    {
+      "id": "world-049",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["dead-evidence", "invalidation"],
+      "question": "The accepted policy to evict cells by distance and tide forecast rests on a simulation. What reload reduction did field captures measure instead?",
+      "answer": {
+        "kind": "value",
+        "value": "22%",
+        "accept": ["22", "22 percent"]
+      },
+      "evidence": ["dec-pool-forecast", "fnd-pool-sim", "fnd-pool-field"],
+      "path": [
+        ["dec-pool-forecast", "derives_from", "fnd-pool-sim"],
+        ["fnd-pool-sim", "invalidated_by", "fnd-pool-field"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-pool-field",
+          "includes": "cuts reloads by 22%",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "63% is the simulated figure, which was invalidated.",
+        "38% is LRU's share of tide-turn reloads that had just been evicted."
+      ]
+    },
+    {
+      "id": "world-050",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["reopened"],
+      "question": "The proposal to compile Gull to bytecode was rejected and later reopened. Which finding about the decision that had rejected it prompted the reopening?",
+      "answer": {
+        "kind": "record",
+        "value": "fnd-gull-alpha-tick"
+      },
+      "evidence": ["dec-gull-bytecode", "dec-gull-tree", "fnd-gull-alpha-tick"],
+      "path": [
+        ["dec-gull-bytecode", "reopen_history", "dec-gull-tree"],
+        ["dec-gull-tree", "supports", "fnd-gull-alpha-tick"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["finding"],
+          "derivesFrom": "dec-gull-tree"
+        }
+      ],
+      "traps": [
+        "The register VM prototype finding came after the reopening.",
+        "The 1.8 ms interpreter finding came before the first rejection."
+      ]
+    },
+    {
+      "id": "world-051",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["rationale", "rejected-alternative"],
+      "question": "Why did the tide simulation move to fixed point instead of compiling the float code in strict IEEE mode?",
+      "answer": {
+        "kind": "text",
+        "rubric": [
+          ["sin", "math library"],
+          ["ulp"],
+          ["Skiff"],
+          ["bit-identical", "bit for bit", "bit-exact", "same bits"]
+        ]
+      },
+      "evidence": [
+        "dec-tide-strict",
+        "dec-tide-fixed",
+        "fnd-tide-strict-test",
+        "con-tide-bitexact"
+      ],
+      "path": [
+        ["dec-tide-strict", "rejected_by", "dec-tide-fixed"],
+        ["dec-tide-strict", "supports", "fnd-tide-strict-test"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-tide-strict-test",
+          "includes": "differs by one ulp",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "Strict mode fixed the compiler contraction and matched PC with Meridian; it failed only because Skiff's sin() differs by one ulp."
+      ]
+    },
+    {
+      "id": "world-052",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["lookup", "lifecycle"],
+      "question": "The current streaming pool constraint descends from a cut that an earlier risk predicted. Who wrote that risk?",
+      "answer": {
+        "kind": "value",
+        "value": "Dara Whitlock",
+        "accept": ["Dara"]
+      },
+      "evidence": [
+        "con-pool-3",
+        "con-pool-2",
+        "fnd-pool-cut-notice",
+        "rsk-pool-cut"
+      ],
+      "path": [
+        ["con-pool-3", "supersedes", "con-pool-2"],
+        ["con-pool-2", "derives_from", "fnd-pool-cut-notice"],
+        ["fnd-pool-cut-notice", "derives_from", "rsk-pool-cut"]
+      ],
+      "checks": [
+        {
+          "type": "field",
+          "record": "rsk-pool-cut",
+          "field": "created_by"
+        }
+      ],
+      "traps": [
+        "Priya Natarajan wrote the notice of the cut and Kenji Arakawa wrote the constraints; the risk is Dara Whitlock's."
+      ]
+    },
+    {
+      "id": "world-053",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["truncation", "aggregate"],
+      "question": "By how many milliseconds did grouping archetype chunks by tide band cut the Skiff crab join, compared with the alpha-world measurement?",
+      "answer": {
+        "kind": "value",
+        "value": "1.9 ms",
+        "accept": ["1.9", "1.9 milliseconds"]
+      },
+      "evidence": ["fnd-ecs-chunk-gain", "dec-ecs-chunk", "fnd-ecs-iter-redo"],
+      "path": [
+        ["fnd-ecs-chunk-gain", "derives_from", "dec-ecs-chunk"],
+        ["dec-ecs-chunk", "derives_from", "fnd-ecs-iter-redo"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-ecs-chunk-gain",
+          "includes": "takes 3.2 ms",
+          "expect": true
+        },
+        {
+          "type": "body",
+          "record": "fnd-ecs-iter-redo",
+          "includes": "takes 5.1 ms",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The 5.1 ms baseline is past the excerpt of the alpha-world finding.",
+        "The chunk decision's 3.5 ms is a target, not a measurement."
+      ]
+    },
+    {
+      "id": "world-054",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["lookup", "supersession"],
+      "question": "Starting from the current job model decision, walk back through the decisions it replaced to the defect that forced Gull scripts out of the fiber pool. Who filed that defect?",
+      "answer": {
+        "kind": "value",
+        "value": "Marta Lindqvist",
+        "accept": ["Marta"]
+      },
+      "evidence": [
+        "dec-jobs-6",
+        "dec-jobs-5",
+        "dec-jobs-4",
+        "iss-jobs-gull-crash"
+      ],
+      "path": [
+        ["dec-jobs-6", "supersedes", "dec-jobs-5"],
+        ["dec-jobs-5", "supersedes", "dec-jobs-4"],
+        ["dec-jobs-4", "derives_from", "iss-jobs-gull-crash"]
+      ],
+      "checks": [
+        {
+          "type": "field",
+          "record": "iss-jobs-gull-crash",
+          "field": "created_by"
+        }
+      ],
+      "traps": [
+        "Rhea Valdés wrote the job decisions; the defect was filed by Marta Lindqvist."
+      ]
+    },
+    {
+      "id": "world-055",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["rationale"],
+      "question": "Why does Kelp remain the streaming codec after the cold-cache rerun showed Zstandard beating it on Skiff?",
+      "answer": {
+        "kind": "text",
+        "rubric": [
+          ["1 MB"],
+          ["dictionary"],
+          ["2.2 GB/s", "1.7x"],
+          ["cache", "cold"]
+        ]
+      },
+      "evidence": ["dec-codec-dict", "fnd-codec-3", "fnd-codec-2"],
+      "path": [
+        ["dec-codec-dict", "derives_from", "fnd-codec-3"],
+        ["fnd-codec-3", "derives_from", "fnd-codec-2"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-codec-3",
+          "includes": "2.2 GB/s",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The original Kelp decision still rests on the invalidated warm-cache benchmark; the reason Kelp survives is the 1 MB dictionary result, not that benchmark."
+      ]
+    },
+    {
+      "id": "world-056",
+      "tier": 3,
+      "hops": 5,
+      "categories": ["temporal", "supersession"],
+      "question": "Which job model decision was in force on 2025-10-01?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-jobs-1"
+      },
+      "evidence": [
+        "dec-jobs-6",
+        "dec-jobs-5",
+        "dec-jobs-4",
+        "dec-jobs-3",
+        "dec-jobs-2",
+        "dec-jobs-1"
+      ],
+      "path": [
+        ["dec-jobs-6", "supersedes", "dec-jobs-5"],
+        ["dec-jobs-5", "supersedes", "dec-jobs-4"],
+        ["dec-jobs-4", "supersedes", "dec-jobs-3"],
+        ["dec-jobs-3", "supersedes", "dec-jobs-2"],
+        ["dec-jobs-2", "supersedes", "dec-jobs-1"]
+      ],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "dec-jobs-6",
+          "at": "2025-10-01T00:00:00Z"
+        }
+      ],
+      "traps": [
+        "Priority lanes came on 2025-10-21, so the plain work-stealing pool was still in force.",
+        "The early fiber proposal was rejected on 2025-09-12."
+      ]
+    },
+    {
+      "id": "world-057",
+      "tier": 3,
+      "hops": 5,
+      "categories": ["blob", "blocker"],
+      "question": "The open blocker about beta saves lacking the second harmonic's phase traces back through the tide decisions to the drift measurement that started fixed-point work. In that measurement's attached log, which tile flipped walkability first?",
+      "answer": {
+        "kind": "value",
+        "value": "212, 87",
+        "accept": ["(212, 87)", "[212, 87]", "212,87", "tile 212, 87"]
+      },
+      "evidence": [
+        "iss-blk-save-harmonic",
+        "dec-tide-harmonic",
+        "dec-tide-fixed",
+        "fnd-tide-drift-3",
+        "cit-tide-drift",
+        "blob-tide-drift"
+      ],
+      "path": [
+        ["iss-blk-save-harmonic", "derives_from", "dec-tide-harmonic"],
+        ["dec-tide-harmonic", "derives_from", "dec-tide-fixed"],
+        ["dec-tide-fixed", "derives_from", "fnd-tide-drift-3"],
+        ["fnd-tide-drift-3", "cites", "cit-tide-drift"],
+        ["cit-tide-drift", "blob", "blob-tide-drift"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blob-tide-drift",
+          "includes": ["\"tile\"", "212", "87"],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The tile appears only in the attached log; the findings give times, not tiles."
+      ]
+    },
+    {
+      "id": "world-058",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["blob", "supersession"],
+      "question": "The decision to shrink Kelp's dictionary rests on a measurement that built on a cold-cache rerun. In that rerun's table, how fast did Kelp with its original 4 MB dictionary decode geometry?",
+      "answer": {
+        "kind": "value",
+        "value": "0.8 GB/s",
+        "accept": ["0.8"]
+      },
+      "evidence": [
+        "dec-codec-dict",
+        "fnd-codec-3",
+        "fnd-codec-2",
+        "cit-codec-2",
+        "blob-codec-2"
+      ],
+      "path": [
+        ["dec-codec-dict", "derives_from", "fnd-codec-3"],
+        ["fnd-codec-3", "derives_from", "fnd-codec-2"],
+        ["fnd-codec-2", "cites", "cit-codec-2"],
+        ["cit-codec-2", "blob", "blob-codec-2"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blob-codec-2",
+          "includes": "| Geometry | 0.8 | 1.2 |",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "2.8 GB/s is Kelp's warm geometry figure in the invalidated October table.",
+        "1.1 GB/s is Kelp's weighted cold figure across all assets."
+      ]
+    },
+    {
+      "id": "world-059",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["blocker", "dead-evidence"],
+      "question": "Two proposed fixes answer the open blocker about beta saves lacking the second harmonic's phase. Which one builds on a decision that still rests on an invalidated cost estimate?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-save-harmonic-clock"
+      },
+      "evidence": [
+        "iss-blk-save-harmonic",
+        "dec-save-harmonic-clock",
+        "dec-save-harmonic-zero",
+        "dec-save-version",
+        "fnd-save-upgrade-cost",
+        "fnd-save-upgrade-real"
+      ],
+      "path": [
+        ["iss-blk-save-harmonic", "supports", "dec-save-harmonic-clock"],
+        ["dec-save-harmonic-clock", "derives_from", "dec-save-version"],
+        ["dec-save-version", "derives_from", "fnd-save-upgrade-cost"],
+        ["fnd-save-upgrade-cost", "invalidated_by", "fnd-save-upgrade-real"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "dec-save-version"
+        }
+      ],
+      "traps": [
+        "The zero-phase fix derives only from the blocker.",
+        "The versioning decision is accepted; its support, the 5 ms estimate, is what was invalidated."
+      ]
+    },
+    {
+      "id": "world-060",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["invalidation", "blocker"],
+      "question": "Start from the open risk that reworking the read scheduler may slip the coast sign-off. Follow its blocker to the finding behind it, then to the decision that finding proved wrong. Which cell size decision did that wrong decision build on?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-cell-192"
+      },
+      "evidence": [
+        "rsk-io-rework",
+        "iss-blk-io-starve",
+        "fnd-io-starve",
+        "dec-io-tide-priority",
+        "dec-cell-192"
+      ],
+      "path": [
+        ["rsk-io-rework", "derives_from", "iss-blk-io-starve"],
+        ["iss-blk-io-starve", "derives_from", "fnd-io-starve"],
+        ["fnd-io-starve", "invalidates", "dec-io-tide-priority"],
+        ["dec-io-tide-priority", "derives_from", "dec-cell-192"]
+      ],
+      "checks": [
+        {
+          "type": "head",
+          "start": "dec-cell-256"
+        }
+      ],
+      "traps": [
+        "The tide-priority decision is invalidated, but the cell size decision it built on is still accepted.",
+        "The retracted 192 m duplicate is not the decision."
+      ]
+    },
+    {
+      "id": "world-061",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["blob", "dead-evidence"],
+      "question": "The realized risk about join queries losing cache locality has evidence that discredited an earlier benchmark. In that earlier benchmark's attached profile, how much memory did the hybrid layout use?",
+      "answer": {
+        "kind": "value",
+        "value": "236 MB",
+        "accept": ["236"]
+      },
+      "evidence": [
+        "rsk-ecs-join",
+        "fnd-ecs-iter-redo",
+        "fnd-ecs-iter-bench",
+        "cit-ecs-profile",
+        "blob-ecs-profile"
+      ],
+      "path": [
+        ["rsk-ecs-join", "evidence", "fnd-ecs-iter-redo"],
+        ["fnd-ecs-iter-redo", "invalidates", "fnd-ecs-iter-bench"],
+        ["fnd-ecs-iter-bench", "cites", "cit-ecs-profile"],
+        ["cit-ecs-profile", "blob", "blob-ecs-profile"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blob-ecs-profile",
+          "includes": "\"memory_mb\": 236",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "212 MB and 340 MB are the archetype and sparse-set layouts.",
+        "Memory per layout appears only in the profile."
+      ]
+    },
+    {
+      "id": "world-062",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["supersession", "blocker"],
+      "question": "One proposed fix for the save-harmonic blocker builds on the save versioning decision. Follow that decision back to the first delta-format decision it built on. How large was a full world snapshot save in the finding that first delta decision rested on?",
+      "answer": {
+        "kind": "value",
+        "value": "310 MB",
+        "accept": ["310"]
+      },
+      "evidence": [
+        "dec-save-harmonic-clock",
+        "dec-save-version",
+        "dec-save-delta-2",
+        "dec-save-delta",
+        "fnd-save-snapshot-size"
+      ],
+      "path": [
+        ["dec-save-harmonic-clock", "derives_from", "dec-save-version"],
+        ["dec-save-version", "derives_from", "dec-save-delta-2"],
+        ["dec-save-delta-2", "supersedes", "dec-save-delta"],
+        ["dec-save-delta", "derives_from", "fnd-save-snapshot-size"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-save-snapshot-size",
+          "includes": "310 MB",
+          "expect": true
+        }
+      ],
+      "traps": ["6.2 MB is a 40-hour delta save, not a snapshot."]
+    },
+    {
+      "id": "world-063",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["supersession", "distractor"],
+      "question": "Follow the current cell size decision back through the cell decisions it replaced to the first cell size sweep. Which streaming pool constraint record did that sweep measure against?",
+      "answer": {
+        "kind": "record",
+        "value": "con-pool-1"
+      },
+      "evidence": [
+        "dec-cell-192",
+        "dec-cell-128",
+        "dec-cell-256",
+        "fnd-cell-sweep",
+        "con-pool-1"
+      ],
+      "path": [
+        ["dec-cell-192", "supersedes", "dec-cell-128"],
+        ["dec-cell-128", "supersedes", "dec-cell-256"],
+        ["dec-cell-256", "derives_from", "fnd-cell-sweep"],
+        ["fnd-cell-sweep", "derives_from", "con-pool-1"]
+      ],
+      "checks": [
+        {
+          "type": "asof",
+          "start": "con-pool-3",
+          "at": "2025-09-25T00:00:00Z"
+        }
+      ],
+      "traps": [
+        "Three records are titled 'Streaming pool budget'; the sweep used the original 2.0 GB one, not the current 1.6 GB one."
+      ]
+    },
+    {
+      "id": "world-064",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["rejected-alternative"],
+      "question": "The accepted risk that fixed-point tides crowd the Skiff simulation budget traces back to a decision that answered a question. Which alternatives did that question reject?",
+      "answer": {
+        "kind": "records",
+        "value": ["dec-tide-strict", "dec-tide-host"]
+      },
+      "evidence": [
+        "rsk-tide-skiff-cost",
+        "fnd-tide-fixed-skiff",
+        "dec-tide-fixed",
+        "iss-tide-math",
+        "dec-tide-strict",
+        "dec-tide-host"
+      ],
+      "path": [
+        ["rsk-tide-skiff-cost", "evidence", "fnd-tide-fixed-skiff"],
+        ["fnd-tide-fixed-skiff", "derives_from", "dec-tide-fixed"],
+        ["dec-tide-fixed", "derives_from", "iss-tide-math"],
+        ["iss-tide-math", "supports", "dec-tide-strict"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "iss-tide-math",
+          "where": {
+            "standing": "rejected"
+          }
+        }
+      ],
+      "traps": [
+        "The phase-wrap decision derives from the fixed-point decision but answered the overflow risk, not the question."
+      ]
+    },
+    {
+      "id": "world-065",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["lookup", "blocker"],
+      "question": "Start from the blocker about crash triage. Follow the decision that resolved it back through its prototype to the first measurement of workers blocking on reads. How much idle time per frame did that first measurement report on Meridian?",
+      "answer": {
+        "kind": "value",
+        "value": "3.1 ms",
+        "accept": ["3.1"]
+      },
+      "evidence": [
+        "iss-blk-crash-triage",
+        "dec-jobs-5",
+        "fnd-jobs-continuations",
+        "fnd-jobs-idle",
+        "fnd-jobs-stalls"
+      ],
+      "path": [
+        ["iss-blk-crash-triage", "resolved_by", "dec-jobs-5"],
+        ["dec-jobs-5", "derives_from", "fnd-jobs-continuations"],
+        ["fnd-jobs-continuations", "derives_from", "fnd-jobs-idle"],
+        ["fnd-jobs-idle", "derives_from", "fnd-jobs-stalls"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "fnd-jobs-stalls",
+          "includes": "3.1 ms per frame",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "28% is the later idle share during tide turns, and 7% is the continuation prototype's."
+      ]
+    },
+    {
+      "id": "world-066",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["blob", "compaction"],
+      "question": "One of the blockers the head compaction names traces to a streaming trace. How many player-proximity reads were delayed in that trace?",
+      "answer": {
+        "kind": "value",
+        "value": "46"
+      },
+      "evidence": [
+        "cmp-4",
+        "iss-blk-io-starve",
+        "fnd-io-starve",
+        "cit-trace-starve",
+        "blob-trace-starve"
+      ],
+      "path": [
+        ["cmp-4", "derives_from", "iss-blk-io-starve"],
+        ["iss-blk-io-starve", "derives_from", "fnd-io-starve"],
+        ["fnd-io-starve", "cites", "cit-trace-starve"],
+        ["cit-trace-starve", "blob", "blob-trace-starve"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blob-trace-starve",
+          "includes": "\"proximity_reads_delayed\": 46",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "11 is the number of tide cells queued; 32 is the maximum queue depth."
+      ]
+    },
+    {
+      "id": "world-067",
+      "tier": 3,
+      "hops": 4,
+      "categories": ["invalidation", "blob"],
+      "question": "Start from the realized risk about Kelp's dictionary thrashing the Skiff cache. In the table attached to the benchmark that the risk's evidence invalidated, how fast did Zstandard decode audio banks?",
+      "answer": {
+        "kind": "value",
+        "value": "1.2 GB/s",
+        "accept": ["1.2"]
+      },
+      "evidence": [
+        "rsk-kelp-cache",
+        "fnd-codec-2",
+        "fnd-codec-1",
+        "cit-codec-1",
+        "blob-codec-1"
+      ],
+      "path": [
+        ["rsk-kelp-cache", "evidence", "fnd-codec-2"],
+        ["fnd-codec-2", "invalidates", "fnd-codec-1"],
+        ["fnd-codec-1", "cites", "cit-codec-1"],
+        ["cit-codec-1", "blob", "blob-codec-1"]
+      ],
+      "checks": [
+        {
+          "type": "body",
+          "record": "blob-codec-1",
+          "includes": "| Audio banks | 1.6 | 2.4 | 1.7 | 1.2 |",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "1.1 GB/s is Zstandard's audio figure in the cold-cache table attached to the evidence itself, not to the invalidated benchmark."
+      ]
+    },
+    {
+      "id": "world-068",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["compaction", "lifecycle"],
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, is the head compaction stale?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": ["cmp-4"],
+      "checks": [
+        {
+          "type": "compaction",
+          "field": "stale"
+        },
+        {
+          "type": "compaction",
+          "field": "changes",
+          "expect": 7
+        }
+      ],
+      "traps": [
+        "Seven records changed since it was written, so brief asks for a new compaction, but none of the records it derives from moved and no finding invalidated it, so it is not stale.",
+        "An older compaction was invalidated; it is no longer the head."
+      ]
+    },
+    {
+      "id": "world-069",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["compaction", "aggregate"],
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, how many records have joined, left, or changed standing in the live set since the head compaction was written?",
+      "answer": {
+        "kind": "count",
+        "value": 7
+      },
+      "evidence": [
+        "cmp-4",
+        "iss-blk-gull-debug",
+        "rsk-io-rework",
+        "fnd-codec-3",
+        "fnd-codec-4",
+        "fnd-gull-debug-cause",
+        "fnd-ecs-chunk-gain",
+        "iss-gull-reload-coro"
+      ],
+      "checks": [
+        {
+          "type": "compaction",
+          "field": "changes"
+        }
+      ],
+      "traps": [
+        "A superseded finding counts as leaving and its replacement as joining; the deferred coroutine defect counts as leaving."
+      ]
+    },
+    {
+      "id": "world-070",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["blocker", "compaction", "aggregate"],
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, how many blocker Issues are open now?",
+      "answer": {
+        "kind": "count",
+        "value": 3
+      },
+      "evidence": [
+        "iss-blk-save-harmonic",
+        "iss-blk-io-starve",
+        "iss-blk-gull-debug",
+        "cmp-4"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["issue"],
+          "where": {
+            "kind": "blocker",
+            "status": "open"
+          },
+          "count": true
+        }
+      ],
+      "traps": [
+        "The head compaction says two blockers are open; the Gull debugger blocker was filed after it.",
+        "The crash triage blocker is resolved."
+      ]
+    },
+    {
+      "id": "world-071",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["dead-evidence", "aggregate"],
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, which live Decisions still derive from a support that has been invalidated?",
+      "answer": {
+        "kind": "records",
+        "value": [
+          "dec-codec-kelp",
+          "dec-ecs-hybrid",
+          "dec-gull-reload",
+          "dec-pool-forecast",
+          "dec-save-version"
+        ]
+      },
+      "evidence": [
+        "dec-codec-kelp",
+        "fnd-codec-1",
+        "dec-ecs-hybrid",
+        "fnd-ecs-iter-bench",
+        "dec-gull-reload",
+        "fnd-gull-reload-proto",
+        "dec-pool-forecast",
+        "fnd-pool-sim",
+        "dec-save-version",
+        "fnd-save-upgrade-cost"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "live": true,
+          "restsOn": ["invalidated"]
+        }
+      ],
+      "traps": [
+        "The tide-priority decision is itself invalidated, so it is not live.",
+        "The cell and job decisions rest on superseded records, which is not the same as invalidated."
+      ]
+    },
+    {
+      "id": "world-072",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["rejected-alternative", "aggregate"],
+      "question": "Which codec proposals did the October 2025 codec question reject?",
+      "answer": {
+        "kind": "records",
+        "value": ["dec-codec-zstd", "dec-codec-lz4"]
+      },
+      "evidence": [
+        "iss-codec",
+        "dec-codec-kelp",
+        "dec-codec-zstd",
+        "dec-codec-lz4"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "iss-codec",
+          "where": {
+            "standing": "rejected"
+          }
+        }
+      ],
+      "traps": [
+        "Zstandard was reopened and rejected again by the dictionary decision; it still counts.",
+        "The dictionary decision did not answer the question."
+      ]
+    },
+    {
+      "id": "world-073",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["reopened", "lifecycle"],
+      "question": "If someone reopened the Zstandard codec proposal again today, could it be accepted without first superseding another decision?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": [
+        "dec-codec-zstd",
+        "dec-codec-dict",
+        "dec-codec-kelp",
+        "iss-codec"
+      ],
+      "checks": [
+        {
+          "type": "field",
+          "record": "dec-codec-dict",
+          "field": "state",
+          "expect": "accepted"
+        },
+        {
+          "type": "field",
+          "record": "dec-codec-kelp",
+          "field": "state",
+          "expect": "accepted"
+        }
+      ],
+      "traps": [
+        "Its last rejecter, the dictionary decision, is still accepted, and the codec question already has an accepted answer in the original Kelp decision; either blocks acceptance."
+      ]
+    },
+    {
+      "id": "world-074",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["retraction", "aggregate"],
+      "question": "How many records in the \"Kestrel world streaming and simulation core\" Effort have been retracted?",
+      "answer": {
+        "kind": "count",
+        "value": 7
+      },
+      "evidence": [
+        "dec-ecs-hybrid-dup",
+        "dec-jobs-5-dup",
+        "dec-cell-192-dup",
+        "fnd-tide-drift-dup",
+        "fnd-codec-1-typo",
+        "iss-gull-reload-coro-dup",
+        "con-pool-draft"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "retracted": "only",
+          "count": true
+        }
+      ],
+      "traps": [
+        "Browse reads hide retracted records; superseded and invalidated records are not retracted."
+      ]
+    },
+    {
+      "id": "world-075",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["retraction", "aggregate"],
+      "question": "Which Decisions in the \"Kestrel world streaming and simulation core\" Effort were retracted?",
+      "answer": {
+        "kind": "records",
+        "value": ["dec-ecs-hybrid-dup", "dec-jobs-5-dup", "dec-cell-192-dup"]
+      },
+      "evidence": ["dec-ecs-hybrid-dup", "dec-jobs-5-dup", "dec-cell-192-dup"],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "retracted": "only"
+        }
+      ],
+      "traps": [
+        "Each retracted Decision has a near-identical live twin; the twins are not retracted."
+      ]
+    },
+    {
+      "id": "world-076",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["reopened", "lifecycle"],
+      "question": "Of the Decisions that were ever reopened, which one ended up accepted?",
+      "answer": {
+        "kind": "record",
+        "value": "dec-gull-bytecode"
+      },
+      "evidence": ["dec-gull-bytecode", "dec-gull-tree", "dec-codec-zstd"],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["decision"],
+          "derivesFrom": "iss-gull-vm",
+          "where": {
+            "standing": "accepted"
+          }
+        }
+      ],
+      "traps": [
+        "The Zstandard proposal was reopened too, but it was rejected again."
+      ]
+    },
+    {
+      "id": "world-077",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["aggregate"],
+      "question": "How many question Issues does the \"Kestrel world streaming and simulation core\" Effort hold?",
+      "answer": {
+        "kind": "count",
+        "value": 9
+      },
+      "evidence": [
+        "iss-ecs-storage",
+        "iss-jobs-model",
+        "iss-cell-size",
+        "iss-io-api",
+        "iss-codec",
+        "iss-gull-vm",
+        "iss-tide-math",
+        "iss-pool-evict",
+        "iss-save-format"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["issue"],
+          "where": {
+            "kind": "question"
+          },
+          "count": true
+        }
+      ],
+      "traps": [
+        "The tide desync and hot reload Issues are defects, not questions."
+      ]
+    },
+    {
+      "id": "world-078",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["lifecycle", "aggregate"],
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, which Risks are still open?",
+      "answer": {
+        "kind": "records",
+        "value": ["rsk-gull-reload-state", "rsk-io-rework"]
+      },
+      "evidence": ["rsk-gull-reload-state", "rsk-io-rework"],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["risk"],
+          "where": {
+            "standing": "open"
+          }
+        }
+      ],
+      "traps": [
+        "Realized risks are live but not open.",
+        "The pool cut risk was realized in June 2026."
+      ]
+    },
+    {
+      "id": "world-079",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["current-state", "aggregate", "distractor"],
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, which hard Constraints are in force now?",
+      "answer": {
+        "kind": "records",
+        "value": [
+          "con-no-jit",
+          "con-pool-3",
+          "con-save-compat",
+          "con-tide-bitexact"
+        ]
+      },
+      "evidence": [
+        "con-no-jit",
+        "con-pool-3",
+        "con-save-compat",
+        "con-tide-bitexact",
+        "con-pool-1",
+        "con-pool-2",
+        "con-pool-draft"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["constraint"],
+          "where": {
+            "kind": "hard"
+          },
+          "live": true
+        }
+      ],
+      "traps": [
+        "Only the newest of the three 'Streaming pool budget' records is in force, and the draft is retracted.",
+        "The I/O budget, cell deadline, and Gull tick budget are soft."
+      ]
+    },
+    {
+      "id": "world-080",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["lifecycle", "aggregate"],
+      "question": "In the \"Kestrel world streaming and simulation core\" Effort, which Issues were closed as deferred?",
+      "answer": {
+        "kind": "records",
+        "value": [
+          "iss-gull-reload-structs",
+          "iss-save-cloud",
+          "iss-gull-reload-coro"
+        ]
+      },
+      "evidence": [
+        "iss-gull-reload-structs",
+        "iss-save-cloud",
+        "iss-gull-reload-coro"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["issue"],
+          "where": {
+            "status": "deferred"
+          }
+        }
+      ],
+      "traps": [
+        "The entity names gap was closed as wontfix, not deferred.",
+        "The coroutine defect was deferred in September 2026, after the head compaction."
+      ]
+    },
+    {
+      "id": "world-081",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["dead-evidence", "lifecycle"],
+      "question": "Which open Risk derives from an accepted Decision that rests on an invalidated Finding?",
+      "answer": {
+        "kind": "record",
+        "value": "rsk-gull-reload-state"
+      },
+      "evidence": [
+        "rsk-gull-reload-state",
+        "dec-gull-reload",
+        "fnd-gull-reload-proto",
+        "rsk-io-rework"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "kinds": ["risk"],
+          "derivesFrom": "dec-gull-reload",
+          "where": {
+            "standing": "open"
+          }
+        }
+      ],
+      "traps": [
+        "The other open risk derives from a proposed decision and a blocker, not from a decision resting on dead evidence."
+      ]
+    }
+  ]
+}

@@ -1,6 +1,14 @@
 import { FlatbreadProvider, type LoadedFlatbreadConfig } from '@flatbread/core';
 import {
   canonicalizeReadQuery,
+  compactionChanges,
+  compactionHeads,
+  parseCovers,
+  RECOMPACT_CHANGE_THRESHOLD,
+  staleDerivations,
+  type CompactionChange,
+  type CompactionStatus,
+  type DigestSection,
   ProofConsistencyError,
   ProofCrossEffortRelationError,
   ProofDanglingRelationError,
@@ -17,7 +25,9 @@ import {
   type PrimitiveKind,
 } from '@flatbread/proof';
 import { loadConfig } from '@flatbread/config';
-import { relative, resolve } from 'node:path';
+import { createHash } from 'node:crypto';
+import { readdir, realpath, stat } from 'node:fs/promises';
+import { join, relative, resolve } from 'node:path';
 
 export interface EffortProjectionOptions {
   readonly cwd: string;
@@ -85,6 +95,8 @@ const FRONTMATTER_FIELDS = [
   'mitigated_by',
   'evidence',
   'cites',
+  // Read by `brief`; digests never print it.
+  'covers',
 ] as const;
 const RELATION_FIELDS = new Set([
   'derives_from',
@@ -384,6 +396,7 @@ class EngineProjection {
       'resolved_by',
       'evidence',
       'role',
+      'covers',
       ...((available.has('_content') ? ['_content { raw }'] : []) as string[]),
     ].filter((field) => available.has(field.split(' ', 1)[0]));
     for (const relation of [
@@ -423,12 +436,71 @@ class EngineProjection {
   }
 }
 
-async function makeProjection(
+async function loadProjection(
   options: EffortProjectionOptions
 ): Promise<EngineProjection> {
   const loaded = await loadConfig({ cwd: options.cwd });
   if (!loaded.config) throw new Error('Flatbread config is not defined');
   return new EngineProjection(configForCwd(loaded.config, options.cwd));
+}
+
+// Off by default: each CLI call builds the graph once and exits. A
+// long-lived read server turns it on, so later reads skip the build.
+let projectionCache: Map<string, Promise<EngineProjection>> | undefined;
+
+/**
+ * Keeps built graphs in memory for the life of the process. Entries are keyed
+ * by the graph root's real path and a fingerprint of its record files, so
+ * callers in different folders that link to one graph share it, and any
+ * change to a record file makes the next read build it again. The journal
+ * generation alone is not enough: it lives in a gitignored folder, and a
+ * pull, merge, or checkout changes records without bumping it.
+ */
+export function enableProjectionCache(): void {
+  projectionCache ??= new Map();
+}
+
+/**
+ * A hash of every record file's path, size, and modification time under
+ * `root`. Statting a few thousand files takes milliseconds, far less than
+ * rebuilding the graph.
+ */
+async function recordFingerprint(root: string): Promise<string> {
+  const hash = createHash('sha256');
+  const walk = async (dir: string): Promise<void> => {
+    const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+    for (const entry of entries) {
+      if (entry.name === '.journal') continue;
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) await walk(path);
+      else if (entry.name.endsWith('.md')) {
+        const info = await stat(path).catch(() => null);
+        if (info) hash.update(`${path}\0${info.size}\0${info.mtimeMs}\n`);
+      }
+    }
+  };
+  await walk(root);
+  return hash.digest('hex');
+}
+
+async function makeProjection(
+  options: EffortProjectionOptions
+): Promise<EngineProjection> {
+  if (!projectionCache) return loadProjection(options);
+  const root = await realpath(options.rootDir).catch(() => options.rootDir);
+  const key = `${root}\0${await generation(root)}\0${await recordFingerprint(
+    root
+  )}`;
+  let projection = projectionCache.get(key);
+  if (!projection) {
+    for (const stale of [...projectionCache.keys()])
+      if (stale.startsWith(`${root}\0`)) projectionCache.delete(stale);
+    projection = loadProjection(options);
+    projection.catch(() => projectionCache?.delete(key));
+    projectionCache.set(key, projection);
+  }
+  return projection;
 }
 
 async function render(
@@ -442,6 +514,8 @@ async function render(
     anomaly?: string;
     relatedRecords?: ReadRecord[];
     fullBody?: boolean;
+    sections?: DigestSection[];
+    compaction?: CompactionStatus;
   } = {}
 ): Promise<ReadEnvelope> {
   const served = await servedGeneration(options.rootDir, options.consistency);
@@ -587,6 +661,18 @@ export async function getRecord(
   );
 }
 
+/**
+ * Which records a browse read returns by retraction: live ones only (the
+ * default), live and retracted together, or retracted ones only. Digests mark
+ * every retracted record, so it cannot pass for a live one.
+ */
+export type RetractedMode = 'exclude' | 'include' | 'only';
+const RETRACTED_MODES: readonly RetractedMode[] = [
+  'exclude',
+  'include',
+  'only',
+];
+
 export async function effortRecords(
   effortId: string,
   options: EffortProjectionOptions & {
@@ -597,9 +683,18 @@ export async function effortRecords(
       kind?: string[];
       created_at?: { gte?: string; lte?: string };
     };
+    retracted?: RetractedMode;
     page?: { cursor?: string; limit?: number };
   }
 ): Promise<ReadEnvelope> {
+  const retracted = options.retracted ?? 'exclude';
+  if (!RETRACTED_MODES.includes(retracted))
+    throw new ProofReadValidationError(
+      'PROOF_INVALID_ARGUMENT',
+      `Invalid retracted mode: ${String(
+        retracted
+      )}. Expected exclude, include, or only.`
+    );
   const projection = await makeProjection(options);
   const kinds = options.kinds?.length
     ? [...new Set(options.kinds)].sort()
@@ -635,7 +730,9 @@ export async function effortRecords(
       .flat()
       .filter(
         (record) =>
-          record.frontmatter.effort === effortId && !isRetracted(record)
+          record.frontmatter.effort === effortId &&
+          (retracted === 'include' ||
+            (retracted === 'only') === isRetracted(record))
       )
   );
   return render(
@@ -645,6 +742,8 @@ export async function effortRecords(
       effort_id: effortId,
       kinds,
       ...(Object.keys(where).length ? { where } : {}),
+      // Left out by default, so existing queries keep their hashes.
+      ...(retracted === 'exclude' ? {} : { retracted }),
       page: options.page,
     },
     records,
@@ -834,5 +933,183 @@ export async function blockingDecisions(
         ),
     ],
     { relatedRecords: issues }
+  );
+}
+
+// Citations and Blobs are never live records, but `derives_from` may name
+// them, so `brief` loads them to check whether those targets moved.
+const BRIEF_COLLECTIONS: readonly Collection[] = [
+  'Issue',
+  'Finding',
+  'Decision',
+  'Constraint',
+  'Risk',
+  'Citation',
+  'Blob',
+];
+const BRIEF_LINE_LIMIT = 50;
+const BRIEF_CHECKPOINT_LIMIT = 5;
+
+/** Relation fields join the frontmatter so standing reads one flat map. */
+function standingRecord(record: ReadRecord) {
+  return {
+    id: record.id,
+    kind: record.kind,
+    frontmatter: { ...record.frontmatter, ...record.relations },
+  };
+}
+
+function changeLines(changes: readonly CompactionChange[]): string[] {
+  const lines = changes
+    .slice(0, BRIEF_LINE_LIMIT)
+    .map(
+      (change) =>
+        `- ${change.change} | ${change.id} | ${change.kind ?? 'unknown'} | ${
+          change.from ?? 'none'
+        } -> ${change.to ?? 'missing'} | ${change.title}`
+    );
+  if (changes.length > BRIEF_LINE_LIMIT)
+    lines.push(
+      `- … ${changes.length - BRIEF_LINE_LIMIT} more; write a new compaction`
+    );
+  return lines;
+}
+
+/**
+ * Where an Effort stands, in one bounded read: the head compaction in full,
+ * older compactions as one-line checkpoints, and each record whose standing
+ * moved since the head's `covers` snapshot. Nothing here is generated; every
+ * line comes from stored records, so the digest is deterministic.
+ */
+export async function effortBrief(
+  effortId: string,
+  options: EffortProjectionOptions
+): Promise<ReadEnvelope> {
+  const projection = await makeProjection(options);
+  if (!(await projection.one('Effort', effortId)))
+    throw new ProofReadValidationError(
+      'PROOF_INVALID_ARGUMENT',
+      `Effort ${effortId} does not exist`
+    );
+  const records = (
+    await Promise.all(
+      BRIEF_COLLECTIONS.map((collection) => projection.query(collection))
+    )
+  )
+    .flat()
+    .filter((record) => record.frontmatter.effort === effortId);
+  const byId = new Map(records.map((record) => [record.id, record]));
+  const standing = records.map(standingRecord);
+  const heads = sortRecords(
+    compactionHeads(standing).map((head) => byId.get(head.id) as ReadRecord)
+  );
+  const head = heads.at(-1);
+  const sections: DigestSection[] = [];
+  const checkpoints: string[] = [];
+  const anomalies: string[] = [];
+  let changes: CompactionChange[];
+  let stale: CompactionChange[] = [];
+  let invalidated = false;
+  if (!head) {
+    changes = compactionChanges(new Map(), standing);
+    sections.push({
+      heading: 'Live records (no compaction yet)',
+      lines: changeLines(changes),
+    });
+  } else {
+    const covers = parseCovers(head.frontmatter.covers);
+    changes = compactionChanges(covers, standing);
+    stale = staleDerivations(
+      covers,
+      head.relations.derives_from ?? [],
+      standing
+    );
+    invalidated = (head.relations.invalidated_by ?? []).length > 0;
+    if (heads.length > 1)
+      anomalies.push(
+        `compaction fork: ${heads.length} head compactions; the next WriteCompaction supersedes all of them`
+      );
+    if (invalidated) anomalies.push('head compaction was invalidated');
+    // Walk `supersedes` back from the head. Bodies stay out: one line each.
+    const ancestors = new Map<string, ReadRecord>();
+    const queue = [...(head.relations.supersedes ?? [])];
+    while (queue.length) {
+      const id = queue.shift() as string;
+      const ancestor = byId.get(id);
+      if (!ancestor || ancestors.has(id)) continue;
+      ancestors.set(id, ancestor);
+      queue.push(...(ancestor.relations.supersedes ?? []));
+    }
+    const lineage = sortRecords([...ancestors.values()]).reverse();
+    checkpoints.push(
+      ...lineage
+        .slice(0, BRIEF_CHECKPOINT_LIMIT)
+        .map(
+          (record) =>
+            `${record.id} | ${String(
+              record.frontmatter.title ?? ''
+            )} | ${String(
+              record.frontmatter.created_at ?? ''
+            )} | superseded_by ${(record.relations.superseded_by ?? []).join(
+              ', '
+            )}`
+        )
+    );
+    if (lineage.length > BRIEF_CHECKPOINT_LIMIT)
+      checkpoints.push(
+        `… ${lineage.length - BRIEF_CHECKPOINT_LIMIT} older compactions`
+      );
+    sections.push({
+      heading: 'Changes since compaction',
+      lines: changes.length ? changeLines(changes) : ['- none'],
+    });
+    if (stale.length)
+      sections.push({
+        heading: 'Stale derivations',
+        lines: changeLines(stale),
+      });
+  }
+  const compaction: CompactionStatus = {
+    head_id: head?.id ?? null,
+    heads: heads.length,
+    stale: stale.length > 0 || invalidated,
+    changes: changes.length,
+    recompact:
+      !head ||
+      heads.length > 1 ||
+      stale.length > 0 ||
+      invalidated ||
+      changes.length >= RECOMPACT_CHANGE_THRESHOLD,
+  };
+  const edges: ReadEdge[] = head
+    ? (['derives_from', 'supersedes', 'cites'] as const).flatMap((relation) =>
+        (head.relations[relation] ?? []).map((to_id) => ({
+          from_id: head.id,
+          relation,
+          to_id,
+        }))
+      )
+    : [];
+  const changedIds = [...stale, ...changes]
+    .filter((change) => change.to !== null)
+    .map((change) => `getRecord("${change.id}")`);
+  return render(
+    options,
+    { type: 'effortBrief', effort_id: effortId },
+    head ? [head] : [],
+    edges,
+    [
+      ...(head
+        ? [`relations("${effortId}", "${head.id}", ["derives_from"])`]
+        : [`effortRecords("${effortId}")`]),
+      ...new Set(changedIds),
+    ],
+    {
+      checkpointLines: checkpoints,
+      anomaly: anomalies.length ? anomalies.join('; ') : undefined,
+      fullBody: true,
+      sections,
+      compaction,
+    }
   );
 }

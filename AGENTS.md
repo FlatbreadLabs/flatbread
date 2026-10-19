@@ -51,13 +51,31 @@ See `CONTRIBUTING.md` for full details. Quick reference:
 - **Proof**: agent memory in this repo. CLI is `flatbread proof …`; records live under `.flatbread-proof/`.
 - **Dev server**: `pnpm play` (GraphQL on port 5057, Next.js on port 3000). From `examples/nextjs`, prefer `pnpm exec flatbread start -- next dev --turbopack`. Use `flatbread start` — `flatbread dev` is not a CLI command.
 
-### Mergify Stacks
+### Stacked pull requests
 
-The repo uses Mergify stacks for PR management. The `mergify-cli` is installed via `pip install mergify-cli` (included in the update script). Key points:
+The repo uses GitHub's own stacked pull requests through `gh stack`, an
+extension to the GitHub CLI. A stack is a chain of branches. Each branch gets
+one pull request based on the branch below it, so a reviewer sees one layer at
+a time.
 
-- Use `mergify stack push` instead of `git push` on feature branches (the `.husky/pre-push` hook will remind you).
-- The commit-msg hook (`.husky/commit-msg`) auto-appends a `Change-Id` trailer for stack tracking.
-- See `.agents/skills/mergify-stack/SKILL.md` for the full workflow.
+1. Install the extension once: `gh extension install github/gh-stack`. It
+   needs Git 2.36 or later, and stacked pull requests must be enabled for the
+   repository on GitHub.
+2. Start a stack with `gh stack init <branch>` and add each layer on top with
+   `gh stack add <branch>`.
+3. Open or update every pull request in the stack with
+   `gh stack submit --auto`. A single branch can still use plain `git push`.
+4. Keep the stack current with `gh stack sync`. After you change a lower
+   layer, run `gh stack rebase --upstack`.
+
+Agents must pass the non-interactive flags listed in
+`.agents/skills/gh-stack/SKILL.md`: bare `gh stack view`, `submit`, and
+`modify` open full-screen prompts that never return.
+
+Merging still goes through Mergify's merge queue, which `.mergify.yml`
+configures. `gh stack merge` knows only GitHub's own merge queue, so it would
+merge directly and skip Mergify. Keep `mergify-cli` installed: the
+`mergify-*` skills use its `mergify queue` commands.
 
 ### PR review models
 

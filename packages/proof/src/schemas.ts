@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { COMPACTION_DERIVES_FROM_LIMIT } from './compaction.js';
 const id = z
   .string()
   .regex(/^[a-z]{3}-[a-z0-9-]+--[0123456789abcdefghjkmnpqrstvwxyz]{16}$/);
@@ -43,6 +44,16 @@ export const WriteFindingSchema = z.object({
   ...createBase,
   kind: z.string().min(1),
 });
+// The writer owns `covers` and `supersedes`, so the payload cannot set them.
+export const WriteCompactionSchema = z
+  .object({
+    type: z.literal('WriteCompaction'),
+    ...common,
+    ...cites,
+    effort: id,
+    derives_from: id.array().max(COMPACTION_DERIVES_FROM_LIMIT).optional(),
+  })
+  .strict();
 export const WriteDecisionSchema = z.object({
   type: z.literal('WriteDecision'),
   ...createBase,
@@ -125,6 +136,7 @@ export const ProofMutationSchema = z.discriminatedUnion('type', [
   SetEffortStatusSchema,
   WriteIssueSchema,
   WriteFindingSchema,
+  WriteCompactionSchema,
   WriteDecisionSchema,
   WriteConstraintSchema,
   WriteRiskSchema,
