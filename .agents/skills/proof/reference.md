@@ -340,10 +340,31 @@ flatbread proof serve [--socket .flatbread/proof/serve.sock]
   Effort. Unless the top Effort's sum is at least 1.5 times the next one's,
   at most 3 hits come from one Effort at first; slots still empty then go to
   the next hits by score.
+- **Passages:** a card quotes up to two passages of the matched version's
+  body, each about 160 characters. The first is the best: the window whose
+  query words weigh most, counting rare words more (by the same inverse
+  document frequency that ranks hits) and counting words the card's title
+  already shows only to break ties. The matches sit in the middle of the
+  window, and the passage runs a little past 160 characters to finish a
+  short word right after the last match, so a value after a matched label
+  (`"fuse_ms": 42`) is not cut off. A second passage appears only when
+  another part of the body holds a query word the first passage and the
+  title lack; it may come from earlier in the body, as its offsets show.
+  When the shown version carries a Blob (a Citation's `blob`), or cites a
+  Citation that does, and that payload holds a query word, the card also
+  quotes the payload's best passage on a `blob <id>:` line. A Blob that is a
+  hit itself, or that an earlier card already quotes, is not quoted again.
+  The Citation and the Blob must be current: not superseded, not written
+  after `--as-of`, and not retracted unless `--retracted include` or `only`
+  lets retracted records in; then the line reads `blob <id> (retracted):`.
+  Query words found only in a quoted Blob count as matched, not missing.
 - **Caps:** `--limit` 1 to 10, default 5. Each card holds at most 4 chain
   versions (the head and the shown and matched versions always appear), 3
-  links per relation, and 6 code references. When five cards run past about
-  4,000 characters, the cards shrink in this order: link titles, the
+  links per relation, and 6 code references. The cards aim for 300
+  characters plus 600 per card, plus the length of every passage they
+  quote: about 4,000 characters for five cards with one passage each.
+  Passages are never cut, so quoting more never pushes out a chain or a
+  link. Past the aim, the cards shrink in this order: link titles, the
   `efforts by match` line, the middle of each chain, then link entries. A
   relation with no entry left shows its count, as `cited_by +4`. When more
   records matched than are shown, the envelope has `complete: false` and
@@ -356,10 +377,12 @@ Each card has these lines:
 1. <id> | <kind>[:<kind field>] | <standing> [(head)] | <created date> | score <n>
    "<title>"
    matched: v<n> <id>                       (only when an older version matched)
-   "…<160-character passage with the most query words>…" [chars <from>-<to> of <length>]
+   "…<best passage of the matched version>…" [chars <from>-<to> of <length>]
+   "…<second passage, when the body matches in a second place>…" [chars <from>-<to> of <length>]
+   blob <id> [(retracted)]: "…<passage of an attached Blob payload>…" [chars <from>-<to> of <length>]
    chain: v1 <id> <standing> <date> -> (n more) -> v4 <id> <standing> <date> (head)
    out: <relation> <id> "<title, 60 chars>" (<standing>), … +n more; <relation> +n
-   in: <derived_by|cited_by|resolves|rejects|mitigates|evidence_for|blob_of> <id> "<title>" (<standing>)
+   in: <resolves|rejects|mitigates|evidence_for|cited_by|blob_of|derived_by> <id> "<title>" (<standing>)
    code: <paths, symbol() names, SHAs, #numbers the chain's records name>
 ```
 

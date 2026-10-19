@@ -278,7 +278,9 @@ A benchmark agent must never see `spec/`, `questions/`, or `keymap.json`.
    the `find` source. The gate passes when, on the stripped set, the
    evidence is in the top 5 for at least 75% of questions and the answer is
    on a card for at least 60% of those it applies to; if it fails, do not
-   pay for sessions.
+   pay for sessions. `--split tune` or `--split holdout` asks only half the
+   questions, chosen by a hash of each id. Read tune misses to decide what
+   to change in `find`; run holdout once the change is done.
 
 3. Run the benchmark:
 
@@ -611,3 +613,94 @@ Next steps, in order:
 2. Decide whether counting and lifecycle questions need their own read,
    such as the `proof state` view the design review proposed, instead of
    search.
+
+#### Cards that quote more
+
+`find-recall.mjs --split tune|holdout|all` now keeps half the questions
+back. A question is in `tune` when the first byte of the SHA-256 of its id
+is even, and in `holdout` when it is odd: 130 and 116 questions. Only tune
+misses were read to decide what to change in this step; holdout was scored
+once the code was done. Holdout is unseen only question by question, though:
+the plan to quote Blob payloads came from the diagnosis of all 246
+questions in the step before, made before the split existed.
+
+On the 10x graph, 43 tune questions missed the answer on the cards. Why:
+
+| Where the answer was                                        | Misses |
+| ----------------------------------------------------------- | ------ |
+| Not a hit, and not one link from a hit                      | 20     |
+| In a hit's body, outside the passage or cut off at its edge | 3      |
+| In a Blob that is a hit, outside its passage                | 3      |
+| In a Blob attached to a hit, which the card did not quote   | 2      |
+| A record linked from a hit, cut by the per-line link cap    | 3      |
+| A chain version the card left out as `(n more)`             | 3      |
+| A retracted record, which `find` leaves out by default      | 3      |
+| In a linked record's text or author                         | 2      |
+| Not written anywhere; it must be worked out                 | 2      |
+| A hit's author, which cards do not show                     | 1      |
+| On the card, but as a bare number the gate does not count   | 1      |
+
+The 1x graph gave 42 misses with the same causes. The cards changed in
+four ways:
+
+1. The best passage is the window whose query words weigh most, rare words
+   more, and words the title already shows count only to break ties. It
+   comes first on the card.
+2. The matches sit in the middle of the window, and the passage runs on to
+   finish a short word right after the last match, so a value after its
+   label stays.
+3. A second passage appears when another part of the body holds a query
+   word the first lacks, and a card quotes the best passage of a Blob that
+   the hit carries or cites through a Citation. Only a current, unretracted
+   Citation and Blob count, and a Blob quoted on one card is not quoted
+   again on a later one. Passages add their length to the size aim, so they
+   never push out a chain or a link.
+4. Reverse links list `resolves`, `rejects`, and the like before
+   `derived_by`, which on a much-used record fills the line.
+
+Showing each card's author was tried and dropped: it pushed chains off the
+cards and put a name on every card, so name answers matched by chance.
+
+The chance rates now come from every question's cards, even with
+`--split`, so each split's figures below are its part of the `all` run.
+The tables also print the largest reply next to the mean.
+
+Holdout is the clean measure. Stripped set, answer on a card, before and
+after (`find_hash`
+`e5be653299abe9b2329822d98ffe09e90ee7cfe96f8711c813a51dc6500b887f`):
+
+| Graph | Split   | Evidence in top 5 | Answer before | Answer after  | Mean reply chars | Largest reply  |
+| ----- | ------- | ----------------- | ------------- | ------------- | ---------------- | -------------- |
+| 10x   | holdout | 85% (98/116)      | 58% (51/88)   | 66% (58/88)   | 6,084 to 6,365   | 6,509 to 7,112 |
+| 10x   | tune    | 79% (102/130)     | 54% (51/94)   | 59% (53/90)   | 6,080 to 6,369   | 6,700 to 7,360 |
+| 10x   | all     | 81% (200/246)     | 56% (102/182) | 62% (111/178) | 6,082 to 6,368   | 6,700 to 7,360 |
+| 1x    | holdout | 84% (97/116)      | 57% (50/88)   | 65% (57/88)   | 6,093 to 6,411   | 6,502 to 7,056 |
+| 1x    | tune    | 79% (102/130)     | 55% (52/94)   | 59% (54/91)   | 6,085 to 6,403   | 6,698 to 7,358 |
+| 1x    | all     | 81% (199/246)     | 56% (102/182) | 62% (111/179) | 6,089 to 6,407   | 6,698 to 7,358 |
+
+Search ranking did not change, so evidence in the top 5 is the same before
+and after. On the 10x holdout, which the code was not tuned on, the answer
+is on a card for 7 more questions and for none fewer: 66% against the 60%
+bar. On the 1x holdout it is also 7 more and none fewer. The gate on all
+246 questions of the 10x graph passes by two points, but that figure
+includes the 130 tune questions, which four rounds of changes were measured
+against (55%, 56%, 57%, then 59% on the 10x tune split).
+
+The tune gain is small partly because longer cards match more answers by
+chance. On the 10x graph, 3 tune answers that were on a card are now set
+aside as chance matches (ports-001, render-003, world-065), and on the 1x
+graph 2 are. One tune miss, world-052, also left the count the same way,
+which nudges the rate up. To check that the set-aside list did not make
+the gain, one list, the union of both runs' set-asides, was applied to
+before and after: on the 10x graph the answer is on a card for 99/178 (55.6%) before
+and 111/178 (62.4%) after; holdout 51/88 to 58/88; tune 48/90 to 53/90. On
+the 1x graph, all goes from 100/179 (55.9%) to 111/179 (62.0%). One 1x tune
+answer, ports-026, was lost when two equally good passages of a Blob
+swapped places. Most misses left are records no hit reaches, mainly
+counting and lifecycle questions, which a `proof state` read should answer
+instead.
+
+The largest reply grew by about 700 characters, to 7,360. That is close
+to 7,500 characters, the most this step allowed for the mean reply. A later
+change that adds passage lines should watch the largest reply, not only the
+mean.

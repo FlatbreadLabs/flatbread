@@ -3,7 +3,7 @@
 // whether its top hits hold the evidence, before any paid agent run.
 //
 //   node scripts/find-recall.mjs [--graph <built-graph-dir>] [--ids a,b]
-//        [--out <json>] [--jobs 8]
+//        [--split tune|holdout|all] [--out <json>] [--jobs 8]
 //
 // The gate verdict that counts is the one on the 10x graph, given with
 // `--graph <x10 build>`. The default, the committed 1x graph, is a quick
@@ -37,10 +37,15 @@
 //                       10% of the other questions' cards in the same set
 //                       (`chance_rate`), since a card shows those by
 //                       accident: "2", "6", "accepted". With --ids, the
-//                       rates come from the chosen questions only.
+//                       rates come from the chosen questions only. With
+//                       --split, they still come from every question, so a
+//                       split's rows are the same as its part of an `all`
+//                       run.
 //   right_effort_first  the top Effort in `efforts by match` is the
 //                       question's own (single-Effort questions, --all sets)
 //   reply_chars, cards_chars
+//                       the tables print the mean reply size and the
+//                       largest one
 //
 // The gate passes when, on the stripped set, evidence_top5 holds for at least
 // 75% of questions and answer_on_card for at least 60% of those it applies
@@ -48,9 +53,19 @@
 // records `find_hash`, a hash of the `find` source, so a later run file can
 // be checked against the search this gate measured.
 //
+// `--split` keeps half the questions back. A question belongs to `tune` when
+// the first byte of the SHA-256 of its id is even, and to `holdout` when it is
+// odd, so the split never changes and needs no list. Read the misses of the
+// tune split to decide what to change in `find`; run the holdout split only
+// after the change is done, to see whether it holds on questions nobody
+// looked at. The default, `all`, scores every question. Every split asks
+// every question, because the chance rates above need all the cards; the
+// rows outside the split are dropped after that.
+//
 // The graph is copied, without its key map, into a temporary folder, and one
 // `proof serve` there answers every query. The folder is removed at the end.
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { request } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -73,6 +88,14 @@ const GATE = { evidence_top5: 0.75, answer_on_card: 0.6 };
 // A value answer that matches more than this share of other questions' cards
 // is set aside: a card shows it by accident.
 const CHANCE_CUTOFF = 0.1;
+const SPLITS = ['tune', 'holdout', 'all'];
+
+/** `tune` or `holdout`, from the first byte of the SHA-256 of the id. */
+export function splitOf(id) {
+  return createHash('sha256').update(id).digest()[0] % 2 === 0
+    ? 'tune'
+    : 'holdout';
+}
 
 function args(argv) {
   const out = {
@@ -80,6 +103,7 @@ function args(argv) {
     ids: [],
     out: join(BENCH, 'runs', 'find-recall.json'),
     jobs: 8,
+    split: 'all',
   };
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
@@ -87,8 +111,11 @@ function args(argv) {
     else if (flag === '--ids') out.ids = argv[++i].split(',');
     else if (flag === '--out') out.out = resolve(argv[++i]);
     else if (flag === '--jobs') out.jobs = Number(argv[++i]);
+    else if (flag === '--split') out.split = argv[++i];
     else throw new Error(`Unknown argument ${flag}`);
   }
+  if (!SPLITS.includes(out.split))
+    throw new Error(`--split must be one of ${SPLITS.join(', ')}`);
   return out;
 }
 
@@ -268,6 +295,7 @@ function tally(rows) {
     mean_reply_chars: Math.round(
       chars.reduce((a, b) => a + b, 0) / (chars.length || 1)
     ),
+    max_reply_chars: Math.max(0, ...chars),
   };
 }
 
@@ -281,7 +309,8 @@ function printTable(label, groups) {
       'ev@5'.padStart(7) +
       'card'.padStart(7) +
       'effort1'.padStart(9) +
-      'chars'.padStart(8)
+      'chars'.padStart(8) +
+      'max'.padStart(7)
   );
   for (const [name, t] of Object.entries(groups))
     console.log(
@@ -290,7 +319,8 @@ function printTable(label, groups) {
         pct(t.evidence_top5).padStart(7) +
         pct(t.answer_on_card).padStart(7) +
         pct(t.right_effort_first).padStart(9) +
-        String(t.mean_reply_chars).padStart(8)
+        String(t.mean_reply_chars).padStart(8) +
+        String(t.max_reply_chars).padStart(7)
     );
 }
 
@@ -365,6 +395,9 @@ async function main() {
   }
 
   setAsideChance(rows);
+  const inSplit = (id) =>
+    options.split === 'all' || splitOf(id) === options.split;
+  rows.splice(0, rows.length, ...rows.filter((r) => inSplit(r.id)));
   const order = new Map(jobs.map((job, i) => [`${job.set} ${job.q.id}`, i]));
   rows.sort(
     (a, b) => order.get(`${a.set} ${a.id}`) - order.get(`${b.set} ${b.id}`)
@@ -372,7 +405,11 @@ async function main() {
   const bySet = Object.fromEntries(
     SETS.map((set) => [set, tally(rows.filter((r) => r.set === set))])
   );
-  printTable(`graph ${options.graph}`, bySet);
+  const questions = new Set(rows.map((r) => r.id)).size;
+  printTable(
+    `graph ${options.graph}, split ${options.split} (${questions} questions)`,
+    bySet
+  );
   console.log(
     `Value answers set aside by chance: ${SETS.map(
       (set) => `${set} ${bySet[set].set_aside_by_chance}`
@@ -407,6 +444,8 @@ async function main() {
     `${JSON.stringify(
       {
         graph: options.graph,
+        split: options.split,
+        questions,
         find_hash,
         gate: { ...GATE, chance_cutoff: CHANCE_CUTOFF, pass },
         bySet,
