@@ -1,0 +1,2256 @@
+{
+  "run": {
+    "name": "x10adv-find-r1-nobrief",
+    "protocol": "one fresh session per question",
+    "models": ["claude-haiku-5-5"],
+    "find_hash": "e5be653299abe9b2329822d98ffe09e90ee7cfe96f8711c813a51dc6500b887f"
+  },
+  "answers": {
+    "ambiguous-001": {
+      "answer": "384 MB",
+      "tokens": 44988,
+      "fixed_tokens": 2741,
+      "processed_tokens": 447512,
+      "tool_calls": 21,
+      "turns": 17
+    },
+    "ambiguous-002": {
+      "answer": "unknown",
+      "tokens": 58307,
+      "fixed_tokens": 2743,
+      "processed_tokens": 332450,
+      "tool_calls": 12,
+      "turns": 11
+    },
+    "ambiguous-003": {
+      "answer": "92.4%",
+      "tokens": 63505,
+      "fixed_tokens": 2742,
+      "processed_tokens": 1556138,
+      "tool_calls": 35,
+      "turns": 33
+    },
+    "ambiguous-004": {
+      "answer": "6 min 40 s",
+      "tokens": 41722,
+      "fixed_tokens": 2745,
+      "processed_tokens": 844973,
+      "tool_calls": 28,
+      "turns": 29
+    },
+    "ambiguous-005": {
+      "answer": "unknown",
+      "tokens": 73136,
+      "fixed_tokens": 1115,
+      "processed_tokens": 2756856,
+      "tool_calls": 58,
+      "turns": 59
+    },
+    "ambiguous-006": {
+      "answer": "unknown",
+      "tokens": 64594,
+      "fixed_tokens": 1116,
+      "processed_tokens": 1591573,
+      "tool_calls": 38,
+      "turns": 39
+    },
+    "ambiguous-007": {
+      "answer": "32 steps",
+      "tokens": 59784,
+      "fixed_tokens": 1117,
+      "processed_tokens": 534891,
+      "tool_calls": 20,
+      "turns": 17
+    },
+    "ambiguous-008": {
+      "answer": "dec-prototype-rollback-netcode-for-co-op--2tx2s2p3sfbwj8x4",
+      "tokens": 19164,
+      "fixed_tokens": 1116,
+      "processed_tokens": 120011,
+      "tool_calls": 7,
+      "turns": 8
+    },
+    "ambiguous-009": {
+      "answer": "3.0 ms per frame",
+      "tokens": 31181,
+      "fixed_tokens": 1121,
+      "processed_tokens": 430973,
+      "tool_calls": 18,
+      "turns": 19
+    },
+    "ambiguous-010": {
+      "answer": "160 MB/s",
+      "tokens": 30559,
+      "fixed_tokens": 1116,
+      "processed_tokens": 279176,
+      "tool_calls": 12,
+      "turns": 13
+    },
+    "ambiguous-011": {
+      "answer": "260 MB",
+      "tokens": 55347,
+      "fixed_tokens": 1119,
+      "processed_tokens": 967418,
+      "tool_calls": 24,
+      "turns": 25
+    },
+    "ambiguous-012": {
+      "answer": "11 m",
+      "tokens": 29092,
+      "fixed_tokens": 1112,
+      "processed_tokens": 277365,
+      "tool_calls": 12,
+      "turns": 13
+    },
+    "ambiguous-013": {
+      "answer": "61%",
+      "tokens": 38184,
+      "fixed_tokens": 1114,
+      "processed_tokens": 488818,
+      "tool_calls": 16,
+      "turns": 17
+    },
+    "ambiguous-014": {
+      "answer": "textures",
+      "tokens": 50873,
+      "fixed_tokens": 1118,
+      "processed_tokens": 1287910,
+      "tool_calls": 36,
+      "turns": 37
+    },
+    "ambiguous-015": {
+      "answer": "unknown",
+      "tokens": 40564,
+      "fixed_tokens": 1114,
+      "processed_tokens": 612778,
+      "tool_calls": 20,
+      "turns": 21
+    },
+    "ambiguous-016": {
+      "answer": "dec-raise-the-shader-cache-fetch-timeout-from-5-seco--4sgdf42ajyct6gt6",
+      "tokens": 55486,
+      "fixed_tokens": 1123,
+      "processed_tokens": 929840,
+      "tool_calls": 27,
+      "turns": 26
+    },
+    "ambiguous-017": {
+      "answer": "unknown",
+      "tokens": 64641,
+      "fixed_tokens": 1119,
+      "processed_tokens": 1602785,
+      "tool_calls": 34,
+      "turns": 35
+    },
+    "ambiguous-018": {
+      "answer": "unknown",
+      "tokens": 56830,
+      "fixed_tokens": 1123,
+      "processed_tokens": 1455063,
+      "tool_calls": 44,
+      "turns": 45
+    },
+    "ambiguous-019": {
+      "answer": "7.4 ms",
+      "tokens": 22465,
+      "fixed_tokens": 1114,
+      "processed_tokens": 242568,
+      "tool_calls": 12,
+      "turns": 13
+    },
+    "ambiguous-020": {
+      "answer": "unknown",
+      "tokens": 24629,
+      "fixed_tokens": 1118,
+      "processed_tokens": 248932,
+      "tool_calls": 12,
+      "turns": 13
+    },
+    "ambiguous-021": {
+      "answer": "dec-run-tern-on-skiff-at-the-performance-preset--74eqayfa83ybqpe3",
+      "tokens": 35253,
+      "fixed_tokens": 1120,
+      "processed_tokens": 497361,
+      "tool_calls": 20,
+      "turns": 20
+    },
+    "ambiguous-022": {
+      "answer": "unknown",
+      "tokens": 55214,
+      "fixed_tokens": 1115,
+      "processed_tokens": 1201207,
+      "tool_calls": 32,
+      "turns": 33
+    },
+    "ambiguous-023": {
+      "answer": "con-skiff-memory-budget--nf7qbhsnmcn6v479",
+      "tokens": 9734,
+      "fixed_tokens": 1117,
+      "processed_tokens": 82476,
+      "tool_calls": 7,
+      "turns": 8
+    },
+    "ambiguous-024": {
+      "answer": "unknown",
+      "tokens": 49071,
+      "fixed_tokens": 1119,
+      "processed_tokens": 1084627,
+      "tool_calls": 31,
+      "turns": 32
+    },
+    "cross-001": {
+      "answer": "con-frame-budget--br0qszfg8fys908n",
+      "tokens": 36599,
+      "fixed_tokens": 1105,
+      "processed_tokens": 367891,
+      "tool_calls": 13,
+      "turns": 14
+    },
+    "cross-002": {
+      "answer": 2,
+      "tokens": 24706,
+      "fixed_tokens": 1108,
+      "processed_tokens": 99276,
+      "tool_calls": 18,
+      "turns": 7
+    },
+    "cross-003": {
+      "answer": 2,
+      "tokens": 21937,
+      "fixed_tokens": 1106,
+      "processed_tokens": 117663,
+      "tool_calls": 18,
+      "turns": 8
+    },
+    "cross-004": {
+      "answer": "dec-run-the-tide-simulation-in-32-32-fixed-point--c5rjfcnmhne4h05e",
+      "tokens": 28103,
+      "fixed_tokens": 1103,
+      "processed_tokens": 424409,
+      "tool_calls": 18,
+      "turns": 19
+    },
+    "cross-005": {
+      "answer": "Rhea Valdés",
+      "tokens": 29919,
+      "fixed_tokens": 1106,
+      "processed_tokens": 468939,
+      "tool_calls": 20,
+      "turns": 21
+    },
+    "cross-006": {
+      "answer": "19%",
+      "tokens": 22065,
+      "fixed_tokens": 1109,
+      "processed_tokens": 217572,
+      "tool_calls": 11,
+      "turns": 12
+    },
+    "cross-007": {
+      "answer": "8 GB",
+      "tokens": 63739,
+      "fixed_tokens": 1107,
+      "processed_tokens": 1811090,
+      "tool_calls": 42,
+      "turns": 43
+    },
+    "cross-008": {
+      "answer": "unknown",
+      "tokens": 46756,
+      "fixed_tokens": 1108,
+      "processed_tokens": 451504,
+      "tool_calls": 14,
+      "turns": 15
+    },
+    "cross-009": {
+      "answer": "con-skiff-memory-budget--nf7qbhsnmcn6v479",
+      "tokens": 29601,
+      "fixed_tokens": 1106,
+      "processed_tokens": 284527,
+      "tool_calls": 12,
+      "turns": 13
+    },
+    "cross-010": {
+      "answer": "dec-build-an-on-device-pipeline-cache-for-skiff--726r9mtk76qndeh7",
+      "tokens": 27053,
+      "fixed_tokens": 1114,
+      "processed_tokens": 283840,
+      "tool_calls": 13,
+      "turns": 14
+    },
+    "cross-011": {
+      "answer": "false",
+      "tokens": 44027,
+      "fixed_tokens": 1104,
+      "processed_tokens": 739447,
+      "tool_calls": 22,
+      "turns": 23
+    },
+    "cross-012": {
+      "answer": "61 MB/s",
+      "tokens": 37352,
+      "fixed_tokens": 1107,
+      "processed_tokens": 643362,
+      "tool_calls": 22,
+      "turns": 23
+    },
+    "cross-013": {
+      "answer": "Skiff runs Tern at the Performance preset, which saves 1.8 ms against Quality (2.1 ms vs 3.9 ms); see dec-run-tern-on-skiff-at-the-performance-preset--74eqayfa83ybqpe3. The graph does not confirm the Meridian 120 Hz premise that Performance is Tern's lowest preset.",
+      "tokens": 47040,
+      "fixed_tokens": 1106,
+      "processed_tokens": 914223,
+      "tool_calls": 28,
+      "turns": 29
+    },
+    "cross-014": {
+      "answer": 3,
+      "tokens": 5437,
+      "fixed_tokens": 1111,
+      "processed_tokens": 40287,
+      "tool_calls": 4,
+      "turns": 5
+    },
+    "cross-015": {
+      "answer": "Two Efforts are no longer active. Shader compile cache and build farm is completed: dec-turn-the-shader-compile-cache-on-for-every-farm--4rr3b12b4sasdmaj (accepted 2026-03-20) turned the cache on for all nightly, on-demand and release builds, which is the Effort's stated end. Co-op rollback netcode prototype is abandoned: dec-abandon-rollback-netcode-for-co-op--46envrg0v4pdwv7b (accepted 2026-04-01) stopped the rollback prototype because re-running tide simulation on rollback frames costs 4.8 ms on Skiff, and it supersedes dec-prototype-rollback-netcode-for-co-op--2tx2s2p3sfbwj8x4.",
+      "tokens": 51214,
+      "fixed_tokens": 1109,
+      "processed_tokens": 521042,
+      "tool_calls": 17,
+      "turns": 15
+    },
+    "cross-016": {
+      "answer": "16.7 ms",
+      "tokens": 26952,
+      "fixed_tokens": 1117,
+      "processed_tokens": 181880,
+      "tool_calls": 9,
+      "turns": 10
+    },
+    "cross-017": {
+      "answer": "false",
+      "tokens": 50484,
+      "fixed_tokens": 1108,
+      "processed_tokens": 820741,
+      "tool_calls": 22,
+      "turns": 23
+    },
+    "netcode-001": {
+      "answer": "abandoned",
+      "tokens": 16572,
+      "fixed_tokens": 1113,
+      "processed_tokens": 82824,
+      "tool_calls": 6,
+      "turns": 7
+    },
+    "netcode-002": {
+      "answer": "netcode/rollback-archive",
+      "tokens": 17090,
+      "fixed_tokens": 1110,
+      "processed_tokens": 119513,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "netcode-003": {
+      "answer": "38 KB",
+      "tokens": 69446,
+      "fixed_tokens": 1114,
+      "processed_tokens": 996042,
+      "tool_calls": 24,
+      "turns": 25
+    },
+    "netcode-004": {
+      "answer": "The team abandoned rollback netcode because rollback must re-run the tide simulation on every rolled-back frame, costing 4.8 ms on Skiff (about a fifth of the 25 ms frame), and the shrinking-window and quarter-resolution workarounds both failed. The reason depends on the world Decision `dec-run-the-tide-simulation-in-32-32-fixed-point--c5rjfcnmhne4h05e`, which keeps tides bit-identical across peers.",
+      "tokens": 42804,
+      "fixed_tokens": 1106,
+      "processed_tokens": 576132,
+      "tool_calls": 18,
+      "turns": 19
+    },
+    "netcode-005": {
+      "answer": "unknown",
+      "tokens": 24756,
+      "fixed_tokens": 1114,
+      "processed_tokens": 300732,
+      "tool_calls": 14,
+      "turns": 15
+    },
+    "netcode-006": {
+      "answer": "dec-prototype-rollback-netcode-for-co-op--2tx2s2p3sfbwj8x4",
+      "tokens": 10485,
+      "fixed_tokens": 1109,
+      "processed_tokens": 94313,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "netcode-007": {
+      "answer": "dec-abandon-rollback-netcode-for-co-op--46envrg0v4pdwv7b",
+      "tokens": 18698,
+      "fixed_tokens": 1118,
+      "processed_tokens": 127714,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "netcode-008": {
+      "answer": "dec-use-a-4-frame-rollback-window--pqe4hvbgmbp0dmh9",
+      "tokens": 35634,
+      "fixed_tokens": 1110,
+      "processed_tokens": 470922,
+      "tool_calls": 18,
+      "turns": 19
+    },
+    "netcode-009": {
+      "answer": "1.9 ms",
+      "tokens": 28555,
+      "fixed_tokens": 1108,
+      "processed_tokens": 324608,
+      "tool_calls": 16,
+      "turns": 15
+    },
+    "netcode-010": {
+      "answer": "dec-use-a-6-frame-rollback-window-with-1-frame-of-in--s53944zhkw103frk",
+      "tokens": 27748,
+      "fixed_tokens": 1109,
+      "processed_tokens": 358062,
+      "tool_calls": 15,
+      "turns": 16
+    },
+    "netcode-011": {
+      "answer": "con-co-op-peers-must-agree-on-tide-state-bit-for-bit--4v0sdbc3t4ywzr3g",
+      "tokens": 45379,
+      "fixed_tokens": 1120,
+      "processed_tokens": 712348,
+      "tool_calls": 26,
+      "turns": 24
+    },
+    "netcode-012": {
+      "answer": "unknown",
+      "tokens": 27841,
+      "fixed_tokens": 1112,
+      "processed_tokens": 372454,
+      "tool_calls": 19,
+      "turns": 19
+    },
+    "netcode-013": {
+      "answer": [
+        "dec-prototype-rollback-netcode-for-co-op--2tx2s2p3sfbwj8x4",
+        "fnd-rollback-re-simulates-a-4-frame-window-in-1-1-ms--xa30a1cez2brphyf",
+        "rsk-re-simulation-cost-could-blow-the-skiff-frame-bu--sk2njsp170a3qwyf"
+      ],
+      "tokens": 49713,
+      "fixed_tokens": 1108,
+      "processed_tokens": 475294,
+      "tool_calls": 29,
+      "turns": 15
+    },
+    "netcode-014": {
+      "answer": [
+        "iss-how-should-co-op-keep-up-to-four-players-in-sync--92t2zfsy3etfzr89",
+        "iss-late-join-during-a-tide-surge-desyncs-the-joinin--mya93va0n7s8g7cj"
+      ],
+      "tokens": 56940,
+      "fixed_tokens": 1112,
+      "processed_tokens": 839551,
+      "tool_calls": 21,
+      "turns": 22
+    },
+    "netcode-015": {
+      "answer": 2,
+      "tokens": 26711,
+      "fixed_tokens": 1110,
+      "processed_tokens": 171534,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "ports-001": {
+      "answer": "25 ms",
+      "tokens": 23219,
+      "fixed_tokens": 1112,
+      "processed_tokens": 227375,
+      "tool_calls": 11,
+      "turns": 12
+    },
+    "ports-002": {
+      "answer": "384 MB",
+      "tokens": 57840,
+      "fixed_tokens": 1107,
+      "processed_tokens": 568589,
+      "tool_calls": 16,
+      "turns": 17
+    },
+    "ports-003": {
+      "answer": "61 MB/s",
+      "tokens": 54438,
+      "fixed_tokens": 1104,
+      "processed_tokens": 1577548,
+      "tool_calls": 43,
+      "turns": 44
+    },
+    "ports-004": {
+      "answer": "accepted",
+      "tokens": 21125,
+      "fixed_tokens": 1112,
+      "processed_tokens": 177704,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "ports-005": {
+      "answer": "unknown",
+      "tokens": 97774,
+      "fixed_tokens": 1114,
+      "processed_tokens": 4502232,
+      "tool_calls": 73,
+      "turns": 74
+    },
+    "ports-034": {
+      "answer": "unknown",
+      "tokens": 58491,
+      "fixed_tokens": 1116,
+      "processed_tokens": 1500257,
+      "tool_calls": 35,
+      "turns": 36
+    },
+    "ports-006": {
+      "answer": "con-skiff-memory-budget--nf7qbhsnmcn6v479",
+      "tokens": 21182,
+      "fixed_tokens": 1103,
+      "processed_tokens": 184456,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "ports-007": {
+      "answer": "SKF-UI-031",
+      "tokens": 46347,
+      "fixed_tokens": 1108,
+      "processed_tokens": 1667821,
+      "tool_calls": 55,
+      "turns": 56
+    },
+    "ports-008": {
+      "answer": "dec-run-tern-on-skiff-at-the-performance-preset--74eqayfa83ybqpe3",
+      "tokens": 9415,
+      "fixed_tokens": 1111,
+      "processed_tokens": 101617,
+      "tool_calls": 9,
+      "turns": 10
+    },
+    "ports-009": {
+      "answer": null,
+      "tokens": 64712,
+      "fixed_tokens": 1113,
+      "processed_tokens": 968499,
+      "tool_calls": 61,
+      "turns": 31
+    },
+    "ports-010": {
+      "answer": "con-frame-budget--wt5rfqh5z444g2cg",
+      "tokens": 84273,
+      "fixed_tokens": 1108,
+      "processed_tokens": 3338037,
+      "tool_calls": 61,
+      "turns": 59
+    },
+    "ports-011": {
+      "answer": "unknown",
+      "tokens": 34275,
+      "fixed_tokens": 1113,
+      "processed_tokens": 481488,
+      "tool_calls": 19,
+      "turns": 19
+    },
+    "ports-012": {
+      "answer": "The ports team raised the Skiff dynamic resolution floor to 576p because caustic patterns under saltglass shimmered badly at the 540p floor, even after Tern (visible in 7 of 10 dune views versus 2 of 10 at 576p), per dec-raise-the-skiff-dynamic-resolution-floor-to-576p--fep9q7m08pp9f0bb, which was later superseded by dec-lower-the-skiff-dynamic-resolution-floor-to-504p--15esnt90gcn29enn.",
+      "tokens": 34385,
+      "fixed_tokens": 1114,
+      "processed_tokens": 359259,
+      "tool_calls": 13,
+      "turns": 14
+    },
+    "ports-013": {
+      "answer": "Ship Tern as Lantern's only upscaler",
+      "tokens": 39022,
+      "fixed_tokens": 1106,
+      "processed_tokens": 393085,
+      "tool_calls": 14,
+      "turns": 14
+    },
+    "ports-014": {
+      "answer": "unknown",
+      "tokens": 38556,
+      "fixed_tokens": 1107,
+      "processed_tokens": 866297,
+      "tool_calls": 29,
+      "turns": 30
+    },
+    "ports-015": {
+      "answer": "textures",
+      "tokens": 25265,
+      "fixed_tokens": 1110,
+      "processed_tokens": 348020,
+      "tool_calls": 16,
+      "turns": 17
+    },
+    "ports-016": {
+      "answer": "dec-ship-prebuilt-pipeline-blobs-in-the-skiff-packag--3vjysjgy9qkvzebn",
+      "tokens": 42390,
+      "fixed_tokens": 1107,
+      "processed_tokens": 692450,
+      "tool_calls": 22,
+      "turns": 23
+    },
+    "ports-017": {
+      "answer": "fnd-skiff-microsd-slows-sharply-on-full-warm-cards--p1rgh36hat2egpz3",
+      "tokens": 103837,
+      "fixed_tokens": 1104,
+      "processed_tokens": 4318484,
+      "tool_calls": 59,
+      "turns": 60
+    },
+    "ports-018": {
+      "answer": "504p",
+      "tokens": 44419,
+      "fixed_tokens": 1106,
+      "processed_tokens": 470513,
+      "tool_calls": 20,
+      "turns": 16
+    },
+    "ports-019": {
+      "answer": "4 MB per minute",
+      "tokens": 46172,
+      "fixed_tokens": 1106,
+      "processed_tokens": 1262839,
+      "tool_calls": 36,
+      "turns": 37
+    },
+    "ports-020": {
+      "answer": "fnd-skiff-sdk-1-2-takes-1-gb-back-from-games--a0ybdgjzw64hwfqa",
+      "tokens": 18714,
+      "fixed_tokens": 1110,
+      "processed_tokens": 159320,
+      "tool_calls": 9,
+      "turns": 10
+    },
+    "ports-021": {
+      "answer": "SKF-DSP-004",
+      "tokens": 58742,
+      "fixed_tokens": 1107,
+      "processed_tokens": 1479914,
+      "tool_calls": 34,
+      "turns": 35
+    },
+    "ports-022": {
+      "answer": "cit-skiff-sdk-1-2-release-notes--7gwwn8xxffrx6npe",
+      "tokens": 26665,
+      "fixed_tokens": 1108,
+      "processed_tokens": 337746,
+      "tool_calls": 15,
+      "turns": 16
+    },
+    "ports-023": {
+      "answer": "fnd-tern-costs-3-9-ms-at-quality-and-2-1-ms-at-perfo--dkbskbqfgfwtryq0",
+      "tokens": 15242,
+      "fixed_tokens": 1109,
+      "processed_tokens": 223792,
+      "tool_calls": 16,
+      "turns": 17
+    },
+    "ports-024": {
+      "answer": "fnd-skiff-firmware-1-2-rejects-pipeline-blobs-built--pernvgb2he7m3z3y",
+      "tokens": 59892,
+      "fixed_tokens": 1108,
+      "processed_tokens": 911816,
+      "tool_calls": 22,
+      "turns": 23
+    },
+    "ports-025": {
+      "answer": "dec-run-tern-on-skiff-at-the-performance-preset--74eqayfa83ybqpe3",
+      "tokens": 31603,
+      "fixed_tokens": 1107,
+      "processed_tokens": 521739,
+      "tool_calls": 22,
+      "turns": 22
+    },
+    "ports-026": {
+      "answer": "unknown",
+      "tokens": 62056,
+      "fixed_tokens": 1102,
+      "processed_tokens": 2400562,
+      "tool_calls": 56,
+      "turns": 57
+    },
+    "ports-027": {
+      "answer": [
+        "dec-stream-skiff-world-tiles-in-2-mb-reads--3jz9w9gvhhc7eppw",
+        "rsk-tide-streaming-outruns-skiff-storage--6q8s3b383z2tyeyb"
+      ],
+      "tokens": 135262,
+      "fixed_tokens": 1105,
+      "processed_tokens": 2120784,
+      "tool_calls": 42,
+      "turns": 33
+    },
+    "ports-028": {
+      "answer": 2,
+      "tokens": 7610,
+      "fixed_tokens": 1114,
+      "processed_tokens": 61101,
+      "tool_calls": 6,
+      "turns": 7
+    },
+    "ports-029": {
+      "answer": 8,
+      "tokens": 96207,
+      "fixed_tokens": 1110,
+      "processed_tokens": 1713334,
+      "tool_calls": 35,
+      "turns": 34
+    },
+    "ports-030": {
+      "answer": [
+        "dec-cap-tide-storm-particles-at-6-000-on-skiff--resze52afjxyxys1",
+        "dec-drop-skiff-to-30-hz-while-a-tide-storm-is-on-scr--72vx1c8s4jrs6axc"
+      ],
+      "tokens": 21358,
+      "fixed_tokens": 1109,
+      "processed_tokens": 132597,
+      "tool_calls": 12,
+      "turns": 9
+    },
+    "ports-031": {
+      "answer": [
+        "iss-meridian-cert-activity-cards-missing-for-two-bio--k214cmfra7pyvvzq",
+        "iss-skiff-cert-docked-30-hz-judder-on-some-tvs--9nq2xg9mzash474g"
+      ],
+      "tokens": 35824,
+      "fixed_tokens": 1115,
+      "processed_tokens": 671118,
+      "tool_calls": 24,
+      "turns": 25
+    },
+    "ports-032": {
+      "answer": 2,
+      "tokens": 6047,
+      "fixed_tokens": 1108,
+      "processed_tokens": 49968,
+      "tool_calls": 5,
+      "turns": 6
+    },
+    "ports-033": {
+      "answer": "unknown",
+      "tokens": 20200,
+      "fixed_tokens": 1106,
+      "processed_tokens": 118823,
+      "tool_calls": 7,
+      "turns": 8
+    },
+    "render-001": {
+      "answer": "7.4 ms",
+      "tokens": 24161,
+      "fixed_tokens": 1106,
+      "processed_tokens": 171209,
+      "tool_calls": 9,
+      "turns": 10
+    },
+    "render-002": {
+      "answer": "3.4x",
+      "tokens": 23529,
+      "fixed_tokens": 1108,
+      "processed_tokens": 320576,
+      "tool_calls": 15,
+      "turns": 16
+    },
+    "render-003": {
+      "answer": "Tomasz Brandt",
+      "tokens": 29698,
+      "fixed_tokens": 1103,
+      "processed_tokens": 229776,
+      "tool_calls": 11,
+      "turns": 12
+    },
+    "render-004": {
+      "answer": "rejected",
+      "tokens": 23995,
+      "fixed_tokens": 1108,
+      "processed_tokens": 405827,
+      "tool_calls": 24,
+      "turns": 25
+    },
+    "render-005": {
+      "answer": true,
+      "tokens": 26430,
+      "fixed_tokens": 1104,
+      "processed_tokens": 205231,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "render-006": {
+      "answer": "unknown",
+      "tokens": 35959,
+      "fixed_tokens": 1105,
+      "processed_tokens": 712938,
+      "tool_calls": 26,
+      "turns": 27
+    },
+    "render-007": {
+      "answer": "2026-07-24",
+      "tokens": 61976,
+      "fixed_tokens": 1114,
+      "processed_tokens": 2221552,
+      "tool_calls": 52,
+      "turns": 53
+    },
+    "render-008": {
+      "answer": "2 failures",
+      "tokens": 23244,
+      "fixed_tokens": 1107,
+      "processed_tokens": 293498,
+      "tool_calls": 14,
+      "turns": 15
+    },
+    "render-009": {
+      "answer": "32 steps",
+      "tokens": 24802,
+      "fixed_tokens": 1113,
+      "processed_tokens": 304901,
+      "tool_calls": 14,
+      "turns": 15
+    },
+    "render-010": {
+      "answer": "unknown",
+      "tokens": 27352,
+      "fixed_tokens": 1110,
+      "processed_tokens": 248552,
+      "tool_calls": 12,
+      "turns": 13
+    },
+    "render-011": {
+      "answer": "fnd-sdf-gi-costs-2-4-ms-on-meridian--2w6c2pc5zmcsyjre",
+      "tokens": 14784,
+      "fixed_tokens": 1105,
+      "processed_tokens": 169974,
+      "tool_calls": 13,
+      "turns": 14
+    },
+    "render-012": {
+      "answer": "deferred",
+      "tokens": 24907,
+      "fixed_tokens": 1109,
+      "processed_tokens": 327278,
+      "tool_calls": 15,
+      "turns": 16
+    },
+    "render-013": {
+      "answer": "16-bit float per channel",
+      "tokens": 44654,
+      "fixed_tokens": 1107,
+      "processed_tokens": 840474,
+      "tool_calls": 25,
+      "turns": 26
+    },
+    "render-014": {
+      "answer": "52 percent",
+      "tokens": 29891,
+      "fixed_tokens": 1105,
+      "processed_tokens": 498792,
+      "tool_calls": 21,
+      "turns": 22
+    },
+    "render-015": {
+      "answer": "unknown",
+      "tokens": 33192,
+      "fixed_tokens": 1108,
+      "processed_tokens": 672577,
+      "tool_calls": 33,
+      "turns": 34
+    },
+    "render-016": {
+      "answer": "1.2 km",
+      "tokens": 7597,
+      "fixed_tokens": 1105,
+      "processed_tokens": 83430,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "render-017": {
+      "answer": "unknown",
+      "tokens": 73898,
+      "fixed_tokens": 1103,
+      "processed_tokens": 876842,
+      "tool_calls": 20,
+      "turns": 21
+    },
+    "render-018": {
+      "answer": "unknown",
+      "tokens": 39714,
+      "fixed_tokens": 1103,
+      "processed_tokens": 407816,
+      "tool_calls": 16,
+      "turns": 15
+    },
+    "render-019": {
+      "answer": "dec-use-the-custom-brine-curve-for-tonemapping--p735g6wf2njare86",
+      "tokens": 24124,
+      "fixed_tokens": 1101,
+      "processed_tokens": 213784,
+      "tool_calls": 13,
+      "turns": 12
+    },
+    "render-020": {
+      "answer": "fnd-screen-space-refraction-loses-off-screen-content--k8zvmmdee7wg2fjy",
+      "tokens": 28839,
+      "fixed_tokens": 1103,
+      "processed_tokens": 379827,
+      "tool_calls": 18,
+      "turns": 17
+    },
+    "render-021": {
+      "answer": "dec-adopt-a-visibility-buffer-for-all-opaque-geometr--68vchzqgd1avw8q4",
+      "tokens": 26437,
+      "fixed_tokens": 1108,
+      "processed_tokens": 286284,
+      "tool_calls": 13,
+      "turns": 14
+    },
+    "render-022": {
+      "answer": "dec-use-cascaded-shadow-maps-with-four-cascades--s5c1y9jaf275afzr",
+      "tokens": 12580,
+      "fixed_tokens": 1103,
+      "processed_tokens": 123796,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "render-023": {
+      "answer": "dec-capture-the-cliffs-and-dunes-benchmarks-on-every--3pqyr66yh4v6q676",
+      "tokens": 52089,
+      "fixed_tokens": 1102,
+      "processed_tokens": 768227,
+      "tool_calls": 20,
+      "turns": 21
+    },
+    "render-024": {
+      "answer": "dec-resolve-materials-with-one-uber-shader-over-bind--s9nbq2qn05mk5j6r",
+      "tokens": 11880,
+      "fixed_tokens": 1106,
+      "processed_tokens": 100529,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "render-025": {
+      "answer": "fnd-tern-cost-at-4k-output-on-meridian-after-fp16-pa--p4gcmzw2a4bvzjev",
+      "tokens": 71356,
+      "fixed_tokens": 1104,
+      "processed_tokens": 2969824,
+      "tool_calls": 67,
+      "turns": 68
+    },
+    "render-026": {
+      "answer": "dec-ship-four-tern-quality-presets--vjw18d82dx5gath8",
+      "tokens": 38167,
+      "fixed_tokens": 1103,
+      "processed_tokens": 714762,
+      "tool_calls": 26,
+      "turns": 27
+    },
+    "render-027": {
+      "answer": "con-frame-budget--j6vneva1g2ywj86m",
+      "tokens": 12354,
+      "fixed_tokens": 1110,
+      "processed_tokens": 91456,
+      "tool_calls": 7,
+      "turns": 8
+    },
+    "render-028": {
+      "answer": "dec-move-to-gpu-driven-two-phase-occlusion-culling--6dre481mabxsw6ee",
+      "tokens": 8975,
+      "fixed_tokens": 1103,
+      "processed_tokens": 106239,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "render-029": {
+      "answer": "fnd-vsm-page-pool-overflows-during-spring-tides--m2p8e89hhdmh0z8a",
+      "tokens": 12052,
+      "fixed_tokens": 1102,
+      "processed_tokens": 100464,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "render-030": {
+      "answer": "dec-use-screen-space-refraction-for-saltglass--vknzksgdrgr7zkg6",
+      "tokens": 30646,
+      "fixed_tokens": 1106,
+      "processed_tokens": 625135,
+      "tool_calls": 31,
+      "turns": 29
+    },
+    "render-031": {
+      "answer": "Alpha-tested foliage cost 2.1 ms in the visibility buffer versus 0.8 ms in forward+, because the alpha test runs in the raster pass with a per-pixel texture fetch, and saltglass refracts what is behind it so it needs the resolved scene first (dec-visibility-buffer-for-opaque-geometry-foliage-an--gvnvp04jgm7kbfh9).",
+      "tokens": 16257,
+      "fixed_tokens": 1108,
+      "processed_tokens": 206381,
+      "tool_calls": 14,
+      "turns": 15
+    },
+    "render-032": {
+      "answer": "The team chose Tern because Halcyon has no Skiff build, so shipping it on two platforms would break the one-upscaler constraint, and owning Tern's code suits saltglass refraction and caustics, which need upscaler changes the team can make without vendor tickets (dec-ship-tern-as-lantern-s-only-upscaler--fmreq35nzyjc7k4e).",
+      "tokens": 46223,
+      "fixed_tokens": 1109,
+      "processed_tokens": 600070,
+      "tool_calls": 19,
+      "turns": 20
+    },
+    "render-033": {
+      "answer": "128 MB",
+      "tokens": 32024,
+      "fixed_tokens": 1102,
+      "processed_tokens": 556889,
+      "tool_calls": 21,
+      "turns": 22
+    },
+    "render-034": {
+      "answer": "PC workstation (Meridian clock profile)",
+      "tokens": 30996,
+      "fixed_tokens": 1103,
+      "processed_tokens": 478755,
+      "tool_calls": 19,
+      "turns": 20
+    },
+    "render-035": {
+      "answer": "5912 pages",
+      "tokens": 15778,
+      "fixed_tokens": 1110,
+      "processed_tokens": 184464,
+      "tool_calls": 12,
+      "turns": 13
+    },
+    "render-036": {
+      "answer": "HDR-07",
+      "tokens": 71285,
+      "fixed_tokens": 1099,
+      "processed_tokens": 2809571,
+      "tool_calls": 52,
+      "turns": 53
+    },
+    "render-037": {
+      "answer": "unknown",
+      "tokens": 46409,
+      "fixed_tokens": 1107,
+      "processed_tokens": 748750,
+      "tool_calls": 22,
+      "turns": 23
+    },
+    "render-038": {
+      "answer": "dec-visibility-buffer-for-opaque-geometry-foliage-an--gvnvp04jgm7kbfh9",
+      "tokens": 24743,
+      "fixed_tokens": 1104,
+      "processed_tokens": 211957,
+      "tool_calls": 11,
+      "turns": 12
+    },
+    "render-039": {
+      "answer": "dec-brine-curve-with-a-separate-hdr-shoulder-at-1-00--be68yywg78dysm2e",
+      "tokens": 29530,
+      "fixed_tokens": 1104,
+      "processed_tokens": 390451,
+      "tool_calls": 16,
+      "turns": 17
+    },
+    "render-040": {
+      "answer": "fnd-lantern-at-alpha--ckpd9ecvdjqbcr7c",
+      "tokens": 11469,
+      "fixed_tokens": 1106,
+      "processed_tokens": 88715,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "render-041": {
+      "answer": "4.7 ms",
+      "tokens": 30330,
+      "fixed_tokens": 1100,
+      "processed_tokens": 539968,
+      "tool_calls": 22,
+      "turns": 23
+    },
+    "render-042": {
+      "answer": "dec-visibility-buffer-on-all-platforms-skiff-resolve--k1ackk3c3275r5y1",
+      "tokens": 16097,
+      "fixed_tokens": 1107,
+      "processed_tokens": 142191,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "render-043": {
+      "answer": "fnd-meshlet-cone-culling-rejects-9-percent-of-triang--t6e5x7trzedex105",
+      "tokens": 34449,
+      "fixed_tokens": 1107,
+      "processed_tokens": 768204,
+      "tool_calls": 29,
+      "turns": 30
+    },
+    "render-044": {
+      "answer": "dec-screen-space-refraction-with-a-ray-marched-fallb--2639xtpyrfrvbx1r",
+      "tokens": 28222,
+      "fixed_tokens": 1103,
+      "processed_tokens": 207670,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "render-045": {
+      "answer": false,
+      "tokens": 65587,
+      "fixed_tokens": 1104,
+      "processed_tokens": 1716355,
+      "tool_calls": 48,
+      "turns": 40
+    },
+    "render-046": {
+      "answer": "The cost Finding that rejected virtual shadow maps (3.1 ms, fnd-virtual-shadow-maps-cost-3-1-ms-on-meridian--r6x0sdfecms7j1yg) was a capture error; with cached pages VSM costs 1.4 ms, less than the 1.6 ms of four cascades, and cascade seams through saltglass remain unsolved under CSM. Reopened on 2026-01-12 against dec-use-cascaded-shadow-maps-with-four-cascades--s5c1y9jaf275afzr; the record is dec-use-virtual-shadow-maps-for-the-sun--x8nqkn9q7eaf1ap4.",
+      "tokens": 29329,
+      "fixed_tokens": 1111,
+      "processed_tokens": 311926,
+      "tool_calls": 14,
+      "turns": 15
+    },
+    "render-047": {
+      "answer": "Because a release-build capture put the visibility buffer at 7.4 ms on Skiff against 8.1 ms for forward+ (6.3 ms with half-rate material resolve), so keeping a forward+ fallback was no longer worth it, and maintaining two opaque paths cost about an engineer-week a month. Record: dec-visibility-buffer-on-all-platforms-skiff-resolve--k1ackk3c3275r5y1",
+      "tokens": 29560,
+      "fixed_tokens": 1107,
+      "processed_tokens": 404353,
+      "tool_calls": 17,
+      "turns": 18
+    },
+    "render-048": {
+      "answer": "dec-exclude-caustic-luminance-from-tern-s-history-cl--xhxjn26ss343v2k4",
+      "tokens": 83065,
+      "fixed_tokens": 1111,
+      "processed_tokens": 5010661,
+      "tool_calls": 92,
+      "turns": 92
+    },
+    "render-049": {
+      "answer": "dec-use-virtual-shadow-maps-for-the-sun--x8nqkn9q7eaf1ap4",
+      "tokens": 107366,
+      "fixed_tokens": 1108,
+      "processed_tokens": 1634801,
+      "tool_calls": 30,
+      "turns": 28
+    },
+    "render-050": {
+      "answer": "con-frame-budget--fzdrbxns6dmrrmy3",
+      "tokens": 11861,
+      "fixed_tokens": 1110,
+      "processed_tokens": 90394,
+      "tool_calls": 7,
+      "turns": 8
+    },
+    "render-051": {
+      "answer": "iss-tern-ghosting-on-moving-saltglass--2yr3q6zf476wajqp",
+      "tokens": 18309,
+      "fixed_tokens": 1111,
+      "processed_tokens": 239854,
+      "tool_calls": 15,
+      "turns": 16
+    },
+    "render-052": {
+      "answer": "61 percent",
+      "tokens": 27726,
+      "fixed_tokens": 1100,
+      "processed_tokens": 387397,
+      "tool_calls": 17,
+      "turns": 18
+    },
+    "render-053": {
+      "answer": "every frame",
+      "tokens": 30738,
+      "fixed_tokens": 1105,
+      "processed_tokens": 494705,
+      "tool_calls": 20,
+      "turns": 20
+    },
+    "render-054": {
+      "answer": "debug-gpu-validation",
+      "tokens": 33400,
+      "fixed_tokens": 1105,
+      "processed_tokens": 700619,
+      "tool_calls": 25,
+      "turns": 26
+    },
+    "render-055": {
+      "answer": "fnd-tern-cost-at-4k-output-on-meridian-with-the-reac--81tcpzvhwzcy6wyn",
+      "tokens": 53695,
+      "fixed_tokens": 1104,
+      "processed_tokens": 776634,
+      "tool_calls": 22,
+      "turns": 22
+    },
+    "render-056": {
+      "answer": "208,000 meshlets",
+      "tokens": 28955,
+      "fixed_tokens": 1109,
+      "processed_tokens": 437011,
+      "tool_calls": 18,
+      "turns": 19
+    },
+    "render-057": {
+      "answer": "dec-visibility-buffer-on-all-platforms-skiff-resolve--k1ackk3c3275r5y1",
+      "tokens": 56644,
+      "fixed_tokens": 1105,
+      "processed_tokens": 2124924,
+      "tool_calls": 55,
+      "turns": 56
+    },
+    "render-058": {
+      "answer": "iss-which-upscaler-should-lantern-ship--g8c2y9tsr856tn2v",
+      "tokens": 46275,
+      "fixed_tokens": 1103,
+      "processed_tokens": 1355499,
+      "tool_calls": 41,
+      "turns": 42
+    },
+    "render-059": {
+      "answer": "fnd-sdf-gi-costs-4-7-ms-on-meridian--sm19rt2f274ajsvr",
+      "tokens": 38326,
+      "fixed_tokens": 1106,
+      "processed_tokens": 598689,
+      "tool_calls": 21,
+      "turns": 22
+    },
+    "render-060": {
+      "answer": "0.31",
+      "tokens": 32229,
+      "fixed_tokens": 1105,
+      "processed_tokens": 406144,
+      "tool_calls": 16,
+      "turns": 17
+    },
+    "render-061": {
+      "answer": "con-ui-composites-at-a-fixed-203-nits-in-hdr--de6aft7cvhdezn5s",
+      "tokens": 41561,
+      "fixed_tokens": 1106,
+      "processed_tokens": 517645,
+      "tool_calls": 20,
+      "turns": 17
+    },
+    "render-062": {
+      "answer": "con-frame-budget--j6vneva1g2ywj86m",
+      "tokens": 22930,
+      "fixed_tokens": 1100,
+      "processed_tokens": 133273,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "render-063": {
+      "answer": "dec-resolve-materials-with-one-uber-shader-over-bind--s9nbq2qn05mk5j6r",
+      "tokens": 31214,
+      "fixed_tokens": 1109,
+      "processed_tokens": 303168,
+      "tool_calls": 17,
+      "turns": 14
+    },
+    "render-064": {
+      "answer": "dec-use-a-cached-shadow-atlas-for-local-lights--8p6f2v774he38t5j",
+      "tokens": 33049,
+      "fixed_tokens": 1108,
+      "processed_tokens": 609710,
+      "tool_calls": 29,
+      "turns": 30
+    },
+    "render-065": {
+      "answer": "unknown",
+      "tokens": 36973,
+      "fixed_tokens": 1108,
+      "processed_tokens": 642184,
+      "tool_calls": 26,
+      "turns": 24
+    },
+    "render-066": {
+      "answer": "dec-use-cascaded-shadow-maps-with-four-cascades--s5c1y9jaf275afzr",
+      "tokens": 15189,
+      "fixed_tokens": 1106,
+      "processed_tokens": 260092,
+      "tool_calls": 19,
+      "turns": 19
+    },
+    "render-067": {
+      "answer": 4,
+      "tokens": 20757,
+      "fixed_tokens": 1110,
+      "processed_tokens": 141627,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "render-068": {
+      "answer": [
+        "dec-exclude-caustic-luminance-from-tern-s-history-cl--xhxjn26ss343v2k4",
+        "dec-lock-caustic-photon-jitter-to-the-tide-phase--85x10k4h11t8nx7c",
+        "dec-use-the-probe-grid-alone-in-120-hz-performance-m--6dzm1nt40pjfpyae",
+        "dec-trace-sdf-gi-at-quarter-resolution-in-performanc--06cqt3mqn3fg5h6e",
+        "dec-read-paper-white-from-the-meridian-system-settin--7crbx73gqw1hn7xq",
+        "dec-add-an-in-game-paper-white-slider-from-80-to-400--1phfvxby983z8tjf"
+      ],
+      "tokens": 23312,
+      "fixed_tokens": 1103,
+      "processed_tokens": 124620,
+      "tool_calls": 7,
+      "turns": 8
+    },
+    "render-069": {
+      "answer": "iss-shadow-pages-run-out-at-spring-low-tide--f4fgy6b44jbkrsmh",
+      "tokens": 28144,
+      "fixed_tokens": 1104,
+      "processed_tokens": 206597,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "render-070": {
+      "answer": [],
+      "tokens": 57262,
+      "fixed_tokens": 1100,
+      "processed_tokens": 1260533,
+      "tool_calls": 31,
+      "turns": 32
+    },
+    "render-071": {
+      "answer": 3,
+      "tokens": 10733,
+      "fixed_tokens": 1101,
+      "processed_tokens": 72343,
+      "tool_calls": 8,
+      "turns": 7
+    },
+    "render-072": {
+      "answer": [
+        "rsk-sdf-volumes-outgrow-the-render-target-memory-bud--xfd2pfztvskdcd2c",
+        "rsk-artists-cannot-match-concept-paintings-under-the--6cfh9vkamn0kbtcx"
+      ],
+      "tokens": 12961,
+      "fixed_tokens": 1109,
+      "processed_tokens": 106426,
+      "tool_calls": 10,
+      "turns": 9
+    },
+    "render-073": {
+      "answer": [
+        "rsk-vsm-page-pool-overflows-when-tides-expose-the-fl--x1r161nrdngra4ty",
+        "rsk-gi-cannot-fit-the-120-hz-performance-mode--tqt3fj839dqfq5s7",
+        "rsk-hdr-certification-slips-the-release-candidate--49t4xjbzmkgc22a4"
+      ],
+      "tokens": 17503,
+      "fixed_tokens": 1111,
+      "processed_tokens": 154434,
+      "tool_calls": 15,
+      "turns": 12
+    },
+    "render-074": {
+      "answer": 5,
+      "tokens": 7420,
+      "fixed_tokens": 1101,
+      "processed_tokens": 52830,
+      "tool_calls": 5,
+      "turns": 6
+    },
+    "render-075": {
+      "answer": "3",
+      "tokens": 37190,
+      "fixed_tokens": 1110,
+      "processed_tokens": 976826,
+      "tool_calls": 34,
+      "turns": 35
+    },
+    "render-076": {
+      "answer": false,
+      "tokens": 16684,
+      "fixed_tokens": 1104,
+      "processed_tokens": 224167,
+      "tool_calls": 16,
+      "turns": 17
+    },
+    "render-077": {
+      "answer": true,
+      "tokens": 41353,
+      "fixed_tokens": 1102,
+      "processed_tokens": 451643,
+      "tool_calls": 30,
+      "turns": 17
+    },
+    "render-078": {
+      "answer": [
+        "dec-brine-curve-with-a-separate-hdr-shoulder-at-1-00--be68yywg78dysm2e",
+        "rsk-hdr-certification-slips-the-release-candidate--49t4xjbzmkgc22a4"
+      ],
+      "tokens": 41863,
+      "fixed_tokens": 1102,
+      "processed_tokens": 313059,
+      "tool_calls": 32,
+      "turns": 13
+    },
+    "render-079": {
+      "answer": 5,
+      "tokens": 47952,
+      "fixed_tokens": 1101,
+      "processed_tokens": 438522,
+      "tool_calls": 15,
+      "turns": 16
+    },
+    "render-080": {
+      "answer": "6 versions",
+      "tokens": 24073,
+      "fixed_tokens": 1104,
+      "processed_tokens": 198734,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "render-081": {
+      "answer": "unknown",
+      "tokens": 61462,
+      "fixed_tokens": 1104,
+      "processed_tokens": 1144700,
+      "tool_calls": 27,
+      "turns": 27
+    },
+    "render-082": {
+      "answer": false,
+      "tokens": 49697,
+      "fixed_tokens": 1105,
+      "processed_tokens": 1467568,
+      "tool_calls": 40,
+      "turns": 41
+    },
+    "render-083": {
+      "answer": null,
+      "tokens": 97362,
+      "fixed_tokens": 1113,
+      "processed_tokens": 3484516,
+      "tool_calls": 55,
+      "turns": 55
+    },
+    "tools-001": {
+      "answer": "completed",
+      "tokens": 20091,
+      "fixed_tokens": 1104,
+      "processed_tokens": 135959,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "tools-002": {
+      "answer": "47 minutes",
+      "tokens": 18811,
+      "fixed_tokens": 1110,
+      "processed_tokens": 139947,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "tools-003": {
+      "answer": "6 min 40 s",
+      "tokens": 14412,
+      "fixed_tokens": 1109,
+      "processed_tokens": 227594,
+      "tool_calls": 17,
+      "turns": 18
+    },
+    "tools-004": {
+      "answer": "unknown",
+      "tokens": 41222,
+      "fixed_tokens": 1108,
+      "processed_tokens": 324012,
+      "tool_calls": 11,
+      "turns": 12
+    },
+    "tools-005": {
+      "answer": "dec-key-the-shader-cache-on-preprocessed-source-defi--qx2da8e4cbkx0drp",
+      "tokens": 24465,
+      "fixed_tokens": 1106,
+      "processed_tokens": 282253,
+      "tool_calls": 13,
+      "turns": 14
+    },
+    "tools-006": {
+      "answer": "dec-build-a-content-addressed-shader-compile-cache-s--e65rq9439k7xz5zh",
+      "tokens": 21334,
+      "fixed_tokens": 1110,
+      "processed_tokens": 140456,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "tools-007": {
+      "answer": "dec-raise-the-shader-cache-fetch-timeout-from-5-seco--4sgdf42ajyct6gt6",
+      "tokens": 109513,
+      "fixed_tokens": 1109,
+      "processed_tokens": 3280224,
+      "tool_calls": 43,
+      "turns": 44
+    },
+    "tools-008": {
+      "answer": "dec-key-the-shader-cache-on-raw-source-text-and-comp--hp6awmx3gq5rn9nc",
+      "tokens": 25671,
+      "fixed_tokens": 1106,
+      "processed_tokens": 218849,
+      "tool_calls": 11,
+      "turns": 12
+    },
+    "tools-009": {
+      "answer": "92.4%",
+      "tokens": 30520,
+      "fixed_tokens": 1107,
+      "processed_tokens": 762449,
+      "tool_calls": 33,
+      "turns": 34
+    },
+    "tools-010": {
+      "answer": "dec-cap-each-farm-agent-at-6-parallel-shader-compile--q5w4sfjm73tsj8x8",
+      "tokens": 47512,
+      "fixed_tokens": 1109,
+      "processed_tokens": 959298,
+      "tool_calls": 27,
+      "turns": 28
+    },
+    "tools-011": {
+      "answer": "fnd-two-compiler-builds-with-the-same-version-string--gmgr4ha0ndxqmcn9",
+      "tokens": 22835,
+      "fixed_tokens": 1112,
+      "processed_tokens": 201288,
+      "tool_calls": 11,
+      "turns": 12
+    },
+    "tools-012": {
+      "answer": 3,
+      "tokens": 20620,
+      "fixed_tokens": 1114,
+      "processed_tokens": 155266,
+      "tool_calls": 9,
+      "turns": 10
+    },
+    "tools-013": {
+      "answer": 6,
+      "tokens": 41175,
+      "fixed_tokens": 1110,
+      "processed_tokens": 515625,
+      "tool_calls": 18,
+      "turns": 19
+    },
+    "tools-014": {
+      "answer": false,
+      "tokens": 35104,
+      "fixed_tokens": 1110,
+      "processed_tokens": 334883,
+      "tool_calls": 13,
+      "turns": 13
+    },
+    "tools-015": {
+      "answer": [
+        "iss-whether-the-audio-bank-packer-should-load-on-a-w--sqzp2rwp6s01w3b0",
+        "iss-whether-the-level-editor-autosave-needs-its-own--rkvmnbqe7w644zkr",
+        "iss-whether-the-artist-sandbox-should-load-on-a-work--73j819anqct8etfn",
+        "iss-whether-the-review-bot-should-load-on-a-worker-t--rtsjwvsksjdq15v1",
+        "iss-whether-the-level-editor-autosave-should-be-cach--radcjs4hyvh7p55q",
+        "iss-whether-the-crash-symbol-server-should-load-on-a--qvyphhgnsnm2cvqb",
+        "iss-whether-the-license-scanner-should-be-cached-bet--nqhd89czbfat9rya",
+        "iss-whether-the-doc-site-should-load-on-a-worker-thr--qxswe0pg52ekky0z",
+        "iss-whether-the-asset-search-should-load-on-a-worker--f9gpv3z522x6p6h4",
+        "iss-whether-the-cache-key-should-move-its-settings-t--jgtdn2f02p8fx5nr",
+        "iss-whether-the-review-bot-needs-its-own-memory-pool--pg3m8g9gn3y6v3kq",
+        "iss-whether-the-changelog-bot-should-skip-work-when--p2vrp5d682p3jrc3",
+        "iss-whether-the-cache-key-should-log-less-0068--cysv4n56q1qn7t2k",
+        "iss-whether-the-fetch-timeout-needs-its-own-unit-tes--11tqzws72gms2h8x",
+        "iss-whether-the-audio-bank-packer-needs-its-own-memo--qjrqrseast8d5mhf",
+        "iss-whether-the-fetch-timeout-should-print-fewer-war--mw8zejz6hk5m60x0",
+        "iss-whether-the-crash-symbol-server-should-ship-in-t--bhq91ajavah18wsk",
+        "iss-whether-the-asset-search-should-load-on-a-worker--80b27kqh36rpafdt",
+        "iss-whether-the-doc-site-should-ship-in-the-first-pa--wcdkq5zab7dxe5yj",
+        "iss-whether-the-patch-differ-should-be-cached-betwee--28b5zqb1ketwzf0r",
+        "iss-whether-the-test-runner-should-load-on-a-worker--aygay1r0qj4mzf78",
+        "iss-whether-the-texture-viewer-should-be-split-into--1jhgyqb70h5x7m7b",
+        "iss-whether-the-shader-compile-cache-needs-its-own-u--fyysrcv6fvbsvcsy",
+        "iss-whether-the-level-editor-autosave-should-be-spli--ncnwh0csw671fs0q",
+        "iss-whether-the-asset-search-should-ship-in-the-firs--hsb2avhx613prxew",
+        "iss-whether-the-test-runner-needs-its-own-memory-poo--bs6arq0qv37d6wmx",
+        "iss-whether-the-artist-sandbox-should-be-split-into--ek47ca2vgmrjanp8",
+        "rsk-shader-cache-storage-could-outgrow-the-4-tb-farm--76y9649mwrx7aavd"
+      ],
+      "tokens": 71052,
+      "fixed_tokens": 1109,
+      "processed_tokens": 847117,
+      "tool_calls": 22,
+      "turns": 23
+    },
+    "tools-016": {
+      "answer": "dec-key-the-shader-cache-on-preprocessed-source-defi--qx2da8e4cbkx0drp",
+      "tokens": 42301,
+      "fixed_tokens": 1109,
+      "processed_tokens": 977905,
+      "tool_calls": 32,
+      "turns": 33
+    },
+    "world-001": {
+      "answer": "64 KB",
+      "tokens": 25585,
+      "fixed_tokens": 1105,
+      "processed_tokens": 257209,
+      "tool_calls": 12,
+      "turns": 13
+    },
+    "world-002": {
+      "answer": "5.1 ms",
+      "tokens": 34409,
+      "fixed_tokens": 1108,
+      "processed_tokens": 359435,
+      "tool_calls": 13,
+      "turns": 14
+    },
+    "world-003": {
+      "answer": "41%",
+      "tokens": 80126,
+      "fixed_tokens": 1107,
+      "processed_tokens": 4117267,
+      "tool_calls": 77,
+      "turns": 78
+    },
+    "world-004": {
+      "answer": "4,100 file opens",
+      "tokens": 36199,
+      "fixed_tokens": 1107,
+      "processed_tokens": 576745,
+      "tool_calls": 21,
+      "turns": 22
+    },
+    "world-005": {
+      "answer": "11 m",
+      "tokens": 34426,
+      "fixed_tokens": 1106,
+      "processed_tokens": 532868,
+      "tool_calls": 19,
+      "turns": 20
+    },
+    "world-006": {
+      "answer": "3.4 reversals per minute",
+      "tokens": 44546,
+      "fixed_tokens": 1102,
+      "processed_tokens": 867928,
+      "tool_calls": 28,
+      "turns": 27
+    },
+    "world-007": {
+      "answer": "unknown",
+      "tokens": 52480,
+      "fixed_tokens": 1103,
+      "processed_tokens": 1743898,
+      "tool_calls": 44,
+      "turns": 45
+    },
+    "world-008": {
+      "answer": "10 Hz",
+      "tokens": 35250,
+      "fixed_tokens": 1103,
+      "processed_tokens": 610301,
+      "tool_calls": 22,
+      "turns": 23
+    },
+    "world-009": {
+      "answer": "unknown",
+      "tokens": 33420,
+      "fixed_tokens": 1112,
+      "processed_tokens": 723330,
+      "tool_calls": 27,
+      "turns": 28
+    },
+    "world-010": {
+      "answer": "29 GB/s",
+      "tokens": 26436,
+      "fixed_tokens": 1105,
+      "processed_tokens": 199858,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "world-011": {
+      "answer": "fnd-shipping-entity-names-costs-57-mb-at-full-popula--6w7gjvy7wdmdx9qx",
+      "tokens": 46378,
+      "fixed_tokens": 1104,
+      "processed_tokens": 1093547,
+      "tool_calls": 32,
+      "turns": 33
+    },
+    "world-012": {
+      "answer": "dec-run-engine-jobs-and-gull-scripts-on-one-thread-p--07pbzvqg00pmnrr3",
+      "tokens": 22947,
+      "fixed_tokens": 1109,
+      "processed_tokens": 168719,
+      "tool_calls": 9,
+      "turns": 10
+    },
+    "world-013": {
+      "answer": "unknown",
+      "tokens": 39053,
+      "fixed_tokens": 1110,
+      "processed_tokens": 997472,
+      "tool_calls": 32,
+      "turns": 33
+    },
+    "world-014": {
+      "answer": "unknown",
+      "tokens": 28562,
+      "fixed_tokens": 1110,
+      "processed_tokens": 267390,
+      "tool_calls": 12,
+      "turns": 13
+    },
+    "world-015": {
+      "answer": "3.0 ms per frame",
+      "tokens": 42263,
+      "fixed_tokens": 1112,
+      "processed_tokens": 473818,
+      "tool_calls": 17,
+      "turns": 16
+    },
+    "world-016": {
+      "answer": "unknown",
+      "tokens": 20722,
+      "fixed_tokens": 1111,
+      "processed_tokens": 138160,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "world-017": {
+      "answer": "dec-partition-the-world-into-128-m-cells--372b6czbjf29ymaw",
+      "tokens": 30123,
+      "fixed_tokens": 1106,
+      "processed_tokens": 454506,
+      "tool_calls": 18,
+      "turns": 19
+    },
+    "world-018": {
+      "answer": "dec-run-engine-jobs-on-a-work-stealing-thread-pool--1pd72x1pxpgwy21x",
+      "tokens": 24014,
+      "fixed_tokens": 1104,
+      "processed_tokens": 145065,
+      "tool_calls": 10,
+      "turns": 9
+    },
+    "world-019": {
+      "answer": "fnd-tide-priority-reads-starve-player-proximity-load--by0d7b0bk39xz3rk",
+      "tokens": 43997,
+      "fixed_tokens": 1108,
+      "processed_tokens": 1018549,
+      "tool_calls": 32,
+      "turns": 33
+    },
+    "world-020": {
+      "answer": "dec-schedule-streaming-reads-by-deadline-instead-of--q2x5aknabgcssdj2",
+      "tokens": 13242,
+      "fixed_tokens": 1109,
+      "processed_tokens": 100405,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "world-021": {
+      "answer": "dec-cut-navigation-tiles-to-64-m-so-three-fit-along--snvepk8ygeb3qsjs",
+      "tokens": 26630,
+      "fixed_tokens": 1104,
+      "processed_tokens": 208857,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "world-022": {
+      "answer": "fnd-41-of-alpha-crash-reports-have-no-usable-stack--35a50b07ferhf13m",
+      "tokens": 16233,
+      "fixed_tokens": 1102,
+      "processed_tokens": 150291,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "world-023": {
+      "answer": "dec-compress-streamed-assets-with-kelp--ezwc5p1tgsgm7v8m",
+      "tokens": 33237,
+      "fixed_tokens": 1101,
+      "processed_tokens": 380671,
+      "tool_calls": 15,
+      "turns": 16
+    },
+    "world-024": {
+      "answer": "dec-shrink-kelp-s-dictionary-to-1-mb-for-streamed-as--yh8hktfqnyqhepew",
+      "tokens": 29658,
+      "fixed_tokens": 1109,
+      "processed_tokens": 388253,
+      "tool_calls": 16,
+      "turns": 17
+    },
+    "world-025": {
+      "answer": "con-streaming-pool-budget--kca88sgh2j6sxvd5",
+      "tokens": 24697,
+      "fixed_tokens": 1102,
+      "processed_tokens": 206590,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "world-026": {
+      "answer": "fnd-retail-skiff-units-sustain-only-190-mb-s-of-stre--485sdcmm3gweevvn",
+      "tokens": 100409,
+      "fixed_tokens": 1100,
+      "processed_tokens": 2794332,
+      "tool_calls": 49,
+      "turns": 45
+    },
+    "world-027": {
+      "answer": "160 MB/s",
+      "tokens": 27772,
+      "fixed_tokens": 1105,
+      "processed_tokens": 353623,
+      "tool_calls": 15,
+      "turns": 16
+    },
+    "world-028": {
+      "answer": "unknown",
+      "tokens": 76807,
+      "fixed_tokens": 1104,
+      "processed_tokens": 1947292,
+      "tool_calls": 38,
+      "turns": 39
+    },
+    "world-029": {
+      "answer": "dec-run-engine-jobs-and-gull-scripts-on-one-thread-p--07pbzvqg00pmnrr3",
+      "tokens": 28764,
+      "fixed_tokens": 1101,
+      "processed_tokens": 661513,
+      "tool_calls": 33,
+      "turns": 34
+    },
+    "world-030": {
+      "answer": "fnd-world-core-state-at-alpha--tkbsm4867h65jqq8",
+      "tokens": 49528,
+      "fixed_tokens": 1111,
+      "processed_tokens": 1593202,
+      "tool_calls": 50,
+      "turns": 51
+    },
+    "world-031": {
+      "answer": "unknown",
+      "tokens": 38048,
+      "fixed_tokens": 1104,
+      "processed_tokens": 736237,
+      "tool_calls": 26,
+      "turns": 26
+    },
+    "world-032": {
+      "answer": "fnd-float-tide-heights-drift-apart-between-pc-and-me--7jb0fg4b5xzr7q5e",
+      "tokens": 33806,
+      "fixed_tokens": 1103,
+      "processed_tokens": 584698,
+      "tool_calls": 22,
+      "turns": 23
+    },
+    "world-033": {
+      "answer": "dec-save-player-changes-as-deltas-against-the-tide-f--n38scy1yaarsr8cw",
+      "tokens": 35500,
+      "fixed_tokens": 1105,
+      "processed_tokens": 677556,
+      "tool_calls": 24,
+      "turns": 25
+    },
+    "world-034": {
+      "answer": "unknown",
+      "tokens": 40821,
+      "fixed_tokens": 1107,
+      "processed_tokens": 919028,
+      "tool_calls": 30,
+      "turns": 31
+    },
+    "world-035": {
+      "answer": false,
+      "tokens": 40589,
+      "fixed_tokens": 1108,
+      "processed_tokens": 448136,
+      "tool_calls": 16,
+      "turns": 17
+    },
+    "world-036": {
+      "answer": "Kestrel retired the fiber scheduler for engine jobs because 41% of alpha crash reports had no usable stack (fiber worker dumps showed only scheduler frames), which blocked crash triage for beta, while a continuation-based thread pool kept workers 93% busy during tide turns, close to the 95% fibers gave. See dec-return-engine-jobs-to-a-thread-pool-with-continu--1zkc1v2x97taf50h.",
+      "tokens": 33203,
+      "fixed_tokens": 1099,
+      "processed_tokens": 484777,
+      "tool_calls": 19,
+      "turns": 19
+    },
+    "world-037": {
+      "answer": "fnd-hot-reload-drops-suspended-gull-coroutines--va0fn0svryzwbzws",
+      "tokens": 45465,
+      "fixed_tokens": 1107,
+      "processed_tokens": 812569,
+      "tool_calls": 25,
+      "turns": 26
+    },
+    "world-038": {
+      "answer": "3 archetypes",
+      "tokens": 15512,
+      "fixed_tokens": 1106,
+      "processed_tokens": 173101,
+      "tool_calls": 14,
+      "turns": 13
+    },
+    "world-039": {
+      "answer": "unknown",
+      "tokens": 78571,
+      "fixed_tokens": 1105,
+      "processed_tokens": 967935,
+      "tool_calls": 19,
+      "turns": 20
+    },
+    "world-040": {
+      "answer": "unknown",
+      "tokens": 70114,
+      "fixed_tokens": 1103,
+      "processed_tokens": 3003468,
+      "tool_calls": 60,
+      "turns": 61
+    },
+    "world-041": {
+      "answer": "61%",
+      "tokens": 24844,
+      "fixed_tokens": 1105,
+      "processed_tokens": 200946,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "world-042": {
+      "answer": "5.4 s",
+      "tokens": 30238,
+      "fixed_tokens": 1111,
+      "processed_tokens": 346543,
+      "tool_calls": 14,
+      "turns": 15
+    },
+    "world-043": {
+      "answer": "5.8 minutes",
+      "tokens": 47691,
+      "fixed_tokens": 1104,
+      "processed_tokens": 759696,
+      "tool_calls": 21,
+      "turns": 22
+    },
+    "world-044": {
+      "answer": "dec-move-engine-jobs-to-fibers--qjkgnm8cex8ydzfq",
+      "tokens": 48934,
+      "fixed_tokens": 1110,
+      "processed_tokens": 756163,
+      "tool_calls": 27,
+      "turns": 24
+    },
+    "world-045": {
+      "answer": "dec-run-engine-jobs-on-fibers-and-pin-gull-scripts-t--rw28cbqfd07rd9te",
+      "tokens": 27199,
+      "fixed_tokens": 1102,
+      "processed_tokens": 371026,
+      "tool_calls": 16,
+      "turns": 17
+    },
+    "world-046": {
+      "answer": "con-streaming-pool-budget--632bkbs79bwj4cr5",
+      "tokens": 27179,
+      "fixed_tokens": 1108,
+      "processed_tokens": 277904,
+      "tool_calls": 12,
+      "turns": 13
+    },
+    "world-047": {
+      "answer": "fnd-world-core-state-at-alpha--tkbsm4867h65jqq8",
+      "tokens": 27138,
+      "fixed_tokens": 1112,
+      "processed_tokens": 204018,
+      "tool_calls": 11,
+      "turns": 12
+    },
+    "world-048": {
+      "answer": "dec-compile-gull-to-bytecode-for-a-register-vm--jrqje646fpevp5f3",
+      "tokens": 30186,
+      "fixed_tokens": 1108,
+      "processed_tokens": 350961,
+      "tool_calls": 15,
+      "turns": 16
+    },
+    "world-049": {
+      "answer": "22%",
+      "tokens": 56422,
+      "fixed_tokens": 1107,
+      "processed_tokens": 1446198,
+      "tool_calls": 40,
+      "turns": 38
+    },
+    "world-050": {
+      "answer": "fnd-alpha-content-needs-6-2-ms-of-gull-time-per-fram--4mekgdpsdv5nk085",
+      "tokens": 48926,
+      "fixed_tokens": 1108,
+      "processed_tokens": 687435,
+      "tool_calls": 20,
+      "turns": 21
+    },
+    "world-051": {
+      "answer": "unknown",
+      "tokens": 37312,
+      "fixed_tokens": 1104,
+      "processed_tokens": 838952,
+      "tool_calls": 28,
+      "turns": 29
+    },
+    "world-052": {
+      "answer": "Kenji Arakawa",
+      "tokens": 46527,
+      "fixed_tokens": 1112,
+      "processed_tokens": 832013,
+      "tool_calls": 26,
+      "turns": 27
+    },
+    "world-053": {
+      "answer": "unknown",
+      "tokens": 46830,
+      "fixed_tokens": 1101,
+      "processed_tokens": 1193729,
+      "tool_calls": 35,
+      "turns": 36
+    },
+    "world-054": {
+      "answer": "Marta Lindqvist",
+      "tokens": 29874,
+      "fixed_tokens": 1103,
+      "processed_tokens": 357998,
+      "tool_calls": 17,
+      "turns": 16
+    },
+    "world-055": {
+      "answer": "Kelp stays because the decision to shrink Kelp's dictionary to 1 MB for streamed assets (dec-shrink-kelp-s-dictionary-to-1-mb-for-streamed-as--yh8hktfqnyqhepew) ships it on every platform, and cold on Skiff it beats Zstandard by 1.7x. That decision also closed the reopened Zstandard option (dec-compress-streamed-assets-with-zstandard--bs1t15cygc51cpje).",
+      "tokens": 44094,
+      "fixed_tokens": 1103,
+      "processed_tokens": 821961,
+      "tool_calls": 28,
+      "turns": 27
+    },
+    "world-056": {
+      "answer": "dec-run-engine-jobs-on-a-work-stealing-thread-pool--1pd72x1pxpgwy21x",
+      "tokens": 22706,
+      "fixed_tokens": 1101,
+      "processed_tokens": 193360,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "world-057": {
+      "answer": "[212, 87]",
+      "tokens": 19715,
+      "fixed_tokens": 1108,
+      "processed_tokens": 276961,
+      "tool_calls": 16,
+      "turns": 17
+    },
+    "world-058": {
+      "answer": "0.8 GB/s",
+      "tokens": 36148,
+      "fixed_tokens": 1102,
+      "processed_tokens": 621723,
+      "tool_calls": 22,
+      "turns": 23
+    },
+    "world-059": {
+      "answer": "dec-derive-the-missing-harmonic-phase-from-each-save--gbqrvvgyq2gy2gnw",
+      "tokens": 27283,
+      "fixed_tokens": 1108,
+      "processed_tokens": 358592,
+      "tool_calls": 18,
+      "turns": 17
+    },
+    "world-060": {
+      "answer": "dec-partition-the-world-into-192-m-cells--bk9r1c5jwb6fh8tc",
+      "tokens": 29702,
+      "fixed_tokens": 1105,
+      "processed_tokens": 368839,
+      "tool_calls": 16,
+      "turns": 17
+    },
+    "world-061": {
+      "answer": "236 MB",
+      "tokens": 19266,
+      "fixed_tokens": 1105,
+      "processed_tokens": 245428,
+      "tool_calls": 14,
+      "turns": 15
+    },
+    "world-062": {
+      "answer": "310 MB",
+      "tokens": 27117,
+      "fixed_tokens": 1103,
+      "processed_tokens": 372762,
+      "tool_calls": 19,
+      "turns": 18
+    },
+    "world-063": {
+      "answer": "con-streaming-pool-budget--632bkbs79bwj4cr5",
+      "tokens": 32016,
+      "fixed_tokens": 1107,
+      "processed_tokens": 517992,
+      "tool_calls": 20,
+      "turns": 21
+    },
+    "world-064": {
+      "answer": [
+        "dec-force-strict-ieee-float-mode-for-the-tide-simula--ecwmqt7ncjngysqw",
+        "dec-have-the-host-stream-tide-heights-to-every-peer--a3rb1seedn2bj7k8"
+      ],
+      "tokens": 39555,
+      "fixed_tokens": 1101,
+      "processed_tokens": 579920,
+      "tool_calls": 20,
+      "turns": 21
+    },
+    "world-065": {
+      "answer": "3.1 ms",
+      "tokens": 50866,
+      "fixed_tokens": 1101,
+      "processed_tokens": 1645519,
+      "tool_calls": 49,
+      "turns": 50
+    },
+    "world-066": {
+      "answer": "46",
+      "tokens": 47467,
+      "fixed_tokens": 1107,
+      "processed_tokens": 1080380,
+      "tool_calls": 31,
+      "turns": 32
+    },
+    "world-067": {
+      "answer": "1.2 GB/s",
+      "tokens": 25453,
+      "fixed_tokens": 1113,
+      "processed_tokens": 374117,
+      "tool_calls": 22,
+      "turns": 19
+    },
+    "world-068": {
+      "answer": true,
+      "tokens": 39935,
+      "fixed_tokens": 1103,
+      "processed_tokens": 385878,
+      "tool_calls": 15,
+      "turns": 15
+    },
+    "world-069": {
+      "answer": 2,
+      "tokens": 314898,
+      "fixed_tokens": 1104,
+      "processed_tokens": 14423843,
+      "tool_calls": 84,
+      "turns": 81
+    },
+    "world-070": {
+      "answer": 3,
+      "tokens": 19699,
+      "fixed_tokens": 1103,
+      "processed_tokens": 139371,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "world-071": {
+      "answer": [
+        "dec-store-components-in-archetype-tables-and-volatil--yxsjd26wcaz6fgx9"
+      ],
+      "tokens": 73042,
+      "fixed_tokens": 1104,
+      "processed_tokens": 2026040,
+      "tool_calls": 41,
+      "turns": 42
+    },
+    "world-072": {
+      "answer": [
+        "dec-compress-streamed-assets-with-zstandard--bs1t15cygc51cpje",
+        "dec-compress-streamed-assets-with-lz4--v1pfsgfp0b3yjv4s"
+      ],
+      "tokens": 67462,
+      "fixed_tokens": 1104,
+      "processed_tokens": 1027237,
+      "tool_calls": 23,
+      "turns": 24
+    },
+    "world-073": {
+      "answer": false,
+      "tokens": 28661,
+      "fixed_tokens": 1106,
+      "processed_tokens": 373609,
+      "tool_calls": 16,
+      "turns": 17
+    },
+    "world-074": {
+      "answer": 7,
+      "tokens": 9160,
+      "fixed_tokens": 1106,
+      "processed_tokens": 69361,
+      "tool_calls": 6,
+      "turns": 7
+    },
+    "world-075": {
+      "answer": [
+        "dec-store-components-in-archetype-tables-and-volatil--8679sjn071ycsbpv",
+        "dec-partition-the-world-into-192-meter-cells--q62ddwdv2n8wxay6",
+        "dec-return-engine-jobs-to-the-thread-pool-with-conti--547qbweqvrp1j5g3"
+      ],
+      "tokens": 6171,
+      "fixed_tokens": 1102,
+      "processed_tokens": 49992,
+      "tool_calls": 5,
+      "turns": 6
+    },
+    "world-076": {
+      "answer": "unknown",
+      "tokens": 72154,
+      "fixed_tokens": 1110,
+      "processed_tokens": 2830874,
+      "tool_calls": 63,
+      "turns": 64
+    },
+    "world-077": {
+      "answer": 251,
+      "tokens": 44042,
+      "fixed_tokens": 1107,
+      "processed_tokens": 831712,
+      "tool_calls": 28,
+      "turns": 29
+    },
+    "world-078": {
+      "answer": [
+        "rsk-hot-reload-may-corrupt-live-script-state--ec2ht2r1sq6h56ew",
+        "rsk-reworking-the-read-scheduler-may-slip-the-coast--9jzvs7etvb5jxqtp"
+      ],
+      "tokens": 15470,
+      "fixed_tokens": 1102,
+      "processed_tokens": 124934,
+      "tool_calls": 11,
+      "turns": 10
+    },
+    "world-079": {
+      "answer": [
+        "con-streaming-pool-budget--8czwb4fjr5p5vpy7",
+        "con-no-runtime-code-generation-on-consoles--6cf25zqmsvqkdd73",
+        "con-tide-state-must-be-bit-identical-on-every-peer--zrpnp8qjyxzkas7t",
+        "con-saves-from-beta-onward-must-load-in-every-later--v6z856sxtgc5sb09"
+      ],
+      "tokens": 12934,
+      "fixed_tokens": 1105,
+      "processed_tokens": 90583,
+      "tool_calls": 7,
+      "turns": 8
+    },
+    "world-080": {
+      "answer": [
+        "iss-gull-hot-reload-rejects-struct-layout-changes--3v2w2f9hg2gwy6aj",
+        "iss-gull-hot-reload-drops-suspended-coroutines--z7j2gmyny6gdxd07",
+        "iss-cross-platform-cloud-saves-are-unplanned--5bk0k4wrgj42ztfy"
+      ],
+      "tokens": 43854,
+      "fixed_tokens": 1107,
+      "processed_tokens": 900859,
+      "tool_calls": 28,
+      "turns": 29
+    },
+    "world-081": {
+      "answer": "rsk-hot-reload-may-corrupt-live-script-state--ec2ht2r1sq6h56ew",
+      "tokens": 72378,
+      "fixed_tokens": 1107,
+      "processed_tokens": 636546,
+      "tool_calls": 42,
+      "turns": 15
+    }
+  }
+}

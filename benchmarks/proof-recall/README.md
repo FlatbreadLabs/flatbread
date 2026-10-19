@@ -872,6 +872,52 @@ What this does not show:
   finds the right Effort, not that agents handle a hard question without a
   named Effort.
 
+### Look-alike filler, and Sonnet
+
+Two more single runs of `find` against no-brief, with the same task texts
+and `find_hash` as above, on 270 questions each (the 246 and the 24
+ambiguous-Effort ones). Figures are for the 245 comparable questions.
+
+**Run C: Haiku on the look-alike graph** (`--scale 10 --filler-overlap 0.3`,
+where 30% of filler records reuse real subsystem names). Run files:
+`runs/x10adv-find-r1-*.json`.
+
+| Measure                           | `find` | no-brief |
+| --------------------------------- | ------ | -------- |
+| Correct                           | 233.7  | 214.7    |
+| Questions only this arm got right | 19     | 1        |
+| Mean read tokens                  | 13,835 | 36,891   |
+| Mean tool calls                   | 9      | 22       |
+| "Unknown" answers                 | 18     | 33       |
+
+The gap is 19 questions (p < 0.0001), the same as on the plain graph
+(about 19 per run), and `find` read 0.38 of no-brief's tokens. The plan's
+pass mark for Run C was half the Run A gain and at most 0.75 of the
+tokens, so it passes easily: filler that looks real did not hurt search.
+On the ambiguous set `find` got 22 of 24 and no-brief 15 (7 to 0,
+p = 0.016).
+
+**Sonnet on the plain 10x graph.** Run files: `runs/x10-sonnet-r1-*.json`.
+
+| Measure                           | `find` | no-brief |
+| --------------------------------- | ------ | -------- |
+| Correct                           | 233.4  | 226.7    |
+| Questions only this arm got right | 11     | 5        |
+| Mean read tokens                  | 9,280  | 16,674   |
+| Mean tool calls                   | 7      | 18       |
+| "Unknown" answers                 | 16     | 27       |
+
+Sonnet without `find` does far better than Haiku without it (226.7
+against about 211), so the accuracy gap shrinks to 6.8 questions and is
+not significant in one run (p = 0.21). `find` still read 44% fewer tokens
+and made fewer than half the calls. On the ambiguous set, where the
+question names no Effort, the gap stays large: `find` 24 of 24, no-brief
+17 (7 to 0, p = 0.016).
+
+So a stronger model gains less accuracy from search and keeps most of the
+saving; a weaker one gains both. Timeouts (10 minutes) hit 3 Haiku and 5
+Sonnet sessions, all but one in the no-brief arm.
+
 ### The offline gate for `proof state`
 
 `proof state <effortId>` is one read, built from frontmatter and links,
@@ -965,5 +1011,61 @@ The find gate, rerun with the same `find_hash` (`e5be6532…`), still gives
 81% evidence in the top 5 and 62% answers on a card on the stripped set.
 
 The paid Run D compares `findstate` against `find` on these questions.
-Before paying for it, decide whether a read that fails its own bar is
-worth a paid run.
+It was run anyway, because `find` and `state` together cover more than
+either alone; see below.
+
+### `find` plus `state` against `find` (Run D)
+
+Haiku on the 10x graph, twice, on the 97 questions in the aggregate,
+dead-evidence, lifecycle and blocker categories (all but `world-077`):
+`run.mjs --strategies findstate,find --ids <those 97>`. The `findstate`
+arm adds one line to the `find` task text: use `proof state <effortId>` for
+counts, open and closed sets, status history, blockers and dead evidence.
+Run files: `runs/x10-rund-r{1,2}-*.json`.
+
+Pooled over both runs (194 question-runs per arm):
+
+| Measure                              | `findstate` | `find` |
+| ------------------------------------ | ----------- | ------ |
+| Correct                              | 181         | 171    |
+| Runs of a question only this arm got | 15          | 5      |
+| Mean read tokens                     | 15,578      | 18,907 |
+| Mean tool calls                      | 9           | 12     |
+
+The pooled sign test gives p = 0.041; counting each question once, 9 to 4
+(p = 0.27). The plan kept `state` only if it gained at least 4 questions
+per run on this subset with no rise in tokens. It gained 5 per run and read
+18% fewer tokens, so it passes.
+
+`state` was shaped on the tune questions, so the holdout half is the clean
+measure: there `findstate` got 83 and `find` 79 of 88 (5 to 1, p = 0.22),
+against 98 and 92 of 106 on tune (10 to 4). The direction holds on
+holdout, but two runs on 44 questions cannot show it alone. Two sessions
+timed out, both in the `find` arm.
+
+### Two private project graphs, as a held-out check
+
+Two real Proof graphs from private projects (200 records across 11 Efforts,
+and 134 across 6) tested whether the gains above hold on memory nobody tuned
+against. An author who never saw `find` or `state` output wrote 39 and 41
+machine-checked questions about them. The questions, answers, graph copies
+and run files live outside this repository (see "Question sets kept outside
+the repository"); only these totals are published. Before any paid run,
+only category totals of the offline gates were read, never a card.
+
+Haiku, two runs per graph, three arms each, pooled:
+
+| Graph | `find`     | no-brief | `findstate` | Read tokens, `find` / no-brief |
+| ----- | ---------- | -------- | ----------- | ------------------------------ |
+| A     | 71.7 of 78 | 66.3     | 71.3        | 12,488 / 27,975                |
+| B     | 75 of 82   | 71       | 74          | 12,230 / 24,389                |
+
+- `find` against no-brief: 7 to 1 on A and 6 to 2 on B; 13 to 3 over both
+  (sign test p = 0.021). `find` read about half the tokens on both.
+- `findstate` against `find`: 1 to 2 on A and 3 to 4 on B, with the same
+  tokens. On these small graphs `state` neither helps nor costs.
+
+So the search gain carries over to real memory at about half the reading.
+The gain from `state` on the 10x graph's counts and blockers does not show
+on graphs a twenty-fifth
+that size or less, where paging `records` is cheap.
