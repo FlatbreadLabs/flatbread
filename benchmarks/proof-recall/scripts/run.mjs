@@ -3,17 +3,19 @@
 // and per strategy, then collects answers and cost into run files.
 //
 //   node scripts/run.mjs <work-dir> --name <run> [--model haiku]
-//        [--strategies brief,nobrief] [--only render] [--ids a,b]
+//        [--strategies brief,nobrief,find] [--only render] [--ids a,b]
 //        [--jobs 8] [--timeout 600] [--graph <built-graph-dir>]
 //        [--server <socket>] [--no-serve]
 //   node scripts/run.mjs --stop-server [--server <socket>]
 //
-// Each session works in <work-dir>/<strategy>/<id>/, which holds a link to
-// the shared copy of the graph, TASK.md, the agent's answer.json, and
-// transcript.jsonl. A rerun skips sessions that already have both an answer
-// and a transcript, so an interrupted run picks up where it stopped. Keep
-// <work-dir> outside the repository, so no CLAUDE.md or AGENTS.md reaches the
-// agent.
+// --strategies names the task texts in task.mjs to run; the default is
+// brief,nobrief. Each session works in <work-dir>/<strategy>/<id>/, which
+// holds a link to the shared copy of the graph, TASK.md, the agent's
+// answer.json, and transcript.jsonl. A rerun skips sessions that already
+// have both an answer and a transcript, so an interrupted run picks up where
+// it stopped. Keep <work-dir> outside the repository, so no CLAUDE.md or
+// AGENTS.md reaches the agent. Each run file records `find_hash`, a hash of
+// the `proof find` source, to match against the offline gate's output.
 //
 // Runs share two things, kept under <tmp>/flatbread-proof-recall/:
 //
@@ -46,7 +48,7 @@ import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { collect } from './collect.mjs';
+import { collect, findHash } from './collect.mjs';
 import {
   copyPublicGraph,
   prepareFolder,
@@ -88,7 +90,7 @@ function args(argv) {
     dir: null,
     name: null,
     model: 'haiku',
-    strategies: STRATEGIES,
+    strategies: ['brief', 'nobrief'],
     only: [],
     ids: [],
     jobs: 8,
@@ -116,6 +118,11 @@ function args(argv) {
     else throw new Error(`Unknown argument ${flag}`);
   }
   if (out.stopServer) return out;
+  for (const strategy of out.strategies)
+    if (!STRATEGIES.includes(strategy))
+      throw new Error(
+        `Unknown strategy ${strategy}; choose from ${STRATEGIES.join(',')}`
+      );
   if (!out.dir || !out.name)
     throw new Error('usage: run.mjs <work-dir> --name <run> [options]');
   if (out.dir.startsWith(resolve(BENCH, '..', '..') + '/'))
@@ -311,8 +318,9 @@ async function main() {
   const options = args(process.argv.slice(2));
   if (options.stopServer) return stopServer(options.server);
   const questions = await publicQuestions(options);
+  const find_hash = await findHash();
   // Alternate strategies question by question, so a change in API speed or
-  // load over the run falls on both strategies alike.
+  // load over the run falls on every strategy alike.
   const sessions = [];
   for (const q of questions)
     for (const strategy of options.strategies)
@@ -370,7 +378,8 @@ async function main() {
           transcript: join(s.folder, 'transcript.jsonl'),
         })),
       `${options.name}-${strategy}`,
-      join(BENCH, 'runs', `${options.name}-${strategy}.json`)
+      join(BENCH, 'runs', `${options.name}-${strategy}.json`),
+      { find_hash }
     );
 }
 
