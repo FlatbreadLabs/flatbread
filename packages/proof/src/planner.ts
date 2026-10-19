@@ -188,13 +188,11 @@ function assertTargetEffort(
  */
 function assertDerivesFrom(
   get: GetRecord,
-  effortId: string,
   derivesFrom: string[] | undefined
 ): void {
   for (const targetId of derivesFrom ?? []) {
     const target = get(targetId);
     assertLive(target);
-    assertTargetEffort('derives_from', effortId, target);
   }
 }
 
@@ -313,7 +311,7 @@ export function planMutation(
     }
     if (EPISTEMIC_CREATE.has(kind)) {
       assertCites(get, raw.effort, raw.cites);
-      assertDerivesFrom(get, raw.effort, raw.derives_from);
+      assertDerivesFrom(get, raw.derives_from);
     }
     const fm: Record<string, unknown> = {
       ...raw,
@@ -551,8 +549,11 @@ export function planMutation(
     const effortId = owningEffort(target);
     if (!effortId)
       throw new ProofValidationError('Retract target has no effort');
+    const allRecords = (Object.keys(KIND_DIRECTORY) as PrimitiveKind[]).flatMap(
+      (kind) => snapshot.recordsByKind(kind)
+    );
     const dependents: string[] = [];
-    for (const record of snapshot.recordsByEffort(effortId)) {
+    for (const record of allRecords) {
       if (record.id === target.id || isRetracted(record)) continue;
       if (
         isSoleCloser(record.frontmatter, target.id) ||
@@ -581,7 +582,7 @@ export function planMutation(
       },
       target.body
     );
-    for (const record of snapshot.recordsByEffort(effortId)) {
+    for (const record of allRecords) {
       if (record.id === target.id) continue;
       const result = stripRelationId({ ...record.frontmatter }, target.id);
       if (!result.changed) continue;

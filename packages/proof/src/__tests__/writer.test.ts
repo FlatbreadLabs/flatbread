@@ -143,7 +143,77 @@ test('one create preserves both reverse projections to the same target', async (
   t.deepEqual(targetRecord.data.invalidated_by, [source]);
 });
 
-test('cross-Effort create relations reject without changing files or generation', async (t) => {
+test('a feature Decision can derive from two Efforts and Retract strips foreign links', async (t) => {
+  const { root, writer } = await makeWriter();
+  const feature = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'Feature', body: '' })
+  );
+  const geometry = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'Geometry', body: '' })
+  );
+  const exportEffort = soleId(
+    await writer.mutate({ type: 'CreateEffort', title: 'Export', body: '' })
+  );
+  const geometryDecision = soleId(
+    await writer.mutate({
+      type: 'WriteDecision',
+      effort: geometry,
+      title: 'Geometry rule',
+      body: '',
+    })
+  );
+  const exportDecision = soleId(
+    await writer.mutate({
+      type: 'WriteDecision',
+      effort: exportEffort,
+      title: 'Export rule',
+      body: '',
+    })
+  );
+  await writer.mutate({
+    type: 'AcceptDecision',
+    decisionId: geometryDecision,
+    rejectSiblings: false,
+  });
+  await writer.mutate({
+    type: 'AcceptDecision',
+    decisionId: exportDecision,
+    rejectSiblings: false,
+  });
+  const before = await readFile(
+    join(root, 'decisions', `${geometryDecision}.md`)
+  );
+  const written = await writer.mutate({
+    type: 'WriteDecision',
+    effort: feature,
+    title: 'Feature choice',
+    body: '',
+    derives_from: [geometryDecision, exportDecision],
+  });
+  t.is(written.touched.length, 1);
+  t.deepEqual(
+    await readFile(join(root, 'decisions', `${geometryDecision}.md`)),
+    before
+  );
+  const featureDecision = written.artifacts[0].id;
+  t.deepEqual(
+    (await readFrontmatter(root, `decisions/${featureDecision}.md`)).data
+      .derives_from,
+    [geometryDecision, exportDecision].sort()
+  );
+  const retraction = await writer.mutate({
+    type: 'Retract',
+    recordId: geometryDecision,
+    reason: 'rule was wrong',
+  });
+  t.true(retraction.touched.some((item) => item.id === featureDecision));
+  t.deepEqual(
+    (await readFrontmatter(root, `decisions/${featureDecision}.md`)).data
+      .derives_from,
+    [exportDecision]
+  );
+});
+test('cross-Effort state-changing create relations reject without changing files or generation', async (t) => {
   const { root, writer } = await makeWriter();
   const effort = soleId(
     await writer.mutate({ type: 'CreateEffort', title: 'Local', body: '' })
@@ -169,18 +239,6 @@ test('cross-Effort create relations reject without changing files or generation'
     path: string;
     input: ProofMutation;
   }[] = [
-    {
-      relation: 'derives_from',
-      path: 'decisions/dec-cross-derive--0000000000000001.md',
-      input: {
-        type: 'WriteDecision',
-        id: 'dec-cross-derive--0000000000000001',
-        effort,
-        title: 'Cross derive',
-        body: '',
-        derives_from: [target],
-      },
-    },
     {
       relation: 'supersedes',
       path: 'findings/fnd-cross-supersede--0000000000000002.md',

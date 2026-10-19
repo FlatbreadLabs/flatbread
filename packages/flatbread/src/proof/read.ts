@@ -535,6 +535,32 @@ export async function getRecord(
       record = next;
     }
   }
+  const displayed = requested && anomaly ? requested : record;
+  const foreignReferences: string[] = [];
+  if (displayed) {
+    for (const targetId of displayed.relations.derives_from ?? []) {
+      const targetCollection = collectionForId(targetId);
+      const target = targetCollection
+        ? await projection.one(targetCollection, targetId)
+        : undefined;
+      // A direct get still opens the requested record when a stored cause is
+      // dangling; relations reports the broken edge explicitly.
+      if (!target) continue;
+      const effort = owningEffort(target);
+      if (effort && effort !== owningEffort(displayed)) {
+        const state = target.frontmatter.retracted
+          ? 'retracted'
+          : target.frontmatter.state ?? target.frontmatter.status ?? 'none';
+        foreignReferences.push(
+          `foreign derives_from -> ${target.id} (${
+            target.kind
+          }; effort ${effort}; state ${String(state)})`
+        );
+      }
+    }
+  }
+  const foreignLimit = 25;
+  const overflow = foreignReferences.length - foreignLimit;
   return render(
     options,
     {
@@ -542,10 +568,22 @@ export async function getRecord(
       id,
       ...(options.resolve ? { resolve: options.resolve } : {}),
     },
-    requested && anomaly ? [requested] : record ? [record] : [],
+    displayed ? [displayed] : [],
     [],
     undefined,
-    { checkpointLines: checkpoints.slice(-5), anomaly, fullBody: true }
+    {
+      checkpointLines: [
+        ...checkpoints.slice(-5),
+        ...foreignReferences.slice(0, foreignLimit),
+        ...(overflow > 0
+          ? [
+              `${overflow} more foreign references; use proof relations to page through them`,
+            ]
+          : []),
+      ],
+      anomaly,
+      fullBody: true,
+    }
   );
 }
 
@@ -708,11 +746,18 @@ export async function relations(
       }
       const targetEffort = owningEffort(target);
       if (targetEffort !== effortId) {
-        foreign.push({
-          relation,
-          to_id: target.id,
-          target_effort_id: targetEffort ?? null,
-        });
+        if (relation === 'derives_from' && targetEffort) {
+          selected.set(`${relation}\0${target.id}`, {
+            ...target,
+            foreign_reference: { relation, effort_id: targetEffort },
+          });
+        } else {
+          foreign.push({
+            relation,
+            to_id: target.id,
+            target_effort_id: targetEffort ?? null,
+          });
+        }
         continue;
       }
       selected.set(target.id, target);
@@ -723,11 +768,13 @@ export async function relations(
     throw new ProofCrossEffortRelationError(effortId, fromId, foreign);
   const records = sortRecords([...selected.values()]);
   const edges = records.flatMap((record) =>
-    relationNames
-      .filter((relation) =>
-        (source.relations[relation] ?? []).includes(record.id)
-      )
-      .map((relation) => ({ from_id: fromId, relation, to_id: record.id }))
+    record.foreign_reference
+      ? []
+      : relationNames
+          .filter((relation) =>
+            (source.relations[relation] ?? []).includes(record.id)
+          )
+          .map((relation) => ({ from_id: fromId, relation, to_id: record.id }))
   );
   return render(
     options,

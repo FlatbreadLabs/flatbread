@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Proof accepts `derives_from` references to live records in other Efforts
+  (#278). `proof relations`, `proof get`, and bounded digests show each
+  foreign cause as one checkpoint with its id, kind, owning Effort, and current
+  state; they do not expand its body. Cross-Effort `supersedes`, `invalidates`,
+  `cites`, and lifecycle links still fail with
+  `PROOF_CROSS_EFFORT_RELATION`. `Retract` now strips inbound references
+  across every Effort in one journal transaction. This narrows the 1.1.0
+  foreign-edge rejection and extends its same-Effort Retract cleanup.
+
 - Proof write contract (#277): `AcceptDecision` now rejects only explicit
   alternatives tied to the same question Issue or named in `rejects`, reports
   changed and rejected Decision ids, and supports a journal-safe dry run. The

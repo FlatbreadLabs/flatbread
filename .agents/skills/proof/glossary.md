@@ -67,10 +67,11 @@ default; use `proof get <blob-id>` to read the content.
 
 ## Edges
 
-`derives_from` is causal upstream evidence or context. `supersedes` replaces a
-record of the same primitive, while `invalidates` says a record was wrong.
-Those forward edges are authoritative; `superseded_by` and `invalidated_by` are
-writer-materialized reverse projections.
+`derives_from` is causal upstream evidence or context and may point to a live
+record in another Effort. It writes no reverse projection. `supersedes`
+replaces a record of the same primitive, while `invalidates` says a record
+was wrong. Those state-changing edges stay within one Effort; their
+`superseded_by` and `invalidated_by` reverse projections are writer-materialized.
 
 `cites` links an Issue, Finding, Decision, Constraint, or Risk to a Citation.
 It accepts Citation ids only, never Blob ids. A Citation may optionally point
@@ -84,8 +85,10 @@ express.
 
 `Retract` hides a record that should not have been journaled. The file stays
 on disk with `retracted: true` so ids remain resolvable and
-`PROOF_DANGLING_RELATION` does not fire. Browse reads omit retracted
-records. `proof get` still returns the body and the reason. This is not
+`PROOF_DANGLING_RELATION` does not fire. The writer strips inbound relation
+ids across every Effort in one transaction, including foreign `derives_from`
+references. Browse reads omit retracted records. `proof get` still returns
+the body and the reason. This is not
 supersession (a better same-kind claim) and not invalidation (a Finding that
 the target was wrong). Git is the undo path for Retract; `ReopenDecision` only returns a rejected
 Decision to proposed. There is no generic Restore mutation.
