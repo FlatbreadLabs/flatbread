@@ -10,6 +10,11 @@
 //                                          add filler until each Effort is
 //                                          about 10 times its size; every
 //                                          question keeps its answer
+//   node scripts/build.mjs --scale 10 --filler-overlap 0.3 --out /tmp/x10adv
+//                                          make 30% of the filler reuse real
+//                                          subsystem names (see
+//                                          spec/_filler.mjs); answers still
+//                                          hold
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
@@ -20,7 +25,12 @@ import {
   generateArtifactId,
   ProofMutationSchema,
 } from '@flatbread/proof';
-import { fillerEvents, fillerTerms, mergeEvents } from '../spec/_filler.mjs';
+import {
+  fillerEvents,
+  fillerTerms,
+  mergeEvents,
+  overlapTerms,
+} from '../spec/_filler.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SPEC_DIR = join(BENCH, 'spec');
@@ -69,14 +79,24 @@ const GRAPH_DIRS = [
 ];
 
 function args(argv) {
-  const out = { only: [], out: join(BENCH, '.flatbread-proof'), scale: 1 };
+  const out = {
+    only: [],
+    out: join(BENCH, '.flatbread-proof'),
+    scale: 1,
+    overlap: 0,
+  };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--only') out.only.push(...argv[++i].split(','));
     else if (argv[i] === '--out') out.out = resolve(argv[++i]);
     else if (argv[i] === '--scale') out.scale = Number(argv[++i]);
+    else if (argv[i] === '--filler-overlap') out.overlap = Number(argv[++i]);
     else throw new Error(`Unknown argument ${argv[i]}`);
   }
   if (!(out.scale >= 1)) throw new Error('--scale must be 1 or more');
+  if (!(out.overlap >= 0 && out.overlap <= 1))
+    throw new Error('--filler-overlap must be a fraction from 0 to 1');
+  if (out.overlap > 0 && !(out.scale > 1))
+    throw new Error('--filler-overlap needs --scale above 1');
   // The committed graph is the unscaled one.
   if (out.scale > 1 && out.out === join(BENCH, '.flatbread-proof'))
     throw new Error('A scaled build needs --out');
@@ -98,6 +118,121 @@ async function assertFillerIsDisjoint(specs) {
     for (const term of fillerTerms(spec.key))
       if (text.includes(term.toLowerCase()))
         throw new Error(`Filler subsystem "${term}" appears in real content`);
+}
+
+/** The question sets, and each spec as text, for the overlap checks. */
+async function readContent(specs) {
+  const dir = join(BENCH, 'questions');
+  const files = (await readdir(dir)).filter((name) => name.endsWith('.json'));
+  const sets = await Promise.all(
+    files.map(async (name) =>
+      JSON.parse(await readFile(join(dir, name), 'utf8'))
+    )
+  );
+  // The overlap redraws depend on these files, so a hash of them tells
+  // whether two adversarial graphs were built from the same questions.
+  const hash = createHash('sha256');
+  for (const name of [...files].sort())
+    hash.update(`${name}\0`).update(await readFile(join(dir, name)));
+  return {
+    sets,
+    specText: specs.map((spec) => JSON.stringify(spec)),
+    questionsHash: hash.digest('hex'),
+  };
+}
+
+/**
+ * Overlap filler must use real names and nothing a question asks about:
+ * each real name appears in its Effort's spec, and no housekeeping metric
+ * or question phrase appears in any spec or question.
+ */
+function assertOverlapVocabulary(specs, { sets, specText }) {
+  const all = [...specText, ...sets.map((set) => JSON.stringify(set))]
+    .join('\n')
+    .toLowerCase();
+  for (const [i, spec] of specs.entries()) {
+    const { real, housekeeping } = overlapTerms(spec.key);
+    for (const name of real)
+      if (!specText[i].toLowerCase().includes(name.toLowerCase()))
+        throw new Error(
+          `Overlap name "${name}" is not in the ${spec.key} spec`
+        );
+    for (const term of housekeeping)
+      if (all.includes(term.toLowerCase()))
+        throw new Error(
+          `Overlap filler term "${term}" appears in real content`
+        );
+  }
+}
+
+/**
+ * For one Effort, a test that is true when an overlap filler event could
+ * change a question's answer. It is true when the event's title and body
+ * hold:
+ *
+ * - every phrase of a `select` check's `bodyIncludes` and `titleIncludes`
+ *   together, for a check that scans this Effort and the event's kind;
+ * - a `body` check's phrase, or a value answer, that is a measurement: a
+ *   number with a unit or word, such as "384 MB" or "6 min 40 s", matched as
+ *   whole words so "4 minutes" does not match "14 minutes".
+ *
+ * Bare numbers ("2", "87") and names ("Dara Whitlock") are left out: filler
+ * prints both everywhere, and neither states a fact about a real subsystem.
+ */
+function overlapCollision(effortKey, { sets }) {
+  const selects = []; // { kinds, phrases }: all phrases must appear
+  const measures = new Set(); // each must appear as whole words
+  const scans = (set, check) =>
+    check.effort === '*' ||
+    (Array.isArray(check.effort)
+      ? check.effort.includes(effortKey)
+      : (check.effort ?? set.effort) === effortKey);
+  const list = (value) => (Array.isArray(value) ? value : [value]);
+  const isMeasure = (text) => /\d/.test(text) && /[a-z%]/i.test(text);
+  for (const set of sets)
+    for (const q of set.questions) {
+      for (const check of q.checks ?? []) {
+        if (check.type === 'select' && scans(set, check)) {
+          const phrases = ['bodyIncludes', 'titleIncludes'].flatMap((field) =>
+            check[field] ? list(check[field]) : []
+          );
+          if (phrases.length)
+            selects.push({
+              kinds: check.kinds ?? null,
+              phrases: phrases.map((p) => p.toLowerCase()),
+            });
+        }
+        if (check.type === 'body')
+          for (const p of list(check.includes))
+            if (isMeasure(p)) measures.add(p.toLowerCase());
+      }
+      if (q.answer.kind === 'value')
+        for (const gold of [q.answer.value, ...(q.answer.accept ?? [])])
+          if (isMeasure(String(gold))) measures.add(String(gold).toLowerCase());
+    }
+  const wholeWord = (text, phrase) => {
+    for (
+      let i = text.indexOf(phrase);
+      i >= 0;
+      i = text.indexOf(phrase, i + 1)
+    ) {
+      const before = text[i - 1] ?? ' ';
+      const after = text[i + phrase.length] ?? ' ';
+      if (!/[\w.]/.test(before) && !/\w/.test(after)) return true;
+    }
+    return false;
+  };
+  return (event) => {
+    const kind = KIND_BY_TYPE[event.type];
+    const text = `${event.title}\n${event.body}`.toLowerCase();
+    return (
+      selects.some(
+        ({ kinds, phrases }) =>
+          (!kinds || kinds.includes(kind)) &&
+          phrases.every((p) => text.includes(p))
+      ) || [...measures].some((m) => wholeWord(text, m))
+    );
+  };
 }
 
 /** Fixed id: the writer's own format, with a suffix hashed from the key. */
@@ -193,8 +328,25 @@ async function main() {
   if (!specs.length) throw new Error('No specs matched');
   if (options.scale > 1) {
     await assertFillerIsDisjoint(specs);
+    const content = options.overlap > 0 ? await readContent(specs) : null;
+    if (content) {
+      assertOverlapVocabulary(specs, content);
+      console.log(`filler overlap: questions sha256 ${content.questionsHash}`);
+    }
     for (const spec of specs)
-      spec.events = mergeEvents(spec.events, fillerEvents(spec, options.scale));
+      spec.events = mergeEvents(
+        spec.events,
+        fillerEvents(
+          spec,
+          options.scale,
+          content
+            ? {
+                overlap: options.overlap,
+                collides: overlapCollision(spec.key, content),
+              }
+            : undefined
+        )
+      );
   }
   await mkdir(options.out, { recursive: true });
   for (const dir of GRAPH_DIRS)

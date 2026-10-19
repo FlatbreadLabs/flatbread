@@ -3,8 +3,11 @@
 // Exits 1 on any error, so authors can loop on it.
 //
 //   node scripts/check.mjs                    all question files
-//   node scripts/check.mjs --only render      one Effort's questions
+//   node scripts/check.mjs --only render      one question set
 //   node scripts/check.mjs --graph /tmp/x     a graph built elsewhere
+//
+// This script checks every file, including the opt-in sets in OPT_IN_SETS.
+// Other scripts load those only when asked for them by name.
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -41,7 +44,19 @@ export const CATEGORIES = [
   'distractor', // a similar record in another Effort or thread
   'cross-effort', // needs records from two Efforts
   'rationale', // explain why, scored by rubric
+  // Rewritten so it names no Effort and uses words several Efforts share;
+  // the reader must find the right Effort first. Only in ambiguous.json.
+  'ambiguous-effort',
 ];
+// Question files whose `effort` names no Effort: their questions span
+// several, so every key is qualified as `<effort>.<key>`.
+export const MULTI_EFFORT_SETS = ['cross', 'ambiguous'];
+// Sets that load only when a script names them (`--only ambiguous`) or asks
+// for one of their ids, so every default keeps the original 246 questions.
+export const OPT_IN_SETS = ['ambiguous'];
+// Names that point at one Effort without its title: the engine and renderer
+// code names that Effort titles use.
+const EFFORT_NAMES = ['Kestrel', 'Lantern'];
 const ANSWER_KINDS = ['record', 'records', 'value', 'boolean', 'count', 'text'];
 const NEEDS_CHECK = new Set(['record', 'records', 'count']);
 
@@ -55,21 +70,136 @@ function args(argv) {
   return out;
 }
 
-export async function loadQuestions(only = []) {
+/**
+ * Question files, sorted by name. `only` lists the sets to load by their
+ * `effort` field; the word `default` stands for every set outside
+ * OPT_IN_SETS. With no `only`, the default sets load, plus the opt-in ones
+ * when `optIn` is true.
+ */
+export async function loadQuestions(only = [], { optIn = false } = {}) {
   const dir = join(BENCH, 'questions');
   const files = (await readdir(dir))
     .filter((name) => name.endsWith('.json'))
     .sort();
+  const wanted = (name) =>
+    only.length
+      ? only.includes(name) ||
+        (only.includes('default') && !OPT_IN_SETS.includes(name))
+      : optIn || !OPT_IN_SETS.includes(name);
   const sets = [];
   for (const file of files) {
     const set = JSON.parse(await readFile(join(dir, file), 'utf8'));
-    if (only.length && !only.includes(set.effort)) continue;
-    sets.push({ file, ...set });
+    if (wanted(set.effort)) sets.push({ file, ...set });
   }
   return sets;
 }
 
-function validate(graph, set, q, errors, seen, warnings = []) {
+/**
+ * Questions picked by set and id, as run.mjs and prepare-run.mjs take them.
+ * Ids are looked up in every set, so `--ids` reaches the opt-in sets too.
+ */
+export async function pickQuestions({ only = [], ids = [] } = {}) {
+  const wanted = new Set(ids);
+  return (await loadQuestions(only, { optIn: wanted.size > 0 }))
+    .map((set) => ({
+      ...set,
+      questions: set.questions.filter((q) => !wanted.size || wanted.has(q.id)),
+    }))
+    .filter((set) => set.questions.length);
+}
+
+/** Problems with an ambiguous-Effort question, as messages. */
+function ambiguityErrors(graph, q, sources) {
+  const out = [];
+  const source = sources.get(q.from);
+  if (!source) return [`"from" must name a question in an Effort file`];
+  if (source.q.tier > 2)
+    out.push(`its source ${q.from} is tier ${source.q.tier}; use tier 0-2`);
+  for (const c of ['ambiguous-effort', ...source.q.categories])
+    if (!q.categories?.includes(c)) out.push(`needs category ${c}`);
+  if (JSON.stringify(q.answer) !== JSON.stringify(qualifiedAnswer(source)))
+    out.push(`its answer differs from ${q.from}'s`);
+  const text = q.question ?? '';
+  const efforts = Object.keys(graph.keymap)
+    .filter((key) => key.endsWith('.effort'))
+    .map((key) => key.split('.')[0]);
+  const titles = efforts.map(
+    (name) =>
+      graph.records.get(graph.keymap[`${name}.effort`]).frontmatter.title
+  );
+  for (const title of titles)
+    if (text.toLowerCase().includes(title.toLowerCase()))
+      out.push(`names the Effort "${title}"`);
+  if (/\bEfforts?\b/i.test(text)) out.push('says "Effort"');
+  for (const name of EFFORT_NAMES)
+    if (new RegExp(`\\b${name}\\b`, 'i').test(text))
+      out.push(`names ${name}, which singles out one Effort`);
+  // "the ports team", "the render work": an Effort key used as a name.
+  const keyed = new RegExp(
+    `\\b(${efforts.join('|')})\\s+(team|work|side|Effort)\\b`,
+    'i'
+  ).exec(text);
+  if (keyed) out.push(`"${keyed[0]}" names an Effort`);
+  // A platform word is fair only if records in two or more Efforts use it
+  // and no one Effort holds more than two thirds of those records.
+  for (const word of PLATFORM_WORDS) {
+    const pattern = new RegExp(
+      `\\b${word}\\b`,
+      word === word.toLowerCase() ? 'i' : ''
+    );
+    if (!pattern.test(text)) continue;
+    const perEffort = new Map();
+    for (const rec of graph.records.values())
+      if (
+        rec.kind !== 'effort' &&
+        pattern.test(`${rec.frontmatter.title ?? ''}\n${rec.body}`)
+      )
+        perEffort.set(
+          rec.frontmatter.effort,
+          (perEffort.get(rec.frontmatter.effort) ?? 0) + 1
+        );
+    const total = [...perEffort.values()].reduce((a, b) => a + b, 0);
+    if (perEffort.size < 2)
+      out.push(`says "${word}", which fewer than two Efforts use`);
+    else if (Math.max(...perEffort.values()) > (total * 2) / 3)
+      out.push(`says "${word}", which mostly one Effort uses`);
+  }
+  // Rivals are records in other Efforts that the wording also fits: the
+  // near misses that make the question ambiguous. A trap says why each one
+  // is wrong.
+  if (!q.rivals?.length)
+    out.push('needs `rivals`: near-miss records in other Efforts');
+  const ownEffort = graph.keymap[`${source.effort}.effort`];
+  for (const key of q.rivals ?? []) {
+    const rec = graph.records.get(graph.keymap[key]);
+    if (rec?.frontmatter.effort === ownEffort)
+      out.push(`rival ${key} is in ${source.effort}, the answer's own Effort`);
+  }
+  return out;
+}
+
+// Words for a platform. "handheld" and "home console" stand for Skiff and
+// Meridian, but may lean on the ports Effort, which owns both ports.
+const PLATFORM_WORDS = ['PC', 'Meridian', 'Skiff', 'handheld', 'home console'];
+
+/** A source question's answer with its keys qualified by its Effort. */
+function qualifiedAnswer({ effort, q }) {
+  const { kind, value } = q.answer;
+  if (kind === 'record') return { ...q.answer, value: qualify(effort, value) };
+  if (kind === 'records')
+    return { ...q.answer, value: value.map((key) => qualify(effort, key)) };
+  return q.answer;
+}
+
+function validate(
+  graph,
+  set,
+  q,
+  errors,
+  seen,
+  warnings = [],
+  sources = new Map()
+) {
   const err = (message) =>
     errors.push(`${set.file} ${q.id ?? '?'}: ${message}`);
   if (!q.id || seen.has(q.id)) return err('missing or duplicate id');
@@ -94,8 +224,20 @@ function validate(graph, set, q, errors, seen, warnings = []) {
     err('text answers need a rubric');
   if (answer.kind !== 'text' && answer.value === undefined)
     err('answer needs a value');
+  const multi = MULTI_EFFORT_SETS.includes(set.effort);
+  if (
+    q.categories?.includes('ambiguous-effort') !==
+    (set.effort === 'ambiguous')
+  )
+    err(
+      'the ambiguous-effort category belongs to ambiguous.json, and every question there needs it'
+    );
+  if (set.effort === 'ambiguous')
+    for (const message of ambiguityErrors(graph, q, sources)) err(message);
   const keysOk = (keys, label) => {
     for (const key of keys ?? []) {
+      if (multi && !String(key).includes('.'))
+        err(`${label}: key "${key}" needs its Effort, as <effort>.<key>`);
       try {
         idFor(graph, set.effort, key);
       } catch (error) {
@@ -105,6 +247,7 @@ function validate(graph, set, q, errors, seen, warnings = []) {
   };
   if (!q.evidence?.length) err('needs evidence keys');
   keysOk(q.evidence, 'evidence');
+  keysOk(q.rivals, 'rivals');
   if (answer.kind === 'record') keysOk([answer.value], 'answer');
   if (answer.kind === 'records') keysOk(answer.value, 'answer');
   const path = q.path ?? [];
@@ -117,7 +260,7 @@ function validate(graph, set, q, errors, seen, warnings = []) {
   // Runs show a question alone. If an Effort-wide check would also find
   // answers in another Effort, the question must name its own, or carry
   // `"scoped": true` once an author confirms the wording pins it down.
-  if (set.effort !== 'cross' && !q.scoped) {
+  if (!multi && !q.scoped) {
     const title = graph.records.get(graph.keymap[`${set.effort}.effort`])
       ?.frontmatter.title;
     const named =
@@ -297,14 +440,21 @@ export function graphStats(graph, effortKey) {
 async function main() {
   const options = args(process.argv.slice(2));
   const graph = await loadGraph(options.graph);
-  const sets = await loadQuestions(options.only);
+  const sets = await loadQuestions(options.only, { optIn: true });
+  // Ambiguous questions are checked against their sources, so load every
+  // Effort file even under --only.
+  const sources = new Map();
+  for (const set of await loadQuestions())
+    if (!MULTI_EFFORT_SETS.includes(set.effort))
+      for (const q of set.questions)
+        sources.set(q.id, { effort: set.effort, q });
   const errors = [];
   const warnings = [];
   const seen = new Set();
   const all = [];
   for (const set of sets)
     for (const q of set.questions ?? []) {
-      validate(graph, set, q, errors, seen, warnings);
+      validate(graph, set, q, errors, seen, warnings, sources);
       all.push({ ...q, effort: set.effort });
     }
   const efforts = [
@@ -324,9 +474,11 @@ async function main() {
       })
     );
   }
-  const other = all.filter((q) => !efforts.includes(q.effort));
-  if (other.length)
-    console.log(JSON.stringify({ effort: 'cross', questions: other.length }));
+  for (const name of MULTI_EFFORT_SETS) {
+    const qs = all.filter((q) => q.effort === name);
+    if (qs.length)
+      console.log(JSON.stringify({ effort: name, questions: qs.length }));
+  }
   if (warnings.length) {
     console.warn(warnings.join('\n'));
     console.warn(`${warnings.length} warning(s)`);
