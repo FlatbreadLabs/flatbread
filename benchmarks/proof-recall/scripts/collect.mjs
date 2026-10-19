@@ -31,18 +31,38 @@ export async function findHash() {
     .digest('hex');
 }
 
-// The `proof state` source: its sections, caps, and size aim.
-const STATE_SOURCE = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  '../../../packages/flatbread/src/proof/state.ts'
-);
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+// What `proof state` prints: its sections, caps, and size aim, and the
+// compaction rule it shares with `get` and `brief`.
+const STATE_SOURCES = [
+  'packages/flatbread/src/proof/state.ts',
+  'packages/proof/src/compaction.ts',
+];
+// What `get`, `records`, and `brief` print and filter. They also use the
+// compaction rule and the rests-on rule from `state.ts`.
+const READ_SOURCES = [
+  'packages/flatbread/src/proof/read.ts',
+  'packages/flatbread/src/proof/state.ts',
+  'packages/proof/src/compaction.ts',
+];
 
-/** A sha256 of the `proof state` source, as `findHash` is of `find`'s. */
-export async function stateHash() {
-  return createHash('sha256')
-    .update(await readFile(STATE_SOURCE))
-    .digest('hex');
+/** A sha256 over these source files, in order, each with its path. */
+async function hashOf(paths) {
+  const hash = createHash('sha256');
+  for (const path of paths)
+    hash.update(`${path}\n`).update(await readFile(join(ROOT, path)));
+  return hash.digest('hex');
 }
+
+/**
+ * A sha256 of the `proof state` source and the compaction rule it uses, as
+ * `findHash` is of `find`'s. Before `get` on a compaction was added, it
+ * hashed `state.ts` alone, so older run files hold that hash.
+ */
+export const stateHash = () => hashOf(STATE_SOURCES);
+
+/** A sha256 of the `get`, `records`, and `brief` sources, as `stateHash` is of `state`'s. */
+export const readHash = () => hashOf(READ_SOURCES);
 
 /**
  * `context_tokens` counts what entered the context once (new input, cache

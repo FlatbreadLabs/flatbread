@@ -1,10 +1,10 @@
 import {
-  compactionChanges,
+  COMPACTION_STALE_RULE,
   compactionHeads,
+  compactionReport,
   isCompaction,
   isLiveStanding,
-  parseCovers,
-  staleDerivations,
+  type CompactionChange,
   type CompactionRecord,
   type ReadRecord,
   type ReadRelation,
@@ -39,6 +39,8 @@ export interface StateLimits {
   readonly lifecycle: number;
   readonly retractions: number;
   readonly compactionTargets: number;
+  /** Records the head compaction no longer matches, listed by id. */
+  readonly compactionChanges: number;
 }
 
 export const STATE_LIMITS: StateLimits = {
@@ -54,20 +56,22 @@ export const STATE_LIMITS: StateLimits = {
   lifecycle: 15,
   retractions: 10,
   compactionTargets: 10,
+  compactionChanges: 10,
 };
 /**
  * Characters the Markdown aims for: under 4,000 tokens at 4 characters a
  * token. Ids run about 70 characters and an entry about 150, so a large
  * Effort fills the lists past this. The read then shows fewer entries,
- * cutting the catch-all lists first: lifecycle and retractions, then live
+ * cutting the catch-all lists first: lifecycle, retractions, and the
+ * records the head compaction no longer matches (its count stays), then live
  * records that rest only on a replaced version, then older versions in
  * contested topics, then the topics themselves, then dead evidence and
  * Risks. Counts are never cut.
  */
 export const STATE_CHARS = 15_000;
 const SHRINK_STEPS: readonly Partial<StateLimits>[] = [
-  { lifecycle: 8, retractions: 6 },
-  { supersededSupports: 3 },
+  { lifecycle: 8, retractions: 6, compactionChanges: 5 },
+  { supersededSupports: 3, compactionChanges: 0 },
   { membersPerTopic: 4 },
   { contested: 8 },
   { deadEvidence: 8, risks: 8, lifecycle: 4 },
@@ -117,7 +121,12 @@ const KIND_LABEL: Record<string, string> = {
   blob: 'Blobs',
 };
 /** Standings that take a record off the live graph. */
-const DEAD = new Set(['superseded', 'invalidated', 'rejected', 'retracted']);
+export const DEAD_STANDINGS: readonly string[] = [
+  'superseded',
+  'invalidated',
+  'rejected',
+  'retracted',
+];
 /** The worst first: a support shown wrong outranks one merely replaced. */
 const DEAD_ORDER = ['invalidated', 'retracted', 'rejected', 'superseded'];
 /** What a live record rests on: what it derives from, cites, or offers as evidence. */
@@ -200,6 +209,40 @@ function standingRecord(record: ReadRecord): CompactionRecord {
     kind: record.kind,
     frontmatter: { ...record.frontmatter, ...record.relations },
   };
+}
+
+/**
+ * The dead records a live record rests on: those in `standings` that it
+ * derives from, cites, or gives as evidence. The record that overturned a
+ * support, by replacing, disproving, or rejecting it, does not rest on it:
+ * it derives from what it overturned. A compaction rests on nothing here,
+ * since a summary rests on everything. `proof state` and
+ * `proof records --rests-on` both use this rule, so their counts agree.
+ */
+export function restsOnDead(
+  record: ReadRecord,
+  get: (id: string) => ReadRecord | undefined,
+  standings: readonly string[] = DEAD_STANDINGS
+): string[] {
+  if (!isCurrent(record)) return [];
+  const dead = new Set<string>();
+  for (const relation of SUPPORT_RELATIONS)
+    for (const id of ids(record, relation)) {
+      const target = get(id);
+      if (!target || !standings.includes(standingOf(target))) continue;
+      const overturned = (
+        ['superseded_by', 'invalidated_by', 'rejected_by'] as const
+      ).some((by) => ids(target, by).includes(record.id));
+      if (!overturned) dead.add(target.id);
+    }
+  return [...dead].sort(compareIds);
+}
+
+/** `id (new)` or `id (from -> to)`: one record the head compaction no longer matches. */
+function changeRef(change: CompactionChange): string {
+  return change.change === 'added'
+    ? `${change.id} (new)`
+    : `${change.id} (${change.from ?? 'none'} -> ${change.to ?? 'missing'})`;
 }
 
 /**
@@ -734,21 +777,11 @@ function stateWithin(
   // dead record, so the record that overturned it is named once.
   const rank = (standing: string) => DEAD_ORDER.indexOf(standing);
   const resting = new Map<string, Set<string>>();
-  for (const record of all) {
-    if (!isLive(record) || isCompaction(standingRecord(record))) continue;
-    for (const relation of SUPPORT_RELATIONS)
-      for (const target of records(ids(record, relation))) {
-        // The record that overturned a support, by replacing, disproving,
-        // or rejecting it, does not rest on it: it derives from what it
-        // overturned.
-        const overturned = (
-          ['superseded_by', 'invalidated_by', 'rejected_by'] as const
-        ).some((by) => ids(target, by).includes(record.id));
-        if (!DEAD.has(standingOf(target)) || overturned) continue;
-        if (!resting.has(target.id)) resting.set(target.id, new Set());
-        (resting.get(target.id) as Set<string>).add(record.id);
-      }
-  }
+  for (const record of all)
+    for (const target of restsOnDead(record, get)) {
+      if (!resting.has(target)) resting.set(target, new Set());
+      (resting.get(target) as Set<string>).add(record.id);
+    }
   const deadSupports = records([...resting.keys()]).sort(
     (a, b) => rank(standingOf(a)) - rank(standingOf(b)) || byCreated(a, b)
   );
@@ -766,42 +799,6 @@ function stateWithin(
   );
   const worst = new Map<string, number>();
   for (const support of deadSupports) bump(worst, standingOf(support));
-  const compaction: string[] = [];
-  const standingRecords = all.map(standingRecord);
-  const head = records(
-    compactionHeads(standingRecords).map((record) => record.id)
-  ).at(-1);
-  if (head) {
-    const covers = parseCovers(head.frontmatter.covers);
-    const changes = compactionChanges(covers, standingRecords);
-    const stale = staleDerivations(
-      covers,
-      ids(head, 'derives_from'),
-      standingRecords
-    );
-    const listed = stale.slice(0, limits.compactionTargets);
-    compaction.push(
-      `- Head compaction ${head.id} (${date(
-        head
-      )}): since it was written, ${count(
-        changes.length,
-        'record'
-      )} differ from the live set it covers (new, no longer live, or with a new standing). ${
-        stale.length
-      } of the records it rests on changed standing${
-        stale.length
-          ? `: ${listed
-              .map(
-                (change) =>
-                  `${change.id} (${change.from ?? 'none'} -> ${
-                    change.to ?? 'missing'
-                  })`
-              )
-              .join(', ')}${more(stale.length, listed.length)}`
-          : ''
-      }.`
-    );
-  }
   section(
     'Dead evidence',
     [
@@ -810,7 +807,6 @@ function stateWithin(
       } directly on ${count(deadSupports.length, 'dead record')}${
         deadSupports.length ? ` (${tallyLine(worst)})` : ''
       }. Resting on a record means deriving from it, citing it, or giving it as evidence.`,
-      ...compaction,
     ],
     deadShown.map((support) => {
       const live = records([...(resting.get(support.id) ?? [])]);
@@ -882,6 +878,70 @@ function stateWithin(
     }
   );
   if (replacedLeft.length) capped = true;
+
+  // Head compaction: whether it is stale, and each record it no longer
+  // matches. Its count is exact even when the list is cut.
+  const standingRecords = all.map(standingRecord);
+  const head = records(
+    compactionHeads(standingRecords).map((record) => record.id)
+  ).at(-1);
+  if (head) {
+    const report = compactionReport(standingRecord(head), standingRecords);
+    const from = new Set(ids(head, 'derives_from')).size;
+    const moved = report.stale.slice(0, limits.compactionTargets);
+    const reasons = [
+      ...(report.stale.length
+        ? [
+            `${report.stale.length} of the ${count(
+              from,
+              'record'
+            )} it derives from changed standing: ${moved
+              .map(changeRef)
+              .join(', ')}${more(report.stale.length, moved.length)}`,
+          ]
+        : []),
+      ...(report.invalidated
+        ? [`invalidated by ${refList(ids(head, 'invalidated_by'))}`]
+        : []),
+    ];
+    const changes = report.changes.slice(0, limits.compactionChanges);
+    const differ = `${count(report.changes.length, 'record')} ${
+      report.changes.length === 1 ? 'differs' : 'differ'
+    } from the live set it covers (exact)`;
+    lines.push(
+      '',
+      '### Head compaction',
+      `- ${head.id} (${date(head)}). Stale: ${
+        report.isStale
+          ? `yes (${reasons.join('; ')})`
+          : `no (none of the ${count(
+              from,
+              'record'
+            )} it derives from changed standing; not invalidated)`
+      }.`,
+      changes.length
+        ? `- ${differ}: ${changes.map(changeRef).join(', ')}${more(
+            report.changes.length,
+            changes.length
+          )}`
+        : `- ${differ}${
+            report.changes.length
+              ? `; \`proof get ${head.id}\` lists ${
+                  // `get` lists at most 25 changes.
+                  report.changes.length > 25 ? '25 of them' : 'them'
+                }`
+              : ''
+          }.`,
+      `- ${COMPACTION_STALE_RULE}`
+    );
+    if (changes.length < report.changes.length) capped = true;
+    // Its total is the records the head no longer matches.
+    sections.push({
+      heading: 'Head compaction',
+      total: report.changes.length,
+      shown: changes.length,
+    });
+  }
 
   // Lifecycle: the Effort, then dated changes to Issues, Decisions, and
   // records shown wrong that no list above shows. A question resolved by a

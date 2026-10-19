@@ -1,11 +1,12 @@
 import { FlatbreadProvider, type LoadedFlatbreadConfig } from '@flatbread/core';
 import {
   canonicalizeReadQuery,
+  COMPACTION_STALE_RULE,
   compactionChanges,
   compactionHeads,
-  parseCovers,
+  compactionReport,
+  isCompaction,
   RECOMPACT_CHANGE_THRESHOLD,
-  staleDerivations,
   type CompactionChange,
   type CompactionStatus,
   type DigestSection,
@@ -14,6 +15,9 @@ import {
   ProofDanglingRelationError,
   ProofInvalidCursorError,
   ProofReadValidationError,
+  DecisionFrontmatterSchema,
+  IssueFrontmatterSchema,
+  RiskFrontmatterSchema,
   READ_RELATIONS,
   readQueryHash,
   renderDigest,
@@ -32,9 +36,15 @@ import {
   FIND_MAX_LIMIT,
   findRecords,
   renderFindCards,
+  standingOf,
   type FindIndex,
 } from './find.js';
-import { buildEffortState, type EffortState } from './state.js';
+import {
+  buildEffortState,
+  DEAD_STANDINGS,
+  restsOnDead,
+  type EffortState,
+} from './state.js';
 import { createHash } from 'node:crypto';
 import { readdir, realpath, stat } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
@@ -661,6 +671,10 @@ export async function getRecord(
   }
   const foreignLimit = 25;
   const overflow = foreignReferences.length - foreignLimit;
+  const sections =
+    displayed && isCompaction(standingRecord(displayed))
+      ? await compactionSections(projection, displayed)
+      : undefined;
   return render(
     options,
     {
@@ -683,6 +697,7 @@ export async function getRecord(
       ],
       anomaly,
       fullBody: true,
+      ...(sections ? { sections } : {}),
     }
   );
 }
@@ -699,6 +714,79 @@ const RETRACTED_MODES: readonly RetractedMode[] = [
   'only',
 ];
 
+/**
+ * Every word `proof records --standing` takes: the stored states and
+ * statuses, `live` for a Finding or Constraint, and the standings that come
+ * from links. They are the words cards and `proof state` print.
+ */
+const STANDINGS: readonly string[] = [
+  'open',
+  'resolved',
+  'deferred',
+  'wontfix',
+  'proposed',
+  'accepted',
+  'rejected',
+  'deprecated',
+  'realized',
+  'mitigated',
+  'live',
+  'superseded',
+  'invalidated',
+  'retracted',
+];
+/** The values `--state` and `--status` match, as the record schemas store them. */
+const STORED_STATES: readonly string[] = [
+  ...new Set([
+    ...DecisionFrontmatterSchema.shape.state.options,
+    ...RiskFrontmatterSchema.shape.state.options,
+  ]),
+];
+const STORED_STATUSES: readonly string[] =
+  IssueFrontmatterSchema.shape.status.options;
+
+/**
+ * Refuses a `--state` or `--status` value no record stores. An agent that
+ * asks for `--state invalidated` would otherwise get an empty, complete
+ * page, so the message says which flags filter by standing instead.
+ */
+function checkStored(
+  field: 'state' | 'status',
+  values: readonly string[] | undefined,
+  stored: readonly string[]
+): void {
+  const bad = (values ?? []).filter((value) => !stored.includes(value));
+  if (!bad.length) return;
+  const example = bad.find((value) => STANDINGS.includes(value));
+  const dead =
+    example && DEAD_STANDINGS.includes(example) ? example : 'invalidated';
+  throw new ProofReadValidationError(
+    'PROOF_INVALID_ARGUMENT',
+    `${bad.map((value) => `\`${value}\``).join(', ')} ${
+      bad.length === 1 ? 'is not a stored' : 'are not stored'
+    } ${field}. Stored ${field} values: ${stored.join(
+      ', '
+    )}. Standing that links or retraction decide (superseded, invalidated, retracted) is filtered with \`--standing ${
+      example ?? 'invalidated'
+    }\`; it takes ${STANDINGS.join(
+      ', '
+    )}. \`--rests-on ${dead}\` lists live records that derive from, cite, or give as evidence a record in that standing.`
+  );
+}
+
+function checkWords(
+  flag: string,
+  values: readonly string[] | undefined,
+  allowed: readonly string[]
+): void {
+  const bad = (values ?? []).filter((value) => !allowed.includes(value));
+  if (bad.length)
+    throw new ProofReadValidationError(
+      'PROOF_INVALID_ARGUMENT',
+      `Invalid ${flag}: ${bad.join(', ')}. Expected ${allowed.join(', ')}.`
+    );
+}
+
 export async function effortRecords(
   effortId: string,
   options: EffortProjectionOptions & {
@@ -710,6 +798,10 @@ export async function effortRecords(
       created_at?: { gte?: string; lte?: string };
     };
     retracted?: RetractedMode;
+    /** Keeps records whose standing, as `proof state` prints it, is one of these. */
+    standing?: string[];
+    /** Keeps live records that rest on a record in one of these dead standings. */
+    restsOn?: string[];
     page?: { cursor?: string; limit?: number };
   }
 ): Promise<ReadEnvelope> {
@@ -721,6 +813,22 @@ export async function effortRecords(
         retracted
       )}. Expected exclude, include, or only.`
     );
+  checkStored('state', options.where?.state, STORED_STATES);
+  checkStored('status', options.where?.status, STORED_STATUSES);
+  const standing = options.standing?.length
+    ? [...new Set(options.standing)].sort()
+    : undefined;
+  const restsOn = options.restsOn?.length
+    ? [...new Set(options.restsOn)].sort()
+    : undefined;
+  checkWords('standing', standing, STANDINGS);
+  checkWords('rests-on standing', restsOn, DEAD_STANDINGS);
+  // Retracted records are hidden by default; asking for that standing
+  // shows them.
+  const shown: RetractedMode =
+    standing?.includes('retracted') && retracted === 'exclude'
+      ? 'include'
+      : retracted;
   const projection = await makeProjection(options);
   const kinds = options.kinds?.length
     ? [...new Set(options.kinds)].sort()
@@ -757,10 +865,21 @@ export async function effortRecords(
       .filter(
         (record) =>
           record.frontmatter.effort === effortId &&
-          (retracted === 'include' ||
-            (retracted === 'only') === isRetracted(record))
+          (shown === 'include' || (shown === 'only') === isRetracted(record)) &&
+          (!standing || standing.includes(standingOf(record)))
       )
   );
+  if (restsOn) {
+    // A support may be any kind, in any Effort. The `find` index holds
+    // every record, as `proof state` reads them, and a served graph keeps it.
+    const index = await projection.findIndex();
+    const get = (id: string) => index.records.get(id);
+    records.splice(
+      0,
+      records.length,
+      ...records.filter((record) => restsOnDead(record, get, restsOn).length)
+    );
+  }
   return render(
     options,
     {
@@ -770,6 +889,8 @@ export async function effortRecords(
       ...(Object.keys(where).length ? { where } : {}),
       // Left out by default, so existing queries keep their hashes.
       ...(retracted === 'exclude' ? {} : { retracted }),
+      ...(standing ? { standing } : {}),
+      ...(restsOn ? { rests_on: restsOn } : {}),
       page: options.page,
     },
     records,
@@ -985,20 +1106,121 @@ function standingRecord(record: ReadRecord) {
   };
 }
 
-function changeLines(changes: readonly CompactionChange[]): string[] {
+function changeLines(
+  changes: readonly CompactionChange[],
+  limit = BRIEF_LINE_LIMIT,
+  rest = 'write a new compaction'
+): string[] {
   const lines = changes
-    .slice(0, BRIEF_LINE_LIMIT)
+    .slice(0, limit)
     .map(
       (change) =>
         `- ${change.change} | ${change.id} | ${change.kind ?? 'unknown'} | ${
           change.from ?? 'none'
         } -> ${change.to ?? 'missing'} | ${change.title}`
     );
-  if (changes.length > BRIEF_LINE_LIMIT)
-    lines.push(
-      `- … ${changes.length - BRIEF_LINE_LIMIT} more; write a new compaction`
-    );
+  if (changes.length > limit)
+    lines.push(`- … ${changes.length - limit} more${rest ? `; ${rest}` : ''}`);
   return lines;
+}
+
+/** Most change lines `get` shows on a compaction. */
+const GET_CHANGE_LIMIT = 25;
+
+/**
+ * What `get` adds on a compaction: whether it is its Effort's head, whether
+ * it is stale and why, and each record whose standing moved since it was
+ * written. `brief` works these out the same way for the head, so a reader
+ * who opens any compaction directly gets the same answer.
+ */
+async function compactionSections(
+  projection: EngineProjection,
+  compaction: ReadRecord
+): Promise<DigestSection[]> {
+  const effortId = owningEffort(compaction);
+  const records = (
+    await Promise.all(
+      BRIEF_COLLECTIONS.map((collection) => projection.query(collection))
+    )
+  )
+    .flat()
+    .filter((record) => record.frontmatter.effort === effortId);
+  const byId = new Map(records.map((record) => [record.id, record]));
+  const standing = records.map(standingRecord);
+  const heads = compactionHeads(standing).map((head) => head.id);
+  const report = compactionReport(standingRecord(compaction), standing);
+  const derivesFrom = [...new Set(compaction.relations.derives_from ?? [])];
+  const dated = (id: string) =>
+    `${id} (${
+      String(byId.get(id)?.frontmatter.created_at ?? '').slice(0, 10) ||
+      'undated'
+    })`;
+  const supersededBy = compaction.relations.superseded_by ?? [];
+  const invalidatedBy = compaction.relations.invalidated_by ?? [];
+  const head = heads.includes(compaction.id)
+    ? heads.length > 1
+      ? `yes, one of ${heads.length} heads; the next WriteCompaction supersedes all of them`
+      : 'yes'
+    : supersededBy.length
+    ? `no; superseded by ${supersededBy.map(dated).join(', ')}`
+    : compaction.frontmatter.retracted === true
+    ? 'no; retracted'
+    : 'no';
+  const reasons = [
+    ...(report.stale.length
+      ? [
+          `${report.stale.length} of the ${derivesFrom.length} ${
+            derivesFrom.length === 1 ? 'record' : 'records'
+          } it derives from changed standing: ${report.stale
+            .map(
+              (change) =>
+                `${change.id} ${change.from ?? 'none'} -> ${
+                  change.to ?? 'missing'
+                }`
+            )
+            .join(', ')}.`,
+        ]
+      : []),
+    ...(report.invalidated
+      ? [`Invalidated by ${invalidatedBy.map(dated).join(', ')}.`]
+      : []),
+  ];
+  const tally = (type: CompactionChange['change']) =>
+    report.changes.filter((change) => change.change === type).length;
+  const differ = report.changes.length;
+  return [
+    {
+      heading: 'Compaction',
+      lines: [
+        `- Head compaction of its Effort: ${head}`,
+        report.isStale
+          ? `- Stale: yes. ${reasons.join(' ')} ${COMPACTION_STALE_RULE}`
+          : `- Stale: no. None of the ${derivesFrom.length} ${
+              derivesFrom.length === 1 ? 'record' : 'records'
+            } it derives from changed standing, and nothing invalidated it. ${COMPACTION_STALE_RULE}`,
+        `- Since it was written, ${differ} ${
+          differ === 1 ? 'record differs' : 'records differ'
+        } from the live set it covers. This count is exact: ${tally(
+          'added'
+        )} new live, ${tally('left')} covered and no longer live, ${tally(
+          'changed'
+        )} covered with a new standing.`,
+      ],
+    },
+    {
+      heading: 'Changes since compaction',
+      lines: differ
+        ? changeLines(
+            report.changes,
+            GET_CHANGE_LIMIT,
+            // Nothing pages the rest. For the head, `brief` lists more.
+            heads.includes(compaction.id) && effortId
+              ? `the count above is exact; \`proof brief ${effortId}\` lists up to ${BRIEF_LINE_LIMIT}`
+              : 'the count above is exact'
+          )
+        : ['- none'],
+    },
+  ];
 }
 
 /**
@@ -1043,14 +1265,10 @@ export async function effortBrief(
       lines: changeLines(changes),
     });
   } else {
-    const covers = parseCovers(head.frontmatter.covers);
-    changes = compactionChanges(covers, standing);
-    stale = staleDerivations(
-      covers,
-      head.relations.derives_from ?? [],
+    ({ changes, stale, invalidated } = compactionReport(
+      standingRecord(head),
       standing
-    );
-    invalidated = (head.relations.invalidated_by ?? []).length > 0;
+    ));
     if (heads.length > 1)
       anomalies.push(
         `compaction fork: ${heads.length} head compactions; the next WriteCompaction supersedes all of them`

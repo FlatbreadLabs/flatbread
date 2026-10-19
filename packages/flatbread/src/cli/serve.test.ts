@@ -370,6 +370,62 @@ test.serial(
 );
 
 test.serial(
+  'a served records read passes --standing and --rests-on through',
+  async (t) => {
+    const cwd = await createProject(t);
+    const write = async (payload: Record<string, unknown>) =>
+      handleEffortWrite(JSON.stringify(payload), { cwd });
+    const effortId = (
+      await write({ type: 'CreateEffort', title: 'E', body: '' })
+    ).artifacts[0].id;
+    const wrong = (
+      await write({
+        type: 'WriteFinding',
+        effort: effortId,
+        title: 'Wrong',
+        body: '',
+        kind: 'measurement',
+      })
+    ).artifacts[0].id;
+    await write({
+      type: 'WriteDecision',
+      effort: effortId,
+      title: 'Built on it',
+      body: '',
+      derives_from: [wrong],
+    });
+    const right = (
+      await write({
+        type: 'WriteFinding',
+        effort: effortId,
+        title: 'Right',
+        body: '',
+        kind: 'measurement',
+      })
+    ).artifacts[0].id;
+    await write({ type: 'Invalidate', findingId: right, targetId: wrong });
+    const standing = await runRead(
+      ['records', effortId, '--standing', 'invalidated'],
+      cwd
+    );
+    t.is(standing.code, 0, standing.stderr);
+    t.regex(JSON.parse(standing.stdout).summary, /^1 record;/);
+    const resting = await runRead(
+      ['records', effortId, '--rests-on', 'invalidated', '--kinds', 'decision'],
+      cwd
+    );
+    t.is(resting.code, 0, resting.stderr);
+    t.regex(JSON.parse(resting.stdout).summary, /^1 record; proposed 1;/);
+    const refused = await runRead(
+      ['records', effortId, '--state', 'invalidated'],
+      cwd
+    );
+    t.is(refused.code, 1);
+    t.regex(JSON.parse(refused.stderr).error.message, /--standing invalidated/);
+  }
+);
+
+test.serial(
   'reads fall back to the local CLI when the server is unreachable',
   async (t) => {
     const cwd = await createProject(t);

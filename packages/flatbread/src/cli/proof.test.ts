@@ -1714,3 +1714,261 @@ export default {
     );
   }
 );
+
+test.serial(
+  'get on a compaction says whether it is head, whether it is stale and why, and what changed',
+  async (t) => {
+    const cwd = await createTempProject('flatbread-effort-get-compaction-', t);
+    await writeFile(
+      join(cwd, 'flatbread.config.js'),
+      `import { source } from '@flatbread/source-filesystem';
+import { transformer } from '@flatbread/transformer-markdown';
+import { proofContent } from '@flatbread/proof';
+export default { source: source(), transformer: transformer(), content: proofContent('.flatbread-proof') };`
+    );
+    const write = async (payload: Record<string, unknown>) =>
+      handleEffortWrite(JSON.stringify(payload), { cwd });
+    const digest = async (id: string) =>
+      readFile((await handleEffortGet(id, { cwd })).artifact_path, 'utf8');
+    const effortId = (
+      await write({ type: 'CreateEffort', title: 'Get', body: '' })
+    ).artifacts[0].id;
+    const measured = (
+      await write({
+        type: 'WriteFinding',
+        effort: effortId,
+        title: 'Reads take 4 ms',
+        body: 'Measured on the dev kit.',
+        kind: 'measurement',
+      })
+    ).artifacts[0].id;
+    const gap = (
+      await write({
+        type: 'WriteIssue',
+        effort: effortId,
+        title: 'No cold-cache numbers',
+        body: '',
+        kind: 'gap',
+      })
+    ).artifacts[0].id;
+    const decision = (
+      await write({
+        type: 'WriteDecision',
+        effort: effortId,
+        title: 'Keep the reader',
+        body: 'It is fast enough.',
+        derives_from: [measured],
+      })
+    ).artifacts[0].id;
+    const decisionBefore = await digest(decision);
+    const firstId = (
+      await write({
+        type: 'WriteCompaction',
+        effort: effortId,
+        title: 'Reader is fast enough',
+        body: 'One measurement, one Decision.',
+        derives_from: [measured],
+      })
+    ).artifacts[0].id;
+    const fresh = await digest(firstId);
+    t.true(
+      fresh.includes('## Compaction\n- Head compaction of its Effort: yes\n')
+    );
+    t.true(
+      fresh.includes(
+        '- Stale: no. None of the 1 record it derives from changed standing, and nothing invalidated it. A compaction is stale when'
+      )
+    );
+    t.true(
+      fresh.includes(
+        '- Since it was written, 0 records differ from the live set it covers.'
+      )
+    );
+    t.true(fresh.includes('## Changes since compaction\n- none\n'));
+
+    // An Issue it does not derive from closes in place and a record is
+    // added: the compaction is not stale, but two records differ.
+    await write({
+      type: 'ResolveIssue',
+      issueId: gap,
+      resolution: 'deferred',
+      resolvedBy: [measured],
+    });
+    const added = (
+      await write({
+        type: 'WriteFinding',
+        effort: effortId,
+        title: 'Cold reads take 9 ms',
+        body: '',
+        kind: 'measurement',
+      })
+    ).artifacts[0].id;
+    const moved = await digest(firstId);
+    t.true(moved.includes('- Stale: no.'));
+    t.true(
+      moved.includes(
+        '- Since it was written, 2 records differ from the live set it covers. This count is exact: 1 new live, 1 covered and no longer live, 0 covered with a new standing.'
+      )
+    );
+    t.true(
+      moved.includes(
+        `- left | ${gap} | issue | open -> deferred | No cold-cache numbers`
+      )
+    );
+    t.true(
+      moved.includes(
+        `- added | ${added} | finding | none -> live | Cold reads take 9 ms`
+      )
+    );
+    const brief = await handleEffortBrief(effortId, { cwd });
+    t.like(brief.compaction, { head_id: firstId, stale: false, changes: 2 });
+
+    // Replacing the record it derives from makes it stale, and says which.
+    await write({ type: 'Supersede', supersederId: added, targetId: measured });
+    const stale = await digest(firstId);
+    t.true(
+      stale.includes(
+        `- Stale: yes. 1 of the 1 record it derives from changed standing: ${measured} live -> superseded. A compaction is stale when`
+      )
+    );
+    t.like((await handleEffortBrief(effortId, { cwd })).compaction, {
+      stale: true,
+    });
+
+    // A newer compaction makes this one history.
+    const second = await write({
+      type: 'WriteCompaction',
+      effort: effortId,
+      title: 'Cold reads matter',
+      body: 'Cold reads take 9 ms.',
+      derives_from: [added],
+    });
+    const secondId = second.artifacts[0].id;
+    const old = await digest(firstId);
+    t.regex(
+      old,
+      new RegExp(
+        `- Head compaction of its Effort: no; superseded by ${secondId} \\(\\d{4}-\\d{2}-\\d{2}\\)`
+      )
+    );
+    t.true((await digest(secondId)).includes('- Stale: no.'));
+
+    // Other records print what they printed before.
+    const decisionAfter = await digest(decision);
+    t.false(decisionAfter.includes('## Compaction'));
+    t.false(decisionAfter.includes('## Changes since compaction'));
+    t.is(
+      decisionAfter.replace(/^served_generation: .*$/m, ''),
+      decisionBefore.replace(/^served_generation: .*$/m, '')
+    );
+  }
+);
+
+test.serial(
+  'records filters by standing and by dead support, and refuses a state no record stores',
+  async (t) => {
+    const cwd = await createTempProject('flatbread-effort-standing-', t);
+    await writeFile(
+      join(cwd, 'flatbread.config.js'),
+      `import { source } from '@flatbread/source-filesystem';
+import { transformer } from '@flatbread/transformer-markdown';
+import { proofContent } from '@flatbread/proof';
+export default { source: source(), transformer: transformer(), content: proofContent('.flatbread-proof') };`
+    );
+    const write = async (payload: Record<string, unknown>) =>
+      handleEffortWrite(JSON.stringify(payload), { cwd });
+    const effortId = (
+      await write({ type: 'CreateEffort', title: 'Standing', body: '' })
+    ).artifacts[0].id;
+    const wrong = (
+      await write({
+        type: 'WriteFinding',
+        effort: effortId,
+        title: 'Reads take 4 ms',
+        body: '',
+        kind: 'measurement',
+      })
+    ).artifacts[0].id;
+    const decision = (
+      await write({
+        type: 'WriteDecision',
+        effort: effortId,
+        title: 'Keep the reader',
+        body: '',
+        derives_from: [wrong],
+      })
+    ).artifacts[0].id;
+    const right = (
+      await write({
+        type: 'WriteFinding',
+        effort: effortId,
+        title: 'Reads take 9 ms cold',
+        body: '',
+        kind: 'measurement',
+        derives_from: [wrong],
+      })
+    ).artifacts[0].id;
+    await write({ type: 'Invalidate', findingId: right, targetId: wrong });
+    // A compaction rests on everything, so it is never listed as resting.
+    await write({
+      type: 'WriteCompaction',
+      effort: effortId,
+      title: 'Reader',
+      body: '',
+      derives_from: [wrong],
+    });
+    const ids = async (options: Record<string, unknown>) => {
+      const read = await handleEffortRecords(effortId, { cwd, ...options });
+      const text = await readFile(read.artifact_path, 'utf8');
+      return [...text.matchAll(/^### (\S+)$/gm)].map((match) => match[1]);
+    };
+    t.deepEqual(await ids({ standing: ['invalidated'] }), [wrong]);
+    // The Finding that disproved it derives from it but does not rest on it.
+    t.deepEqual(await ids({ restsOn: ['invalidated'] }), [decision]);
+    t.deepEqual(await ids({ restsOn: ['superseded'] }), []);
+    t.deepEqual(await ids({ state: ['proposed'] }), [decision]);
+    const plain = await handleEffortRecords(effortId, {
+      cwd,
+      state: ['proposed'],
+    });
+    const header = (await readFile(plain.artifact_path, 'utf8')).split('\n')[1];
+    t.false(header.includes('"standing"'));
+    t.false(header.includes('"rests_on"'));
+    await t.throwsAsync(
+      handleEffortRecords(effortId, { cwd, state: ['invalidated'] }),
+      { message: /`invalidated` is not a stored state.*--standing invalidated/ }
+    );
+    await t.throwsAsync(
+      handleEffortRecords(effortId, { cwd, status: ['bogus'] }),
+      { message: /`bogus` is not a stored status.*--standing/ }
+    );
+    await t.throwsAsync(
+      handleEffortRecords(effortId, { cwd, restsOn: ['open'] }),
+      { message: /Invalid rests-on standing: open/ }
+    );
+    t.deepEqual(
+      mapEffortCliOptions({ standing: 'invalidated', 'rests-on': 'a,b' }),
+      { standing: ['invalidated'], restsOn: ['a', 'b'] }
+    );
+    const spawned = await runCli(
+      cwd,
+      'proof',
+      'records',
+      effortId,
+      '--rests-on',
+      'invalidated,rejected'
+    );
+    t.is(spawned.code, 0, spawned.stderr);
+    t.regex(JSON.parse(spawned.stdout).summary, /^1 record;/);
+    const refused = await runCli(
+      cwd,
+      'proof',
+      'records',
+      effortId,
+      '--state',
+      'invalidated'
+    );
+    t.not(refused.code, 0);
+    t.regex(JSON.parse(refused.stderr).error.message, /--standing/);
+  }
+);

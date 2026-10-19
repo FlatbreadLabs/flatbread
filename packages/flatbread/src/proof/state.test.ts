@@ -1,5 +1,10 @@
 import test from 'ava';
-import type { PrimitiveKind, ReadRecord } from '@flatbread/proof';
+import {
+  compactionChanges,
+  parseCovers,
+  type PrimitiveKind,
+  type ReadRecord,
+} from '@flatbread/proof';
 import { buildFindIndex } from './find.js';
 import { buildEffortState, STATE_CHARS } from './state.js';
 
@@ -300,7 +305,7 @@ test('a large Effort shows fewer entries and says how many it left out', (t) => 
   // Sixty contested questions with long ids, each with two Decisions.
   for (let i = 0; i < 60; i++) {
     const n = String(i).padStart(2, '0');
-    const long = `-${'x'.repeat(50)}--${n}`;
+    const long = `-${'x'.repeat(170)}--${n}`;
     records.push(
       rec(`iss-question${long}`, {
         kind: 'question',
@@ -453,4 +458,157 @@ test('section totals count Constraints and every dead record', (t) => {
     shown: 3,
   });
   t.is(of('Dead evidence')?.total, 5);
+});
+
+/** A head compaction written when `fnd-old` was live, resting on it. */
+function compacted(records: ReadRecord[]): ReadRecord[] {
+  return [
+    ...records,
+    rec('fnd-summary', {
+      kind: 'compaction',
+      created_at: at('01-20'),
+      covers: ['dec-live@accepted', 'fnd-old@live', 'iss-blk@open'],
+      relations: { derives_from: ['fnd-old', 'dec-live'] },
+    }),
+  ];
+}
+
+function changedIds(records: ReadRecord[]): string[] {
+  const all = records.filter((record) => record.frontmatter.effort === 'eff-a');
+  const head = all.find((record) => record.id === 'fnd-summary') as ReadRecord;
+  return compactionChanges(
+    parseCovers(head.frontmatter.covers),
+    all.map((record) => ({
+      id: record.id,
+      kind: record.kind,
+      frontmatter: { ...record.frontmatter, ...record.relations },
+    }))
+  ).map((change) => change.id);
+}
+
+test('the head compaction has its own section: stale or not, and what it no longer matches', (t) => {
+  const records = compacted(fixture());
+  const state = buildEffortState(buildFindIndex(records), 'eff-a');
+  const section = sectionOf(state.markdown, 'Head compaction');
+  t.regex(
+    section,
+    /- fnd-summary \(2026-01-20\)\. Stale: yes \(1 of the 2 records it derives from changed standing: fnd-old \(live -> invalidated\)\)\./
+  );
+  t.true(
+    section.includes(
+      '\n- A compaction is stale when a record it derives from changed standing after it was written, or when a Finding invalidated it.'
+    )
+  );
+  const changed = changedIds(records);
+  t.true(changed.length > 10);
+  const line = section
+    .split('\n')
+    .find((entry) => entry.includes('differ from the live set'));
+  t.regex(
+    line ?? '',
+    new RegExp(
+      `^- ${changed.length} records differ from the live set it covers \\(exact\\): `
+    )
+  );
+  t.deepEqual(
+    [...(line ?? '').matchAll(/(\S+) \((?:new|[a-z]+ -> [a-z]+)\)/g)].map(
+      (match) => match[1]
+    ),
+    changed.slice(0, 10)
+  );
+  t.true(line?.endsWith(`, and ${changed.length - 10} more`));
+  t.true(line?.includes('fnd-old (live -> invalidated)'));
+  t.true(line?.includes('dec-p (new)'));
+  t.like(
+    state.sections.find((entry) => entry.heading === 'Head compaction'),
+    { total: changed.length, shown: 10 }
+  );
+  t.false(sectionOf(state.markdown, 'Dead evidence').includes('fnd-summary'));
+  // A compaction rests on everything, so it is not listed as resting.
+  t.regex(
+    sectionOf(state.markdown, 'Dead evidence'),
+    /1 live record rests directly on 1 dead record/
+  );
+});
+
+test('a compaction nothing moved under reads as not stale', (t) => {
+  const records = [
+    rec('eff-a', { created_at: at('01-01') }),
+    rec('fnd-m', { kind: 'measurement', created_at: at('01-02') }),
+    rec('fnd-summary', {
+      kind: 'compaction',
+      created_at: at('01-03'),
+      covers: ['fnd-m@live'],
+      relations: { derives_from: ['fnd-m'] },
+    }),
+  ];
+  const section = sectionOf(
+    buildEffortState(buildFindIndex(records), 'eff-a').markdown,
+    'Head compaction'
+  );
+  t.regex(
+    section,
+    /- fnd-summary \(2026-01-03\)\. Stale: no \(none of the 1 record it derives from changed standing; not invalidated\)\.\n- 0 records differ from the live set it covers \(exact\)\.\n/
+  );
+});
+
+/** The compacted fixture plus sixty contested questions with long ids. */
+function large(idLength: number): ReadRecord[] {
+  const records = compacted(fixture());
+  for (let i = 0; i < 60; i++) {
+    const n = String(i).padStart(2, '0');
+    const long = `-${'x'.repeat(idLength)}--${n}`;
+    records.push(
+      rec(`iss-question${long}`, {
+        kind: 'question',
+        status: 'resolved',
+        created_at: at('04-01'),
+      }),
+      rec(`dec-winner${long}`, {
+        state: 'accepted',
+        created_at: at('04-02'),
+        relations: { derives_from: [`iss-question${long}`] },
+      }),
+      rec(`dec-loser${long}`, {
+        state: 'rejected',
+        created_at: at('04-02'),
+        relations: {
+          derives_from: [`iss-question${long}`],
+          rejected_by: [`dec-winner${long}`],
+        },
+      })
+    );
+  }
+  return records;
+}
+
+test('a large Effort cuts the compaction list before other lists, and keeps its count', (t) => {
+  const shown = (state: ReturnType<typeof buildEffortState>, heading: string) =>
+    state.sections.find((entry) => entry.heading === heading)?.shown;
+  // A little over the size aim: the compaction list goes to 5 first, while
+  // Contested topics keeps all 12 it shows at full size.
+  const over = buildEffortState(buildFindIndex(large(140)), 'eff-a');
+  t.true(over.markdown.length <= STATE_CHARS);
+  t.is(shown(over, 'Head compaction'), 5);
+  t.is(shown(over, 'Contested topics'), 12);
+  // Far over: the list goes, and the exact count stays.
+  const records = large(180);
+  const state = buildEffortState(buildFindIndex(records), 'eff-a');
+  const changed = changedIds(records);
+  t.true(
+    sectionOf(state.markdown, 'Head compaction').includes(
+      `- ${
+        changed.length
+      } records differ from the live set it covers (exact); \`proof get fnd-summary\` lists ${
+        changed.length > 25 ? '25 of them' : 'them'
+      }.`
+    )
+  );
+  t.like(
+    state.sections.find((entry) => entry.heading === 'Head compaction'),
+    { total: changed.length, shown: 0 }
+  );
+  t.true(state.capped);
+  // Counts are never cut.
+  t.regex(state.markdown, /  - question 62: resolved 62/);
 });
