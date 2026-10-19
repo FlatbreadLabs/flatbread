@@ -1217,3 +1217,22 @@ same figures before and after on graph A and graph B, neither graph holds a
 compaction question, and the read invariants hold on every Effort (165 on
 A, 90 on B). The `--rests-on` reads hold the answer for 1 of 3 scored
 questions on A and 1 of 1 on B.
+
+#### Paid check of round two
+
+Haiku ran the unchanged `find` task text twice on this build, on the 53
+questions in the compaction, invalidation and dead-evidence categories
+(`run.mjs --strategies find --ids <those 53>`). The comparison is Run A's
+`find` arm on the same questions, which used the build before this round.
+The two were run on different days. Run files: `runs/x10-iter2-r{1,2}-find.json`.
+
+| Split   | Question-runs | This build | Before | Only one right | Read tokens, this / before |
+| ------- | ------------- | ---------- | ------ | -------------- | -------------------------- |
+| tune    | 62            | 60.3       | 50.3   | 10 to 0        | 15,498 / 23,236            |
+| holdout | 44            | 42         | 42     | 1 to 1         | 13,702 / 16,164            |
+
+The accuracy gain is all on the tune questions this round was chosen from
+(p = 0.002). On holdout there is none, though holdout was at 42 of 44
+before and had little room. The saving in reading carries over: 15% fewer
+tokens on holdout. So this round is kept for clearer, cheaper reads; it has
+not shown that it raises accuracy on questions it was not built from.
