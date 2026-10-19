@@ -2,13 +2,16 @@
 // Compares two runs over the questions both answered, pair by pair.
 //
 //   node scripts/compare.mjs runs/<a>.json runs/<b>.json [--skip id1,id2]
-//        [--only ambiguous]
+//        [--only ambiguous] [--split tune|holdout|all]
 //   node scripts/compare.mjs runs/a-r1.json,runs/a-r2.json \
 //        runs/b-r1.json,runs/b-r2.json
 //
 // It compares the original 246 questions. `--only` names the sets to compare
 // instead, as run.mjs takes them, so a run that also asked the
 // ambiguous-Effort set reports that set apart: `--only ambiguous`.
+// `--split` compares only the tune or holdout questions, split by a hash of
+// each id as in find-recall.mjs. Judge a read that was changed after reading
+// tune misses, such as `proof state`, on `--split holdout`.
 //
 // With several files on each side, the runs are pooled: run i of side A is
 // paired with run i of side B, and each question in each pair of runs is one
@@ -26,6 +29,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadQuestions } from './check.mjs';
+import { splitOf } from './find-recall.mjs';
 import { score } from './grade.mjs';
 import { loadGraph } from './graph.mjs';
 
@@ -59,10 +63,14 @@ async function main() {
   const skip = new Set(at >= 0 ? argv.splice(at, 2)[1].split(',') : []);
   const atOnly = argv.indexOf('--only');
   const only = atOnly >= 0 ? argv.splice(atOnly, 2)[1].split(',') : [];
+  const atSplit = argv.indexOf('--split');
+  const split = atSplit >= 0 ? argv.splice(atSplit, 2)[1] : 'all';
+  if (!['tune', 'holdout', 'all'].includes(split))
+    throw new Error('--split must be one of tune, holdout, all');
   const [pathA, pathB] = argv;
   if (!pathB)
     throw new Error(
-      'usage: compare.mjs <run-a.json>[,more] <run-b.json>[,more] [--skip ids] [--only sets]'
+      'usage: compare.mjs <run-a.json>[,more] <run-b.json>[,more] [--skip ids] [--only sets] [--split tune|holdout|all]'
     );
   const load = (paths) =>
     Promise.all(
@@ -101,6 +109,7 @@ async function main() {
         const x = a.answers?.[q.id];
         const y = runsB[i].answers?.[q.id];
         if (!x || !y || skip.has(q.id)) continue;
+        if (split !== 'all' && splitOf(q.id) !== split) continue;
         rows.push({
           id: pooled ? `${q.id}#${i + 1}` : q.id,
           question: q.id,
@@ -136,6 +145,7 @@ async function main() {
         a: name(runsA, pathA),
         b: name(runsB, pathB),
         ...(pooled ? { runs: runsA.length } : {}),
+        split,
         questions: rows.length,
         correct: { a: total('a'), b: total('b') },
         byTier,

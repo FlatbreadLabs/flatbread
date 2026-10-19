@@ -13,6 +13,7 @@ import {
   handleEffortList,
   handleEffortRecords,
   handleEffortRelations,
+  handleEffortState,
   mapEffortCliOptions,
 } from './proof.js';
 
@@ -30,6 +31,7 @@ export const SERVED_READS: Readonly<Record<string, number>> = {
   'blocking-decisions': 1,
   brief: 1,
   find: 1,
+  state: 1,
 };
 
 /** Options that take no value. */
@@ -130,6 +132,8 @@ export async function runRead(
         ? await handleEffortBlockingDecisions(first, mapped)
         : command === 'find'
         ? await handleEffortFind(first, mapped)
+        : command === 'state'
+        ? await handleEffortState(first, mapped)
         : await handleEffortBrief(first, mapped);
     return { stdout: `${JSON.stringify(result)}\n`, stderr: '', code: 0 };
   } catch (error) {

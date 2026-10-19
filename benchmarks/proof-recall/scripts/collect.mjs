@@ -31,6 +31,19 @@ export async function findHash() {
     .digest('hex');
 }
 
+// The `proof state` source: its sections, caps, and size aim.
+const STATE_SOURCE = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../../packages/flatbread/src/proof/state.ts'
+);
+
+/** A sha256 of the `proof state` source, as `findHash` is of `find`'s. */
+export async function stateHash() {
+  return createHash('sha256')
+    .update(await readFile(STATE_SOURCE))
+    .digest('hex');
+}
+
 /**
  * `context_tokens` counts what entered the context once (new input, cache
  * writes, output): how much the agent had to read. `processed_tokens` adds

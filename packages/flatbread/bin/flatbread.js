@@ -35,6 +35,7 @@ const SERVED_READS = new Set([
   'blocking-decisions',
   'brief',
   'find',
+  'state',
 ]);
 
 /**

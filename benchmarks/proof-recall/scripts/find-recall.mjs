@@ -79,7 +79,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { MULTI_EFFORT_SETS, RUNS_DIR, pickQuestions } from './check.mjs';
 import { findHash } from './collect.mjs';
 import { loadGraph, qualify } from './graph.mjs';
@@ -96,7 +96,7 @@ const EFFORT_WORDS = ['render', 'world', 'ports', 'netcode', 'tools'];
 const GATE = { evidence_top5: 0.75, answer_on_card: 0.6 };
 // A value answer that matches more than this share of other questions' cards
 // is set aside: a card shows it by accident.
-const CHANCE_CUTOFF = 0.1;
+export const CHANCE_CUTOFF = 0.1;
 const SPLITS = ['tune', 'holdout', 'all'];
 
 /** `tune` or `holdout`, from the first byte of the SHA-256 of the id. */
@@ -130,9 +130,9 @@ function args(argv) {
   return out;
 }
 
-const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
+export const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
-function serverAnswers(socket) {
+export function serverAnswers(socket) {
   return new Promise((answer) => {
     const req = request({ socketPath: socket, path: '/' }, (res) => {
       res.resume();
@@ -144,7 +144,7 @@ function serverAnswers(socket) {
 }
 
 /** Runs `./flatbread` in `folder`; resolves with stdout. */
-function flatbread(folder, argv, env = {}) {
+export function flatbread(folder, argv, env = {}) {
   return new Promise((done, fail) => {
     const child = spawn(join(folder, 'flatbread'), argv, {
       cwd: folder,
@@ -191,7 +191,7 @@ const list = (value) =>
   Array.isArray(value) ? value : value === undefined ? [] : [value];
 
 /** Record ids that count as evidence, and the answer ids, for a question. */
-function targets(graph, effort, q) {
+export function targets(graph, effort, q) {
   const id = (key) => graph.keymap[qualify(effort, key)];
   const answers = ['record', 'records'].includes(q.answer.kind)
     ? list(q.answer.value).map(id)
@@ -210,7 +210,7 @@ const number = (text) => Number(text.replace(/,/g, ''));
  * accepted alternatives, each as a whole token, so "6" does not match "16"
  * or "6.2". Null when no card can show the answer.
  */
-function valueForms(q) {
+export function valueForms(q) {
   const { kind, value, accept } = q.answer;
   if (kind !== 'value' || String(value).toLowerCase() === 'unknown')
     return null;
@@ -229,7 +229,7 @@ function valueForms(q) {
 }
 
 /** True, false, or null (no card can show it) for one question's cards. */
-function answerOnCard(q, answers, cards) {
+export function answerOnCard(q, answers, cards) {
   const { kind } = q.answer;
   if (kind === 'record' || kind === 'records')
     return answers.every((id) => cards.includes(id));
@@ -287,7 +287,7 @@ function scoreReply(graph, effortIds, row, stdout) {
   };
 }
 
-function rate(rows, field) {
+export function rate(rows, field) {
   const known = rows.filter((r) => r[field] !== null);
   if (!known.length) return { n: 0, rate: null };
   const yes = known.filter((r) => r[field]).length;
@@ -310,7 +310,8 @@ function tally(rows) {
   };
 }
 
-const pct = (r) => (r.rate === null ? '   -' : `${Math.round(r.rate * 100)}%`);
+export const pct = (r) =>
+  r.rate === null ? '   -' : `${Math.round(r.rate * 100)}%`;
 
 function printTable(label, groups) {
   console.log(`\n${label}`);
@@ -472,7 +473,8 @@ async function main() {
   console.log(`find_hash ${find_hash}\nWrote ${options.out}`);
 }
 
-main().catch((error) => {
-  console.error(error.message);
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  main().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });

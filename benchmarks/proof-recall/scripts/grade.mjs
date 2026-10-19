@@ -2,10 +2,15 @@
 // Scores one benchmark run.
 //
 //   node scripts/grade.mjs runs/<name>.json [--only ambiguous]
+//        [--split tune|holdout|all]
 //
 // It scores the original 246 questions that the run answered. `--only`
 // names the sets to score instead, as run.mjs takes them: `ambiguous` for
-// the ambiguous-Effort set alone, `default,ambiguous` for both.
+// the ambiguous-Effort set alone, `default,ambiguous` for both. `--split`
+// scores only the tune or holdout questions, split by a hash of each id as
+// in find-recall.mjs. A read that was changed after reading tune misses,
+// such as `proof state`, should be judged on holdout. `bySplit` always
+// reports both halves.
 //
 // A run file holds one entry per question id:
 //   { "run": { "strategy": "brief", "model": "..." },
@@ -17,6 +22,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadQuestions } from './check.mjs';
+import { splitOf } from './find-recall.mjs';
 import { loadGraph, qualify, sameAnswer } from './graph.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -122,15 +128,22 @@ async function main() {
   const argv = process.argv.slice(2);
   const at = argv.indexOf('--only');
   const only = at >= 0 ? argv.splice(at, 2)[1].split(',') : [];
+  const atSplit = argv.indexOf('--split');
+  const split = atSplit >= 0 ? argv.splice(atSplit, 2)[1] : 'all';
+  if (!['tune', 'holdout', 'all'].includes(split))
+    throw new Error('--split must be one of tune, holdout, all');
   const [runPath] = argv;
-  if (!runPath) throw new Error('usage: grade.mjs <run.json> [--only sets]');
+  if (!runPath)
+    throw new Error(
+      'usage: grade.mjs <run.json> [--only sets] [--split tune|holdout|all]'
+    );
   const run = JSON.parse(await readFile(resolve(runPath), 'utf8'));
   const graph = await loadGraph(join(BENCH, '.flatbread-proof'));
   const rows = [];
   for (const set of await loadQuestions(only))
     for (const q of set.questions) {
       const entry = run.answers?.[q.id];
-      if (!entry) continue;
+      if (!entry || (split !== 'all' && splitOf(q.id) !== split)) continue;
       rows.push({
         id: q.id,
         effort: set.effort,
@@ -145,8 +158,10 @@ async function main() {
     JSON.stringify(
       {
         run: run.run ?? {},
+        split,
         answered: rows.length,
         overall: summarize(rows, () => 'all').all,
+        bySplit: summarize(rows, (r) => splitOf(r.id)),
         byTier: summarize(rows, (r) => `tier-${r.tier}`),
         byEffort: summarize(rows, (r) => r.effort),
         byCategory: summarize(rows, (r) => r.categories),

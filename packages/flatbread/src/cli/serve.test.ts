@@ -283,6 +283,93 @@ test.serial(
 );
 
 test.serial(
+  'proof state prints the same envelope locally and through proof serve',
+  async (t) => {
+    t.timeout(180_000);
+    const cwd = await createProject(t);
+    const write = async (input: Record<string, unknown>) =>
+      (await handleEffortWrite(JSON.stringify(input), { cwd })).artifacts[0].id;
+    const effortId = await write({
+      type: 'CreateEffort',
+      title: 'Renderer',
+      body: '',
+    });
+    const question = await write({
+      type: 'WriteIssue',
+      effort: effortId,
+      title: 'Which shadow technique?',
+      body: '',
+      kind: 'question',
+    });
+    const chosen = await write({
+      type: 'WriteDecision',
+      effort: effortId,
+      title: 'Use virtual shadow maps',
+      body: '',
+      derives_from: [question],
+    });
+    const passed = await write({
+      type: 'WriteDecision',
+      effort: effortId,
+      title: 'Use cascaded shadow maps',
+      body: '',
+      derives_from: [question],
+    });
+    await write({ type: 'AcceptDecision', decisionId: chosen });
+    const blocker = await write({
+      type: 'WriteIssue',
+      effort: effortId,
+      title: 'Shadow pages run out',
+      body: '',
+      kind: 'blocker',
+    });
+    const socket = join(cwd, '.flatbread/proof/serve.sock');
+    const server = await serveProofReads(socket);
+    t.teardown(() => new Promise((done) => server.close(() => done())));
+    const served = { FLATBREAD_PROOF_SERVER: socket };
+
+    const local = await runCli(cwd, {}, 'proof', 'state', effortId);
+    t.is(local.code, 0, local.stderr);
+    const remote = await runCli(cwd, served, 'proof', 'state', effortId);
+    t.is(remote.code, 0, remote.stderr);
+    t.deepEqual(JSON.parse(remote.stdout), JSON.parse(local.stdout));
+    const envelope = JSON.parse(local.stdout);
+    t.is(envelope.state.effort_id, effortId);
+    t.false(envelope.state.capped);
+    t.true(envelope.complete);
+    t.regex(envelope.markdown, /- Decisions 2: accepted 1, rejected 1/);
+    t.regex(
+      envelope.markdown,
+      new RegExp(`\\[b\\] ${passed}: rejected by \\[a\\]`)
+    );
+    t.regex(envelope.markdown, new RegExp(`- ${blocker} \\(open\\), blocker`));
+    t.regex(envelope.summary, /^state of /);
+    t.regex(
+      await readFile(envelope.artifact_path, 'utf8'),
+      /## Effort state\n/
+    );
+
+    for (const env of [{}, served] as Record<string, string>[]) {
+      // --as-of is refused, with a pointer to find, both ways.
+      const asOf = await runCli(
+        cwd,
+        env,
+        'proof',
+        'state',
+        effortId,
+        '--as-of',
+        '2026-01-01'
+      );
+      t.is(asOf.code, 1);
+      t.regex(JSON.parse(asOf.stderr).error.message, /proof find --as-of/);
+      const missing = await runCli(cwd, env, 'proof', 'state', question);
+      t.is(missing.code, 1);
+      t.is(JSON.parse(missing.stderr).error.code, 'PROOF_INVALID_ARGUMENT');
+    }
+  }
+);
+
+test.serial(
   'reads fall back to the local CLI when the server is unreachable',
   async (t) => {
     const cwd = await createProject(t);

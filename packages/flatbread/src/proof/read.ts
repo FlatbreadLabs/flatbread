@@ -34,6 +34,7 @@ import {
   renderFindCards,
   type FindIndex,
 } from './find.js';
+import { buildEffortState, type EffortState } from './state.js';
 import { createHash } from 'node:crypto';
 import { readdir, realpath, stat } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
@@ -1294,5 +1295,60 @@ export async function effortFind(
       })),
     },
     cards,
+  };
+}
+
+/** A `state` envelope: the usual read fields plus the state inline. */
+export interface StateEnvelope extends ReadEnvelope {
+  /** Exact counts and how much of each list is shown. */
+  state: Omit<EffortState, 'markdown'>;
+  /** The state as Markdown, so the agent needs no second Read. */
+  markdown: string;
+}
+
+/**
+ * Where an Effort stands, from frontmatter and links alone: exact counts,
+ * contested topics, open blockers and risks, Issues closed without a fix,
+ * live records on dead evidence, dated lifecycles, and retractions. It
+ * shares the `find` index, so a served graph builds both once.
+ */
+export async function effortState(
+  effortId: string,
+  options: EffortProjectionOptions & { asOf?: string }
+): Promise<StateEnvelope> {
+  if (options.asOf !== undefined)
+    throw new ProofReadValidationError(
+      'PROOF_INVALID_ARGUMENT',
+      'proof state does not take --as-of. Its lifecycle lines date each change; proof find --as-of shows the version current at a date.'
+    );
+  const projection = await makeProjection(options);
+  const index = await projection.findIndex();
+  if (index.records.get(effortId)?.kind !== 'effort')
+    throw new ProofReadValidationError(
+      'PROOF_INVALID_ARGUMENT',
+      `Effort ${effortId} does not exist`
+    );
+  const { markdown, ...state } = buildEffortState(index, effortId);
+  const envelope = await render(
+    options,
+    { type: 'effortState', effort_id: effortId },
+    [],
+    [],
+    [`effortRecords("${effortId}")`, `blockingDecisions("${effortId}")`],
+    {
+      sections: [{ heading: 'Effort state', lines: markdown.split('\n') }],
+      capReasons: state.capped ? ['state_limit'] : [],
+    }
+  );
+  return {
+    ...envelope,
+    summary: `state of ${effortId}: ${state.live} live of ${
+      state.records
+    } records; ${state.sections
+      .filter((section) => section.heading !== 'Counts')
+      .map((section) => `${section.heading.toLowerCase()} ${section.total}`)
+      .join(', ')}${state.capped ? '; some lists cut' : ''}`,
+    state,
+    markdown,
   };
 }

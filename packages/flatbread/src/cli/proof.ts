@@ -17,7 +17,9 @@ import {
   effortBrief,
   effortFind,
   effortRecords,
+  effortState,
   type FindEnvelope,
+  type StateEnvelope,
   relations,
   getRecord,
   listEfforts,
@@ -296,6 +298,21 @@ export async function handleEffortFind(
     asOf: options.asOf,
     retracted: options.retracted,
     limit: options.limit,
+  });
+}
+
+/** `proof state`: where one Effort stands, from frontmatter and links. */
+export async function handleEffortState(
+  effortId: string,
+  options: EffortCliOptions = {}
+): Promise<StateEnvelope> {
+  const cwd = options.cwd ?? process.cwd();
+  return effortState(effortId, {
+    cwd,
+    rootDir: await rootFor(cwd),
+    cacheRoot: resolve(cwd, '.flatbread/proof'),
+    consistency: consistency(options),
+    asOf: options.asOf,
   });
 }
 
@@ -607,6 +624,16 @@ export function registerProofCommands(prog: any): void {
           mapEffortCliOptions(options)
         )
       )
+    );
+  consistencyOptions(
+    prog.command(
+      'proof state <effortId>',
+      'Read counts, contested topics, blockers, risks, dead evidence, and lifecycles'
+    )
+  )
+    .option('--as-of <iso>', 'Not supported; refused with a pointer to find')
+    .action(async (effortId: string, options: Record<string, unknown>) =>
+      printResult(handleEffortState(effortId, mapEffortCliOptions(options)))
     );
   paginationOptions(
     consistencyOptions(
