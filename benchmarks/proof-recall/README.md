@@ -872,6 +872,52 @@ What this does not show:
   finds the right Effort, not that agents handle a hard question without a
   named Effort.
 
+### Look-alike filler, and Sonnet
+
+Two more single runs of `find` against no-brief, with the same task texts
+and `find_hash` as above, on 270 questions each (the 246 and the 24
+ambiguous-Effort ones). Figures are for the 245 comparable questions.
+
+**Run C: Haiku on the look-alike graph** (`--scale 10 --filler-overlap 0.3`,
+where 30% of filler records reuse real subsystem names). Run files:
+`runs/x10adv-find-r1-*.json`.
+
+| Measure                           | `find` | no-brief |
+| --------------------------------- | ------ | -------- |
+| Correct                           | 233.7  | 214.7    |
+| Questions only this arm got right | 19     | 1        |
+| Mean read tokens                  | 13,835 | 36,891   |
+| Mean tool calls                   | 9      | 22       |
+| "Unknown" answers                 | 18     | 33       |
+
+The gap is 19 questions (p < 0.0001), the same as on the plain graph
+(about 19 per run), and `find` read 0.38 of no-brief's tokens. The plan's
+pass mark for Run C was half the Run A gain and at most 0.75 of the
+tokens, so it passes easily: filler that looks real did not hurt search.
+On the ambiguous set `find` got 22 of 24 and no-brief 15 (7 to 0,
+p = 0.016).
+
+**Sonnet on the plain 10x graph.** Run files: `runs/x10-sonnet-r1-*.json`.
+
+| Measure                           | `find` | no-brief |
+| --------------------------------- | ------ | -------- |
+| Correct                           | 233.4  | 226.7    |
+| Questions only this arm got right | 11     | 5        |
+| Mean read tokens                  | 9,280  | 16,674   |
+| Mean tool calls                   | 7      | 18       |
+| "Unknown" answers                 | 16     | 27       |
+
+Sonnet without `find` does far better than Haiku without it (226.7
+against about 211), so the accuracy gap shrinks to 6.8 questions and is
+not significant in one run (p = 0.21). `find` still read 44% fewer tokens
+and made fewer than half the calls. On the ambiguous set, where the
+question names no Effort, the gap stays large: `find` 24 of 24, no-brief
+17 (7 to 0, p = 0.016).
+
+So a stronger model gains less accuracy from search and keeps most of the
+saving; a weaker one gains both. Timeouts (10 minutes) hit 3 Haiku and 5
+Sonnet sessions, all but one in the no-brief arm.
+
 ### The offline gate for `proof state`
 
 `proof state <effortId>` is one read, built from frontmatter and links,
