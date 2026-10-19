@@ -1011,5 +1011,34 @@ The find gate, rerun with the same `find_hash` (`e5be6532…`), still gives
 81% evidence in the top 5 and 62% answers on a card on the stripped set.
 
 The paid Run D compares `findstate` against `find` on these questions.
-Before paying for it, decide whether a read that fails its own bar is
-worth a paid run.
+It was run anyway, because `find` and `state` together cover more than
+either alone; see below.
+
+### `find` plus `state` against `find` (Run D)
+
+Haiku on the 10x graph, twice, on the 97 questions in the aggregate,
+dead-evidence, lifecycle and blocker categories (all but `world-077`):
+`run.mjs --strategies findstate,find --ids <those 97>`. The `findstate`
+arm adds one line to the `find` task text: use `proof state <effortId>` for
+counts, open and closed sets, status history, blockers and dead evidence.
+Run files: `runs/x10-rund-r{1,2}-*.json`.
+
+Pooled over both runs (194 question-runs per arm):
+
+| Measure                              | `findstate` | `find` |
+| ------------------------------------ | ----------- | ------ |
+| Correct                              | 181         | 171    |
+| Runs of a question only this arm got | 15          | 5      |
+| Mean read tokens                     | 15,578      | 18,907 |
+| Mean tool calls                      | 9           | 12     |
+
+The pooled sign test gives p = 0.041; counting each question once, 9 to 4
+(p = 0.27). The plan kept `state` only if it gained at least 4 questions
+per run on this subset with no rise in tokens. It gained 5 per run and read
+18% fewer tokens, so it passes.
+
+`state` was shaped on the tune questions, so the holdout half is the clean
+measure: there `findstate` got 83 and `find` 79 of 88 (5 to 1, p = 0.22),
+against 98 and 92 of 106 on tune (10 to 4). The direction holds on
+holdout, but two runs on 44 questions cannot show it alone. Two sessions
+timed out, both in the `find` arm.
