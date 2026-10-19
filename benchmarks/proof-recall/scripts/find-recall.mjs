@@ -3,7 +3,14 @@
 // whether its top hits hold the evidence, before any paid agent run.
 //
 //   node scripts/find-recall.mjs [--graph <built-graph-dir>] [--ids a,b]
-//        [--split tune|holdout|all] [--out <json>] [--jobs 8]
+//        [--only ambiguous] [--split tune|holdout|all] [--out <json>]
+//        [--jobs 8]
+//
+// The gate asks the original 246 questions. `--only` names question sets
+// by their `effort` field instead, as run.mjs takes them: `--only ambiguous`
+// asks the ambiguous-Effort set, whose questions name no Effort. `--ids`
+// picks questions from any set. Run the ambiguous set only after it is
+// written and frozen, since its point is that nobody tuned it to `find`.
 //
 // The gate verdict that counts is the one on the 10x graph, given with
 // `--graph <x10 build>`. The default, the committed 1x graph, is a quick
@@ -16,7 +23,7 @@
 //             names, or platform names, with --all. Topic words that an
 //             Effort title also uses, such as "build farm", stay elsewhere.
 //   scoped    the question text, with --effort set to the question's Effort
-//             (cross-Effort questions are skipped)
+//             (cross-Effort and ambiguous-Effort questions are skipped)
 // The plan asked for a third set of queries taken from pilot transcripts.
 // No pilot ran `proof find`, so none exist; `scoped` stands in until a find
 // pilot gives real agent queries.
@@ -42,7 +49,9 @@
 //                       split's rows are the same as its part of an `all`
 //                       run.
 //   right_effort_first  the top Effort in `efforts by match` is the
-//                       question's own (single-Effort questions, --all sets)
+//                       question's own (single-Effort questions, --all sets;
+//                       for an ambiguous-Effort question, the Effort of the
+//                       question it was rewritten `from`)
 //   reply_chars, cards_chars
 //                       the tables print the mean reply size and the
 //                       largest one
@@ -71,7 +80,7 @@ import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadQuestions } from './check.mjs';
+import { MULTI_EFFORT_SETS, pickQuestions } from './check.mjs';
 import { findHash } from './collect.mjs';
 import { loadGraph, qualify } from './graph.mjs';
 import { prepareFolder } from './prepare-run.mjs';
@@ -101,6 +110,7 @@ function args(argv) {
   const out = {
     graph: join(BENCH, '.flatbread-proof'),
     ids: [],
+    only: [],
     out: join(BENCH, 'runs', 'find-recall.json'),
     jobs: 8,
     split: 'all',
@@ -109,6 +119,7 @@ function args(argv) {
     const flag = argv[i];
     if (flag === '--graph') out.graph = resolve(argv[++i]);
     else if (flag === '--ids') out.ids = argv[++i].split(',');
+    else if (flag === '--only') out.only = argv[++i].split(',');
     else if (flag === '--out') out.out = resolve(argv[++i]);
     else if (flag === '--jobs') out.jobs = Number(argv[++i]);
     else if (flag === '--split') out.split = argv[++i];
@@ -263,9 +274,9 @@ function scoreReply(graph, effortIds, row, stdout) {
     ),
     answer_on_card: answerOnCard(row.q, answers, reply.cards),
     right_effort_first:
-      row.set === 'scoped' || row.effort === 'cross'
+      row.set === 'scoped' || !effortIds[row.home]
         ? null
-        : reply.find.efforts?.[0]?.id === effortIds[row.effort],
+        : reply.find.efforts?.[0]?.id === effortIds[row.home],
     reply_chars: stdout.length,
     cards_chars: reply.cards.length,
     hits: top5.map((hit) => hit.matched_id ?? hit.id),
@@ -341,12 +352,14 @@ async function main() {
         'that counts is the one on the 10x graph (--graph <x10 build>).'
     );
   const find_hash = await findHash();
-  const wanted = new Set(options.ids);
   const jobs = [];
-  for (const set of await loadQuestions())
+  for (const set of await pickQuestions(options))
     for (const q of set.questions) {
-      if (wanted.size && !wanted.has(q.id)) continue;
-      const row = { q, effort: set.effort };
+      // The Effort a reader should land in: the file's own, or for an
+      // ambiguous question, that of its source (ids are `<effort>-NNN`).
+      const home =
+        set.effort === 'ambiguous' ? q.from.split('-')[0] : set.effort;
+      const row = { q, effort: set.effort, home };
       jobs.push({ ...row, set: 'raw', query: q.question, scope: ['--all'] });
       jobs.push({
         ...row,
@@ -354,7 +367,7 @@ async function main() {
         query: stripNames(q.question, titles),
         scope: ['--all'],
       });
-      if (set.effort !== 'cross')
+      if (!MULTI_EFFORT_SETS.includes(set.effort))
         jobs.push({
           ...row,
           set: 'scoped',

@@ -9,7 +9,10 @@
 //   node scripts/run.mjs --stop-server [--server <socket>]
 //
 // --strategies names the task texts in task.mjs to run; the default is
-// brief,nobrief. Each session works in <work-dir>/<strategy>/<id>/, which
+// brief,nobrief. The default questions are the original 246. --only names
+// question sets by their `effort` field: `--only ambiguous` runs the
+// ambiguous-Effort set alone, and `--only default,ambiguous` runs both in
+// one run. --ids picks questions from any set. Each session works in <work-dir>/<strategy>/<id>/, which
 // holds a link to the shared copy of the graph, TASK.md, the agent's
 // answer.json, and transcript.jsonl. A rerun skips sessions that already
 // have both an answer and a transcript, so an interrupted run picks up where

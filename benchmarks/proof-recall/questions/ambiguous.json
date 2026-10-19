@@ -1,0 +1,1073 @@
+{
+  "effort": "ambiguous",
+  "questions": [
+    {
+      "id": "ambiguous-001",
+      "from": "ports-002",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["ambiguous-effort", "truncation", "lookup"],
+      "question": "Before I shrink the shader cache on Skiff, how large is it allowed to grow on the device's storage right now?",
+      "answer": {
+        "kind": "value",
+        "value": "384 MB",
+        "accept": ["384", "384 megabytes"]
+      },
+      "evidence": ["ports.dec-pso-ondevice"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "live": true,
+          "bodyIncludes": ["cache", "capped at"],
+          "expect": ["ports.dec-pso-ondevice"]
+        },
+        {
+          "type": "body",
+          "record": "ports.dec-pso-ondevice",
+          "includes": "capped at 384 MB",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "212 MB is how much the cache held after a full playthrough, not its cap.",
+        "140 MB is the size of the prebuilt blobs the cache replaced.",
+        "\"Shader cache\" also names the build farm's compile cache. Its storage Risk is about a 4 TB farm volume, and that cache never ships to players."
+      ],
+      "rivals": ["tools.rsk-storage"]
+    },
+    {
+      "id": "ambiguous-002",
+      "from": "ports-011",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["ambiguous-effort", "distractor", "retraction"],
+      "question": "When a player comes back to an area they have already visited, what share of lookups hit the shader cache?",
+      "answer": {
+        "kind": "value",
+        "value": "99.6 percent",
+        "accept": ["99.6%", "99.6"]
+      },
+      "evidence": ["ports.dec-pso-ondevice", "ports.fnd-cache-warm"],
+      "path": [["ports.dec-pso-ondevice", "supports", "ports.fnd-cache-warm"]],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "live": true,
+          "bodyIncludes": "second visit",
+          "expect": ["ports.fnd-cache-warm"]
+        },
+        {
+          "type": "body",
+          "record": "ports.fnd-cache-warm",
+          "includes": "99.6 percent of pipeline lookups hit the cache",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "97 percent is the build farm's shader compile cache hit rate, in a retracted Finding posted here by mistake.",
+        "The build farm's shader cache reports hit rates too (94% steady state, 92.4% in week four), but they count shader permutations in farm builds, not lookups on a player's device."
+      ],
+      "rivals": ["tools.fnd-hitrate"]
+    },
+    {
+      "id": "ambiguous-003",
+      "from": "tools-009",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["ambiguous-effort", "blob"],
+      "question": "The shader cache warmed up week by week after the key change. What hit rate did it reach in week four?",
+      "answer": {
+        "kind": "value",
+        "value": "92.4%",
+        "accept": ["92.4", "92.4 percent"]
+      },
+      "evidence": [
+        "tools.fnd-hitrate",
+        "tools.cit-hitrate",
+        "tools.blb-hitrate"
+      ],
+      "path": [
+        ["tools.fnd-hitrate", "cites", "tools.cit-hitrate"],
+        ["tools.cit-hitrate", "blob", "tools.blb-hitrate"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["blob"],
+          "bodyIncludes": ["hit_rate", "week"],
+          "expect": ["tools.blb-hitrate"]
+        },
+        {
+          "type": "body",
+          "record": "tools.blb-hitrate",
+          "includes": "\"hit_rate\": 92.4",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The Finding body gives only week 1 (71%).",
+        "The retrospective's 94% is the later steady-state rate, and the February summary says only \"low 90s\".",
+        "Blob bodies are left out of list and records digests; only `proof get` on the Blob shows the series.",
+        "Two SDF GI capture payloads also carry a hit-rate field, for the GPU L2 cache, with no weeks.",
+        "The on-device pipeline cache is also called the shader cache, and its key includes the driver version, but it reports one second-visit figure (99.6 percent), not weekly ones."
+      ],
+      "rivals": ["ports.fnd-cache-warm"]
+    },
+    {
+      "id": "ambiguous-004",
+      "from": "tools-003",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["ambiguous-effort", "truncation", "lookup"],
+      "question": "Going by the retrospective, how long does a clean rebuild take now that the cache is warm?",
+      "answer": {
+        "kind": "value",
+        "value": "6 min 40 s",
+        "accept": ["6 minutes 40 seconds", "6:40", "400 seconds", "6m40s"]
+      },
+      "evidence": ["tools.fnd-retro"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["finding"],
+          "live": true,
+          "titleIncludes": "retrospective",
+          "expect": ["ports.fnd-retro", "tools.fnd-retro"]
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["finding"],
+          "live": true,
+          "titleIncludes": "retrospective",
+          "bodyIncludes": "clean rebuild",
+          "expect": ["tools.fnd-retro"]
+        },
+        {
+          "type": "body",
+          "record": "tools.fnd-retro",
+          "includes": "6 min 40 s",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The figure sits at the end of a long body, past the 600-character excerpt that list and records digests show.",
+        "The hit-rate report's 7.2-minute median build time is a different measure.",
+        "There are two retrospectives. The Skiff beta one says nothing about rebuild times."
+      ],
+      "rivals": ["ports.fnd-retro"]
+    },
+    {
+      "id": "ambiguous-005",
+      "from": "ports-034",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["ambiguous-effort", "truncation", "lookup"],
+      "question": "The retrospective puts a schedule cost on the wrong pipeline choice. How many weeks did it cost?",
+      "answer": {
+        "kind": "value",
+        "value": "6 weeks",
+        "accept": ["6", "six weeks"]
+      },
+      "evidence": ["ports.fnd-retro"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["finding"],
+          "live": true,
+          "titleIncludes": "retrospective",
+          "expect": ["ports.fnd-retro", "tools.fnd-retro"]
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["finding"],
+          "live": true,
+          "titleIncludes": "retrospective",
+          "bodyIncludes": "pipeline choice",
+          "expect": ["ports.fnd-retro"]
+        },
+        {
+          "type": "body",
+          "record": "ports.fnd-retro",
+          "includes": "cost 6 weeks of schedule",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The Kelp switch took one week; that figure sits earlier in the same record.",
+        "The shader compile cache retrospective says the team lost about three weeks blaming the network for flaky nightly builds. That was a wrong diagnosis, not a pipeline choice."
+      ],
+      "rivals": ["tools.fnd-retro"]
+    },
+    {
+      "id": "ambiguous-006",
+      "from": "render-013",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["ambiguous-effort", "truncation", "lookup"],
+      "question": "I want to add a channel to the history the upscaler keeps between frames. How precisely is each channel stored today?",
+      "answer": {
+        "kind": "value",
+        "value": "16-bit float",
+        "accept": ["FP16", "16-bit float per channel", "half float"]
+      },
+      "evidence": ["render.dec-tern"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "live": true,
+          "bodyIncludes": "history buffer",
+          "expect": ["render.dec-tern"]
+        },
+        {
+          "type": "body",
+          "record": "render.dec-tern",
+          "includes": "stored as 16-bit float per channel",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "FP16 packing of reprojection inputs is a different change, in a Tern cost Finding.",
+        "The Skiff upscaler Decision picks a Tern preset but says nothing about the history buffer; every preset shares one format."
+      ],
+      "rivals": ["ports.dec-tern-skiff"]
+    },
+    {
+      "id": "ambiguous-007",
+      "from": "render-009",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["ambiguous-effort", "truncation", "current-state"],
+      "question": "Someone wants the refraction fallback to take more steps. What step cap is in force now?",
+      "answer": {
+        "kind": "value",
+        "value": "32",
+        "accept": ["32 steps"]
+      },
+      "evidence": ["render.dec-refr-hybrid"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["decision"],
+          "live": true,
+          "bodyIncludes": ["refraction", "capped at"],
+          "expect": ["render.dec-refr-hybrid"]
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["decision"],
+          "live": true,
+          "bodyIncludes": "capped at",
+          "expect": ["ports.dec-pso-ondevice", "render.dec-refr-hybrid"]
+        },
+        {
+          "type": "body",
+          "record": "render.dec-refr-hybrid",
+          "includes": "capped at 32 steps",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "64 steps is what the October cost Finding and the rejected full ray-march used.",
+        "The only other live Decision that caps something is the Skiff pipeline cache, at 384 MB.",
+        "A rejected Skiff Decision would have dropped saltglass refraction to half resolution there. That limits pixels, not steps."
+      ],
+      "rivals": ["ports.dec-pso-ondevice", "ports.dec-skiff-native"]
+    },
+    {
+      "id": "ambiguous-008",
+      "from": "netcode-006",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["ambiguous-effort", "rejected-alternative"],
+      "question": "Someone wants co-op to run deterministically, with each peer waiting for every other peer's input before it simulates a frame. Which Decision turned that approach down?",
+      "answer": {
+        "kind": "record",
+        "value": "netcode.dec-rollback"
+      },
+      "evidence": ["netcode.dec-lockstep", "netcode.dec-rollback"],
+      "path": [["netcode.dec-lockstep", "rejected_by", "netcode.dec-rollback"]],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["decision"],
+          "titleIncludes": "lockstep",
+          "expect": ["netcode.dec-lockstep"]
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "superseded"
+          },
+          "derivesFrom": "netcode.iss-sync"
+        },
+        {
+          "type": "edge",
+          "edge": [
+            "netcode.dec-lockstep",
+            "rejected_by",
+            "netcode.dec-rollback"
+          ],
+          "expect": true
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["decision"],
+          "bodyIncludes": "exchange only inputs",
+          "expect": ["world.dec-tide-fixed"]
+        }
+      ],
+      "traps": [
+        "The host-authoritative Decision is today's answer to the sync question, but it rejected nothing; lockstep was already rejected.",
+        "The lockstep playtest Finding explains the loss but is not a Decision.",
+        "The fixed-point tide Decision keeps tides deterministic and says co-op peers exchange only inputs. But it is accepted, and what it rejected was the host streaming tide heights, not this approach."
+      ],
+      "rivals": ["world.dec-tide-fixed"]
+    },
+    {
+      "id": "ambiguous-009",
+      "from": "world-015",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["ambiguous-effort", "lookup"],
+      "question": "Gameplay scripts keep running long on Skiff. How many milliseconds per frame do all scripts together get there?",
+      "answer": {
+        "kind": "value",
+        "value": "3.0 ms",
+        "accept": ["3 ms", "3.0", "3"]
+      },
+      "evidence": ["world.con-gull-tick"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["constraint"],
+          "live": true,
+          "bodyIncludes": "script",
+          "expect": ["world.con-gull-tick"]
+        },
+        {
+          "type": "body",
+          "record": "world.con-gull-tick",
+          "includes": "3.0 ms per frame on Skiff",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "2.0 ms is Meridian's budget.",
+        "25 ms is the whole Skiff 40 Hz frame, not the script share."
+      ],
+      "rivals": ["ports.con-frame-2"]
+    },
+    {
+      "id": "ambiguous-010",
+      "from": "world-027",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["ambiguous-effort", "current-state", "distractor"],
+      "question": "We want to stream more data per second on Skiff. What sustained read rate does the current streaming budget allow?",
+      "answer": {
+        "kind": "value",
+        "value": "160 MB/s",
+        "accept": ["160"]
+      },
+      "evidence": ["world.con-io-budget", "world.con-io-budget-2"],
+      "path": [
+        ["world.con-io-budget", "superseded_by", "world.con-io-budget-2"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["constraint"],
+          "live": true,
+          "bodyIncludes": "MB/s",
+          "expect": ["world.con-io-budget-2"]
+        },
+        {
+          "type": "body",
+          "record": "world.con-io-budget-2",
+          "includes": "under 160 MB/s",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "220 MB/s is the superseded December budget.",
+        "The streaming pool budget has a near-identical title but limits memory, not reads.",
+        "61 MB/s is the worst sustained read measured on budget microSD cards, a Finding, not a budget."
+      ],
+      "rivals": ["ports.fnd-sd-speed-2"]
+    },
+    {
+      "id": "ambiguous-011",
+      "from": "world-007",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["ambiguous-effort", "truncation", "lookup"],
+      "question": "When the 400 MB memory cut hit the pool, how much of it came back from texture mips?",
+      "answer": {
+        "kind": "value",
+        "value": "260 MB",
+        "accept": ["260"]
+      },
+      "evidence": ["world.con-pool-2"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "bodyIncludes": ["400 MB", "texture mip"],
+          "expect": ["world.con-pool-2"]
+        },
+        {
+          "type": "body",
+          "record": "world.con-pool-2",
+          "includes": "texture mips give back 260 MB",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The split is in the last paragraph of a superseded constraint; the current constraint does not repeat it.",
+        "320 MB is the tide-band reservation, not part of the cut.",
+        "About 900 MB is what Kelp's high-ratio texture mode saved on the Skiff harbor route, a different cut."
+      ],
+      "rivals": ["ports.dec-kelp-skiff"]
+    },
+    {
+      "id": "ambiguous-012",
+      "from": "world-005",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["ambiguous-effort", "truncation", "lookup"],
+      "question": "Players say that something they dug up at low tide moves after they save and load the game again. In the worst case, how far inland did it end up?",
+      "answer": {
+        "kind": "value",
+        "value": "11 m",
+        "accept": ["11 metres", "11 meters", "11"]
+      },
+      "evidence": ["world.fnd-save-tide-mismatch"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "bodyIncludes": ["low tide", "inland"],
+          "expect": ["world.fnd-save-tide-mismatch"]
+        },
+        {
+          "type": "body",
+          "record": "world.fnd-save-tide-mismatch",
+          "includes": "11 m inland",
+          "afterExcerpt": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The distance is in the final paragraph, past the browse excerpt; 31 of 50 is the repro count.",
+        "The Skiff delta-save Decision is about how much autosave writes, not where chests end up."
+      ],
+      "rivals": ["ports.dec-delta-save"]
+    },
+    {
+      "id": "ambiguous-013",
+      "from": "world-041",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["ambiguous-effort", "blob"],
+      "question": "We're tuning what streams first when the tide falls. In the Skiff trace with 256 m cells, what share of the reads were textures?",
+      "answer": {
+        "kind": "value",
+        "value": "61%",
+        "accept": ["0.61", "61 percent"]
+      },
+      "evidence": [
+        "world.fnd-tide-burst",
+        "world.cit-trace-tide-turn",
+        "world.blob-trace-tide-turn"
+      ],
+      "path": [
+        ["world.fnd-tide-burst", "cites", "world.cit-trace-tide-turn"],
+        ["world.cit-trace-tide-turn", "blob", "world.blob-trace-tide-turn"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["blob"],
+          "bodyIncludes": "\"cell_size_m\": 256",
+          "expect": ["world.blob-trace-tide-turn"]
+        },
+        {
+          "type": "body",
+          "record": "world.blob-trace-tide-turn",
+          "includes": "\"textures\": 0.61",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "30% is the share of a cell that changes when the tide falls, not a read share.",
+        "The Skiff harbor memory capture also puts textures first, but in megabytes of memory, not as a share of reads."
+      ],
+      "rivals": ["ports.blb-mem-capture"]
+    },
+    {
+      "id": "ambiguous-014",
+      "from": "ports-015",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["ambiguous-effort", "blob", "distractor"],
+      "question": "We need to cut memory in the harbor on Skiff. Which category was largest in the capture that showed its peak going over the memory budget?",
+      "answer": {
+        "kind": "value",
+        "value": "textures",
+        "accept": ["texture", "textures (3184 MB)"]
+      },
+      "evidence": [
+        "ports.fnd-mem-capture",
+        "ports.cit-mem-capture",
+        "ports.blb-mem-capture"
+      ],
+      "path": [
+        ["ports.fnd-mem-capture", "cites", "ports.cit-mem-capture"],
+        ["ports.cit-mem-capture", "blob", "ports.blb-mem-capture"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["blob"],
+          "bodyIncludes": "categories_mb",
+          "expect": ["ports.blb-mem-capture"]
+        },
+        {
+          "type": "body",
+          "record": "ports.blb-mem-capture",
+          "includes": "\"textures\": 3184",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The Finding says audio banks grew the most; growth is not size.",
+        "The streaming pool is the second largest at 2048 MB.",
+        "The streaming pool occupancy capture also records a memory peak, but only for the pool, and it does not split memory into categories."
+      ],
+      "rivals": ["world.blob-pool-occupancy"]
+    },
+    {
+      "id": "ambiguous-015",
+      "from": "netcode-003",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["ambiguous-effort", "lookup", "retraction", "distractor"],
+      "question": "I'm adding another component to the snapshot. How big is one player's snapshot for a single frame right now?",
+      "answer": {
+        "kind": "value",
+        "value": "38 KB",
+        "accept": ["38", "38 kilobytes"]
+      },
+      "evidence": ["netcode.fnd-snapshot", "netcode.fnd-noise"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "live": true,
+          "bodyIncludes": ["snapshot", "per frame"],
+          "expect": ["netcode.fnd-snapshot"]
+        },
+        {
+          "type": "body",
+          "record": "netcode.fnd-snapshot",
+          "includes": "38 KB per frame",
+          "expect": true
+        },
+        {
+          "type": "field",
+          "record": "netcode.fnd-noise",
+          "field": "standing",
+          "expect": "retracted"
+        }
+      ],
+      "traps": [
+        "A retracted Finding gives 14 KB per player; it measured save-game snapshots and was filed here by mistake.",
+        "About 600 KB is the whole 4-frame ring for four players, not one player's frame.",
+        "A full world snapshot save is 310 MB. That is a save file, not a per-frame snapshot."
+      ],
+      "rivals": ["world.fnd-save-snapshot-size"]
+    },
+    {
+      "id": "ambiguous-016",
+      "from": "tools-007",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["ambiguous-effort", "dead-evidence", "invalidation"],
+      "question": "Before I touch the nightly build settings: which accepted Decision still rests on a diagnosis of the flaky nightlies that turned out to be wrong?",
+      "answer": {
+        "kind": "record",
+        "value": "tools.dec-timeout"
+      },
+      "evidence": [
+        "tools.dec-timeout",
+        "tools.fnd-flaky-net",
+        "tools.fnd-flaky-oom"
+      ],
+      "path": [
+        ["tools.dec-timeout", "derives_from", "tools.fnd-flaky-net"],
+        ["tools.fnd-flaky-net", "invalidated_by", "tools.fnd-flaky-oom"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["finding"],
+          "where": {
+            "standing": "invalidated"
+          },
+          "titleIncludes": "nightly",
+          "expect": ["tools.fnd-flaky-net"]
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "accepted"
+          },
+          "derivesFrom": "tools.fnd-flaky-net"
+        }
+      ],
+      "traps": [
+        "The job cap is the real fix for the flaky builds, but it rests on the correct memory diagnosis.",
+        "The superseded cache keys rest on superseded or live records, not on a disproved Finding.",
+        "Other Efforts hold accepted Decisions that rest on dead evidence too, but none rests on a nightly-build diagnosis."
+      ],
+      "rivals": ["ports.dec-stream-block"]
+    },
+    {
+      "id": "ambiguous-017",
+      "from": "ports-017",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["ambiguous-effort", "dead-evidence", "invalidation"],
+      "question": "We chose the size of our tile reads on Skiff from a storage speed measurement. Which Finding showed that measurement was wrong?",
+      "answer": {
+        "kind": "record",
+        "value": "ports.fnd-sd-speed-2"
+      },
+      "evidence": [
+        "ports.dec-stream-block",
+        "ports.fnd-sd-speed",
+        "ports.fnd-sd-speed-2"
+      ],
+      "path": [
+        ["ports.dec-stream-block", "derives_from", "ports.fnd-sd-speed"],
+        ["ports.fnd-sd-speed", "invalidated_by", "ports.fnd-sd-speed-2"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["decision"],
+          "live": true,
+          "bodyIncludes": "in 2 MB blocks",
+          "expect": ["ports.dec-stream-block"]
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["decision"],
+          "live": true,
+          "restsOn": "invalidated",
+          "bodyIncludes": "read",
+          "expect": ["ports.dec-stream-block", "world.dec-save-version"]
+        },
+        {
+          "type": "edge",
+          "edge": [
+            "ports.dec-stream-block",
+            "derives_from",
+            "ports.fnd-sd-speed"
+          ],
+          "expect": true
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["finding"],
+          "invalidates": "ports.fnd-sd-speed"
+        }
+      ],
+      "traps": [
+        "The 2 MB read Decision is still accepted; nothing invalidated it directly, so reading only its state hides the problem.",
+        "A retail-unit trace also showed that a dev-kit streaming read figure was wrong, but the 2 MB read Decision does not rest on that figure.",
+        "The save version Decision also rests on a disproved Finding, but that Finding timed save upgrades, not storage speed."
+      ],
+      "rivals": ["world.fnd-io-trace-2", "world.dec-save-version"]
+    },
+    {
+      "id": "ambiguous-018",
+      "from": "world-026",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["ambiguous-effort", "invalidation", "distractor"],
+      "question": "Our December measurement of sustained streaming reads on Skiff turned out to be wrong. Which Finding showed it?",
+      "answer": {
+        "kind": "record",
+        "value": "world.fnd-io-trace-2"
+      },
+      "evidence": ["world.fnd-io-trace-1", "world.fnd-io-trace-2"],
+      "path": [
+        ["world.fnd-io-trace-1", "invalidated_by", "world.fnd-io-trace-2"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["finding"],
+          "where": {
+            "standing": "invalidated"
+          },
+          "bodyIncludes": "MB/s",
+          "expect": ["ports.fnd-sd-speed", "world.fnd-io-trace-1"]
+        },
+        {
+          "type": "field",
+          "record": "world.fnd-io-trace-1",
+          "field": "created_at",
+          "expect": "2025-12-08T10:00:00Z"
+        },
+        {
+          "type": "field",
+          "record": "ports.fnd-sd-speed",
+          "field": "created_at",
+          "expect": "2026-03-04T10:30:00Z"
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["finding"],
+          "invalidates": "world.fnd-io-trace-1"
+        }
+      ],
+      "traps": [
+        "The I/O budget constraint was superseded, not invalidated, and it is not a finding.",
+        "The microSD read measurement was wrong too, but it was taken in March, and the full-card test disproved it.",
+        "The Skiff beta retrospective mentions a December pipeline blob test; that tested pipeline blobs, not streaming reads."
+      ],
+      "rivals": ["ports.fnd-sd-speed-2", "ports.fnd-retro"]
+    },
+    {
+      "id": "ambiguous-019",
+      "from": "render-001",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["ambiguous-effort", "lookup", "current-state"],
+      "question": "We're adding a pass to the 120 Hz performance mode on Meridian. How many milliseconds of each frame may GPU work take?",
+      "answer": {
+        "kind": "value",
+        "value": "7.4",
+        "accept": ["7.4 ms"]
+      },
+      "evidence": ["render.con-120-2"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["constraint"],
+          "live": true,
+          "titleIncludes": "120 Hz",
+          "expect": ["render.con-120-2"]
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["constraint"],
+          "live": true,
+          "bodyIncludes": "120 Hz",
+          "expect": [
+            "ports.con-frame-2",
+            "render.con-120-2",
+            "render.con-budget-3"
+          ]
+        },
+        {
+          "type": "body",
+          "record": "render.con-120-2",
+          "includes": "Lantern GPU passes get 7.4 ms",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "8.3 ms is the whole 120 Hz frame, not the GPU share.",
+        "15.0 ms is the GPU share in Meridian's 60 Hz quality mode, in a Frame budget Constraint.",
+        "0.9 ms is the headroom left after the GPU share.",
+        "The ports Frame budget Constraint mentions the 120 Hz mode but gives it no budget; it says that budget belongs elsewhere."
+      ],
+      "rivals": ["ports.con-frame-2"]
+    },
+    {
+      "id": "ambiguous-020",
+      "from": "render-035",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["ambiguous-effort", "blob", "lifecycle"],
+      "question": "We're resizing the pool that overflowed at low tide. At its peak, how many pages did the trace behind that risk's evidence ask for?",
+      "answer": {
+        "kind": "value",
+        "value": "5912",
+        "accept": ["5,912"]
+      },
+      "evidence": [
+        "render.rsk-vsm-overflow",
+        "render.fnd-vsm-overflow",
+        "render.cit-vsm-pages",
+        "render.blb-vsm-pages"
+      ],
+      "path": [
+        ["render.rsk-vsm-overflow", "evidence", "render.fnd-vsm-overflow"],
+        ["render.fnd-vsm-overflow", "cites", "render.cit-vsm-pages"],
+        ["render.cit-vsm-pages", "blob", "render.blb-vsm-pages"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["risk"],
+          "titleIncludes": ["pool", "overflow"],
+          "expect": ["render.rsk-vsm-overflow"]
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["blob"],
+          "bodyIncludes": "peak_pages_requested",
+          "expect": ["render.blb-vsm-pages"]
+        },
+        {
+          "type": "body",
+          "record": "render.blb-vsm-pages",
+          "includes": "\"peak_pages_requested\": 5912",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "4,096 is the pool size, not the peak request.",
+        "The streaming pool Risk also came true, but it was a budget cut, not an overflow, and it has no page trace."
+      ],
+      "rivals": ["world.rsk-pool-cut"]
+    },
+    {
+      "id": "ambiguous-021",
+      "from": "ports-008",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["ambiguous-effort", "rejected-alternative"],
+      "question": "When we chose the upscaler for Skiff, which Decision's acceptance rejected the spatial upscaler?",
+      "answer": {
+        "kind": "record",
+        "value": "ports.dec-tern-skiff"
+      },
+      "evidence": ["ports.dec-skiff-spatial", "ports.dec-tern-skiff"],
+      "path": [
+        ["ports.dec-skiff-spatial", "rejected_by", "ports.dec-tern-skiff"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "rejected"
+          },
+          "titleIncludes": "spatial",
+          "expect": ["ports.dec-skiff-spatial"]
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["decision"],
+          "derivesFrom": "ports.iss-upscale-q",
+          "where": {
+            "state": "accepted"
+          }
+        },
+        {
+          "type": "edge",
+          "edge": [
+            "ports.dec-skiff-spatial",
+            "rejected_by",
+            "ports.dec-tern-skiff"
+          ],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The native 720p option was rejected by the same acceptance; it is a fellow loser, not the rejecter.",
+        "The answer names the render Decision \"Ship Tern as Lantern's only upscaler\" as its reason, but that render Decision did not reject the spatial option."
+      ],
+      "rivals": ["render.dec-tern"]
+    },
+    {
+      "id": "ambiguous-022",
+      "from": "render-048",
+      "tier": 2,
+      "hops": 2,
+      "categories": ["ambiguous-effort", "blocker"],
+      "question": "I'm taking over the open blocker about the caustics. A test found that one of the proposed fixes leaves the caustics ghosting. Which Decision is that?",
+      "answer": {
+        "kind": "record",
+        "value": "render.dec-caustic-clamp"
+      },
+      "evidence": [
+        "render.iss-caustic-flicker",
+        "render.dec-caustic-clamp",
+        "render.fnd-caustic-clamp-test"
+      ],
+      "path": [
+        ["render.iss-caustic-flicker", "supports", "render.dec-caustic-clamp"],
+        [
+          "render.dec-caustic-clamp",
+          "supports",
+          "render.fnd-caustic-clamp-test"
+        ]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["issue"],
+          "live": true,
+          "titleIncludes": "flicker",
+          "expect": ["render.iss-caustic-flicker"]
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "proposed"
+          },
+          "derivesFrom": "render.iss-caustic-flicker",
+          "expect": ["render.dec-caustic-clamp", "render.dec-caustic-seed"]
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["finding"],
+          "titleIncludes": "ghost",
+          "derivesFrom": "render.dec-caustic-clamp",
+          "expect": ["render.fnd-caustic-clamp-test"]
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["decision"],
+          "derivesFrom": "render.iss-caustic-flicker",
+          "bodyIncludes": "clamp"
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "proposed"
+          },
+          "derivesFrom": "ports.iss-blk-storm",
+          "expect": ["ports.dec-storm-30", "ports.dec-storm-cap"]
+        }
+      ],
+      "traps": [
+        "The tide-locked seed test found frozen caustics, not ghosting.",
+        "The open Skiff cert blocker about tide storms also has two proposed fixes and a test, but the test found a CPU saving, not ghosting.",
+        "A rejected Skiff Decision would have stepped caustics down a quality tier under GPU load. It was never a fix for the caustics blocker."
+      ],
+      "rivals": ["ports.dec-storm-cap", "ports.dec-dynres-tiers"]
+    },
+    {
+      "id": "ambiguous-023",
+      "from": "ports-006",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["ambiguous-effort", "supersession", "current-state"],
+      "question": "Which Constraint sets how much memory the game may use on Skiff today?",
+      "answer": {
+        "kind": "record",
+        "value": "ports.con-skiff-mem-8"
+      },
+      "evidence": ["ports.con-skiff-mem-9", "ports.con-skiff-mem-8"],
+      "path": [
+        ["ports.con-skiff-mem-9", "superseded_by", "ports.con-skiff-mem-8"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["constraint"],
+          "live": true,
+          "titleIncludes": "memory",
+          "bodyIncludes": "Skiff"
+        },
+        {
+          "type": "head",
+          "start": "ports.con-skiff-mem-9",
+          "expect": "ports.con-skiff-mem-8"
+        }
+      ],
+      "traps": [
+        "Both versions share the title Skiff memory budget; the 9 GB version was superseded.",
+        "The streaming pool budget (1.6 GB) is one system's share of the Skiff total, not the total."
+      ],
+      "rivals": ["world.con-pool-3"]
+    },
+    {
+      "id": "ambiguous-024",
+      "from": "world-028",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["ambiguous-effort", "rejected-alternative"],
+      "question": "We're thinking again about letting one machine run the tide and send the result to everyone else. Which Finding measured the cost that ruled that out last time?",
+      "answer": {
+        "kind": "record",
+        "value": "world.fnd-tide-host-bw"
+      },
+      "evidence": ["world.dec-tide-host", "world.fnd-tide-host-bw"],
+      "path": [["world.dec-tide-host", "supports", "world.fnd-tide-host-bw"]],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["decision"],
+          "titleIncludes": "tide height",
+          "expect": ["world.dec-tide-host"]
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["finding"],
+          "derivesFrom": "world.dec-tide-host"
+        }
+      ],
+      "traps": [
+        "The strict-float finding ruled out a different alternative.",
+        "The netcode Effort's host-authoritative spike Finding measures the client CPU saved by not running tides, not the bandwidth of streaming tide heights."
+      ],
+      "rivals": ["netcode.fnd-host-spike"]
+    }
+  ]
+}

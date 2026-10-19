@@ -11,22 +11,23 @@ Each question has a known answer and a stated path through the graph.
 
 ## Layout
 
-| Path                      | What it holds                                            |
-| ------------------------- | -------------------------------------------------------- |
-| `WORLD.md`                | The shared facts every Effort must agree on              |
-| `spec/<effort>.mjs`       | One Effort's history, as an ordered list of mutations    |
-| `questions/<effort>.json` | That Effort's questions and answers                      |
-| `questions/cross.json`    | Questions that need two or more Efforts                  |
-| `scripts/build.mjs`       | Replays every spec through the Proof writer              |
-| `scripts/check.mjs`       | Proves each answer against the built graph               |
-| `scripts/grade.mjs`       | Scores one run                                           |
-| `scripts/run.mjs`         | Runs one headless agent session per question             |
-| `scripts/task.mjs`        | The task text each session reads                         |
-| `scripts/compare.mjs`     | Compares two runs question by question                   |
-| `scripts/find-recall.mjs` | Checks offline whether `proof find` reaches the evidence |
-| `runs/`                   | Answers and costs from each pilot and full run           |
-| `.flatbread-proof/`       | The built graph, committed so runs need no build         |
-| `flatbread.config.js`     | Lets `flatbread proof …` read the graph from this folder |
+| Path                       | What it holds                                            |
+| -------------------------- | -------------------------------------------------------- |
+| `WORLD.md`                 | The shared facts every Effort must agree on              |
+| `spec/<effort>.mjs`        | One Effort's history, as an ordered list of mutations    |
+| `questions/<effort>.json`  | That Effort's questions and answers                      |
+| `questions/cross.json`     | Questions that need two or more Efforts                  |
+| `questions/ambiguous.json` | Questions that name no Effort, asked only on request     |
+| `scripts/build.mjs`        | Replays every spec through the Proof writer              |
+| `scripts/check.mjs`        | Proves each answer against the built graph               |
+| `scripts/grade.mjs`        | Scores one run                                           |
+| `scripts/run.mjs`          | Runs one headless agent session per question             |
+| `scripts/task.mjs`         | The task text each session reads                         |
+| `scripts/compare.mjs`      | Compares two runs question by question                   |
+| `scripts/find-recall.mjs`  | Checks offline whether `proof find` reaches the evidence |
+| `runs/`                    | Answers and costs from each pilot and full run           |
+| `.flatbread-proof/`        | The built graph, committed so runs need no build         |
+| `flatbread.config.js`      | Lets `flatbread proof …` read the graph from this folder |
 
 ## Build and check
 
@@ -160,6 +161,8 @@ Each question file holds one Effort's questions:
 | `checks`     | Machine checks that compute or confirm the answer               |
 | `traps`      | The wrong answers a careless reader gives, and why              |
 | `scoped`     | `true` when wording other than the title pins the Effort down   |
+| `from`       | In `ambiguous.json` only: the question it was rewritten from    |
+| `rivals`     | In `ambiguous.json` only: near-miss records in other Efforts    |
 
 ### Answer kinds
 
@@ -210,17 +213,21 @@ A check without `expect` must compute the answer itself. A `select` scans the qu
 `expect` must return exactly that value. `record`, `records`, and `count`
 answers need at least one computing check.
 
-| `type`       | Fields                                                                                             | Returns                                            |
-| ------------ | -------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `field`      | `record`, `field` (or `standing`)                                                                  | that frontmatter value                             |
-| `head`       | `start`                                                                                            | the newest version's key                           |
-| `chain`      | `start`                                                                                            | every version's key, oldest first                  |
-| `asof`       | `start`, `at`                                                                                      | the version current at `at`                        |
-| `select`     | `kinds`, `where`, `live`, `retracted`, `derivesFrom`, `restsOn`, `bodyIncludes`, `count`, `effort` | matching keys, or their count                      |
-| `efforts`    | `where`, `count`                                                                                   | matching Efforts' keys, or their count             |
-| `compaction` | `field`: `head`, `heads`, `stale`, `changes`, `changed`, `staleTargets`                            | the Effort's compaction state                      |
-| `body`       | `record`, `includes`, `afterExcerpt`                                                               | whether the text is present (and past the excerpt) |
-| `edge`       | `edge`                                                                                             | whether the edge exists                            |
+| `type`       | Fields                                                                                                                             | Returns                                            |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `field`      | `record`, `field` (or `standing`)                                                                                                  | that frontmatter value                             |
+| `head`       | `start`                                                                                                                            | the newest version's key                           |
+| `chain`      | `start`                                                                                                                            | every version's key, oldest first                  |
+| `asof`       | `start`, `at`                                                                                                                      | the version current at `at`                        |
+| `select`     | `kinds`, `where`, `live`, `retracted`, `derivesFrom`, `restsOn`, `invalidates`, `bodyIncludes`, `titleIncludes`, `count`, `effort` | matching keys, or their count                      |
+| `efforts`    | `where`, `count`                                                                                                                   | matching Efforts' keys, or their count             |
+| `compaction` | `field`: `head`, `heads`, `stale`, `changes`, `changed`, `staleTargets`                                                            | the Effort's compaction state                      |
+| `body`       | `record`, `includes`, `afterExcerpt`                                                                                               | whether the text is present (and past the excerpt) |
+| `edge`       | `edge`                                                                                                                             | whether the edge exists                            |
+
+`bodyIncludes` and `titleIncludes` take one phrase or a list, and a record
+must contain every phrase. `invalidates` keeps records that invalidate the
+named record.
 
 A record's **standing** is its state or status, or `live`, overridden by
 `retracted`, `superseded`, or `invalidated`. `select` with `live: true` keeps
@@ -329,6 +336,41 @@ A benchmark agent must never see `spec/`, `questions/`, or `keymap.json`.
    `questionSignTest` counts each question once, as a win for the side
    with more right answers over the runs, and is the stricter reading. The
    script warns when the run files record different `find_hash` values.
+
+**Ambiguous-Effort questions.** `questions/ambiguous.json` holds 24
+questions rewritten from tier 0-2 questions so that they name no Effort and
+use words several Efforts share, such as "shader cache", "the
+retrospective", "refraction", or "Skiff". Each names its source question in
+`from`. Each lists in `rivals` at least one record from another Effort that
+the wording also fits, and a trap says why that record is wrong. Checks over
+every Effort (`effort: "*"`) prove that only one record or value fits.
+`check.mjs` also refuses a question that names an Effort or one of its code
+names, or uses a platform word that mostly one Effort's records use, such
+as "handheld". It cannot prove that every other word in a question is
+shared, so a reader who knows the subject may still guess the Effort.
+
+No script asks these questions by default, so every default stays on the
+original 246: pass `--only ambiguous` to `run.mjs`, `grade.mjs`,
+`compare.mjs`, or `find-recall.mjs`, or `--only default,ambiguous` for both
+sets in one run, or name their ids with `--ids`. `check.mjs` always checks
+them.
+
+**Adversarial filler.** This build makes 30% of the filler reuse real
+subsystem names from the specs, such as Tern, VSM, and saltglass refraction:
+
+```bash
+node scripts/build.mjs --scale 10 --filler-overlap 0.3 --out <dir>
+```
+
+These records still link to no real record and measure only housekeeping,
+such as warning counts. The builder redraws any that would match a
+question's check or state one of its answers, so `check.mjs --graph <dir>`
+gives the same result as on the plain 10x graph. Filler outside that 30% is
+the same as in a plain build. The overlap records are the same on every
+build with the same fraction and the same question files. The redraws read
+every file in `questions/`, so editing any question can change them. The
+build prints a hash of those files; rebuild an adversarial graph after any
+question edit before you compare runs on it.
 
 Three rules shaped this protocol, each learned from a pilot below:
 
@@ -704,3 +746,24 @@ The largest reply grew by about 700 characters, to 7,360. That is close
 to 7,500 characters, the most this step allowed for the mean reply. A later
 change that adds passage lines should watch the largest reply, not only the
 mean.
+
+#### Questions that name no Effort, and filler that looks real
+
+The 24 ambiguous-Effort questions were frozen before `find` was run on
+them. With the cards above (same `find_hash`), the stripped set on the 10x
+graph gives:
+
+| Graph                       | Questions | Evidence in top 5 | Answer on a card | Right Effort first | Mean reply chars |
+| --------------------------- | --------- | ----------------- | ---------------- | ------------------ | ---------------- |
+| 10x                         | 24        | 96%               | 87%              | 88%                | 6,448            |
+| 10x, `--filler-overlap 0.3` | 24        | 96%               | 87%              | 92%                | 6,433            |
+| 10x, `--filler-overlap 0.3` | 246       | 80%               | 62% (gate PASS)  | 80%                | 6,326            |
+| 10x (from the table above)  | 246       | 81%               | 62%              | 81%                | 6,368            |
+
+Two things follow. First, search finds the right record even when the
+question names no Effort. These questions were rewritten from tier 0-2
+lookups, though, so they are easier than the full set, and they test
+`find` more than they test an agent. Second, filler that reuses real
+subsystem names cost the gate one point of evidence and no answers, so the
+10x result is not only a sign that filler is easy to tell apart. The paid
+runs (Runs A to C in the plan) still have to show that agents gain from it.

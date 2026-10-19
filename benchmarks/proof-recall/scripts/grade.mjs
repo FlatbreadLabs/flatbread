@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 // Scores one benchmark run.
 //
-//   node scripts/grade.mjs runs/<name>.json
+//   node scripts/grade.mjs runs/<name>.json [--only ambiguous]
+//
+// It scores the original 246 questions that the run answered. `--only`
+// names the sets to score instead, as run.mjs takes them: `ambiguous` for
+// the ambiguous-Effort set alone, `default,ambiguous` for both.
 //
 // A run file holds one entry per question id:
 //   { "run": { "strategy": "brief", "model": "..." },
@@ -115,12 +119,15 @@ function summarize(rows, by) {
 }
 
 async function main() {
-  const runPath = process.argv[2];
-  if (!runPath) throw new Error('usage: grade.mjs <run.json>');
+  const argv = process.argv.slice(2);
+  const at = argv.indexOf('--only');
+  const only = at >= 0 ? argv.splice(at, 2)[1].split(',') : [];
+  const [runPath] = argv;
+  if (!runPath) throw new Error('usage: grade.mjs <run.json> [--only sets]');
   const run = JSON.parse(await readFile(resolve(runPath), 'utf8'));
   const graph = await loadGraph(join(BENCH, '.flatbread-proof'));
   const rows = [];
-  for (const set of await loadQuestions())
+  for (const set of await loadQuestions(only))
     for (const q of set.questions) {
       const entry = run.answers?.[q.id];
       if (!entry) continue;

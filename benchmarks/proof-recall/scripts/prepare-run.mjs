@@ -10,7 +10,7 @@
 import { cp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { loadQuestions } from './check.mjs';
+import { pickQuestions } from './check.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // The form an answer takes, never its content.
@@ -24,12 +24,14 @@ export const FORMATS = {
 };
 const REPO = resolve(BENCH, '..', '..');
 
-/** Questions as an agent may see them: text and answer form only. */
+/**
+ * Questions as an agent may see them: text and answer form only. The
+ * default is the original 246; `only` names sets (`ambiguous`, or
+ * `default,ambiguous` for both), and `ids` finds questions in any set.
+ */
 export async function publicQuestions({ only = [], ids = [] } = {}) {
-  const wanted = new Set(ids);
-  return (await loadQuestions(only))
+  return (await pickQuestions({ only, ids }))
     .flatMap((set) => set.questions)
-    .filter((q) => !wanted.size || wanted.has(q.id))
     .map((q) => ({
       id: q.id,
       question: q.question,

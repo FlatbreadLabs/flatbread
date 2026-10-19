@@ -2,8 +2,13 @@
 // Compares two runs over the questions both answered, pair by pair.
 //
 //   node scripts/compare.mjs runs/<a>.json runs/<b>.json [--skip id1,id2]
+//        [--only ambiguous]
 //   node scripts/compare.mjs runs/a-r1.json,runs/a-r2.json \
 //        runs/b-r1.json,runs/b-r2.json
+//
+// It compares the original 246 questions. `--only` names the sets to compare
+// instead, as run.mjs takes them, so a run that also asked the
+// ambiguous-Effort set reports that set apart: `--only ambiguous`.
 //
 // With several files on each side, the runs are pooled: run i of side A is
 // paired with run i of side B, and each question in each pair of runs is one
@@ -52,10 +57,12 @@ async function main() {
   const argv = process.argv.slice(2);
   const at = argv.indexOf('--skip');
   const skip = new Set(at >= 0 ? argv.splice(at, 2)[1].split(',') : []);
+  const atOnly = argv.indexOf('--only');
+  const only = atOnly >= 0 ? argv.splice(atOnly, 2)[1].split(',') : [];
   const [pathA, pathB] = argv;
   if (!pathB)
     throw new Error(
-      'usage: compare.mjs <run-a.json>[,more] <run-b.json>[,more] [--skip ids]'
+      'usage: compare.mjs <run-a.json>[,more] <run-b.json>[,more] [--skip ids] [--only sets]'
     );
   const load = (paths) =>
     Promise.all(
@@ -86,7 +93,7 @@ async function main() {
       ? runs.map((run, i) => run.run?.name ?? paths.split(',')[i]).join(',')
       : runs[0].run?.name ?? paths;
   const graph = await loadGraph(join(BENCH, '.flatbread-proof'));
-  const sets = await loadQuestions();
+  const sets = await loadQuestions(only);
   const rows = [];
   for (const [i, a] of runsA.entries())
     for (const set of sets)

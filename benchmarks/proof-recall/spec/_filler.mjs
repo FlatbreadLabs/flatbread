@@ -8,6 +8,16 @@
 // the Effort's head compaction, which therefore covers it. A seeded random
 // generator makes the output identical on every build.
 //
+// `build.mjs --filler-overlap <fraction>` makes filler adversarial. That
+// share of filler threads and records take a real subsystem name from the
+// Effort's own spec (Tern, VSM, saltglass refraction) in place of a made-up
+// one. They still link to no real record, and they measure only routine
+// things no question asks about, such as warning counts. Their numbers come
+// from a second seeded generator, so the other filler records stay exactly
+// as in a plain build. build.mjs redraws any overlap draft that collides
+// with a question, so the output is fixed for a given fraction and a given
+// set of question files; editing any question can change it.
+//
 // The leading underscore keeps `loadSpecs` from reading this file as a spec.
 
 const PEOPLE = {
@@ -108,6 +118,74 @@ const SUBSYSTEMS = {
   ],
 };
 
+// Real subsystem names that overlap filler reuses. Each must appear in its
+// Effort's spec; `build.mjs` checks that.
+const OVERLAP_SUBSYSTEMS = {
+  render: [
+    'Tern',
+    'VSM',
+    'saltglass refraction',
+    'caustics',
+    'SDF GI',
+    'Brine curve',
+    'visibility buffer',
+    'meshlets',
+  ],
+  world: [
+    'tide simulation',
+    'streaming pool',
+    'Gull VM',
+    'fibers',
+    'Kelp',
+    'delta saves',
+    'archetype tables',
+    'hot reload',
+  ],
+  ports: [
+    'pipeline cache',
+    'dynamic resolution',
+    'microSD',
+    'fast travel',
+    'autosave',
+    'Kelp',
+    'Tern',
+  ],
+  tools: [
+    'shader compile cache',
+    'cache key',
+    'remote execution',
+    'nightly builds',
+    'fetch timeout',
+    'build farm',
+  ],
+  netcode: [
+    'rollback window',
+    'host-authoritative sync',
+    'lockstep',
+    'desync',
+    'input delay',
+    'tide simulation',
+  ],
+};
+// What overlap filler measures and asks: housekeeping that no question asks
+// about. `build.mjs` refuses any of these that a spec or question uses.
+const OVERLAP_METRICS = [
+  ['warning count', '', 1, 60],
+  ['log lines per minute', '', 5, 900],
+  ['unit test time', 's', 2, 120],
+  ['config parse time', 'ms', 1, 90],
+  ['symbol upload time', 's', 3, 200],
+  ['console command count', '', 2, 80],
+];
+const OVERLAP_QUESTIONS = [
+  'should log less',
+  'needs a clearer error message',
+  'should move its settings to the new config format',
+  'should drop its old console commands',
+  'needs its own unit test target',
+  'should print fewer warnings',
+];
+
 const PLATFORMS = ['PC', 'Meridian', 'Skiff'];
 const METRICS = [
   ['load time', 'ms', 20, 900],
@@ -175,10 +253,35 @@ export function fillerTerms(effortKey) {
 }
 
 /**
+ * The words overlap filler uses, for build.mjs to check: `real` names must
+ * appear in the Effort's spec; `housekeeping` phrases must appear in no spec
+ * or question.
+ */
+export function overlapTerms(effortKey) {
+  return {
+    real: OVERLAP_SUBSYSTEMS[effortKey] ?? [],
+    housekeeping: [
+      ...OVERLAP_METRICS.map(([metric]) => metric),
+      ...OVERLAP_QUESTIONS,
+    ],
+  };
+}
+
+/**
  * Filler events for one spec, so the Effort ends with about `scale` times
  * its own records. Returns events with `at` and `key` like a spec's own.
+ *
+ * With `overlap` above 0, that share of filler threads and records reuse a
+ * real subsystem name (see the header). `collides(event)` is true when an
+ * overlap event would match a question's check or state one of its
+ * answers; such an item draws new words, and after five tries falls back to
+ * plain filler, so overlap filler never changes an answer.
  */
-export function fillerEvents(spec, scale) {
+export function fillerEvents(
+  spec,
+  scale,
+  { overlap = 0, collides = () => false } = {}
+) {
   if (scale <= 1) return [];
   const subsystems = SUBSYSTEMS[spec.key];
   const people = PEOPLE[spec.key];
@@ -193,6 +296,41 @@ export function fillerEvents(spec, scale) {
     6 * 3600e3;
   const rand = random(`filler:${spec.key}`);
   const pick = (list) => list[Math.floor(rand() * list.length)];
+  // Overlap draws come from their own stream, so they never shift `rand`.
+  const overlapRand = random(`overlap:${spec.key}`);
+  const overlapPick = (list) => list[Math.floor(overlapRand() * list.length)];
+  const realNames = OVERLAP_SUBSYSTEMS[spec.key] ?? [];
+  if (overlap > 0 && !realNames.length)
+    throw new Error(`No overlap vocabulary for ${spec.key}`);
+  const measure = (lo, hi, draw) =>
+    +(lo + draw() * (hi - lo)).toFixed(lo < 1 ? 1 : 0);
+  /**
+   * Candidate words for one filler item (subsystem, metric, value, and
+   * question), best first. An item outside the overlap share gets only its
+   * plain words; one inside gets five drafts with real names and
+   * housekeeping metrics, then its plain words as the last resort.
+   */
+  const overlapWords = (plain) => {
+    if (!(overlap > 0) || overlapRand() >= overlap) return [plain];
+    const tries = [];
+    for (let i = 0; i < 5; i++) {
+      const [metric, unit, lo, hi] = overlapPick(OVERLAP_METRICS);
+      tries.push({
+        sub: overlapPick(realNames),
+        metric,
+        unit,
+        value: measure(lo, hi, overlapRand),
+        question: overlapPick(OVERLAP_QUESTIONS),
+      });
+    }
+    return [...tries, plain];
+  };
+  const firstClean = (options, render) =>
+    options.find(
+      (words, i) =>
+        i === options.length - 1 ||
+        !render(words).some((event) => collides(event))
+    );
   const at = (ms) => new Date(Math.floor(ms / 60e3) * 60e3).toISOString();
   const events = [];
   let n = 0;
@@ -209,52 +347,59 @@ export function fillerEvents(spec, scale) {
       // A small thread: a question, the measurement that answers it, and the
       // accepted Decision that closes it. Its links stay inside the thread.
       const question = pick(QUESTIONS);
+      const [metric, unit, lo, hi] = pick(METRICS);
+      const value = measure(lo, hi, rand);
+      const verdict = pick(VERDICTS);
+      const doIt = rand() < 0.5;
+      const cheap = rand() < 0.5;
+      const followup = pick(FOLLOWUPS);
       const issue = `fill-iss-${id}`;
       const finding = `fill-fnd-${id}`;
       const decision = `fill-dec-${id}`;
-      const [metric, unit, lo, hi] = pick(METRICS);
-      const value = +(lo + rand() * (hi - lo)).toFixed(lo < 1 ? 1 : 0);
+      const render = (w) => {
+        const amount = `${w.value}${w.unit ? ` ${w.unit}` : ''}`;
+        return [
+          {
+            at: at(time),
+            key: issue,
+            type: 'WriteIssue',
+            kind: 'question',
+            title: `Whether the ${w.sub} ${w.question} (${id})`,
+            body: `${person} asked whether the ${w.sub} ${w.question}. It came up while looking at build ${build} on ${platform}.`,
+            created_by: person,
+          },
+          {
+            at: at(time + 3600e3),
+            key: finding,
+            type: 'WriteFinding',
+            kind: 'measurement',
+            title: `${capitalize(w.sub)} ${
+              w.metric
+            } is ${amount} on ${platform} (${id})`,
+            body: `${person} measured the ${w.sub} ${w.metric} on ${platform}, build ${build}: ${amount}. That is ${verdict}.`,
+            derives_from: [issue],
+            created_by: person,
+          },
+          {
+            at: at(time + 2 * 3600e3),
+            key: decision,
+            type: 'WriteDecision',
+            title: `${capitalize(w.sub)}: ${
+              doIt ? 'do it' : 'leave it as is'
+            } (${id})`,
+            body: `The ${w.sub} ${
+              w.metric
+            } is ${amount} on ${platform}, so the change is ${
+              cheap ? 'cheap enough to make now' : 'not worth making this year'
+            }. ${followup}`,
+            derives_from: [issue, finding],
+            created_by: person,
+          },
+        ];
+      };
+      const plain = { sub, question, metric, unit, value };
       events.push(
-        {
-          at: at(time),
-          key: issue,
-          type: 'WriteIssue',
-          kind: 'question',
-          title: `Whether the ${sub} ${question} (${id})`,
-          body: `${person} asked whether the ${sub} ${question}. It came up while looking at build ${build} on ${platform}.`,
-          created_by: person,
-        },
-        {
-          at: at(time + 3600e3),
-          key: finding,
-          type: 'WriteFinding',
-          kind: 'measurement',
-          title: `${capitalize(sub)} ${metric} is ${value}${
-            unit ? ` ${unit}` : ''
-          } on ${platform} (${id})`,
-          body: `${person} measured the ${sub} ${metric} on ${platform}, build ${build}: ${value}${
-            unit ? ` ${unit}` : ''
-          }. That is ${pick(VERDICTS)}.`,
-          derives_from: [issue],
-          created_by: person,
-        },
-        {
-          at: at(time + 2 * 3600e3),
-          key: decision,
-          type: 'WriteDecision',
-          title: `${capitalize(sub)}: ${
-            rand() < 0.5 ? 'do it' : 'leave it as is'
-          } (${id})`,
-          body: `The ${sub} ${metric} is ${value}${
-            unit ? ` ${unit}` : ''
-          } on ${platform}, so the change is ${
-            rand() < 0.5
-              ? 'cheap enough to make now'
-              : 'not worth making this year'
-          }. ${pick(FOLLOWUPS)}`,
-          derives_from: [issue, finding],
-          created_by: person,
-        },
+        ...render(firstClean(overlapWords(plain), render)),
         {
           at: at(time + 3 * 3600e3),
           type: 'AcceptDecision',
@@ -270,36 +415,47 @@ export function fillerEvents(spec, scale) {
       );
       budget -= 3;
     } else if (roll < 0.4) {
-      events.push({
-        at: at(time),
-        key: `fill-cit-${id}`,
-        type: 'WriteCitation',
-        title: `${capitalize(sub)} capture, build ${build} (${id})`,
-        body: `https://perf.tidewater.example/${spec.key}/${sub.replace(
-          /\W+/g,
-          '-'
-        )}/${build}`,
-        role: 'evidence',
-        created_by: person,
-      });
+      const render = (w) => [
+        {
+          at: at(time),
+          key: `fill-cit-${id}`,
+          type: 'WriteCitation',
+          title: `${capitalize(w.sub)} capture, build ${build} (${id})`,
+          body: `https://perf.tidewater.example/${spec.key}/${w.sub.replace(
+            /\W+/g,
+            '-'
+          )}/${build}`,
+          role: 'evidence',
+          created_by: person,
+        },
+      ];
+      events.push(...render(firstClean(overlapWords({ sub }), render)));
       budget -= 1;
     } else {
       const [metric, unit, lo, hi] = pick(METRICS);
-      const value = +(lo + rand() * (hi - lo)).toFixed(lo < 1 ? 1 : 0);
+      const value = measure(lo, hi, rand);
       const runs = 3 + Math.floor(rand() * 8);
-      events.push({
-        at: at(time),
-        key: `fill-fnd-${id}`,
-        type: 'WriteFinding',
-        kind: 'measurement',
-        title: `${capitalize(
-          sub
-        )} ${metric} on ${platform}, build ${build} (${id})`,
-        body: `${person} measured the ${sub} ${metric} on ${platform}, build ${build}, over ${runs} runs: ${value}${
-          unit ? ` ${unit}` : ''
-        }. That is ${pick(VERDICTS)}. ${pick(FOLLOWUPS)}`,
-        created_by: person,
-      });
+      const verdict = pick(VERDICTS);
+      const followup = pick(FOLLOWUPS);
+      const render = (w) => [
+        {
+          at: at(time),
+          key: `fill-fnd-${id}`,
+          type: 'WriteFinding',
+          kind: 'measurement',
+          title: `${capitalize(w.sub)} ${
+            w.metric
+          } on ${platform}, build ${build} (${id})`,
+          body: `${person} measured the ${w.sub} ${
+            w.metric
+          } on ${platform}, build ${build}, over ${runs} runs: ${w.value}${
+            w.unit ? ` ${w.unit}` : ''
+          }. That is ${verdict}. ${followup}`,
+          created_by: person,
+        },
+      ];
+      const plain = { sub, metric, unit, value };
+      events.push(...render(firstClean(overlapWords(plain), render)));
       budget -= 1;
     }
   }

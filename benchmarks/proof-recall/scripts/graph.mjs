@@ -230,7 +230,9 @@ function compactionState(graph, effortId) {
  */
 export function runCheck(graph, effort, check) {
   const keyOf = (rec) => graph.keyById.get(rec.id);
-  // Only Effort-wide checks need it; cross-Effort files name `check.effort`.
+  // Only Effort-wide checks need it. Files that span Efforts (`cross`,
+  // `ambiguous`) have no Effort of their own, so their checks name
+  // `check.effort` and qualify every key as `<effort>.<key>`.
   const effortId = () => idFor(graph, check.effort ?? effort, 'effort');
   switch (check.type) {
     case 'field': {
@@ -292,9 +294,23 @@ export function runCheck(graph, effort, check) {
             return support && list(check.restsOn).includes(standing(support));
           })
         );
-      if (check.bodyIncludes)
+      if (check.invalidates) {
+        const target = idFor(graph, effort, check.invalidates);
         recs = recs.filter((rec) =>
-          rec.body.toLowerCase().includes(check.bodyIncludes.toLowerCase())
+          list(rec.frontmatter.invalidates).includes(target)
+        );
+      }
+      // Each text filter takes one phrase or a list; a record must contain
+      // every phrase, ignoring case.
+      const contains = (text, phrases) =>
+        list(phrases).every((p) =>
+          text.toLowerCase().includes(p.toLowerCase())
+        );
+      if (check.bodyIncludes)
+        recs = recs.filter((rec) => contains(rec.body, check.bodyIncludes));
+      if (check.titleIncludes)
+        recs = recs.filter((rec) =>
+          contains(String(rec.frontmatter.title ?? ''), check.titleIncludes)
         );
       const keys = recs.map(keyOf).sort();
       return check.count ? keys.length : keys;
