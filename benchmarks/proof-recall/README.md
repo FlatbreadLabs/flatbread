@@ -23,6 +23,7 @@ Each question has a known answer and a stated path through the graph.
 | `scripts/run.mjs`         | Runs one headless agent session per question             |
 | `scripts/task.mjs`        | The task text each session reads                         |
 | `scripts/compare.mjs`     | Compares two runs question by question                   |
+| `scripts/find-recall.mjs` | Checks offline whether `proof find` reaches the evidence |
 | `runs/`                   | Answers and costs from each pilot and full run           |
 | `.flatbread-proof/`       | The built graph, committed so runs need no build         |
 | `flatbread.config.js`     | Lets `flatbread proof …` read the graph from this folder |
@@ -251,17 +252,47 @@ A benchmark agent must never see `spec/`, `questions/`, or `keymap.json`.
 
 1. Build the workspace (`pnpm build` at the repository root), so the
    `flatbread` binary exists.
-2. Run the benchmark:
+2. Before a paid run that tests `proof find`, run the free offline gate:
+   `node scripts/find-recall.mjs --graph <x10 build> [--out <json>]`.
+   The gate verdict that counts is the one on the 10x graph; with no
+   `--graph` the script checks the committed 1x graph and says so. It asks
+   the real `proof find` every question three ways: the raw text with
+   `--all`; the text with Effort titles, the words that name an Effort right
+   before "Effort" (as in "the co-op netcode Effort"), the code names
+   Kestrel and Lantern, and the platform names removed, with `--all`; and
+   the raw text with `--effort` set to the question's own Effort. Topic
+   words that an Effort title also uses, such as "build farm", stay in the
+   stripped text by design. The plan's third set, queries taken from pilot
+   transcripts, does not exist yet, because no pilot ran `proof find`; the
+   scoped set stands in for it.
+
+   For each query the script records whether a top-5 hit, or the version it
+   matched, is an evidence or answer record; whether the answer appears on
+   the cards; and whether the right Effort ranks first. A value answer
+   counts only as a whole token, never as its number without its unit
+   ("61" for "61 MB/s"), and one that matches more than 10% of the
+   other questions' cards (such as "2" or "accepted", which dates, counts,
+   and standings print everywhere) is set aside, since a card shows it by
+   chance. The script prints a table and writes per-question rows to
+   `--out` (default `runs/find-recall.json`), with `find_hash`, a hash of
+   the `find` source. The gate passes when, on the stripped set, the
+   evidence is in the top 5 for at least 75% of questions and the answer is
+   on a card for at least 60% of those it applies to; if it fails, do not
+   pay for sessions.
+
+3. Run the benchmark:
 
    ```bash
    node scripts/run.mjs /tmp/recall --name <run> --model haiku --jobs 12
    ```
 
    `run.mjs` gives every question its own folder and its own fresh,
-   headless `claude -p` session, once per strategy (`brief` first, or
-   no `brief`). Each folder holds the graph without the key map, the
-   config, a `./flatbread` wrapper, `TASK.md`, and, afterwards, the
-   agent's `answer.json` and `transcript.jsonl`. Sessions get only the
+   headless `claude -p` session, once per strategy. `--strategies` picks
+   them from `brief` (start from `proof brief`), `nobrief`, and `find`
+   (start from `proof find`); the default is `brief,nobrief`. Each folder
+   holds the graph without the key map, the config, a `./flatbread`
+   wrapper, `TASK.md`, and, afterwards, the agent's `answer.json` and
+   `transcript.jsonl`. Sessions get only the
    Bash, Read, and Write tools, no MCP servers, and no settings files.
    Runs share one read-only copy of each built graph and one
    `flatbread proof serve` process, both under
@@ -274,15 +305,28 @@ A benchmark agent must never see `spec/`, `questions/`, or `keymap.json`.
    `--no-serve` makes reads run locally.
    Keep the work folder outside the repository. A rerun skips finished
    sessions. When every session ends, `run.mjs` writes
-   `runs/<run>-brief.json` and `runs/<run>-nobrief.json`, taking tokens
-   and tool calls from the transcripts.
+   `runs/<run>-<strategy>.json` for each strategy, taking tokens and tool
+   calls from the transcripts. Each run file records the same `find_hash`
+   as the gate, so you can check that both used the same search.
 
-3. Score each run with `node scripts/grade.mjs runs/<run>-brief.json`.
-4. Compare the two strategies question by question with
+4. Score each run with `node scripts/grade.mjs runs/<run>-brief.json`.
+5. Compare two strategies question by question with
    `node scripts/compare.mjs runs/<run>-brief.json runs/<run>-nobrief.json`.
    It reports both scores, the questions only one got right, a sign test
    on those, and read tokens, which leave out each session's fixed first
    turn.
+6. To pool repeated runs, give each side a comma-separated list of run
+   files, in the same order:
+   `node scripts/compare.mjs runs/r1-find.json,runs/r2-find.json runs/r1-nobrief.json,runs/r2-nobrief.json`.
+   Run i of one side is paired with run i of the other, and each question
+   in each pair is one row, named `<id>#<i>` in the lists of one-side wins.
+   `signTestP` counts every disagreement across all the runs. That treats
+   repeats as independent, which holds only for separate runs of fresh
+   sessions, so the script refuses a file listed twice; and it says how
+   sure we can be about these questions, not about new ones.
+   `questionSignTest` counts each question once, as a win for the side
+   with more right answers over the runs, and is the stricter reading. The
+   script warns when the run files record different `find_hash` values.
 
 Three rules shaped this protocol, each learned from a pilot below:
 
@@ -535,3 +579,35 @@ Next steps, in order:
    graph. Give-ups, not wrong answers, are what grew.
 2. Look at the questions `brief` agents gave up on, to see whether the
    summary steers agents away from records they should read.
+
+### The first offline gate for `proof find`
+
+`proof find` now exists, and `scripts/find-recall.mjs` checks it for free
+before any paid run. On the 10x graph, with Effort titles and platform
+names removed from each question:
+
+| Check                                   | Result           | Bar |
+| --------------------------------------- | ---------------- | --- |
+| An evidence record is in the top 5 hits | 81% (200 of 246) | 75% |
+| The answer itself appears on a card     | 56% (102 of 182) | 60% |
+| The right Effort is ranked first        | 81%              |     |
+
+The gate fails on the second check, so no paid run tested `find` yet. The
+1x graph gives the same numbers within a point, which fits the worry that
+filler is easy to tell apart from real records.
+
+Where cards miss the answer:
+
+- **Blob payloads (22%).** `find` reaches the record every time (100%),
+  but the value sits in the attached payload, which the card does not quote.
+- **Aggregates (24%) and lifecycle (46%).** These ask for counts or states
+  across many records, which a search cannot give.
+- **Retraction (40%).** `find` leaves retracted records out by default.
+
+Next steps, in order:
+
+1. Quote the matching passage of a linked Blob payload on the card, and
+   rerun the gate.
+2. Decide whether counting and lifecycle questions need their own read,
+   such as the `proof state` view the design review proposed, instead of
+   search.

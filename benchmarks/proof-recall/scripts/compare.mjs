@@ -2,7 +2,18 @@
 // Compares two runs over the questions both answered, pair by pair.
 //
 //   node scripts/compare.mjs runs/<a>.json runs/<b>.json [--skip id1,id2]
+//   node scripts/compare.mjs runs/a-r1.json,runs/a-r2.json \
+//        runs/b-r1.json,runs/b-r2.json
 //
+// With several files on each side, the runs are pooled: run i of side A is
+// paired with run i of side B, and each question in each pair of runs is one
+// row, named `<id>#<i>` in the lists of questions only one side got right.
+// `signTestP` then counts every disagreement across the runs. That is sound
+// only when each file is its own run of fresh sessions, so the script refuses
+// a file listed twice, and it speaks only for these questions. To ask whether
+// the gap would hold on new questions, `questionSignTest` counts each
+// question once: a win for the side with more right answers over the runs.
+// If the run files record different `find_hash` values, a warning says so.
 // Read tokens leave out each session's first turn (`fixed_tokens`), which is
 // the same task and system prompt in both runs. A sign test on the questions
 // that only one run got right says how likely the accuracy gap is by chance.
@@ -44,35 +55,67 @@ async function main() {
   const [pathA, pathB] = argv;
   if (!pathB)
     throw new Error(
-      'usage: compare.mjs <run-a.json> <run-b.json> [--skip ids]'
+      'usage: compare.mjs <run-a.json>[,more] <run-b.json>[,more] [--skip ids]'
     );
-  const [a, b] = await Promise.all(
-    [pathA, pathB].map(async (p) =>
-      JSON.parse(await readFile(resolve(p), 'utf8'))
-    )
+  const load = (paths) =>
+    Promise.all(
+      paths
+        .split(',')
+        .map(async (p) => JSON.parse(await readFile(resolve(p), 'utf8')))
+    );
+  const files = [...pathA.split(','), ...pathB.split(',')].map((p) =>
+    resolve(p)
   );
+  if (new Set(files).size !== files.length)
+    throw new Error('Each run file may appear only once');
+  const [runsA, runsB] = await Promise.all([load(pathA), load(pathB)]);
+  if (runsA.length !== runsB.length)
+    throw new Error('Give each side the same number of run files');
+  const hashes = new Set(
+    [...runsA, ...runsB].map((run) => run.run?.find_hash).filter(Boolean)
+  );
+  if (hashes.size > 1)
+    console.warn(
+      `Warning: the run files used different proof find code: ${[
+        ...hashes,
+      ].join(', ')}`
+    );
+  const pooled = runsA.length > 1;
+  const name = (runs, paths) =>
+    pooled
+      ? runs.map((run, i) => run.run?.name ?? paths.split(',')[i]).join(',')
+      : runs[0].run?.name ?? paths;
   const graph = await loadGraph(join(BENCH, '.flatbread-proof'));
+  const sets = await loadQuestions();
   const rows = [];
-  for (const set of await loadQuestions())
-    for (const q of set.questions) {
-      const x = a.answers?.[q.id];
-      const y = b.answers?.[q.id];
-      if (!x || !y || skip.has(q.id)) continue;
-      rows.push({
-        id: q.id,
-        tier: q.tier,
-        a: score(graph, q, set.effort, x.answer),
-        b: score(graph, q, set.effort, y.answer),
-        readA: x.tokens - (x.fixed_tokens ?? 0),
-        readB: y.tokens - (y.fixed_tokens ?? 0),
-        toolsA: x.tool_calls,
-        toolsB: y.tool_calls,
-      });
-    }
+  for (const [i, a] of runsA.entries())
+    for (const set of sets)
+      for (const q of set.questions) {
+        const x = a.answers?.[q.id];
+        const y = runsB[i].answers?.[q.id];
+        if (!x || !y || skip.has(q.id)) continue;
+        rows.push({
+          id: pooled ? `${q.id}#${i + 1}` : q.id,
+          question: q.id,
+          tier: q.tier,
+          a: score(graph, q, set.effort, x.answer),
+          b: score(graph, q, set.effort, y.answer),
+          readA: x.tokens - (x.fixed_tokens ?? 0),
+          readB: y.tokens - (y.fixed_tokens ?? 0),
+          toolsA: x.tool_calls,
+          toolsB: y.tool_calls,
+        });
+      }
   if (!rows.length) throw new Error('The runs share no questions');
   const onlyA = rows.filter((r) => r.a === 1 && r.b < 1).map((r) => r.id);
   const onlyB = rows.filter((r) => r.b === 1 && r.a < 1).map((r) => r.id);
   const total = (key) => +rows.reduce((n, r) => n + r[key], 0).toFixed(2);
+  // Per question, the sum over runs of A's score minus B's.
+  const margin = new Map();
+  for (const r of rows)
+    margin.set(r.question, (margin.get(r.question) ?? 0) + r.a - r.b);
+  const questionWins = (sign) =>
+    [...margin.values()].filter((m) => Math.sign(m) === sign).length;
   const byTier = {};
   for (const r of rows) {
     const t = (byTier[`tier-${r.tier}`] ??= { n: 0, a: 0, b: 0 });
@@ -83,14 +126,24 @@ async function main() {
   console.log(
     JSON.stringify(
       {
-        a: a.run?.name ?? pathA,
-        b: b.run?.name ?? pathB,
+        a: name(runsA, pathA),
+        b: name(runsB, pathB),
+        ...(pooled ? { runs: runsA.length } : {}),
         questions: rows.length,
         correct: { a: total('a'), b: total('b') },
         byTier,
         onlyA,
         onlyB,
         signTestP: +signTest(onlyA.length, onlyB.length).toFixed(4),
+        ...(pooled
+          ? {
+              questionSignTest: {
+                a: questionWins(1),
+                b: questionWins(-1),
+                p: +signTest(questionWins(1), questionWins(-1)).toFixed(4),
+              },
+            }
+          : {}),
         readTokens: {
           a: summary(rows.map((r) => r.readA)),
           b: summary(rows.map((r) => r.readB)),

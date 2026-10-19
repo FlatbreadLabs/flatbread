@@ -9,9 +9,27 @@
 // Each folder holds the agent's `answer.json`: { "answer": ... }. Transcripts
 // are Claude Code agent logs or `claude -p --output-format stream-json`
 // output (JSON lines); each assistant turn carries usage.
+import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+// The `proof find` source: its tokenizer and BM25 weights.
+const FIND_SOURCE = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../../packages/flatbread/src/proof/find.ts'
+);
+
+/**
+ * A sha256 of the `proof find` source, so a run file and the offline gate
+ * can show they used the same search. It hashes the source, not the build,
+ * so rebuild after any change to it.
+ */
+export async function findHash() {
+  return createHash('sha256')
+    .update(await readFile(FIND_SOURCE))
+    .digest('hex');
+}
 
 /**
  * `context_tokens` counts what entered the context once (new input, cache
@@ -59,8 +77,11 @@ export async function sessionCost(transcriptPath) {
   return { ...cost, models: [...models] };
 }
 
-/** Reads each session's answer and cost, and writes one run file. */
-export async function collect(manifest, name, outPath) {
+/**
+ * Reads each session's answer and cost, and writes one run file. `about`
+ * adds fields to the file's `run` header, such as `find_hash`.
+ */
+export async function collect(manifest, name, outPath, about = {}) {
   const answers = {};
   const models = new Set();
   for (const session of manifest) {
@@ -88,6 +109,7 @@ export async function collect(manifest, name, outPath) {
       name,
       protocol: 'one fresh session per question',
       models: [...models],
+      ...about,
     },
     answers,
   };
