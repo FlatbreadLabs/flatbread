@@ -17,7 +17,7 @@ Supersede keeps both records. Invalidate adds a Finding that says a target was w
 
 ## Decision
 
-Add Retract as a sixteenth named mutation. Tombstone the file in place with retracted, retracted_at, and retracted_reason. Strip that id from other records in the same Effort in the same journal transaction. Browse reads omit retracted records. proof get still returns the file. Later writes refuse retracted ids. Efforts cannot be retracted; abandon them.
+Add Retract as a sixteenth named mutation. Tombstone the file in place with retracted, retracted_at, and retracted_reason. Strip that id from records across every Effort in the same journal transaction, including foreign `derives_from` references. Browse reads omit retracted records. proof get still returns the file. Later writes refuse retracted ids. Efforts cannot be retracted; abandon them.
 
 This is not a hard delete and not a Collapse that folds bodies into a survivor. Folding N noisy records into one survivor is a body edit on the survivor plus Retract on the rest.
 
