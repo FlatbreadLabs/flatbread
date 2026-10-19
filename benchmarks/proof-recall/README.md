@@ -1042,3 +1042,30 @@ measure: there `findstate` got 83 and `find` 79 of 88 (5 to 1, p = 0.22),
 against 98 and 92 of 106 on tune (10 to 4). The direction holds on
 holdout, but two runs on 44 questions cannot show it alone. Two sessions
 timed out, both in the `find` arm.
+
+### Two private project graphs, as a held-out check
+
+Two real Proof graphs from private projects (200 records across 11 Efforts,
+and 134 across 6) tested whether the gains above hold on memory nobody tuned
+against. An author who never saw `find` or `state` output wrote 39 and 41
+machine-checked questions about them. The questions, answers, graph copies
+and run files live outside this repository (see "Question sets kept outside
+the repository"); only these totals are published. Before any paid run,
+only category totals of the offline gates were read, never a card.
+
+Haiku, two runs per graph, three arms each, pooled:
+
+| Graph | `find`     | no-brief | `findstate` | Read tokens, `find` / no-brief |
+| ----- | ---------- | -------- | ----------- | ------------------------------ |
+| A     | 71.7 of 78 | 66.3     | 71.3        | 12,488 / 27,975                |
+| B     | 75 of 82   | 71       | 74          | 12,230 / 24,389                |
+
+- `find` against no-brief: 7 to 1 on A and 6 to 2 on B; 13 to 3 over both
+  (sign test p = 0.021). `find` read about half the tokens on both.
+- `findstate` against `find`: 1 to 2 on A and 3 to 4 on B, with the same
+  tokens. On these small graphs `state` neither helps nor costs.
+
+So the search gain carries over to real memory at about half the reading.
+The gain from `state` on the 10x graph's counts and blockers does not show
+on graphs a twenty-fifth
+that size or less, where paging `records` is cheap.
