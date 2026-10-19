@@ -22,6 +22,7 @@ export interface ReadRecord {
   frontmatter: Record<string, unknown>;
   body_excerpt: string;
   relations: Partial<Record<ReadRelation, string[]>>;
+  foreign_reference?: { relation: ReadRelation; effort_id: string };
 }
 
 export interface ReadEdge {
@@ -252,6 +253,14 @@ function renderRecord(
   record: ReadRecord,
   options: { bodyMode?: RecordBodyMode } = {}
 ): string {
+  if (record.foreign_reference) {
+    const state = record.frontmatter.retracted
+      ? 'retracted'
+      : record.frontmatter.state ?? record.frontmatter.status ?? 'none';
+    return `- foreign ${record.foreign_reference.relation} -> ${record.id} (${
+      record.kind
+    }; effort ${record.foreign_reference.effort_id}; state ${String(state)})`;
+  }
   const bodyMode = options.bodyMode ?? 'excerpt';
   const frontmatter = Object.fromEntries(
     FRONTMATTER_KEYS.filter((key) => record.frontmatter[key] !== undefined).map(
@@ -371,7 +380,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
     ...(input.anomaly ? [`> anomaly: ${input.anomaly}`, ''] : []),
     '# Proof read',
     '## Index',
-    ...visible.map(indexLine),
+    ...visible.filter((record) => !record.foreign_reference).map(indexLine),
     '## Records',
     ...visible.map((record) => renderPrimary(record)),
     ...(input.relatedRecords?.length
@@ -406,7 +415,8 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
       ...(anomaly ? [`> anomaly: ${anomaly}`, ''] : []),
       '# Proof read',
       '## Index',
-      ...visible.map(indexLine),
+      ...visible.filter((record) => !record.foreign_reference).map(indexLine),
+      ...checkpoints,
       '## Records',
     ];
     const sections: string[] = [];
