@@ -181,7 +181,7 @@ survivor (score 4/4 if it adds claims) plus `Retract` on the rest.
 
 `generation` is a durable, monotonic journal token — the input to strict reads.
 
-## The 6 read queries
+## The 7 read queries
 
 All reads execute through Flatbread's query engine (in-process GraphQL over
 the generated schema) and return a `ReadEnvelope`:
@@ -208,6 +208,8 @@ lists), one-hop related records, and an edge table. Body policy:
   Blob payloads and Citation bodies (URLs / short notes).
 - **`proof brief`:** full body of the head compaction only. Every other
   record appears as one line.
+- **`proof find`:** the hit cards (below) under `## Find hits`, and each hit's
+  record with the browse excerpt. The envelope also carries the cards inline.
 - **`list` / `records` / `relations` / `blocking-decisions`:** body excerpt
   capped at 600 chars / 12 lines (`[…truncated]`). **Blob bodies are omitted**
   from these digests — use `proof get` for the payload. Citation bodies
@@ -230,7 +232,8 @@ order:
    error; do not retry the same page.
 3. If `cap_reasons` is not empty, narrow the query or fail closed. It can hold
    several sorted, duplicate-free values from `primary_records`,
-   `displayed_edges`, and `bytes`.
+   `displayed_edges`, `bytes`, and `find_limit` (`proof find` matched more
+   records than it shows).
 4. A hard cap alone leaves `page.has_more: false` and `next_cursor: null`.
    Paging and hard caps can occur together, but caps never create a cursor.
 
@@ -246,13 +249,14 @@ flatbread proof records <effortId> [--kinds k1,k2] [--state s1,s2] [--status s1,
 flatbread proof relations <effortId> <fromId> --relations r1,r2 [--limit n] [--cursor c] [consistency flags]
 flatbread proof blocking-decisions <effortId> [consistency flags]
 flatbread proof brief <effortId> [consistency flags]
+flatbread proof find "<words>" [--effort <effortId> | --all] [--kinds k1,k2] [--as-of iso] [--retracted exclude|include|only] [--limit n] [consistency flags]
 flatbread proof cache prune
 flatbread proof serve [--socket .flatbread/proof/serve.sock]
 ```
 
-- `proof serve` keeps the graph loaded in one process and answers the six
+- `proof serve` keeps the graph loaded in one process and answers the seven
   reads above (`list`, `records`, `get`, `relations`, `blocking-decisions`,
-  `brief`); it serves nothing that writes. Set `FLATBREAD_PROOF_SERVER` to its
+  `brief`, `find`); it keeps the `find` index with the graph and serves nothing that writes. Set `FLATBREAD_PROOF_SERVER` to its
   socket and those read commands go to it, in any folder whose graph root
   resolves to the same files. Each later read then takes a fraction of a
   second instead of rebuilding the graph. A write bumps the journal
@@ -296,6 +300,72 @@ flatbread proof serve [--socket .flatbread/proof/serve.sock]
   the head. `recompact` is true when there is no head, more than one head, a
   stale head, or at least 5 changes. Programs read these fields, not the
   digest.
+
+### `proof find`
+
+`find` locates records by what they say. Quoted or not, every word after
+`find` is part of the query, locally and through `proof serve`.
+
+- **Scope:** `--effort <effortId>` searches one Effort. Without it, or with
+  `--all`, it searches every Effort. `--kinds` narrows to some of `issue`,
+  `finding`, `decision`, `constraint`, `risk`, `citation`, `blob` (default:
+  all seven; Efforts are never hits). `--retracted` works as on `records`:
+  retracted records are left out unless you pass `include` or `only`, and a
+  shown one is marked `RETRACTED`. Every version a card scores, quotes, or
+  shows passes this scope; other versions appear only on the chain line.
+- **Ranking:** BM25 keyword scoring (k1 1.2, b 0.75) over the title (counted
+  twice), the full body, `kind`, `state`, `status`, `role`, `created_by`, and
+  Blob payloads. Rare words weigh more, measured over the whole graph. Words
+  are lowercased, apostrophes dropped, hyphenated words indexed joined and
+  split, and plurals, `-ed`, `-ing`, and a final `-e` folded (`added` meets
+  `add`, `using` meets `use`). Numbers with units
+  (`4.7 ms` is `4.7ms`), people (`created_by`), and code references (file
+  paths, `symbol()` names, commit SHAs, `#123`) count 1.5 times. Ties break by
+  id. The index is rebuilt from the record files; nothing derived is stored.
+- **Chains:** all versions linked by `supersedes` / `superseded_by` form one
+  hit, scored by its best in-scope version. Versions are numbered `v1`,
+  `v2`, … in link order: each comes after the versions it supersedes, and
+  created time, then id, orders fork branches. The card shows the chain head,
+  or the newest in-scope version when the head is out of scope (for example,
+  retracted under the default `exclude`). If an older version matched, the
+  card says which (`matched: v1 <id>`).
+- **As of:** `--as-of <date>` takes `YYYY-MM-DD` (UTC midnight) or a
+  date-time with `Z` or an offset, such as `2026-03-01T00:00:00Z`; other
+  forms are refused, so the answer does not depend on the machine's time
+  zone. Only versions created at or before that moment are scored, quoted,
+  and shown. The card shows the last such version in link order, and chains
+  with no such version drop out.
+- **Grouping:** without `--effort`, Efforts are ranked by the summed score
+  of their best 3 hits (`efforts by match`), and hits are grouped under each
+  Effort. Unless the top Effort's sum is at least 1.5 times the next one's,
+  at most 3 hits come from one Effort at first; slots still empty then go to
+  the next hits by score.
+- **Caps:** `--limit` 1 to 10, default 5. Each card holds at most 4 chain
+  versions (the head and the shown and matched versions always appear), 3
+  links per relation, and 6 code references. When five cards run past about
+  4,000 characters, the cards shrink in this order: link titles, the
+  `efforts by match` line, the middle of each chain, then link entries. A
+  relation with no entry left shows its count, as `cited_by +4`. When more
+  records matched than are shown, the envelope has `complete: false` and
+  `cap_reasons: ["find_limit"]`; there is no cursor, so narrow the query or
+  raise `--limit`.
+
+Each card has these lines:
+
+```text
+1. <id> | <kind>[:<kind field>] | <standing> [(head)] | <created date> | score <n>
+   "<title>"
+   matched: v<n> <id>                       (only when an older version matched)
+   "…<160-character passage with the most query words>…" [chars <from>-<to> of <length>]
+   chain: v1 <id> <standing> <date> -> (n more) -> v4 <id> <standing> <date> (head)
+   out: <relation> <id> "<title, 60 chars>" (<standing>), … +n more; <relation> +n
+   in: <derived_by|cited_by|resolves|rejects|mitigates|evidence_for|blob_of> <id> "<title>" (<standing>)
+   code: <paths, symbol() names, SHAs, #numbers the chain's records name>
+```
+
+The card header reads `find "<words>" in <effortId|all Efforts> (<searched> records searched, <matched> matched, <shown> shown)`, then `matched: … | missing: …`. The envelope adds `cards` (that Markdown) and `find`:
+`{"query","effort_id","searched","matched","shown","terms":{"matched","missing"},"efforts"?,"hits":[{"id","matched_id"?,"score"}]}`.
+`find` shows only the top hits; use `records` to count.
 
 ### Consistency flags
 

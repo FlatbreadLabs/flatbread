@@ -162,6 +162,126 @@ test.serial(
 );
 
 test.serial(
+  'proof find returns the chain head card locally and through proof serve',
+  async (t) => {
+    // Each local run loads the graph from scratch, and this test makes many.
+    t.timeout(180_000);
+    const cwd = await createProject(t);
+    const write = async (input: Record<string, unknown>) =>
+      (await handleEffortWrite(JSON.stringify(input), { cwd })).artifacts[0].id;
+    const effortId = await write({
+      type: 'CreateEffort',
+      title: 'Renderer',
+      body: '',
+    });
+    await write({
+      type: 'WriteFinding',
+      effort: effortId,
+      title: 'Build times',
+      body: 'The nightly build takes ten minutes.',
+      kind: 'measurement',
+    });
+    const first = await write({
+      type: 'WriteDecision',
+      effort: effortId,
+      title: 'Clamp the quokka history buffer',
+      body: 'Clamp history to the neighborhood to stop ghosting.',
+    });
+    const head = await write({
+      type: 'WriteDecision',
+      effort: effortId,
+      title: 'Clamp history only outside caustics',
+      body: 'Caustic light skips the clamp; everything else keeps it.',
+      supersedes: [first],
+    });
+    const socket = join(cwd, '.flatbread/proof/serve.sock');
+    const server = await serveProofReads(socket);
+    t.teardown(() => new Promise((done) => server.close(() => done())));
+    const served = { FLATBREAD_PROOF_SERVER: socket };
+
+    for (const scope of [['--effort', effortId], ['--all']]) {
+      const args = ['proof', 'find', 'quokka history', ...scope];
+      const local = await runCli(cwd, {}, ...args);
+      t.is(local.code, 0, local.stderr);
+      const remote = await runCli(cwd, served, ...args);
+      t.is(remote.code, 0, remote.stderr);
+      t.deepEqual(JSON.parse(remote.stdout), JSON.parse(local.stdout));
+      const envelope = JSON.parse(local.stdout);
+      // One hit for the whole chain: the head, which says the old version matched.
+      t.deepEqual(
+        envelope.find.hits.map((hit: { id: string }) => hit.id),
+        [head]
+      );
+      t.is(envelope.find.hits[0].matched_id, first);
+      t.deepEqual(envelope.find.terms, {
+        matched: ['quokka', 'history'],
+        missing: [],
+      });
+      t.regex(
+        envelope.cards,
+        new RegExp(`1\\. ${head} \\| decision \\| proposed \\(head\\)`)
+      );
+      t.regex(envelope.cards, new RegExp(`matched: v1 ${first}`));
+      t.deepEqual(envelope.hints, [`getRecord("${head}")`]);
+      t.regex(await readFile(envelope.artifact_path, 'utf8'), /## Find hits\n/);
+    }
+    for (const env of [{}, served] as Record<string, string>[]) {
+      // An unquoted query searches every word, locally and served alike.
+      const unquoted = await runCli(
+        cwd,
+        env,
+        'proof',
+        'find',
+        'quokka',
+        'nightly',
+        '--effort',
+        effortId
+      );
+      t.is(unquoted.code, 0, unquoted.stderr);
+      const envelope = JSON.parse(unquoted.stdout);
+      t.is(envelope.find.query, 'quokka nightly');
+      t.deepEqual(envelope.find.terms.missing, []);
+      t.is(envelope.find.shown, 2);
+      t.true(envelope.complete);
+      // More matches than shown: the envelope says it is not complete.
+      const capped = JSON.parse(
+        (
+          await runCli(
+            cwd,
+            env,
+            'proof',
+            'find',
+            'quokka nightly',
+            '--limit',
+            '1'
+          )
+        ).stdout
+      );
+      t.false(capped.complete);
+      t.deepEqual(capped.cap_reasons, ['find_limit']);
+      t.false(capped.page.has_more);
+      // A bare year and a date-time with no offset are refused both ways.
+      for (const asOf of ['2026', '2026-03-01T00:00:00']) {
+        const bad = await runCli(
+          cwd,
+          env,
+          'proof',
+          'find',
+          'x',
+          '--as-of',
+          asOf
+        );
+        t.is(bad.code, 1, asOf);
+        t.is(JSON.parse(bad.stderr).error.code, 'PROOF_INVALID_ARGUMENT');
+      }
+      const bad = await runCli(cwd, env, 'proof', 'find', 'x', '--limit', '11');
+      t.is(bad.code, 1);
+      t.is(JSON.parse(bad.stderr).error.code, 'PROOF_INVALID_ARGUMENT');
+    }
+  }
+);
+
+test.serial(
   'reads fall back to the local CLI when the server is unreachable',
   async (t) => {
     const cwd = await createProject(t);

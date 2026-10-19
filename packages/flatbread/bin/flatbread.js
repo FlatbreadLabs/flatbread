@@ -34,6 +34,7 @@ const SERVED_READS = new Set([
   'relations',
   'blocking-decisions',
   'brief',
+  'find',
 ]);
 
 /**

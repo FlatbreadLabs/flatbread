@@ -30,7 +30,15 @@ export interface ReadEdge {
   to_id: string;
 }
 
-export type ReadCapReason = 'primary_records' | 'displayed_edges' | 'bytes';
+/**
+ * Why a read is not complete. `find_limit` means `proof find` matched more
+ * records than it shows; it pages no further, so narrow the query instead.
+ */
+export type ReadCapReason =
+  | 'primary_records'
+  | 'displayed_edges'
+  | 'bytes'
+  | 'find_limit';
 
 /** Machine-readable state of an Effort's head compaction (`brief` only). */
 export interface CompactionStatus {
@@ -84,6 +92,8 @@ export interface DigestInput {
   /** Extra line-per-record sections, rendered after checkpoints. */
   sections?: readonly DigestSection[];
   compaction?: CompactionStatus;
+  /** Caps the caller applied before the digest, such as `find_limit`. */
+  capReasons?: readonly ReadCapReason[];
 }
 
 const CAP_RECORDS = 25;
@@ -337,7 +347,7 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
       )
     )
     .slice(0, CAP_EDGES);
-  const reasons: ReadCapReason[] = [];
+  const reasons: ReadCapReason[] = [...(input.capReasons ?? [])];
   if (records.length > CAP_RECORDS) reasons.push('primary_records');
   if (input.edges.length > CAP_EDGES) reasons.push('displayed_edges');
   let completeness = digestCompleteness(hasMore, reasons);

@@ -8,6 +8,7 @@ import {
   errorPayload,
   handleEffortBlockingDecisions,
   handleEffortBrief,
+  handleEffortFind,
   handleEffortGet,
   handleEffortList,
   handleEffortRecords,
@@ -28,7 +29,16 @@ export const SERVED_READS: Readonly<Record<string, number>> = {
   relations: 2,
   'blocking-decisions': 1,
   brief: 1,
+  find: 1,
 };
+
+/** Options that take no value. */
+const BOOLEAN_FLAGS = new Set(['all']);
+/**
+ * Reads whose positionals are words of one query. They take one or more, and
+ * the words are joined with spaces, as the local CLI joins them.
+ */
+const JOINED_POSITIONALS = new Set(['find']);
 
 /** What the server sends back: what the CLI would print, and its exit code. */
 export interface ServedRead {
@@ -78,10 +88,14 @@ export function parseReadArgs(argv: readonly string[]): {
       continue;
     }
     const eq = arg.indexOf('=');
-    if (eq > 0) options[arg.slice(2, eq)] = arg.slice(eq + 1);
+    if (eq < 0 && BOOLEAN_FLAGS.has(arg.slice(2)))
+      options[arg.slice(2)] = 'true';
+    else if (eq > 0) options[arg.slice(2, eq)] = arg.slice(eq + 1);
     else if (i + 1 < rest.length) options[arg.slice(2)] = rest[++i];
     else invalid(`Option ${arg} needs a value`);
   }
+  if (JOINED_POSITIONALS.has(command) && positional.length)
+    return { command, positional: [positional.join(' ')], options };
   if (positional.length !== SERVED_READS[command])
     invalid(
       `proof ${command} takes ${SERVED_READS[command]} argument(s), got ${positional.length}`
@@ -109,6 +123,8 @@ export async function runRead(
         ? await handleEffortRelations(first, second, mapped)
         : command === 'blocking-decisions'
         ? await handleEffortBlockingDecisions(first, mapped)
+        : command === 'find'
+        ? await handleEffortFind(first, mapped)
         : await handleEffortBrief(first, mapped);
     return { stdout: `${JSON.stringify(result)}\n`, stderr: '', code: 0 };
   } catch (error) {
