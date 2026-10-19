@@ -47,7 +47,12 @@ export interface ServedRead {
   readonly code: number;
 }
 
-/** True when something answers HTTP on `socketPath`. */
+/**
+ * True when a server holds `socketPath`. A dead socket refuses the connection
+ * at once. A live server that is busy, such as one building a large graph,
+ * accepts it but may not reply within the probe's two seconds, so a timeout
+ * also counts as live.
+ */
 function answers(socketPath: string): Promise<boolean> {
   return new Promise((resolveAnswer) => {
     const probe = request(
@@ -60,7 +65,7 @@ function answers(socketPath: string): Promise<boolean> {
     probe.on('error', () => resolveAnswer(false));
     probe.setTimeout(2000, () => {
       probe.destroy();
-      resolveAnswer(false);
+      resolveAnswer(true);
     });
     probe.end();
   });

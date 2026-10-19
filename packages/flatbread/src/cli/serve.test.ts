@@ -11,6 +11,7 @@ import {
   unlink,
   writeFile,
 } from 'node:fs/promises';
+import { createServer } from 'node:http';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { handleEffortWrite } from './proof.js';
@@ -298,5 +299,27 @@ test.serial(
     );
     t.is(result.code, 0, result.stderr);
     t.regex(JSON.parse(result.stdout).summary, /^0 records/);
+  }
+);
+
+test.serial(
+  'a second server does not take the socket from a busy one',
+  async (t) => {
+    const dir = await mkdtemp(join(tmpdir(), 'flatbread-busy-'));
+    t.teardown(() => rm(dir, { recursive: true, force: true }));
+    const socket = join(dir, 'serve.sock');
+    // A server that accepts connections but never replies, like one
+    // blocked while it builds a large graph.
+    const busy = createServer(() => undefined);
+    const held = new Set<import('node:net').Socket>();
+    busy.on('connection', (connection) => held.add(connection));
+    await new Promise<void>((done) => busy.listen(socket, done));
+    t.teardown(() => {
+      for (const connection of held) connection.destroy();
+      busy.close();
+    });
+    await t.throwsAsync(serveProofReads(socket), {
+      message: /already answers on/,
+    });
   }
 );
