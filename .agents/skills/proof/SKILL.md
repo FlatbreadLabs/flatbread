@@ -106,13 +106,13 @@ Critical semantics:
   `MitigateRisk`, `SetRiskState`) to transition. `WriteCitation` and
   `WriteBlob` have no lifecycle state.
 - `Retract` removes a record from browse reads without deleting the file.
-  Pass a reason. The writer strips that id from other records in the same
-  Effort so reads do not fail closed. Use it for session noise that should
-  never have been journaled. Do not `git rm` records or hand-edit
-  frontmatter. `proof get` still returns a retracted record, and
-  `proof records <effortId> --retracted only` lists an Effort's retracted
-  records, each marked **RETRACTED** with its date and reason. Efforts
-  cannot be retracted; abandon them instead.
+  Pass a reason. The writer strips that id from records in every Effort,
+  including foreign `derives_from` links, so reads do not fail closed. Use it
+  for session noise that should never have been journaled. Do not `git rm`
+  records or hand-edit frontmatter. `proof get` still returns a retracted
+  record, and `proof records <effortId> --retracted only` lists an Effort's
+  retracted records, each marked **RETRACTED** with its date and reason.
+  Efforts cannot be retracted; abandon them instead.
 - `AcceptDecision` defaults `rejectSiblings: true`, which rejects only
   proposed Decisions derived from the same `question` Issue, even if the
   Issue is closed. Use
@@ -120,8 +120,14 @@ Critical semantics:
   `changedDecisionIds` and `rejectedIds`; pass `dryRun: true` to preview
   without saving. Use `ReopenDecision` with a reason to restore a rejected
   Decision to proposed while keeping its rejection in `reopen_history`.
-- Edges are forward-only in payloads (`derives_from`, `supersedes`,
-  `invalidates`); back-edges are materialized automatically.
+- A Decision may use `derives_from` to link to a live record in another
+  Effort. The link records a cause without changing that record. `proof relations`
+  shows each foreign target as one checkpoint with its Effort id, kind, and
+  current state. Use `proof get` on a target id to read its full record.
+  `supersedes`, `invalidates`, and lifecycle links stay within one Effort.
+- Edges are forward-only in payloads. `supersedes` and `invalidates` write
+  `superseded_by` and `invalidated_by` reverse projections; `derives_from`
+  writes no reverse edge.
 - External sources: create a `WriteCitation` record (its body may be a URL,
   with optional `blob` and `role` fields), then add
   `cites: ["<cit-id>"]` when creating an Issue, Finding, Decision,
