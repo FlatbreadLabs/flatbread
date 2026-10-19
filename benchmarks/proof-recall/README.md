@@ -337,6 +337,14 @@ A benchmark agent must never see `spec/`, `questions/`, or `keymap.json`.
    with more right answers over the runs, and is the stricter reading. The
    script warns when the run files record different `find_hash` values.
 
+**Question sets kept outside the repository.** A set about a private
+graph must never enter Git. Set `PROOF_RECALL_QUESTIONS` to a folder of
+question files and `PROOF_RECALL_RUNS` to a folder for run files; every
+script then reads questions and writes runs there, and `--graph` points at
+the graph, whose `keymap.json` maps `<effort>.<key>` to record ids. With
+neither set, nothing changes. Use such a set only as a held-out check:
+never read its cards or outputs to choose a change.
+
 **Ambiguous-Effort questions.** `questions/ambiguous.json` holds 24
 questions rewritten from tier 0-2 questions so that they name no Effort and
 use words several Efforts share, such as "shader cache", "the

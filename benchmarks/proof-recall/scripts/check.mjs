@@ -24,6 +24,19 @@ import {
 } from './graph.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+
+/**
+ * Where question files and run files live. `PROOF_RECALL_QUESTIONS` and
+ * `PROOF_RECALL_RUNS` point them outside this folder, so a question set
+ * about a private graph can be checked and run without ever entering the
+ * repository.
+ */
+export const QUESTIONS_DIR = process.env.PROOF_RECALL_QUESTIONS
+  ? resolve(process.env.PROOF_RECALL_QUESTIONS)
+  : join(BENCH, 'questions');
+export const RUNS_DIR = process.env.PROOF_RECALL_RUNS
+  ? resolve(process.env.PROOF_RECALL_RUNS)
+  : join(BENCH, 'runs');
 export const CATEGORIES = [
   'current-state', // what holds now
   'lookup', // a fact stated in one record
@@ -77,7 +90,7 @@ function args(argv) {
  * when `optIn` is true.
  */
 export async function loadQuestions(only = [], { optIn = false } = {}) {
-  const dir = join(BENCH, 'questions');
+  const dir = QUESTIONS_DIR;
   const files = (await readdir(dir))
     .filter((name) => name.endsWith('.json'))
     .sort();

@@ -57,6 +57,7 @@ import {
   prepareFolder,
   publicQuestions,
 } from './prepare-run.mjs';
+import { RUNS_DIR } from './check.mjs';
 import { STRATEGIES, taskText } from './task.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -146,9 +147,11 @@ function serverAnswers(socket) {
       }
     );
     req.on('error', () => answer(false));
+    // A busy server accepts the connection but may not reply in time; a dead
+    // socket refuses it at once. So a timeout means a server is there.
     req.setTimeout(2000, () => {
       req.destroy();
-      answer(false);
+      answer(true);
     });
     req.end();
   });
@@ -185,9 +188,20 @@ async function ensureServer(socket) {
       { cwd: dir, detached: true, stdio: ['ignore', log, log] }
     );
     child.unref();
-    await writeFile(`${socket}.pid`, `${child.pid}\n`);
+    // A server busy building a large graph can miss the probe above, so this
+    // child may find the socket taken and exit. Record its pid only when it
+    // is the one that answers, or --stop-server would miss the live server.
+    let exited = false;
+    child.once('exit', () => (exited = true));
     for (let i = 0; i < 300; i++) {
-      if (await serverAnswers(socket)) return 'started';
+      if (await serverAnswers(socket)) {
+        // A child that found the socket taken exits within its own probe's
+        // two-second timeout; wait that long before calling it the server.
+        for (let j = 0; j < 15 && !exited; j++) await sleep(200);
+        if (exited) return 'reused';
+        await writeFile(`${socket}.pid`, `${child.pid}\n`);
+        return 'started';
+      }
       await sleep(200);
     }
     throw new Error(`proof serve did not start; see ${join(dir, 'serve.log')}`);
@@ -370,7 +384,7 @@ async function main() {
   // Root ignores file modes, so check that no session changed the graph.
   if ((await treeHash(shared)) !== hash)
     console.warn(`The shared graph in ${shared} changed during the run`);
-  await mkdir(join(BENCH, 'runs'), { recursive: true });
+  await mkdir(RUNS_DIR, { recursive: true });
   for (const strategy of options.strategies)
     await collect(
       sessions
