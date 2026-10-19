@@ -8,7 +8,7 @@ derives_from:
   - dec-compact-an-effort-with-writer-built-superseding--v37k0ef5evtrd59a
   - fnd-brief-is-84-percent-smaller-than-the-status-brie--qhgmcvqdma6rq4rq
 supersedes:
-  - con-mutation-enum-stays-deliberately-small--3hw451bsedfj6khs
+  - con-mutation-enum-stays-deliberately-small--2pggn03xasqjs9bp
 ---
 
 Changed: the set grows from seventeen to eighteen mutations with
@@ -23,6 +23,6 @@ The surface consists of Effort lifecycle (`CreateEffort`, `SetEffortStatus`); on
 
 `AcceptDecision` rejects only explicit alternatives: proposed Decisions derived from a shared question Issue, regardless of whether that Issue remains open, or proposed Decisions named in `rejects`. It names every changed and rejected Decision in the result, and a dry run previews the same changes without committing them. It must not accept a second answer to a shared question or a reopened Decision still rejected by an accepted alternative. `ReopenDecision` restores only a rejected Decision to proposed and retains the earlier rejection in history.
 
-`Retract` remains the named archive operation. It tombstones a file in place, strips live relation references to that id, and drops the record from browse reads. It is not a generic frontmatter patch, hard delete, or fold into a survivor. Git is the undo path for Retract; there is no generic Restore mutation.
+`Retract` remains the named archive operation. It tombstones a file in place, strips inbound relation references to that id from records across every Effort in the same journal transaction, and drops the record from browse reads. The global strip includes foreign `derives_from` references now that causal links can cross Efforts. It is not a generic frontmatter patch, hard delete, or fold into a survivor. Git is the undo path for Retract; there is no generic Restore mutation.
 
 No generic frontmatter patch, hard delete, standalone `RejectDecision`, or body-edit mutation is part of v1. Bodies remain ordinary editable markdown while the platform owns frontmatter semantics. Additive mutations require dogfood evidence; removing or reshaping one is a breaking migration.

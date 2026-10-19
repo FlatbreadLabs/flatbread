@@ -7,7 +7,7 @@ created_at: '2026-09-25T09:56:29.313Z'
 supersedes:
   - con-mutation-enum-stays-deliberately-small--0vf4ssfg2jmzxyn4
 superseded_by:
-  - con-mutation-enum-stays-deliberately-small--996zbtny5gv21ngy
+  - con-mutation-enum-stays-deliberately-small--2pggn03xasqjs9bp
 ---
 
 V1 has exactly seventeen named mutations. Every operation has a Zod schema, validates against a committed index generation, and owns a defined semantic transition. The seventeenth mutation exists because an Effort-wide Decision rejection could silently discard unrelated proposals and could not be undone through Proof.
