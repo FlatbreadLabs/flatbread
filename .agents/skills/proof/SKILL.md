@@ -11,7 +11,7 @@ repository. It has eight record types: **Effort**, **Issue**, **Finding**,
 **Citation** stores a source or reference; and **Blob** stores attached
 content such as a document, JSON, or image. Every record belongs to one
 Effort. Create and update records through 18 typed mutations, and read them
-through 6 bounded queries. Do not hand-edit record frontmatter, although you
+through 7 bounded queries. Do not hand-edit record frontmatter, although you
 may edit record bodies freely.
 
 Read [glossary.md](./glossary.md) for the primitive and edge semantics before
@@ -169,6 +169,23 @@ an `artifact_path` to a rendered markdown digest (the evidence — spend one
 Read on it, or grep it), `served_generation`, page info, and ≤10 executable
 `hints`. Digests cap at 25 records / one-hop expansion / 50 edges / 64 KiB.
 
+Pick the read by what you need, in this order:
+
+1. **Locate a record by what it says: `proof find "<words>"`.** It ranks
+   records by their title, full body, and Blob payload, and prints the hit
+   cards inline in the JSON, so you need no second Read. Each card shows the
+   newest version of the record (or, with `--as-of`, the version current
+   then), its standing, the passage that matched, its supersession chain
+   with dates, and its links in both directions. Leave out `--effort` when
+   you do not know the Effort: hits then group by Effort, at most 3 each
+   unless one Effort clearly leads. The `missing` terms name query words no
+   hit contains. Ordinary words often land there; a missing distinctive
+   term, such as a name, a number, or a code reference, is the cue that the
+   answer may not be recorded.
+2. **Read one record in full: `proof get <id>`.**
+3. **Count or page through records: `proof records`.** `find` shows only
+   the top hits, so never count from it.
+
 Browse digests (`list`, `records`, `relations`, `blocking-decisions`) excerpt
 each body at 600 chars / 12 lines (`[…truncated]`). **`proof get` digests
 always include the full record body** (still subject to the 64 KiB digest
@@ -176,6 +193,10 @@ byte cap). Zoom in with `get`, then Read/grep that digest — do not open
 `.flatbread-proof/**/*.md` for normal full-body recall.
 
 ```bash
+# Find records by what they say (one Effort, or all when --effort is left out)
+flatbread proof find "tern history buffer precision" --effort <effortId>
+flatbread proof find "shadow pool overflow" --as-of 2026-03-01T00:00:00Z
+
 # What's gating this effort? (proposed Decisions deriving from open blocker Issues)
 flatbread proof blocking-decisions <effortId>
 
@@ -201,7 +222,8 @@ flatbread proof brief <effortId>
 Flags shared by reads: `--strict-min-generation <token>` (with optional
 `--timeout-ms <ms>`, default 3000) and, on `list`/`records`/`relations`, `--limit`
 (≤25) and `--cursor` (opaque `next_cursor` from a prior page; only valid for
-the same query at the same generation).
+the same query at the same generation). `find` takes `--limit` 1 to 10
+(default 5) and has no cursor.
 
 `proof list` is bounded Effort discovery. It defaults to `active`; valid
 statuses are exactly `active`, `paused`, `completed`, and `abandoned`.
@@ -230,12 +252,15 @@ server-side.
    families showed this roughly halves recall tool calls with no loss of
    answer quality (Decision
    `dec-adopt-a-bounded-status-briefing-fast-path-for-ef--kcw0rw39g3b2ym2h`).
-2. **When a browse digest shows `[…truncated]` and you need the body:** run
+2. **When you need a particular record or fact:** run `proof find` first,
+   then `proof get` the hit whose card fits. Do not page through `records`
+   to look for it.
+3. **When a browse digest shows `[…truncated]` and you need the body:** run
    `flatbread proof get <id>`, then Read/grep that digest (`artifact_path`)
    for the full body. Reserve opening `.flatbread-proof/**/*.md` for rare
    cases (e.g. digest byte-cap miss on an oversized record), not normal
    zoom-in.
-3. **During work:** apply the write gate above before any create or body
+4. **During work:** apply the write gate above before any create or body
    edit that adds claims. When outside material supports a 4/4 record, save
    large content with `WriteBlob` if needed, then create a `WriteCitation`,
    then create the Issue, Finding, Decision, Constraint, or Risk with
@@ -243,10 +268,10 @@ server-side.
    Citation first. Open Issues for real gaps or blockers, and use
    `derives_from` on Decisions to link the Findings, Constraints, and Issues
    they respond to.
-4. **On commitment:** preview `AcceptDecision` with `dryRun: true`, inspect
+5. **On commitment:** preview `AcceptDecision` with `dryRun: true`, inspect
    its `rejectedIds`, then commit the acceptance. Use `ResolveIssue` with
    `resolvedBy` citing the closing Decision/Findings. These lifecycle
    transitions do not need a 4/4 score. Retract session noise with `Retract`
    rather than deleting files.
-5. Maintenance: `flatbread proof cache prune` deletes digests older than
+6. Maintenance: `flatbread proof cache prune` deletes digests older than
    24h / over the 100 MiB ceiling. Prune does not need a 4/4 score.

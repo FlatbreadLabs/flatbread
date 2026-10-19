@@ -15,7 +15,9 @@ import {
 import {
   blockingDecisions,
   effortBrief,
+  effortFind,
   effortRecords,
+  type FindEnvelope,
   relations,
   getRecord,
   listEfforts,
@@ -39,6 +41,9 @@ export interface EffortCliOptions {
   cursor?: string;
   relations?: string[];
   retracted?: RetractedMode;
+  effort?: string;
+  all?: boolean;
+  asOf?: string;
   verify?: boolean;
   dryRun?: boolean;
 }
@@ -73,6 +78,15 @@ export function mapEffortCliOptions(
       retracted:
         typeof options.retracted === 'string'
           ? (options.retracted as RetractedMode)
+          : undefined,
+      effort: typeof options.effort === 'string' ? options.effort : undefined,
+      all: options.all === true || options.all === 'true' ? true : undefined,
+      // The option parser turns `--as-of 2026` into a number; keep it as
+      // text so the date check refuses it, as the read server does.
+      asOf:
+        typeof options['as-of'] === 'string' ||
+        typeof options['as-of'] === 'number'
+          ? String(options['as-of'])
           : undefined,
       verify: options.verify === true ? true : undefined,
       dryRun:
@@ -255,6 +269,33 @@ export async function handleEffortBrief(
     rootDir: await rootFor(cwd),
     cacheRoot: resolve(cwd, '.flatbread/proof'),
     consistency: consistency(options),
+  });
+}
+
+/**
+ * `proof find`: searches one Effort with `effort`, or every Effort when
+ * `effort` is left out or `all` is set.
+ */
+export async function handleEffortFind(
+  query: string,
+  options: EffortCliOptions = {}
+): Promise<FindEnvelope> {
+  if (options.effort && options.all)
+    throw new ProofReadValidationError(
+      'PROOF_INVALID_ARGUMENT',
+      'Pass --effort <effortId> or --all, not both'
+    );
+  const cwd = options.cwd ?? process.cwd();
+  return effortFind(String(query ?? ''), {
+    cwd,
+    rootDir: await rootFor(cwd),
+    cacheRoot: resolve(cwd, '.flatbread/proof'),
+    consistency: consistency(options),
+    effort: options.effort,
+    kinds: options.kinds as PrimitiveKind[] | undefined,
+    asOf: options.asOf,
+    retracted: options.retracted,
+    limit: options.limit,
   });
 }
 
@@ -538,6 +579,35 @@ export function registerProofCommands(prog: any): void {
   ).action(async (effortId: string, options: Record<string, unknown>) =>
     printResult(handleEffortRecords(effortId, mapEffortCliOptions(options)))
   );
+  consistencyOptions(
+    prog.command(
+      'proof find <words>',
+      'Find records by what they say, ranked; one card per supersession chain'
+    )
+  )
+    .option('--effort <effortId>', 'Search one Effort')
+    .option(
+      '--all',
+      'Search every Effort (the default without --effort)',
+      false
+    )
+    .option('--kinds <values>', 'Comma-separated primitive kinds')
+    .option('--as-of <iso>', 'Show the version current at this date')
+    .option(
+      '--retracted <mode>',
+      'exclude (default), include, or only retracted records'
+    )
+    .option('--limit <n>', 'Hits to show, 1 to 10 (default 5)')
+    .action(async (words: unknown, options: Record<string, unknown>) =>
+      printResult(
+        handleEffortFind(
+          // An unquoted query arrives as one word here and the rest in `_`.
+          // Join them, as the read server does, so every word is searched.
+          [words, ...(Array.isArray(options._) ? options._ : [])].join(' '),
+          mapEffortCliOptions(options)
+        )
+      )
+    );
   paginationOptions(
     consistencyOptions(
       prog.command('proof list', 'List Efforts by lifecycle status')

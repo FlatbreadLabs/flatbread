@@ -17,6 +17,7 @@ import {
   READ_RELATIONS,
   readQueryHash,
   renderDigest,
+  type ReadCapReason,
   type ReadEdge,
   type ReadEnvelope,
   type ReadRecord,
@@ -25,6 +26,14 @@ import {
   type PrimitiveKind,
 } from '@flatbread/proof';
 import { loadConfig } from '@flatbread/config';
+import {
+  buildFindIndex,
+  FIND_DEFAULT_LIMIT,
+  FIND_MAX_LIMIT,
+  findRecords,
+  renderFindCards,
+  type FindIndex,
+} from './find.js';
 import { createHash } from 'node:crypto';
 import { readdir, realpath, stat } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
@@ -343,6 +352,7 @@ function configForCwd(
 class EngineProjection {
   readonly provider: FlatbreadProvider;
   private fieldsPromise?: Promise<Map<Collection, Set<string>>>;
+  private findIndexPromise?: Promise<FindIndex>;
 
   constructor(config: LoadedFlatbreadConfig) {
     this.provider = new FlatbreadProvider(config);
@@ -425,6 +435,20 @@ class EngineProjection {
         `all${plural(collection)}`
       ] ?? [];
     return nodes.map((node) => toRecord(node, collection));
+  }
+
+  /**
+   * The `find` index over every record. It lives on the projection, so a
+   * cached projection keeps its index and a rebuilt one builds a new one.
+   */
+  findIndex(): Promise<FindIndex> {
+    if (!this.findIndexPromise) {
+      this.findIndexPromise = Promise.all(
+        COLLECTIONS.map((collection) => this.query(collection))
+      ).then((records) => buildFindIndex(records.flat()));
+      this.findIndexPromise.catch(() => (this.findIndexPromise = undefined));
+    }
+    return this.findIndexPromise;
   }
 
   async one(
@@ -516,6 +540,7 @@ async function render(
     fullBody?: boolean;
     sections?: DigestSection[];
     compaction?: CompactionStatus;
+    capReasons?: ReadCapReason[];
   } = {}
 ): Promise<ReadEnvelope> {
   const served = await servedGeneration(options.rootDir, options.consistency);
@@ -1112,4 +1137,162 @@ export async function effortBrief(
       compaction,
     }
   );
+}
+
+/** A `find` envelope: the usual read fields plus the hit cards inline. */
+export interface FindEnvelope extends ReadEnvelope {
+  find: {
+    query: string;
+    effort_id: string | null;
+    searched: number;
+    matched: number;
+    shown: number;
+    terms: { matched: string[]; missing: string[] };
+    /** Searching every Effort: the Efforts whose best 3 hits score highest. */
+    efforts?: { id: string; mass: number }[];
+    /** In card order; `matched_id` names an older version when it matched. */
+    hits: { id: string; matched_id?: string; score: number }[];
+  };
+  /** The hit cards as Markdown, so the agent needs no second Read. */
+  cards: string;
+}
+
+const FIND_KINDS: readonly PrimitiveKind[] = [
+  'issue',
+  'finding',
+  'decision',
+  'constraint',
+  'risk',
+  'citation',
+  'blob',
+];
+
+/**
+ * An as-of date: `YYYY-MM-DD` (read as UTC midnight) or a date-time with `Z`
+ * or an offset. Other forms are refused, because JavaScript reads them in the
+ * machine's own time zone and the hits would differ between machines.
+ */
+const AS_OF =
+  /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2}))?$/;
+
+function roundScore(score: number): number {
+  return Math.round(score * 1000) / 1000;
+}
+
+/**
+ * Finds records by what they say: BM25 over titles, full bodies, a few
+ * frontmatter fields, and Blob payloads, one hit per supersession chain.
+ * The envelope carries the cards inline and writes them, with each hit's
+ * record, to the usual digest.
+ */
+export async function effortFind(
+  query: string,
+  options: EffortProjectionOptions & {
+    effort?: string;
+    kinds?: PrimitiveKind[];
+    asOf?: string;
+    retracted?: RetractedMode;
+    limit?: number;
+  }
+): Promise<FindEnvelope> {
+  const invalid = (message: string): never => {
+    throw new ProofReadValidationError('PROOF_INVALID_ARGUMENT', message);
+  };
+  const retracted = options.retracted ?? 'exclude';
+  if (!RETRACTED_MODES.includes(retracted))
+    invalid(
+      `Invalid retracted mode: ${String(
+        retracted
+      )}. Expected exclude, include, or only.`
+    );
+  const limit = options.limit ?? FIND_DEFAULT_LIMIT;
+  if (!Number.isInteger(limit) || limit < 1 || limit > FIND_MAX_LIMIT)
+    invalid(`limit must be an integer between 1 and ${FIND_MAX_LIMIT}`);
+  if (
+    options.asOf !== undefined &&
+    (!AS_OF.test(options.asOf) || Number.isNaN(Date.parse(options.asOf)))
+  )
+    invalid(
+      `Invalid as-of date: ${options.asOf}. Expected YYYY-MM-DD or an ISO date-time with Z or an offset.`
+    );
+  const kinds = options.kinds?.length
+    ? [...new Set(options.kinds)].sort()
+    : undefined;
+  const badKinds = (kinds ?? []).filter((kind) => !FIND_KINDS.includes(kind));
+  if (badKinds.length)
+    invalid(
+      `Invalid kinds for find: ${badKinds.join(
+        ', '
+      )}. Expected ${FIND_KINDS.join(', ')}.`
+    );
+  const text = String(query ?? '').trim();
+  if (!text) invalid('find needs at least one word to search for');
+  const projection = await makeProjection(options);
+  const index = await projection.findIndex();
+  if (options.effort && index.records.get(options.effort)?.kind !== 'effort')
+    invalid(`Effort ${options.effort} does not exist`);
+  const result = findRecords(index, text, {
+    effort: options.effort,
+    kinds,
+    asOf: options.asOf,
+    retracted,
+    limit,
+  });
+  const cards = renderFindCards(index, result);
+  const envelope = await render(
+    options,
+    {
+      type: 'effortFind',
+      query: text,
+      effort_id: options.effort ?? null,
+      ...(kinds ? { kinds } : {}),
+      ...(options.asOf ? { as_of: options.asOf } : {}),
+      ...(retracted === 'exclude' ? {} : { retracted }),
+      limit,
+    },
+    result.hits.map((hit) => hit.record),
+    [],
+    result.hits.map((hit) => `getRecord("${hit.record.id}")`),
+    {
+      sections: [{ heading: 'Find hits', lines: cards.split('\n') }],
+      // A ranked search that shows fewer records than matched is not complete.
+      capReasons: result.matched > result.hits.length ? ['find_limit'] : [],
+    }
+  );
+  const summary = `${result.hits.length} shown of ${result.matched} matching (${
+    result.searched
+  } searched); matched: ${result.found.join(' ') || 'none'}; missing: ${
+    result.missing.join(' ') || 'none'
+  }`;
+  return {
+    ...envelope,
+    summary:
+      [...summary].length <= 640
+        ? summary
+        : `${[...summary].slice(0, 639).join('')}…`,
+    find: {
+      query: text,
+      effort_id: result.effort,
+      searched: result.searched,
+      matched: result.matched,
+      shown: result.hits.length,
+      terms: { matched: [...result.found], missing: [...result.missing] },
+      ...(result.efforts
+        ? {
+            efforts: result.efforts.map((effort) => ({
+              id: effort.id,
+              mass: roundScore(effort.mass),
+            })),
+          }
+        : {}),
+      hits: result.hits.map((hit) => ({
+        id: hit.record.id,
+        ...(hit.matched.id !== hit.record.id
+          ? { matched_id: hit.matched.id }
+          : {}),
+        score: roundScore(hit.score),
+      })),
+    },
+    cards,
+  };
 }
