@@ -1,0 +1,16 @@
+{
+  "names": [
+    "agent-memory",
+    "coding-agents",
+    "context-engineering",
+    "project-memory",
+    "context-management",
+    "agent-context",
+    "llm-memory",
+    "git-native",
+    "markdown-cms",
+    "git-cms",
+    "file-based-cms",
+    "docs-as-code"
+  ]
+}
