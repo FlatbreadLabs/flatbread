@@ -392,20 +392,13 @@
           "count": true
         },
         {
-          "type": "atRef",
+          "type": "refDiff",
           "ref": "*",
-          "check": {
-            "type": "field",
-            "record": "world.dec-pool-forecast",
-            "field": "standing"
-          },
-          "equals": "accepted",
-          "expect": [
-            "ines/vsm-pool",
-            "kenji/tide-lod",
-            "priya/skiff-cpu",
-            "tomasz/vsm-evict"
-          ]
+          "change": "restanded",
+          "effort": "world",
+          "kinds": ["decision"],
+          "where": { "title": "Evict cells by distance and tide forecast" },
+          "expect": []
         }
       ],
       "traps": [

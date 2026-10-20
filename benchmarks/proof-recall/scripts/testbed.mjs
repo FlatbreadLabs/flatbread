@@ -22,6 +22,7 @@ import { join } from 'node:path';
 import { isCompaction, isLiveStanding } from '@flatbread/proof';
 import { headRecord, matches, readGraph, standing } from './graph.mjs';
 import { specAnchors, specCommits } from '../spec/repo.mjs';
+import { isFillerKey } from '../spec/_repo-filler.mjs';
 
 const list = (value) =>
   Array.isArray(value) ? value : value === undefined ? [] : [value];
@@ -230,8 +231,9 @@ const CHECKS = {
 
   // Records that cite a `role: code` Citation for `path` (a file or a
   // folder), and `symbol` if given. Every such Citation must be one that
-  // spec/repo.mjs declares, and git must agree with it: the commit exists on
-  // the ref, touches the file, and the file holds the symbol at that commit.
+  // spec/repo.mjs declares, or filler from spec/_repo-filler.mjs in a scaled
+  // bed, and git must agree with it: the commit exists on the ref, touches
+  // the file, and the file holds the symbol at that commit.
   // `commit: "introducing"` keeps anchors on the commit that first added the
   // symbol to the file. `citations: true` returns the Citations themselves.
   codeAnchor(bed, _graph, _effort, check) {
@@ -251,10 +253,11 @@ const CHECKS = {
       if (check.symbol && symbol !== check.symbol) continue;
       const spec = declared.get(key);
       if (
-        !spec ||
-        spec.path !== path ||
-        spec.symbol !== symbol ||
-        !bed.commitSha.get(spec.commit)?.startsWith(abbrev)
+        !isFillerKey(key) &&
+        (!spec ||
+          spec.path !== path ||
+          spec.symbol !== symbol ||
+          !bed.commitSha.get(spec.commit)?.startsWith(abbrev))
       )
         throw new Error(`code anchor ${key} is not one spec/repo.mjs declares`);
       const sha = bed.commitOf(abbrev);
