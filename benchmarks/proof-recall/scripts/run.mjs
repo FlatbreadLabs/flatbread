@@ -34,8 +34,11 @@
 //   with --stop-server, or restart it after rebuilding the CLI so it runs
 //   the new code. --no-serve makes every read run locally instead.
 //
-// --repo <dir> runs the code and branch sets (`--only code`, `--only
-// branch`) on the git test bed from build-repo.mjs. Each session's folder is
+// --repo <dir> runs the test-bed sets (`--only code`, `--only branch`, and
+// on the 10x refactor bed `refactor`, `behaviour` and `multibranch`) on the
+// git test bed from build-repo.mjs. The refactor sets are refused on any
+// other bed, and on a refactor bed the code and branch questions marked
+// `refactorStale` are left out (check.mjs fitBed). Each session's folder is
 // then its own `git clone --no-hardlinks` of the test bed, so git log, the
 // branches, and the draft-PR file are there for every strategy. It holds no
 // key map, spec, or questions file. These runs use neither the shared graph
@@ -72,7 +75,7 @@ import {
   prepareFolder,
   publicQuestions,
 } from './prepare-run.mjs';
-import { pickQuestions, REPO_SETS, RUNS_DIR } from './check.mjs';
+import { fitBed, pickQuestions, REPO_SETS, RUNS_DIR } from './check.mjs';
 import { STRATEGIES, taskText } from './task.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -361,14 +364,30 @@ async function main() {
   if (options.stopServer) return stopServer(options.server);
   // The test-bed sets need the test bed, and its graph holds records that
   // could change other sets' answers, so the two never share a run.
-  const onBed = (await pickQuestions(options)).map((set) =>
-    REPO_SETS.includes(set.effort)
-  );
+  const picked = await pickQuestions(options);
+  const onBed = picked.map((set) => REPO_SETS.includes(set.effort));
   if (options.repo && onBed.includes(false))
-    throw new Error('--repo runs only the code and branch sets');
+    throw new Error(`--repo runs only the ${REPO_SETS.join(', ')} sets`);
   if (!options.repo && onBed.includes(true))
-    throw new Error('The code and branch sets need --repo <test bed>');
-  const questions = await publicQuestions(options);
+    throw new Error(`The ${REPO_SETS.join(', ')} sets need --repo <test bed>`);
+  // The refactor sets run only on the 10x refactor bed, and on a refactor
+  // bed the code and branch questions about moved code are left out.
+  const fit = options.repo ? fitBed(picked, options.repo) : { sets: picked };
+  if (fit.dropped?.length)
+    console.log(
+      `Left out ${
+        fit.dropped.length
+      } questions that name code main no longer has on this refactor bed: ${fit.dropped.join(
+        ', '
+      )}`
+    );
+  const keep = new Set(
+    fit.sets.flatMap((set) => set.questions.map((q) => q.id))
+  );
+  const questions = (await publicQuestions(options)).filter((q) =>
+    keep.has(q.id)
+  );
+  if (!questions.length) throw new Error('No questions left to run');
   const find_hash = await findHash();
   const state_hash = await stateHash();
   const read_hash = await readHash();

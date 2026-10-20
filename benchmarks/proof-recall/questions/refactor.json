@@ -1,0 +1,959 @@
+{
+  "effort": "refactor",
+  "questions": [
+    {
+      "id": "refactor-001",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "moved-code", "current-state"],
+      "group": "follow",
+      "question": "Before I edit engine/lantern/shadows/page_pool.rs, which live Decision on main governs how big the sun shadow page pool is and which pages it frees first?",
+      "answer": {
+        "kind": "record",
+        "value": "render.dec-vsm"
+      },
+      "evidence": [
+        "render.dec-vsm",
+        "render.fnd-impl-vsm-evict",
+        "render.cit-code-vsm-evict"
+      ],
+      "checks": [
+        {
+          "type": "renamed",
+          "path": "engine/lantern/shadows/vsm_pool.rs",
+          "expect": "engine/lantern/shadows/page_pool.rs"
+        },
+        {
+          "type": "trailer",
+          "path": "engine/lantern/shadows/page_pool.rs",
+          "expect": []
+        },
+        {
+          "type": "codeAnchor",
+          "path": "engine/lantern/shadows/page_pool.rs",
+          "expect": []
+        },
+        {
+          "type": "trailer",
+          "path": "engine/lantern/shadows/vsm_pool.rs",
+          "kinds": ["decision"],
+          "live": true
+        },
+        {
+          "type": "codeAnchor",
+          "path": "engine/lantern/shadows/vsm_pool.rs",
+          "follow": "derives_from",
+          "kinds": ["decision"],
+          "live": true
+        }
+      ],
+      "traps": [
+        "No record, Citation or trailer names page_pool.rs. The file was vsm_pool.rs until a rename commit with no Proof trailer, so `git log -- page_pool.rs` without --follow shows only that rename.",
+        "Two open branches, ines/vsm-pool and tomasz/vsm-evict, each supersede this Decision, but neither is merged; on main it still holds."
+      ]
+    },
+    {
+      "id": "refactor-002",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["code-context", "moved-code", "supersession"],
+      "group": "follow",
+      "question": "Before I change how tools/shaders/cache/key.py builds the cache key, which Decision about the key is in force?",
+      "answer": {
+        "kind": "record",
+        "value": "tools.dec-key-v3"
+      },
+      "evidence": [
+        "tools.dec-key-v2",
+        "tools.dec-key-v3",
+        "tools.dec-key-v1",
+        "tools.fnd-impl-cache-key",
+        "tools.cit-code-cache-key"
+      ],
+      "path": [["tools.dec-key-v2", "superseded_by", "tools.dec-key-v3"]],
+      "checks": [
+        {
+          "type": "renamed",
+          "path": "tools/shadercache/key.py",
+          "expect": "tools/shaders/cache/key.py"
+        },
+        {
+          "type": "renamed",
+          "path": "tools/shadercache",
+          "report": "commit",
+          "expect": "Move the shader cache package to tools/shaders/cache"
+        },
+        {
+          "type": "trailer",
+          "path": "tools/shaders/cache/key.py",
+          "expect": []
+        },
+        {
+          "type": "trailer",
+          "path": "tools/shadercache/key.py",
+          "resolve": "head"
+        },
+        {
+          "type": "staleAnchor",
+          "path": "tools/shadercache/key.py",
+          "follow": "derives_from",
+          "kinds": ["decision"],
+          "live": true
+        }
+      ],
+      "traps": [
+        "Every record and trailer names the old folder tools/shadercache/; nothing names tools/shaders/cache/.",
+        "The trailers on the old path name only the first two key Decisions, both superseded."
+      ]
+    },
+    {
+      "id": "refactor-003",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "moved-code", "lookup"],
+      "group": "follow",
+      "question": "Before I add a step to migration_steps in engine/kestrel/save/migrate.rs, which live Decision sets the rules every step must follow?",
+      "answer": {
+        "kind": "record",
+        "value": "world.dec-save-version"
+      },
+      "evidence": [
+        "world.dec-save-version",
+        "world.con-save-compat",
+        "world.fnd-impl-save-upgrade",
+        "world.cit-code-save-upgrade"
+      ],
+      "checks": [
+        {
+          "type": "renamed",
+          "path": "engine/kestrel/save/upgrade.rs",
+          "symbol": "upgrade_steps",
+          "report": "symbol",
+          "expect": "engine/kestrel/save/migrate.rs#migration_steps"
+        },
+        {
+          "type": "trailer",
+          "path": "engine/kestrel/save/migrate.rs",
+          "expect": []
+        },
+        {
+          "type": "trailer",
+          "path": "engine/kestrel/save/upgrade.rs",
+          "kinds": ["decision"],
+          "live": true
+        },
+        {
+          "type": "codeAnchor",
+          "path": "engine/kestrel/save/upgrade.rs",
+          "symbol": "upgrade_steps",
+          "follow": "derives_from",
+          "kinds": ["decision"],
+          "live": true
+        }
+      ],
+      "traps": [
+        "Proof calls the file save/upgrade.rs and the function upgrade_steps; one commit renamed both and wrote no trailer.",
+        "The beta-save Constraint is a hard Constraint the steps must keep, not the Decision that sets their rules."
+      ]
+    },
+    {
+      "id": "refactor-004",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "moved-code", "current-state"],
+      "group": "follow",
+      "question": "Before I edit prewarm_district in platform/skiff/pipeline_cache.rs, which live Decision governs how that cache is filled and when it is thrown away?",
+      "answer": {
+        "kind": "record",
+        "value": "ports.dec-pso-ondevice"
+      },
+      "evidence": [
+        "ports.dec-pso-ondevice",
+        "ports.dec-pso-ship",
+        "ports.fnd-impl-pso-warm",
+        "ports.cit-code-pso-warm"
+      ],
+      "checks": [
+        {
+          "type": "renamed",
+          "path": "platform/skiff/pso_cache.rs",
+          "symbol": "warm_district",
+          "report": "symbol",
+          "expect": "platform/skiff/pipeline_cache.rs#prewarm_district"
+        },
+        {
+          "type": "codeAnchor",
+          "path": "platform/skiff/pipeline_cache.rs",
+          "expect": []
+        },
+        {
+          "type": "trailer",
+          "path": "platform/skiff/pso_cache.rs",
+          "kinds": ["decision"],
+          "live": true
+        },
+        {
+          "type": "staleAnchor",
+          "symbol": "warm_district",
+          "follow": "derives_from",
+          "kinds": ["decision"],
+          "live": true
+        }
+      ],
+      "traps": [
+        "Proof names pso_cache.rs and warm_district; the commit that renamed the file and the function has no trailer.",
+        "The prebuilt-blob plan it replaced is superseded, and the build farm shader compile cache is a different cache."
+      ]
+    },
+    {
+      "id": "refactor-005",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "moved-code", "lookup"],
+      "group": "follow",
+      "question": "Before I edit apply_reactive_mask in engine/lantern/tern/reactive.rs, which live Decision is that code carrying out?",
+      "answer": {
+        "kind": "record",
+        "value": "render.dec-tern-reactive"
+      },
+      "evidence": [
+        "render.dec-tern-reactive",
+        "render.fnd-impl-tern-reactive",
+        "render.cit-code-tern-reactive"
+      ],
+      "checks": [
+        {
+          "type": "renamed",
+          "path": "engine/lantern/tern/history.rs",
+          "symbol": "apply_reactive_mask",
+          "report": "symbol",
+          "expect": "engine/lantern/tern/reactive.rs#apply_reactive_mask"
+        },
+        {
+          "type": "trailer",
+          "path": "engine/lantern/tern/reactive.rs",
+          "expect": []
+        },
+        {
+          "type": "codeAnchor",
+          "path": "engine/lantern/tern/reactive.rs",
+          "expect": []
+        },
+        {
+          "type": "trailer",
+          "path": "engine/lantern/tern/history.rs",
+          "symbol": "apply_reactive_mask"
+        },
+        {
+          "type": "codeAnchor",
+          "path": "engine/lantern/tern/history.rs",
+          "symbol": "apply_reactive_mask",
+          "follow": "derives_from",
+          "kinds": ["decision"],
+          "live": true
+        }
+      ],
+      "traps": [
+        "reactive.rs was split out of tern/history.rs by a commit with no trailer. history.rs still exists, so its anchor looks fine until you see the function is gone from it."
+      ]
+    },
+    {
+      "id": "refactor-006",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["code-context", "moved-code", "aggregate"],
+      "group": "no-follow",
+      "question": "Which Decisions do the commits that wrote the code now under engine/kestrel/world/ocean/ give as their reason?",
+      "answer": {
+        "kind": "records",
+        "value": [
+          "world.dec-tide-fixed",
+          "world.dec-tide-harmonic",
+          "world.dec-tide-wrap"
+        ]
+      },
+      "evidence": [
+        "world.dec-tide-fixed",
+        "world.dec-tide-harmonic",
+        "world.dec-tide-wrap",
+        "world.con-tide-step-alloc",
+        "world.dec-tide-lod-quarter"
+      ],
+      "checks": [
+        {
+          "type": "renamed",
+          "path": "engine/kestrel/tides",
+          "expect": "engine/kestrel/world/ocean"
+        },
+        {
+          "type": "trailer",
+          "path": "engine/kestrel/world/ocean",
+          "expect": []
+        },
+        {
+          "type": "trailer",
+          "path": "engine/kestrel/tides",
+          "kinds": ["decision"]
+        }
+      ],
+      "traps": [
+        "The code was under engine/kestrel/tides/ until one move commit with no trailer; the only commit under world/ocean/ is that move.",
+        "The far-cell tide Decision is only proposed on main, and only branches add code for it.",
+        "engine/kestrel/world/ also holds the flocks and kites folders, moved there by another commit; they are not tide code."
+      ]
+    },
+    {
+      "id": "refactor-007",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "moved-code", "lookup"],
+      "group": "follow",
+      "question": "Before I add an allocation to the tide step in engine/kestrel/world/ocean/fixed.rs, which hard Constraint stands in the way?",
+      "answer": {
+        "kind": "record",
+        "value": "world.con-tide-step-alloc"
+      },
+      "evidence": ["world.con-tide-step-alloc", "world.con-tide-bitexact"],
+      "checks": [
+        {
+          "type": "renamed",
+          "path": "engine/kestrel/tides/fixed.rs",
+          "expect": "engine/kestrel/world/ocean/fixed.rs"
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "bodyIncludes": "world/ocean/fixed.rs",
+          "expect": []
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["constraint"],
+          "where": {
+            "kind": "hard"
+          },
+          "bodyIncludes": "engine/kestrel/tides/fixed.rs"
+        }
+      ],
+      "traps": [
+        "The Constraint names the file by its old path, engine/kestrel/tides/fixed.rs, so a search for the new path finds nothing.",
+        "The bit-identical tide Constraint governs the same code but says nothing about allocation."
+      ]
+    },
+    {
+      "id": "refactor-008",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "moved-code", "lookup"],
+      "group": "follow",
+      "question": "Is there an open defect in how the dynamic resolution code in platform/skiff/display.rs handles a single frame that runs long? Which record is it?",
+      "answer": {
+        "kind": "record",
+        "value": "ports.iss-dynres-hold"
+      },
+      "evidence": ["ports.iss-dynres-hold", "ports.dec-dynres-3"],
+      "checks": [
+        {
+          "type": "renamed",
+          "path": "platform/skiff/dynres.rs",
+          "expect": "platform/skiff/display.rs"
+        },
+        {
+          "type": "renamed",
+          "path": "platform/skiff/dynres.rs",
+          "report": "commit",
+          "expect": "Merge the Skiff frame modes and dynamic resolution into display.rs"
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "bodyIncludes": "display.rs",
+          "expect": []
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["issue"],
+          "live": true,
+          "bodyIncludes": "platform/skiff/dynres.rs"
+        }
+      ],
+      "traps": [
+        "display.rs merges the old dynres.rs and frame_modes.rs. Git follows dynres.rs into display.rs as a rename (70% similar), so `git log --follow` on display.rs reaches the dynres.rs history; frame_modes.rs shows as deleted. The record names only the old path, so a search for display.rs finds nothing.",
+        "The dynamic resolution question Issue is resolved and is not a defect."
+      ]
+    },
+    {
+      "id": "refactor-009",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["code-context", "stale-anchor", "aggregate"],
+      "group": "no-follow",
+      "question": "Which records on main cite a code anchor that no longer holds, because the file it names is gone or the function it names is no longer in that file?",
+      "answer": {
+        "kind": "records",
+        "value": [
+          "netcode.fnd-impl-checksum",
+          "ports.fnd-impl-pso-warm",
+          "render.fnd-impl-tern-reactive",
+          "render.fnd-impl-vsm-evict",
+          "tools.fnd-impl-cache-key",
+          "world.bed-fnd-040",
+          "world.fnd-impl-save-upgrade",
+          "world.fnd-impl-tide-wrap"
+        ]
+      },
+      "evidence": [
+        "netcode.cit-code-checksum",
+        "ports.cit-code-pso-warm",
+        "render.cit-code-tern-reactive",
+        "render.cit-code-vsm-evict",
+        "tools.cit-code-cache-key",
+        "world.bed-cit-039",
+        "world.cit-code-save-upgrade",
+        "world.cit-code-tide-wrap",
+        "world.cit-code-pool-score",
+        "world.cit-code-pool-score-2",
+        "world.cit-code-tide-push"
+      ],
+      "checks": [
+        {
+          "type": "staleAnchor"
+        },
+        {
+          "type": "staleAnchor",
+          "where": {
+            "kind": "implementation"
+          }
+        },
+        {
+          "type": "staleAnchor",
+          "stale": "fresh",
+          "citations": true,
+          "count": true,
+          "expect": 42
+        }
+      ],
+      "traps": [
+        "The anchors on engine/kestrel/streaming/pool.rs and io_queue.rs still hold: that code was not moved.",
+        "The Tern reactive-mask anchor names tern/history.rs, which still exists; only the function moved out of it.",
+        "One of the eight is a kite physics note whose folder moved under engine/kestrel/world/; it is not one of the files a reader might expect."
+      ]
+    },
+    {
+      "id": "refactor-010",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["code-context", "stale-anchor", "aggregate"],
+      "group": "no-follow",
+      "question": "How many code anchors on main name a file that main no longer has?",
+      "answer": {
+        "kind": "count",
+        "value": 7
+      },
+      "evidence": [
+        "netcode.cit-code-checksum",
+        "ports.cit-code-pso-warm",
+        "render.cit-code-vsm-evict",
+        "tools.cit-code-cache-key",
+        "world.bed-cit-039",
+        "world.cit-code-save-upgrade",
+        "world.cit-code-tide-wrap",
+        "render.cit-code-tern-reactive"
+      ],
+      "checks": [
+        {
+          "type": "staleAnchor",
+          "stale": "path",
+          "citations": true,
+          "count": true
+        },
+        {
+          "type": "staleAnchor",
+          "citations": true,
+          "count": true,
+          "expect": 8
+        },
+        {
+          "type": "refAll",
+          "check": {
+            "type": "staleAnchor",
+            "stale": "path",
+            "citations": true,
+            "count": true
+          },
+          "mode": "every",
+          "expect": [0]
+        }
+      ],
+      "traps": [
+        "The Tern reactive-mask anchor is stale too, but its file still exists, so it is not one of these.",
+        "On every open branch the count is 0: the branches were cut before the refactor."
+      ]
+    },
+    {
+      "id": "refactor-011",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "stale-anchor", "lookup"],
+      "group": "no-follow",
+      "question": "Which code anchor on main names a file that still exists, but a function that is no longer in that file?",
+      "answer": {
+        "kind": "record",
+        "value": "render.cit-code-tern-reactive"
+      },
+      "evidence": [
+        "render.cit-code-tern-reactive",
+        "render.fnd-impl-tern-reactive"
+      ],
+      "checks": [
+        {
+          "type": "staleAnchor",
+          "stale": "symbol",
+          "citations": true
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/lantern/tern/history.rs",
+          "exists": true,
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/lantern/tern/history.rs",
+          "symbol": "apply_reactive_mask",
+          "expect": false
+        }
+      ],
+      "traps": [
+        "The other stale anchors name files main no longer has, which is a different failure."
+      ]
+    },
+    {
+      "id": "refactor-012",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["code-context", "stale-anchor", "aggregate"],
+      "group": "no-follow",
+      "question": "Which live Decisions have an implementation note whose code anchor no longer holds on main, because the code was moved or renamed?",
+      "answer": {
+        "kind": "records",
+        "value": [
+          "netcode.dec-checksum",
+          "ports.dec-pso-ondevice",
+          "render.dec-tern-reactive",
+          "render.dec-vsm",
+          "tools.dec-key-v3",
+          "world.dec-save-version",
+          "world.dec-tide-wrap",
+          "world.fill-dec-0741"
+        ]
+      },
+      "evidence": [
+        "netcode.dec-checksum",
+        "ports.dec-pso-ondevice",
+        "render.dec-tern-reactive",
+        "render.dec-vsm",
+        "tools.dec-key-v3",
+        "world.dec-save-version",
+        "world.dec-tide-wrap",
+        "world.fill-dec-0741",
+        "world.dec-pool-forecast",
+        "world.dec-io-tide-priority"
+      ],
+      "checks": [
+        {
+          "type": "staleAnchor",
+          "follow": "derives_from",
+          "kinds": ["decision"],
+          "live": true
+        },
+        {
+          "type": "staleAnchor",
+          "where": {
+            "kind": "implementation"
+          },
+          "count": true,
+          "expect": 8
+        },
+        {
+          "type": "staleAnchor",
+          "follow": "derives_from",
+          "kinds": ["decision"],
+          "live": false,
+          "expect": []
+        }
+      ],
+      "traps": [
+        "The save-format note also rests on the beta-save Constraint, which is not a Decision.",
+        "The pool forecast Decision and the tide-read priority Decision have notes too, but their anchors still hold."
+      ]
+    },
+    {
+      "id": "refactor-013",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "moved-code", "code-drift"],
+      "group": "drift",
+      "question": "The accepted Decision behind the co-op desync check says how often each peer hashes the state blocks. Does the code in net/coop/desync.rs on main still hash them that often?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": [
+        "netcode.dec-checksum",
+        "netcode.fnd-impl-checksum",
+        "netcode.cit-code-checksum"
+      ],
+      "checks": [
+        {
+          "type": "renamed",
+          "path": "net/coop/checksum.rs",
+          "symbol": "hash_blocks",
+          "report": "symbol",
+          "expect": "net/coop/desync.rs#hash_state_blocks"
+        },
+        {
+          "type": "trailer",
+          "path": "net/coop/desync.rs",
+          "expect": []
+        },
+        {
+          "type": "trailer",
+          "path": "net/coop/checksum.rs",
+          "kinds": ["decision"],
+          "titleIncludes": "frames",
+          "expect": ["netcode.dec-checksum"]
+        },
+        {
+          "type": "field",
+          "record": "netcode.dec-checksum",
+          "field": "standing",
+          "expect": "accepted"
+        },
+        {
+          "type": "body",
+          "record": "netcode.dec-checksum",
+          "includes": "every 30 frames",
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "net/coop/desync.rs",
+          "pattern": "HASH_INTERVAL_FRAMES: u64 = (\\d+)",
+          "expect": "60"
+        },
+        {
+          "type": "codeAt",
+          "path": "net/coop/desync.rs",
+          "ref": "main~1",
+          "pattern": "HASH_INTERVAL_FRAMES: u64 = (\\d+)",
+          "expect": "30"
+        }
+      ],
+      "traps": [
+        "Every record about this code says 30 frames and names net/coop/checksum.rs and hash_blocks. The file and function were renamed, and then a commit with no trailer changed the interval to 60.",
+        "The host-authoritative sync Decision is also named on that file, but it says nothing about the hash interval."
+      ]
+    },
+    {
+      "id": "refactor-014",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "moved-code", "code-drift"],
+      "group": "drift",
+      "question": "Before I edit hash_state_blocks in net/coop/desync.rs: every how many frames does the Decision behind it say the state blocks are hashed, and every how many frames does the code on main hash them?",
+      "answer": {
+        "kind": "text",
+        "rubric": [["30"], ["60"]]
+      },
+      "evidence": [
+        "netcode.dec-checksum",
+        "netcode.fnd-impl-checksum",
+        "netcode.cit-code-checksum"
+      ],
+      "checks": [
+        {
+          "type": "codeAnchor",
+          "path": "net/coop/checksum.rs",
+          "symbol": "hash_blocks",
+          "follow": "derives_from",
+          "kinds": ["decision"],
+          "expect": ["netcode.dec-checksum"]
+        },
+        {
+          "type": "body",
+          "record": "netcode.dec-checksum",
+          "includes": "every 30 frames",
+          "expect": true
+        },
+        {
+          "type": "body",
+          "record": "netcode.fnd-impl-checksum",
+          "includes": "every 30th frame",
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "net/coop/checksum.rs",
+          "follow": true,
+          "pattern": "HASH_INTERVAL_FRAMES: u64 = (\\d+)",
+          "expect": "60"
+        },
+        {
+          "type": "anchorDrift",
+          "anchor": "netcode.cit-code-checksum",
+          "content": true,
+          "expect": [
+            "Rename checksum.rs to desync.rs and hash_blocks to hash_state_blocks",
+            "Hash co-op state blocks every 60 frames"
+          ]
+        }
+      ],
+      "traps": [
+        "Proof gives only 30: the Decision and its implementation note were never updated. Only the code and the last commit's message say 60.",
+        "Answering from Proof alone gives 30 for both."
+      ]
+    },
+    {
+      "id": "refactor-015",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "stale-anchor", "lookup"],
+      "group": "location",
+      "question": "A Proof note on the order in which shadow pages are freed cites the function that frees them. Where is that function on main now: which file, and under what name?",
+      "answer": {
+        "kind": "text",
+        "rubric": [
+          [
+            "engine/lantern/shadows/page_pool.rs",
+            "shadows/page_pool.rs",
+            "page_pool.rs"
+          ],
+          ["reclaim_pages"]
+        ]
+      },
+      "evidence": ["render.fnd-impl-vsm-evict", "render.cit-code-vsm-evict"],
+      "checks": [
+        {
+          "type": "codeAnchor",
+          "path": "engine/lantern/shadows/vsm_pool.rs",
+          "symbol": "evict_pages",
+          "expect": ["render.fnd-impl-vsm-evict"]
+        },
+        {
+          "type": "staleAnchor",
+          "path": "engine/lantern/shadows/vsm_pool.rs",
+          "report": "now",
+          "expect": ["engine/lantern/shadows/page_pool.rs#reclaim_pages"]
+        },
+        {
+          "type": "renamed",
+          "path": "engine/lantern/shadows/vsm_pool.rs",
+          "symbol": "evict_pages",
+          "report": "commits",
+          "expect": [
+            "Rename evict_pages to reclaim_pages",
+            "Rename vsm_pool.rs to page_pool.rs"
+          ]
+        }
+      ],
+      "traps": [
+        "The note's anchor still says engine/lantern/shadows/vsm_pool.rs and evict_pages; neither exists on main.",
+        "Two commits did it: one renamed the function, the next renamed the file."
+      ]
+    },
+    {
+      "id": "refactor-016",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "stale-anchor", "lookup"],
+      "group": "location",
+      "question": "The Proof note on how Tern treats pixels under the saltglass mask cites a function in the Tern history module. Which file holds that function on main now?",
+      "answer": {
+        "kind": "value",
+        "value": "engine/lantern/tern/reactive.rs",
+        "accept": ["tern/reactive.rs", "reactive.rs"]
+      },
+      "evidence": [
+        "render.fnd-impl-tern-reactive",
+        "render.cit-code-tern-reactive"
+      ],
+      "checks": [
+        {
+          "type": "codeAnchor",
+          "path": "engine/lantern/tern/history.rs",
+          "symbol": "apply_reactive_mask",
+          "expect": ["render.fnd-impl-tern-reactive"]
+        },
+        {
+          "type": "renamed",
+          "path": "engine/lantern/tern/history.rs",
+          "symbol": "apply_reactive_mask",
+          "report": "symbol",
+          "expect": "engine/lantern/tern/reactive.rs#apply_reactive_mask"
+        },
+        {
+          "type": "renamed",
+          "path": "engine/lantern/tern/history.rs",
+          "symbol": "apply_reactive_mask",
+          "report": "commit",
+          "expect": "Split the reactive mask out of the Tern history module"
+        }
+      ],
+      "traps": [
+        "engine/lantern/tern/history.rs still exists, so the anchor's path looks right; the function moved out of it into a new file."
+      ]
+    },
+    {
+      "id": "refactor-017",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "current-state"],
+      "group": "control",
+      "question": "Before I edit evict_score in engine/kestrel/streaming/pool.rs, which live Decision governs how it picks the cells to evict?",
+      "answer": {
+        "kind": "record",
+        "value": "world.dec-pool-forecast"
+      },
+      "evidence": [
+        "world.dec-pool-forecast",
+        "world.dec-pool-lru",
+        "world.fnd-impl-pool-score-2",
+        "world.cit-code-pool-score-2"
+      ],
+      "checks": [
+        {
+          "type": "renamed",
+          "path": "engine/kestrel/streaming/pool.rs",
+          "report": "commits",
+          "expect": []
+        },
+        {
+          "type": "staleAnchor",
+          "path": "engine/kestrel/streaming/pool.rs",
+          "stale": "fresh",
+          "citations": true,
+          "expect": ["world.cit-code-pool-score", "world.cit-code-pool-score-2"]
+        },
+        {
+          "type": "codeAnchor",
+          "path": "engine/kestrel/streaming/pool.rs",
+          "symbol": "evict_score",
+          "follow": "derives_from",
+          "kinds": ["decision"],
+          "live": true
+        },
+        {
+          "type": "trailer",
+          "path": "engine/kestrel/streaming/pool.rs",
+          "kinds": ["decision"],
+          "live": true
+        }
+      ],
+      "traps": [
+        "Control: the refactor did not touch this file, so its anchors and trailers still hold.",
+        "The least-recently-used eviction Decision the file started from is superseded."
+      ]
+    },
+    {
+      "id": "refactor-018",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "invalidation"],
+      "group": "control",
+      "question": "Before I edit push_tide_read in engine/kestrel/streaming/io_queue.rs, is the Decision behind it, which lets tide reads jump the queue, still sound?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": [
+        "world.dec-io-tide-priority",
+        "world.fnd-io-starve",
+        "world.fnd-impl-tide-push",
+        "world.cit-code-tide-push"
+      ],
+      "checks": [
+        {
+          "type": "renamed",
+          "path": "engine/kestrel/streaming/io_queue.rs",
+          "symbol": "push_tide_read",
+          "report": "commits",
+          "expect": []
+        },
+        {
+          "type": "staleAnchor",
+          "path": "engine/kestrel/streaming/io_queue.rs",
+          "stale": "fresh",
+          "citations": true,
+          "expect": ["world.cit-code-tide-push"]
+        },
+        {
+          "type": "codeAnchor",
+          "path": "engine/kestrel/streaming/io_queue.rs",
+          "symbol": "push_tide_read",
+          "follow": "derives_from",
+          "expect": ["world.dec-io-tide-priority"]
+        },
+        {
+          "type": "field",
+          "record": "world.dec-io-tide-priority",
+          "field": "standing",
+          "expect": "invalidated"
+        }
+      ],
+      "traps": [
+        "Control: the refactor did not touch this file.",
+        "The single-request-queue Decision the file started from is still accepted, but it is not the one behind push_tide_read."
+      ]
+    },
+    {
+      "id": "refactor-019",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "negative"],
+      "group": "control",
+      "question": "Before I edit engine/kestrel/world/mod.rs, which Decision governs it?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": ["world.dec-tide-fixed", "world.dec-tide-wrap"],
+      "checks": [
+        {
+          "type": "codeAt",
+          "path": "engine/kestrel/world/mod.rs",
+          "exists": true,
+          "expect": true
+        },
+        {
+          "type": "renamed",
+          "path": "engine/kestrel/world/mod.rs",
+          "report": "commits",
+          "expect": []
+        },
+        {
+          "type": "trailer",
+          "path": "engine/kestrel/world/mod.rs",
+          "expect": []
+        },
+        {
+          "type": "codeAnchor",
+          "path": "engine/kestrel/world/mod.rs",
+          "expect": []
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "bodyIncludes": "world/mod.rs",
+          "expect": []
+        }
+      ],
+      "traps": [
+        "The file is new: the refactor commits that moved the tides, flocks and kites under engine/kestrel/world/ created it to list those modules, and no record or trailer names it.",
+        "The tide Decisions govern the files under world/ocean/, not this module list."
+      ]
+    }
+  ]
+}

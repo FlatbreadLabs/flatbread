@@ -8,10 +8,14 @@
 //   node scripts/check.mjs --only code,branch --repo /tmp/p2-repo
 //                                             the sets about the git test
 //                                             bed from build-repo.mjs
+//   node scripts/check.mjs --only refactor --repo /tmp/p3-bed-x10
+//                                             the set about a bed built
+//                                             with --refactor --scale 10
 //
 // This script checks every file, including the opt-in sets in OPT_IN_SETS,
 // except the sets in REPO_SETS, which need --repo and load only when named.
 // Other scripts load opt-in sets only when asked for them by name.
+import { existsSync, readFileSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -71,17 +75,118 @@ export const CATEGORIES = [
   // The answer exists only on an unmerged branch, or comes from merging two.
   // Only in branch.json.
   'branch',
+  // The question names code by where it is now, after a refactor Proof never
+  // heard of; every record still names its old path or symbol. Only in
+  // refactor.json.
+  'moved-code',
+  // Code anchors whose file is gone, or whose function left the file. Only
+  // in refactor.json.
+  'stale-anchor',
+  // The code now does something other than what a live record says it does.
+  // In refactor.json and behaviour.json.
+  'code-drift',
+  // A behaviour spread over several files or folders: no single path
+  // answers it, and the question names a folder at most. Only in
+  // behaviour.json.
+  'behaviour',
+  // Needs many open branches at once: what they all propose, which pairs
+  // conflict, or what holds on every branch but not on main. Only in
+  // multibranch.json.
+  'multibranch',
 ];
 // Question files whose `effort` names no Effort: their questions span
 // several, so every key is qualified as `<effort>.<key>`.
-export const MULTI_EFFORT_SETS = ['cross', 'ambiguous', 'code', 'branch'];
+export const MULTI_EFFORT_SETS = [
+  'cross',
+  'ambiguous',
+  'code',
+  'branch',
+  'refactor',
+  'behaviour',
+  'multibranch',
+];
 // Sets that load only when a script names them (`--only ambiguous`) or asks
 // for one of their ids, so every default keeps the original 246 questions.
-export const OPT_IN_SETS = ['ambiguous', 'code', 'branch'];
+export const OPT_IN_SETS = [
+  'ambiguous',
+  'code',
+  'branch',
+  'refactor',
+  'behaviour',
+  'multibranch',
+];
 // Sets about the git test bed from build-repo.mjs. Their checks read git
 // history and branches, so they need `--repo <dir>`, and check.mjs checks
-// them only when --only names them.
-export const REPO_SETS = ['code', 'branch'];
+// them only when --only names them. `refactor` asks about a bed built with
+// `--refactor`, and its answers hold only there. `behaviour` and
+// `multibranch` are written for the scaled refactor bed
+// (`build-repo.mjs --scale 10 --refactor`), whose filler branches some of
+// their answers count.
+export const REPO_SETS = [
+  'code',
+  'branch',
+  'refactor',
+  'behaviour',
+  'multibranch',
+];
+// The sets written for the scaled refactor bed. fitBed refuses them on any
+// other bed, where their answers are wrong.
+export const REFACTOR_SETS = ['refactor', 'behaviour', 'multibranch'];
+const REFACTOR_SCALE = 10;
+// `group` sorts a refactor-bed question for reporting, since the groups
+// measure different things (README, "The refactor layer"):
+// - refactor.json: "follow" (`git log --follow` on the new path reaches the
+//   old trailer), "no-follow" (a folder, or every stale anchor at once),
+//   "drift" (a Decision against the code), "location" (where code is now),
+//   "control" (code the refactor left alone);
+// - behaviour.json: "spread" (needs code or trailers from several folders)
+//   and "control" (answered from Proof records alone, or one folder's log).
+const GROUPS = {
+  refactor: ['follow', 'no-follow', 'drift', 'location', 'control'],
+  behaviour: ['spread', 'control'],
+};
+
+/** The refactor map beside a test bed, or null for a bed without one. */
+export function refactorMap(repo) {
+  const file = `${repo}.refactor.json`;
+  return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null;
+}
+
+/**
+ * The sets as they fit the test bed at `repo`. A refactor set on a bed
+ * without a 10x refactor map is an error. On a bed with a refactor map, the
+ * code and branch questions marked `refactorStale` name a path or symbol
+ * main no longer has; they are dropped unless `keepStale` (check.mjs keeps
+ * them, since their checks read history and still hold). Returns the sets
+ * and the ids dropped.
+ */
+export function fitBed(sets, repo, { keepStale = false } = {}) {
+  const map = refactorMap(repo);
+  for (const set of sets)
+    if (REFACTOR_SETS.includes(set.effort) && map?.scale !== REFACTOR_SCALE)
+      throw new Error(
+        `${
+          set.file
+        } holds only on a bed built with --scale ${REFACTOR_SCALE} --refactor; ${repo} ${
+          map
+            ? `has a refactor map at scale ${map.scale}`
+            : 'has no refactor map'
+        }`
+      );
+  if (!map || keepStale) return { sets, dropped: [] };
+  const dropped = sets.flatMap((set) =>
+    set.questions.filter((q) => q.refactorStale).map((q) => q.id)
+  );
+  return {
+    sets: sets
+      .map((set) => ({
+        ...set,
+        questions: set.questions.filter((q) => !q.refactorStale),
+      }))
+      .filter((set) => set.questions.length),
+    dropped,
+  };
+}
 // Names that point at one Effort without its title: the engine and renderer
 // code names that Effort titles use.
 const EFFORT_NAMES = ['Kestrel', 'Lantern'];
@@ -97,10 +202,11 @@ function args(argv) {
     else throw new Error(`Unknown argument ${argv[i]}`);
   }
   // The test bed's main graph adds records that change other sets'
-  // answers, so --repo checks only the sets about it.
-  if (out.repo && !out.only.length) out.only.push(...REPO_SETS);
+  // answers, so --repo checks only the sets about it. `refactor` holds only
+  // on a refactor bed, so it runs only when named.
+  if (out.repo && !out.only.length) out.only.push('code', 'branch');
   if (out.repo && out.only.some((name) => !REPO_SETS.includes(name)))
-    throw new Error('--repo runs only the code and branch sets');
+    throw new Error(`--repo runs only the ${REPO_SETS.join(', ')} sets`);
   return out;
 }
 
@@ -272,6 +378,23 @@ function validate(
     errors.push(`${set.file} ${q.id ?? '?'}: ${message}`);
   if (!q.id || seen.has(q.id)) return err('missing or duplicate id');
   seen.add(q.id);
+  if (q.refactorStale !== undefined && q.refactorStale !== true)
+    err('refactorStale is true or left out');
+  if (q.refactorStale && !['code', 'branch'].includes(set.effort))
+    err('refactorStale belongs to code.json and branch.json');
+  if (GROUPS[set.effort] && !GROUPS[set.effort].includes(q.group))
+    err(`group must be one of ${GROUPS[set.effort].join(', ')}`);
+  if (!GROUPS[set.effort] && q.group !== undefined)
+    err('group belongs to refactor.json and behaviour.json');
+  if (
+    q.overlaps !== undefined &&
+    (!Array.isArray(q.overlaps) ||
+      !q.overlaps.length ||
+      q.overlaps.some((id) => typeof id !== 'string' || id === q.id))
+  )
+    err('overlaps lists the ids of other questions');
+  if (q.completeness !== undefined && !String(q.completeness).trim())
+    err('completeness says how the answer set was shown complete');
   if (!Number.isInteger(q.tier) || q.tier < 0 || q.tier > 4)
     err('tier must be 0-4');
   if (!Number.isInteger(q.hops) || q.hops < 0)
@@ -529,6 +652,7 @@ async function main() {
       throw new Error(
         `${set.file} needs --repo <dir>, a test bed from build-repo.mjs`
       );
+  if (options.repo) fitBed(sets, options.repo, { keepStale: true });
   // Ambiguous questions are checked against their sources, so load every
   // Effort file even under --only.
   const sources = new Map();
@@ -567,6 +691,16 @@ async function main() {
     if (qs.length)
       console.log(JSON.stringify({ effort: name, questions: qs.length }));
   }
+  // An overlap names a question in a set that only loads with another
+  // --only, so look for it in every file.
+  const allIds = new Set(
+    (await loadQuestions([], { optIn: true })).flatMap((set) =>
+      set.questions.map((q) => q.id)
+    )
+  );
+  for (const q of all)
+    for (const id of q.overlaps ?? [])
+      if (!allIds.has(id)) errors.push(`${q.id}: overlaps names unknown ${id}`);
   if (warnings.length) {
     console.warn(warnings.join('\n'));
     console.warn(`${warnings.length} warning(s)`);

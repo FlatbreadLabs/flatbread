@@ -71,6 +71,23 @@ function list(value) {
   return Array.isArray(value) ? value : value === undefined ? [] : [value];
 }
 
+/** `values` sorted: numbers by value, before strings in code-unit order. */
+export function sortValues(values) {
+  return values.sort((a, b) =>
+    typeof a === 'number' && typeof b === 'number'
+      ? a - b
+      : typeof a === 'number'
+      ? -1
+      : typeof b === 'number'
+      ? 1
+      : String(a) < String(b)
+      ? -1
+      : String(a) > String(b)
+      ? 1
+      : 0
+  );
+}
+
 export function standing(rec) {
   return recordStanding(rec);
 }
@@ -362,6 +379,25 @@ export function runCheck(graph, effort, check) {
     }
     case 'edge':
       return hasEdge(graph, effort, check.edge);
+    // Several checks combined: the keys or values any of them gives
+    // ("union") or every one of them gives ("intersect"), sorted. One that
+    // fails fails the whole check.
+    case 'union':
+    case 'intersect': {
+      if (!check.checks?.length) throw new Error(`${check.type} needs checks`);
+      const sets = check.checks.map(
+        (inner) =>
+          new Set(
+            list(runCheck(graph, effort, inner)).map((v) => JSON.stringify(v))
+          )
+      );
+      const keep =
+        check.type === 'union'
+          ? [...new Set(sets.flatMap((set) => [...set]))]
+          : [...sets[0]].filter((v) => sets.every((set) => set.has(v)));
+      const out = sortValues(keep.map((v) => JSON.parse(v)));
+      return check.count ? out.length : out;
+    }
     // Checks on the git test bed (scripts/testbed.mjs), for the code and
     // branch question sets.
     case 'atRef':
@@ -371,6 +407,12 @@ export function runCheck(graph, effort, check) {
     case 'refDiff':
     case 'changedPaths':
     case 'conflicts':
+    case 'renamed':
+    case 'staleAnchor':
+    case 'codeAt':
+    case 'anchorDrift':
+    case 'goneText':
+    case 'refAll':
       if (!graph.repo)
         throw new Error(`check ${check.type} needs --repo <test bed>`);
       return graph.repo.runCheck(graph, effort, check, runCheck);
