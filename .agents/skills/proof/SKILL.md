@@ -203,6 +203,15 @@ Pick the read by what you need, in this order:
    a `Proof: <id>` trailer, or a body that names the path. Add words to
    rank them. Run it before you change a file, so you build on the accepted
    Decisions and Constraints instead of crawling the codebase or the graph.
+   It follows git history at HEAD: records on a file's or folder's former
+   names count, and the `via:` line says `anchored at <old>, renamed to <new> in <sha> "<subject>"`. A path or symbol HEAD lacks still lists its
+   records, and a `note:` says where it went (renamed, or deleted in which
+   commit). Wherever a code Citation is printed (find cards, `get`, other
+   digests), a line flags an anchor HEAD no longer bears out: `anchor … is stale` when its file or symbol moved or went, `anchor … changed since`
+   when its file changed after the anchor's sha (in any part), with the
+   commits' subjects. Read those commits before you rely on what the record
+   says the code does. An anchor that still holds, and code on disk that is
+   not committed yet, add nothing.
 5. **Before building on a Decision: `proof find --refs all`.** It overlays
    the Proof records other branches change, without a checkout, tags each
    card `main`, `only on <ref>`, or `differs on <ref>: <here> vs <there>`
