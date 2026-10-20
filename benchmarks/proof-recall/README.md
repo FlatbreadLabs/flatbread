@@ -1614,3 +1614,52 @@ codebase grow, and the filler never touches a real file. `--path` and
 `--refs` earn their place by cost, about half the reading and half the
 tool calls, not by accuracy. A test that could show more would ask about
 code no single path names, or about many branches at once.
+
+### Phase 3: behaviour, many branches, and a refactor Proof missed
+
+The 10x test bed with `build-repo.mjs --refactor`: about ten commits on
+main move folders, rename files and functions, split one module, merge
+two, and change one behaviour (a hash interval from 30 to 60 frames, while
+the accepted Decision still says 30). None of them updates Proof, so ten
+code anchors no longer hold. The sets are the 27 code and branch questions
+the refactor leaves true, plus `behaviour` (16), `multibranch` (12) and
+`refactor` (19). Haiku, twice, `--timeout 1200`. Run files:
+`runs/p3-r{1,2}-*.json` (today's reads) and `runs/p3s-r{1,2}-findcode.json`
+(the reads that follow renames and flag stale anchors). No-brief reads no
+Proof, so both `findcode` builds are compared with the same no-brief runs.
+
+| Set (question-runs)    | `findcode`, today's reads | `findcode`, rename-aware | no-brief | Read tokens, today / rename-aware / no-brief |
+| ---------------------- | ------------------------- | ------------------------ | -------- | -------------------------------------------- |
+| all (148)              | 133                       | 129                      | 129      | 24,983 / 23,948 / 34,303                     |
+| code and branch (54)   | 52                        | 52                       | 51       | 15,512 / 15,641 / 25,629                     |
+| behaviour (32)         | 24                        | 21                       | 21       | 29,705 / 27,799 / 45,047                     |
+| multibranch (24)       | 23                        | 23                       | 22       | 31,660 / 37,222 / 35,842                     |
+| refactor (38)          | 34                        | 33                       | 35       | 30,248 / 24,125 / 36,610                     |
+| refactor, holdout (10) | 8                         | 8                        | 10       | 27,623 / 18,627 / 37,395                     |
+
+No gap here is larger than chance (today's reads against no-brief, 11 to
+7, p = 0.48; rename-aware against today's, 3 to 7, p = 0.34). No session
+timed out. Ten sessions wrote scratch files outside their folder; none
+read the questions, the keymap or the refactor map.
+
+- **Behaviour no single path names.** Search reads a third fewer tokens
+  than git alone (29,705 against 45,047) and makes 15 tool calls instead
+  of 26, at the same accuracy.
+- **Many branches.** No saving: `--refs all` cards on every question cost
+  as much as `git diff` per branch.
+- **Stale anchors, today's reads.** `findcode` does slightly worse than git
+  alone on the refactor set. `--path` on a moved file returns nothing, and
+  cards show old paths with no warning, so an agent that trusts them
+  misses a function that moved out of a file that still exists.
+- **Rename-aware reads.** On the offline gate they lift answers on the cards
+  from 9 to 12 of 21 on holdout, with no holdout question worse. Paid, they
+  cut reading on the refactor set by a fifth (a third on holdout) and tool
+  calls from 14 to 10, but do not change accuracy. The remaining refactor
+  misses are graph-wide audits ("which records cite an anchor that no
+  longer holds?"): agents search for words like "stale", which no read
+  indexes, and stop at what they find.
+
+So a refactor that Proof missed costs an agent that trusts Proof less than
+expected, because git still shows the moves, and the new notes make the
+recovery cheaper rather than more accurate. A read that lists every stale
+anchor at once is the change these numbers point to next.
