@@ -2,7 +2,7 @@
 // Compares two runs over the questions both answered, pair by pair.
 //
 //   node scripts/compare.mjs runs/<a>.json runs/<b>.json [--skip id1,id2]
-//        [--only ambiguous] [--split tune|holdout|all]
+//        [--only ambiguous] [--split tune|holdout|all] [--repo <test bed>]
 //   node scripts/compare.mjs runs/a-r1.json,runs/a-r2.json \
 //        runs/b-r1.json,runs/b-r2.json
 //
@@ -31,7 +31,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadQuestions } from './check.mjs';
 import { splitOf } from './find-recall.mjs';
 import { score } from './grade.mjs';
-import { loadGraph } from './graph.mjs';
+import { loadGraph, readGraph } from './graph.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -67,10 +67,14 @@ async function main() {
   const split = atSplit >= 0 ? argv.splice(atSplit, 2)[1] : 'all';
   if (!['tune', 'holdout', 'all'].includes(split))
     throw new Error('--split must be one of tune, holdout, all');
-  const [pathA, pathB] = argv;
-  if (!pathB)
+  // The code and branch sets name records that exist only in the git test
+  // bed, so they are scored against it, as grade.mjs does.
+  const atRepo = argv.indexOf('--repo');
+  const repo = atRepo >= 0 ? resolve(argv.splice(atRepo, 2)[1]) : null;
+  const [pathA, pathB, ...extra] = argv;
+  if (!pathB || extra.length)
     throw new Error(
-      'usage: compare.mjs <run-a.json>[,more] <run-b.json>[,more] [--skip ids] [--only sets] [--split tune|holdout|all]'
+      'usage: compare.mjs <run-a.json>[,more] <run-b.json>[,more] [--skip ids] [--only sets] [--split tune|holdout|all] [--repo <test bed>]'
     );
   const load = (paths) =>
     Promise.all(
@@ -100,7 +104,12 @@ async function main() {
     pooled
       ? runs.map((run, i) => run.run?.name ?? paths.split(',')[i]).join(',')
       : runs[0].run?.name ?? paths;
-  const graph = await loadGraph(join(BENCH, '.flatbread-proof'));
+  const graph = repo
+    ? readGraph(
+        join(repo, '.flatbread-proof'),
+        JSON.parse(await readFile(`${repo}.keymap.json`, 'utf8'))
+      )
+    : await loadGraph(join(BENCH, '.flatbread-proof'));
   const sets = await loadQuestions(only);
   const rows = [];
   for (const [i, a] of runsA.entries())
