@@ -516,6 +516,12 @@ export interface FindHit {
   readonly outbound: readonly FindLink[];
   readonly inbound: readonly FindLink[];
   readonly code: readonly string[];
+  /**
+   * Set by the caller from git history: lines for code the card names that
+   * HEAD no longer bears out, such as a code Citation's anchor whose file
+   * was renamed. The renderer prints them as given and never cuts them.
+   */
+  readonly codeNotes?: readonly string[];
   /** With `governed`: the ties of every chain member, strongest first. */
   readonly via?: readonly FindVia[];
   /** With `--refs`: where the shown version lives, as `only on feat/a`. */
@@ -1265,7 +1271,7 @@ function attachedLine(attached: NonNullable<FindHit['attached']>): string {
 
 const VIAS_SHOWN = 3;
 
-/** The `via:` and `branch:` lines, which are never cut. */
+/** The `via:`, `branch:`, and code note lines, which are never cut. */
 function tieLines(hit: FindHit): string[] {
   const lines: string[] = [];
   const vias = (hit.via ?? []).filter((via) => via.text);
@@ -1284,6 +1290,7 @@ function tieLines(hit: FindHit): string[] {
       }`
     );
   if (hit.branch) lines.push(`   branch: ${hit.branch}`);
+  for (const note of hit.codeNotes ?? []) lines.push(`   ${note}`);
   return lines;
 }
 

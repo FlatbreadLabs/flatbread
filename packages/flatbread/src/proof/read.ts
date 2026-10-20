@@ -32,6 +32,7 @@ import {
 import { loadConfig } from '@flatbread/config';
 import {
   buildFindIndex,
+  codeReferences,
   FIND_DEFAULT_LIMIT,
   FIND_MAX_LIMIT,
   findRecords,
@@ -44,13 +45,26 @@ import {
   type FindVia,
 } from './find.js';
 import {
+  aliasTarget,
+  anchorMatches,
+  anchorText,
+  codeAnchors,
   git,
   governingRecords,
+  isCodeCitation,
   parseCodeTarget,
   trailerCommits,
+  type CodeAlias,
+  type CodeAnchor,
   type CodeTarget,
   type TrailerCommit,
 } from './anchors.js';
+import {
+  anchorNote,
+  CodeHistory,
+  pathNote as pathFateNote,
+  targetAliases,
+} from './history.js';
 import {
   branchCandidates,
   buildOverlay,
@@ -616,6 +630,11 @@ async function render(
     sections?: DigestSection[];
     compaction?: CompactionStatus;
     capReasons?: ReadCapReason[];
+    /**
+     * Lines for code anchors HEAD no longer bears out. Left out, they are
+     * worked out for the code Citations on the page.
+     */
+    codeNotes?: string[];
   } = {}
 ): Promise<ReadEnvelope> {
   const served = await servedGeneration(options.rootDir, options.consistency);
@@ -641,7 +660,32 @@ async function render(
     : 0;
   const selected = records.slice(offset, offset + limit);
   const hasMore = offset + selected.length < records.length;
-  return renderDigest({
+  const { codeNotes: given, ...digestExtra } = extra;
+  let codeNotes = given;
+  if (!codeNotes) {
+    const citations = selected.filter(isCodeCitation);
+    const repo = citations.length
+      ? await proofRepository(options.rootDir)
+      : undefined;
+    codeNotes = repo
+      ? [
+          ...(
+            await codeNotesFor(
+              citations.map((citation) => ({
+                id: citation.id,
+                citations: [citation],
+                paths: [],
+              })),
+              new CodeHistory(repo.top, repo.root),
+              2
+            )
+          ).entries(),
+        ].flatMap(([id, lines]) =>
+          lines.map((line) => line.replace(/^anchor /, `anchor ${id} `))
+        )
+      : [];
+  }
+  const envelope = await renderDigest({
     query: normalized,
     queryHash: hash,
     generation: served,
@@ -664,8 +708,30 @@ async function render(
         })
       : null,
     hints,
-    ...extra,
+    ...digestExtra,
+    sections: [
+      ...(digestExtra.sections ?? []),
+      ...(codeNotes.length
+        ? [
+            {
+              heading: 'Code anchors at HEAD',
+              lines: codeNotes.map((line) => `- ${line}`),
+            },
+          ]
+        : []),
+    ],
   });
+  if (!codeNotes.length) return envelope;
+  const summary = `${envelope.summary}; ${codeNotes.length} code ${
+    codeNotes.length === 1 ? 'note' : 'notes'
+  } (## Code anchors at HEAD): ${codeNotes[0]}`;
+  return {
+    ...envelope,
+    summary:
+      [...summary].length <= 640
+        ? summary
+        : `${[...summary].slice(0, 639).join('')}…`,
+  };
 }
 
 export async function getRecord(
@@ -733,6 +799,37 @@ export async function getRecord(
       }
     }
   }
+  // The code it anchors, cites, or names, where HEAD no longer bears it out.
+  let codeNotes: string[] = [];
+  if (displayed) {
+    const cited: ReadRecord[] = [];
+    for (const citedId of displayed.relations.cites ?? []) {
+      const one = await projection.one('Citation', citedId);
+      if (one) cited.push(one);
+    }
+    const citations = codeCitationsOf(
+      displayed,
+      (citedId) => cited.find((one) => one.id === citedId),
+      [],
+      'include'
+    );
+    const paths = codeReferences(
+      `${String(displayed.frontmatter.title ?? '')}\n${displayed.body_excerpt}`
+    );
+    const repo =
+      citations.length || paths.some(repoPath)
+        ? await proofRepository(options.rootDir)
+        : undefined;
+    if (repo)
+      codeNotes =
+        (
+          await codeNotesFor(
+            [{ id: displayed.id, citations, paths }],
+            new CodeHistory(repo.top, repo.root),
+            6
+          )
+        ).get(displayed.id) ?? [];
+  }
   const foreignLimit = 25;
   const overflow = foreignReferences.length - foreignLimit;
   const sections =
@@ -762,6 +859,7 @@ export async function getRecord(
       anomaly,
       fullBody: true,
       ...(sections ? { sections } : {}),
+      codeNotes,
     }
   );
 }
@@ -1488,6 +1586,213 @@ function roundScore(score: number): number {
   return Math.round(score * 1000) / 1000;
 }
 
+/** Former names whose trailers `--path` reads, at most. */
+const ALIAS_TRAILER_PATHS = 4;
+/** Code anchors one read checks against HEAD, at most. */
+const ANCHORS_CHECKED = 8;
+/** Paths a body names that one read looks up in history, at most. */
+const PATHS_CHECKED = 6;
+/** Code notes on one card, at most. */
+const CARD_CODE_NOTES = 3;
+/** Alias anchor shas one read checks against the move commit, at most. */
+const ALIAS_SHA_CHECKS = 8;
+/** Git commands one `trailerCommits` read runs. */
+const TRAILER_GIT_CALLS = 2;
+
+/**
+ * Narrows what a target's former names govern, from git history:
+ *
+ * - an anchor on a former name taken at or after the commit that moved the
+ *   code off it is about whatever has that name since, not the target;
+ * - for a split whose source HEAD still has, an anchor on a symbol the
+ *   target lacks is about code that stayed behind;
+ * - for a former name HEAD has again, a body counts only if it was written
+ *   before the move.
+ */
+async function refineAliases(
+  index: FindIndex,
+  target: CodeTarget,
+  history: CodeHistory
+): Promise<CodeTarget> {
+  const aliases = target.aliases ?? [];
+  if (!aliases.some((alias) => alias.until && alias.path !== undefined))
+    return target;
+  const anchors = [...index.records.values()]
+    .filter(isCodeCitation)
+    .flatMap((record) => codeAnchors(record.body_excerpt));
+  const heads = await history.kindsAtHead(
+    aliases.flatMap((alias) => (alias.until && alias.path ? [alias.path] : []))
+  );
+  const splitSymbols =
+    target.path !== undefined && target.file
+      ? history.symbolsAtHead(
+          aliases
+            .filter((alias) => alias.split)
+            .flatMap((alias) =>
+              anchors.filter((anchor) =>
+                anchorMatches(anchor, aliasTarget(alias))
+              )
+            )
+            .flatMap((anchor) =>
+              anchor.symbol
+                ? [{ path: target.path as string, symbol: anchor.symbol }]
+                : []
+            )
+        )
+      : undefined;
+  const checked = new Set<string>();
+  const refined: CodeAlias[] = [];
+  for (const alias of aliases) {
+    if (!alias.until || alias.path === undefined) {
+      refined.push(alias);
+      continue;
+    }
+    const own = aliasTarget(alias);
+    const here = heads.get(alias.path) ?? (await history.diskKind(alias.path));
+    const skip = new Set<string>();
+    for (const anchor of anchors) {
+      if (!anchorMatches(anchor, own)) continue;
+      const key = `${anchor.sha}\0${alias.until}`;
+      const check =
+        anchor.sha !== undefined &&
+        (checked.has(key) || checked.size < ALIAS_SHA_CHECKS);
+      if (check) checked.add(key);
+      if (
+        check &&
+        (await history.isAncestor(alias.until, anchor.sha as string))
+      )
+        skip.add(anchorText(anchor));
+      else if (
+        alias.split &&
+        here &&
+        anchor.symbol &&
+        splitSymbols &&
+        target.path !== undefined &&
+        (await history.hasSymbolNow(
+          target.path,
+          anchor.symbol,
+          splitSymbols
+        )) === false
+      )
+        skip.add(anchorText(anchor));
+    }
+    const before = here ? await history.commitTime(alias.until) : undefined;
+    refined.push({
+      ...alias,
+      ...(skip.size ? { skipAnchors: skip } : {}),
+      ...(before !== undefined ? { bodiesBefore: before } : {}),
+    });
+  }
+  return { ...target, aliases: refined };
+}
+
+/** A code reference that reads as a repository path. */
+function repoPath(ref: string): boolean {
+  return (
+    ref.includes('/') &&
+    !ref.endsWith('()') &&
+    !ref.startsWith('#') &&
+    !/^[a-z]+:/i.test(ref) &&
+    !ref.includes('..')
+  );
+}
+
+/**
+ * The code Citations a record brings: itself, when it is one, the ones it
+ * cites, and the ones that derive from it, live unless `retracted` lets
+ * retracted ones in.
+ */
+function codeCitationsOf(
+  record: ReadRecord,
+  lookup: (id: string) => ReadRecord | undefined,
+  derived: readonly string[],
+  retracted: RetractedMode
+): ReadRecord[] {
+  const list = [
+    record,
+    ...[...(record.relations.cites ?? []), ...derived].flatMap((id) => {
+      const found = lookup(id);
+      return found ? [found] : [];
+    }),
+  ];
+  return [...new Map(list.map((one) => [one.id, one])).values()].filter(
+    (one) =>
+      isCodeCitation(one) &&
+      (retracted !== 'exclude' || one.frontmatter.retracted !== true)
+  );
+}
+
+/**
+ * Lines for code a set of records names that HEAD no longer bears out: a
+ * code Citation's anchor whose path or symbol is gone or whose file
+ * changed since its sha, and a path a body names that HEAD lacks. Live
+ * anchors that hold add nothing. Returns each record's lines, in order.
+ */
+async function codeNotesFor(
+  items: readonly {
+    id: string;
+    citations: readonly ReadRecord[];
+    paths: readonly string[];
+  }[],
+  history: CodeHistory,
+  perItem: number
+): Promise<Map<string, string[]>> {
+  const anchorsOf = (citation: ReadRecord): CodeAnchor[] =>
+    codeAnchors(citation.body_excerpt).slice(0, 2);
+  const anchors = items.flatMap((item) => item.citations.flatMap(anchorsOf));
+  const statuses = await history.anchorStatuses(anchors, ANCHORS_CHECKED);
+  const anchored = new Set(anchors.map((anchor) => anchor.path));
+  const fates = await history.pathFates(
+    items
+      .flatMap((item) => item.paths)
+      .filter((path) => repoPath(path) && !anchored.has(path)),
+    PATHS_CHECKED
+  );
+  const notes = new Map<string, string[]>();
+  for (const item of items) {
+    const lines: string[] = [];
+    for (const citation of item.citations)
+      for (const anchor of anchorsOf(citation)) {
+        const status = statuses.get(anchorText(anchor));
+        const line = status
+          ? anchorNote(
+              status,
+              citation.id === item.id ? undefined : citation.id
+            )
+          : undefined;
+        if (line && !lines.includes(line)) lines.push(line);
+      }
+    for (const path of item.paths) {
+      const fate = fates.get(path);
+      if (fate) lines.push(pathFateNote(fate));
+    }
+    if (lines.length) notes.set(item.id, lines.slice(0, perItem));
+  }
+  return notes;
+}
+
+/** Code notes for find cards, keyed by the shown record. */
+async function cardCodeNotes(
+  index: FindIndex,
+  hits: readonly FindHit[],
+  history: CodeHistory,
+  options: { retracted: RetractedMode; onlyOnRef: (id: string) => boolean }
+): Promise<Map<string, string[]>> {
+  const items = hits
+    .filter((hit) => !options.onlyOnRef(hit.record.id))
+    .map((hit) => ({
+      id: hit.record.id,
+      citations: codeCitationsOf(
+        hit.record,
+        (id) => index.records.get(id),
+        index.inbound.get(hit.record.id)?.get('derived_by') ?? [],
+        options.retracted
+      ).filter((citation) => !options.onlyOnRef(citation.id)),
+      paths: hit.code,
+    }));
+  return codeNotesFor(items, history, CARD_CODE_NOTES);
+}
+
 /**
  * Finds records by what they say: BM25 over titles, full bodies, a few
  * frontmatter fields, and Blob payloads, one hit per supersession chain.
@@ -1570,6 +1875,8 @@ export async function effortFind(
   let governed: Map<string, FindVia[]> | undefined;
   let pathLabel: string | undefined;
   let pathNote: (() => Promise<string | undefined>) | undefined;
+  let history: CodeHistory | undefined;
+  let historyNotes: string[] = [];
   if (codePath) {
     const repo = await proofRepository(options.rootDir);
     // For a path the working tree lacks: the refs that hold it, from the
@@ -1613,7 +1920,7 @@ export async function effortFind(
       return list;
     };
     // With --refs, a path only a ref has is read from that ref's tree.
-    const target = await parseCodeTarget(
+    let target = await parseCodeTarget(
       codePath,
       options.cwd,
       repo?.top ?? options.cwd,
@@ -1622,6 +1929,18 @@ export async function effortFind(
         : undefined
     );
     pathLabel = target.label;
+    // Other names the code had or has now, from git history at HEAD.
+    history = repo ? new CodeHistory(repo.top, repo.root) : undefined;
+    if (history) {
+      const found = await targetAliases(target, history);
+      if (found.aliases.length)
+        target = await refineAliases(
+          index,
+          { ...target, aliases: found.aliases },
+          history
+        );
+      historyNotes = found.notes;
+    }
     // Trailers need a path; a bare symbol has none to give git log. With
     // --refs, the commits of every ref that holds the path count too, so a
     // branch that changes code and no record still ties its trailers.
@@ -1643,7 +1962,38 @@ export async function effortFind(
             target.path
           )
         : [];
-    pathNote = () => codeTargetNote(target, codePath, refs, repo, holdersOf);
+    // Trailers on an alias: before the commit that moved the code off it.
+    const direct = new Set(commits.map((commit) => commit.sha));
+    // The first alias of each other path: the one that keeps the symbol.
+    const aliasPaths = (target.aliases ?? [])
+      .filter(
+        (alias, i, all) =>
+          alias.path !== undefined &&
+          alias.path !== target.path &&
+          all.findIndex((other) => other.path === alias.path) === i
+      )
+      .slice(0, ALIAS_TRAILER_PATHS);
+    if (repo)
+      for (const alias of aliasPaths)
+        for (const commit of !history || history.take(TRAILER_GIT_CALLS)
+          ? await trailerCommits(
+              repo.top,
+              alias.until ? [`${alias.until}^`] : ['HEAD'],
+              alias.path as string
+            )
+          : [])
+          if (!direct.has(commit.sha)) {
+            direct.add(commit.sha);
+            commits.push({
+              ...commit,
+              via: `on ${alias.name.replace(/#.*$/, '')}, ${alias.how}`,
+            });
+          }
+    const named = target;
+    // History already said the path is gone; a branch that has it is news.
+    const moved = historyNotes.some((line) => / is not at HEAD/.test(line));
+    pathNote = () =>
+      codeTargetNote(named, codePath, refs, repo, holdersOf, moved);
     governed = governingRecords(
       index,
       target,
@@ -1666,11 +2016,33 @@ export async function effortFind(
     limit,
     ...(governed ? { governed } : {}),
   });
-  const note = pathNote && !found.matched ? await pathNote() : undefined;
+  const branchNote = pathNote && !found.matched ? await pathNote() : undefined;
+  const noteLines = [...historyNotes, ...(branchNote ? [branchNote] : [])];
+  const note = noteLines.length ? noteLines.join(' ') : undefined;
+  // Code anchors and paths on the cards that HEAD no longer bears out.
+  if (!history) {
+    const repo = await proofRepository(options.rootDir);
+    history = repo ? new CodeHistory(repo.top, repo.root) : undefined;
+  }
+  const staleLines = history
+    ? await cardCodeNotes(index, found.hits, history, {
+        retracted,
+        onlyOnRef: overlay
+          ? (id) => (overlay as Overlay).tag(id).startsWith('only on')
+          : () => false,
+      })
+    : new Map<string, string[]>();
+  const withNotes = (hits: readonly FindHit[]): FindHit[] =>
+    hits.map((hit) =>
+      staleLines.get(hit.record.id)?.length
+        ? { ...hit, codeNotes: staleLines.get(hit.record.id) }
+        : hit
+    );
   const result: FindResult =
     codePath || overlay
       ? {
           ...found,
+          hits: withNotes(found.hits),
           header: findHeader(
             text,
             pathLabel,
@@ -1678,11 +2050,11 @@ export async function effortFind(
             found,
             options.effort
           ),
-          ...(note ? { notes: [note] } : {}),
+          ...(noteLines.length ? { notes: noteLines } : {}),
           ...(overlay && refSet && conflicts
             ? {
-                notes: [refsLine(refSet), ...(note ? [note] : [])],
-                hits: found.hits.map((hit) =>
+                notes: [refsLine(refSet), ...noteLines],
+                hits: withNotes(found.hits).map((hit) =>
                   branchOf(overlay as Overlay, hit)
                 ),
                 conflicts: conflicts.texts,
@@ -1690,7 +2062,7 @@ export async function effortFind(
               }
             : {}),
         }
-      : found;
+      : { ...found, hits: withNotes(found.hits) };
   const cards = renderFindCards(index, result);
   const envelope = await render(
     options,
@@ -1710,6 +2082,7 @@ export async function effortFind(
     result.hits.map((hit) => `getRecord("${hit.record.id}")`),
     {
       sections: [{ heading: 'Find hits', lines: cards.split('\n') }],
+      codeNotes: [],
       // A ranked search that shows fewer records than matched is not complete.
       capReasons: result.matched > result.hits.length ? ['find_limit'] : [],
     }
@@ -1826,7 +2199,9 @@ async function codeTargetNote(
   value: string,
   refs: readonly string[] | 'all' | undefined,
   repo: { top: string } | undefined,
-  holdersOf: (path: string) => Promise<{ name: string }[]>
+  holdersOf: (path: string) => Promise<{ name: string }[]>,
+  /** History has said where the path went: only a branch that has it adds. */
+  onlyHolders = false
 ): Promise<string | undefined> {
   const { label } = target;
   if (target.path === undefined) {
@@ -1840,8 +2215,12 @@ async function codeTargetNote(
       : undefined;
   }
   if (!target.absent) return undefined;
-  if (!repo) return `note: ${label} is not in the working tree.`;
+  if (!repo)
+    return onlyHolders
+      ? undefined
+      : `note: ${label} is not in the working tree.`;
   const list = await holdersOf(target.path);
+  if (onlyHolders && !list.length) return undefined;
   if (!refs)
     return list.length
       ? `note: ${label} is not in the working tree; ${refNames(list)} ${

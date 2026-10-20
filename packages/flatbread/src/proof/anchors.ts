@@ -15,6 +15,11 @@ import type { FindIndex, FindVia } from './find.js';
  * - a git commit that touches the path and carries `Proof: <id>` trailers.
  * - a record body that names the path, or the symbol, exactly.
  *
+ * Each of the three also counts on the target's aliases (`CodeTarget.aliases`,
+ * from git history in `history.ts`): a former name of the file or folder,
+ * the name a gone path moved to, a symbol's other name. Those ties say how
+ * the name connects.
+ *
  * Everything here but the git read is a pure function of its inputs.
  */
 
@@ -33,6 +38,44 @@ export interface CodeTarget {
   readonly label: string;
   /** `path` is not in the working tree. */
   readonly absent?: true;
+  /**
+   * Other names the code had, or has now, from git history at HEAD:
+   * a file's or folder's former names, the name a gone path moved to, a
+   * symbol's former or new name. Anchors, trailers, and bodies on an alias
+   * govern the target too, and say how they connect.
+   */
+  readonly aliases?: readonly CodeAlias[];
+}
+
+/** Another name for a target's code, and how it connects. */
+export interface CodeAlias {
+  readonly path?: string;
+  readonly dir: boolean;
+  readonly file: boolean;
+  readonly symbol?: string;
+  /** The alias as a via line names it, such as `src/old.ts` or `#oldName`. */
+  readonly name: string;
+  /** How it connects, such as `renamed to src/new.ts in 1a2b3c4 "…"`. */
+  readonly how: string;
+  /**
+   * The commit that moved the code off this name. Trailers on the name
+   * count only before it, so a file that a split left in place keeps its
+   * later commits to itself.
+   */
+  readonly until?: string;
+  /** The code was split off this name, which HEAD may still have. */
+  readonly split?: true;
+  /**
+   * Anchors on this name that do not govern the target, by `anchorText`:
+   * ones taken after the code moved off the name, and, for a split whose
+   * source is still at HEAD, ones on a symbol the target lacks.
+   */
+  readonly skipAnchors?: ReadonlySet<string>;
+  /**
+   * For a name HEAD has again: bodies on it count only when created before
+   * this time (ms), the commit that moved the code off it.
+   */
+  readonly bodiesBefore?: number;
 }
 
 /** One code reference in a code Citation's body. */
@@ -226,7 +269,7 @@ export function namesTarget(body: string, target: CodeTarget): boolean {
   return Boolean(file || under) && symbol;
 }
 
-function isCodeCitation(record: ReadRecord): boolean {
+export function isCodeCitation(record: ReadRecord): boolean {
   return (
     record.kind === 'citation' &&
     String(record.frontmatter.role ?? '').toLowerCase() === 'code'
@@ -238,6 +281,19 @@ export interface TrailerCommit {
   readonly sha: string;
   readonly subject: string;
   readonly ids: readonly string[];
+  /** For a commit on an alias of the target: how that name connects. */
+  readonly via?: string;
+}
+
+/** An alias as a target of its own, for the matchers. */
+export function aliasTarget(alias: CodeAlias): CodeTarget {
+  return {
+    ...(alias.path !== undefined ? { path: alias.path } : {}),
+    dir: alias.dir,
+    file: alias.file,
+    ...(alias.symbol ? { symbol: alias.symbol } : {}),
+    label: alias.name,
+  };
 }
 
 /**
@@ -258,15 +314,31 @@ export function governingRecords(
     if (!governed.has(record)) governed.set(record, []);
     (governed.get(record) as FindVia[]).push({ strength, record, text });
   };
+  const aliases = (target.aliases ?? []).map((alias) => ({
+    alias,
+    target: aliasTarget(alias),
+  }));
   for (const record of index.records.values()) {
     if (record.kind === 'effort') continue;
     if (isCodeCitation(record)) {
       if (!usable(record)) continue;
-      const anchors = codeAnchors(record.body_excerpt).filter((anchor) =>
-        anchorMatches(anchor, target)
-      );
+      const all = codeAnchors(record.body_excerpt);
+      let anchors = all.filter((anchor) => anchorMatches(anchor, target));
+      let how = '';
+      if (!anchors.length)
+        for (const { alias, target: other } of aliases) {
+          anchors = all.filter(
+            (anchor) =>
+              anchorMatches(anchor, other) &&
+              !alias.skipAnchors?.has(anchorText(anchor))
+          );
+          if (anchors.length) {
+            how = `; anchored at ${alias.name}, ${alias.how}`;
+            break;
+          }
+        }
       if (!anchors.length) continue;
-      const named = anchors.slice(0, 2).map(anchorText).join(', ');
+      const named = `${anchors.slice(0, 2).map(anchorText).join(', ')}${how}`;
       const citers =
         index.inbound.get(record.id)?.get('cited_by') ?? ([] as string[]);
       const causes = record.relations.derives_from ?? [];
@@ -278,6 +350,19 @@ export function governingRecords(
         add(record.id, STRENGTH.citation, `code citation: ${named}`);
     } else if (namesTarget(record.body_excerpt, target))
       add(record.id, STRENGTH.text, `body names ${target.label}`);
+    else {
+      const created = Date.parse(String(record.frontmatter.created_at ?? ''));
+      const alias = aliases.find(
+        ({ alias: one, target: other }) =>
+          !(
+            one.bodiesBefore !== undefined &&
+            Number.isFinite(created) &&
+            created >= one.bodiesBefore
+          ) && namesTarget(record.body_excerpt, other)
+      )?.alias;
+      if (alias)
+        add(record.id, STRENGTH.text, `body names ${alias.name}, ${alias.how}`);
+    }
   }
   for (const commit of commits)
     for (const id of commit.ids)
@@ -288,7 +373,7 @@ export function governingRecords(
           commit.subject.length > 50
             ? `${commit.subject.slice(0, 49)}…`
             : commit.subject
-        }"`
+        }"${commit.via ? `, ${commit.via}` : ''}`
       );
   return governed;
 }

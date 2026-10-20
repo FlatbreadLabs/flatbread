@@ -206,7 +206,12 @@ anchor index, per-record sections (selected frontmatter, body, relation
 lists), one-hop related records, and an edge table. Body policy:
 
 - **`proof get`:** full record body (the normal zoom-in path), including
-  Blob payloads and Citation bodies (URLs / short notes).
+  Blob payloads and Citation bodies (URLs / short notes). For a code
+  Citation, the code Citations a record `cites`, and paths a body names,
+  `## Code anchors at HEAD` lists each one HEAD no longer bears out (see
+  [Code anchors at HEAD](#code-anchors-at-head)), and the summary repeats
+  the first. Other digests list the code Citations on their page the same
+  way.
 - **`proof brief`:** full body of the head compaction only. Every other
   record appears as one line.
 - **`proof find`:** the hit cards (below) under `## Find hits`, and each hit's
@@ -462,6 +467,77 @@ Each card adds, after its title:
 ```
 
 The header reads `find ["<words>"] --path <target> in <scope> (<n> governing, <shown> shown)`.
+
+**Renames and moves.** `--path` reads git history at HEAD with rename
+detection, and the three ties above also count on the code's other names:
+
+- a file at HEAD: its former names (`git log --follow -M`), back to the
+  commit that added it, so a path reused after a move does not inherit the
+  old file's names. A copy counts only as a split, when the same commit
+  took lines out of the source; it reads `split into`;
+- a folder at HEAD: the files and folders renamed into it, from the commits
+  that added files under it. A folder move counts when the old folder is
+  gone at HEAD and most of its files moved, and is followed back through
+  earlier folder moves;
+- a path HEAD lacks: its records as before, plus those on the name a rename
+  gave it, and a `note:` that says where it went: `note: src/old.ts is not at HEAD: renamed to src/new.ts in 1a2b3c4 "<subject>".` or `deleted in …`;
+- a symbol: with a file, the name it had before a rename (or, when the
+  file lacks it, the name a rename gave it); a bare symbol HEAD's code
+  lacks gets the name a rename in the last 500 commits gave it, and a note.
+  An old name counts only if it is gone from the file and the commit that
+  introduced the new one is where it first appears, so swapping a call from
+  one function to another is no rename.
+
+A tie on another name says how it connects:
+
+```text
+   via: cites <cit-id>: src/old.ts#run@1a2b3c4; anchored at src/old.ts, renamed to src/new.ts in 5d6e7f8 "Rename old.ts"
+   via: commit 9a8b7c6 "<subject>", on src/old.ts, renamed to src/new.ts in 5d6e7f8 "Rename old.ts"
+   via: body names lib/parser/, moved to lib/lang/parser/ in 0a1b2c3 "Move the parser"
+```
+
+A former name governs only code from before the move: a trailer counts
+only before the commit that moved the code off it, an anchor whose sha is
+at or after that commit does not count, and when HEAD has the old name
+again, a body counts only if it was written before the move. For a split
+whose source HEAD still has, an anchor on a symbol the target lacks stays
+with the source.
+
+### Code anchors at HEAD
+
+Every find card, `get`, and digest that prints a code Citation checks the
+first 2 anchors in its body against HEAD and the working tree, and prints
+a line only for one that no longer holds. Code on disk that is not
+committed yet is never stale.
+
+```text
+   anchor <cit-id> src/old.ts#run@1a2b3c4 is stale: file renamed to src/new.ts in 5d6e7f8 "Rename old.ts"; #run renamed to start in 2b3c4d5 "Rename run"; 3 commits touched it since 1a2b3c4: 7e8f9a0 "Retry 5 times", 2b3c4d5 (above), 5d6e7f8 (above)
+   anchor <cit-id> src/a.ts#budget@1a2b3c4 changed since: 1 commit touched it since 1a2b3c4: 4c5d6e7 "Cap the fuse"
+   path lib/parser/reader.py is stale: renamed to lib/lang/parser/reader.py in 0a1b2c3 "Move the parser"
+```
+
+- **Path:** not at HEAD or on disk: where it went after the anchor's sha
+  (renamed, then renamed again; or deleted in which commit), or `not at HEAD or in its history`.
+- **Symbol:** no longer a whole word in the file at HEAD or on disk: the
+  commit that took its last use out (pickaxe on the file and its former
+  names), and the name that replaced it on otherwise identical lines, or
+  the files that commit added it to (`moved to …`), or `removed`.
+- **Since:** with a sha, when the file at HEAD differs from the file at the
+  sha: how many commits touched it, under any of its names, after the sha,
+  and up to 3 of them; `(above)` marks one already named. A commit that
+  touched another part of the file counts too, so this line says the file
+  changed, not that the anchored code did. The record may describe the
+  code as it was: read those commits first. A sha HEAD's history lacks
+  (rebased or squashed) reads `the file at HEAD differs from <sha>, which is not in HEAD's history`.
+
+The card's other lines are about the record; these are about the code. A
+`path` line flags a path a body names that HEAD and the working tree lack.
+A card shows at most 3 such lines. One read checks at most 8 anchors and 6
+paths, and runs at most 60 local git commands (no fetch), trailer reads on
+former names included; past that, it says nothing. Pickaxe searches cover
+the last 500 commits. Path-limited walks have no cap on length, as for
+any `git log -- <path>`: `--follow` on the target file, trailer reads, and
+the deletion lookup for a path HEAD lacks.
 
 ### `proof find --refs`: what other branches propose
 
