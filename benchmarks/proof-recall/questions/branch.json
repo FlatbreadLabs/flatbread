@@ -1,0 +1,848 @@
+{
+  "effort": "branch",
+  "questions": [
+    {
+      "id": "branch-001",
+      "tier": 1,
+      "hops": 1,
+      "pathRef": "ines/vsm-pool",
+      "categories": ["branch", "supersession"],
+      "question": "Does any open branch propose replacing the accepted sun-shadow Decision by growing the shadow page pool? Give its draft PR number.",
+      "answer": {
+        "kind": "value",
+        "value": "41",
+        "accept": ["#41"]
+      },
+      "evidence": [
+        "render.dec-vsm",
+        "render.dec-vsm-grow",
+        "render.dec-vsm-coarse"
+      ],
+      "path": [["render.dec-vsm", "superseded_by", "render.dec-vsm-grow"]],
+      "checks": [
+        {
+          "type": "atRef",
+          "ref": "*",
+          "check": {
+            "type": "head",
+            "start": "render.dec-vsm"
+          },
+          "equals": "render.dec-vsm-grow",
+          "report": "pr"
+        },
+        {
+          "type": "pr",
+          "branch": "ines/vsm-pool",
+          "field": "number",
+          "expect": 41
+        }
+      ],
+      "traps": [
+        "tomasz/vsm-evict (draft #44) also replaces it, but with coarser pages on wet sand and the same pool size."
+      ]
+    },
+    {
+      "id": "branch-002",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["branch", "supersession"],
+      "question": "Two open branches each rewrite how engine/lantern/shadows/vsm_pool.rs copes with spring low tide. If both merged, which record would end up superseded by two different records?",
+      "answer": {
+        "kind": "record",
+        "value": "render.dec-vsm"
+      },
+      "evidence": [
+        "render.dec-vsm",
+        "render.dec-vsm-grow",
+        "render.dec-vsm-coarse"
+      ],
+      "checks": [
+        {
+          "type": "conflicts",
+          "refs": ["ines/vsm-pool", "tomasz/vsm-evict"],
+          "kind": "double-supersede"
+        },
+        {
+          "type": "changedPaths",
+          "ref": "*",
+          "under": "engine/lantern/shadows",
+          "expect": ["engine/lantern/shadows/vsm_pool.rs"]
+        },
+        {
+          "type": "conflicts",
+          "refs": ["ines/vsm-pool", "tomasz/vsm-evict"],
+          "kind": "state-differs",
+          "expect": []
+        }
+      ],
+      "traps": [
+        "The Lantern summary is replaced on only one of the two branches, so it is not superseded twice."
+      ]
+    },
+    {
+      "id": "branch-003",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["branch", "current-state"],
+      "question": "On the branch that draws exposed wet sand with coarser shadow pages, what state is its new sun-shadow Decision in?",
+      "answer": {
+        "kind": "value",
+        "value": "proposed"
+      },
+      "evidence": ["render.dec-vsm-coarse", "render.dec-vsm-grow"],
+      "checks": [
+        {
+          "type": "atRef",
+          "ref": "tomasz/vsm-evict",
+          "check": {
+            "type": "field",
+            "record": "render.dec-vsm-coarse",
+            "field": "state"
+          }
+        }
+      ],
+      "traps": ["The rival replacement on ines/vsm-pool is accepted there."]
+    },
+    {
+      "id": "branch-004",
+      "tier": 1,
+      "hops": 1,
+      "pathRef": "ines/vsm-pool",
+      "categories": ["branch", "blocker", "lifecycle"],
+      "question": "Which open branch closes the blocker about the shadow pool overflowing when the tide drains the flats? Give the branch name.",
+      "answer": {
+        "kind": "value",
+        "value": "ines/vsm-pool"
+      },
+      "evidence": [
+        "render.iss-vsm-tide",
+        "render.dec-vsm-grow",
+        "render.dec-vsm-coarse"
+      ],
+      "path": [["render.iss-vsm-tide", "resolved_by", "render.dec-vsm-grow"]],
+      "checks": [
+        {
+          "type": "atRef",
+          "ref": "*",
+          "check": {
+            "type": "field",
+            "record": "render.iss-vsm-tide",
+            "field": "status"
+          },
+          "equals": "resolved"
+        },
+        {
+          "type": "atRef",
+          "ref": "main",
+          "check": {
+            "type": "field",
+            "record": "render.iss-vsm-tide",
+            "field": "status"
+          },
+          "expect": "open"
+        }
+      ],
+      "traps": [
+        "tomasz/vsm-evict builds its Decision on the blocker but leaves it open."
+      ]
+    },
+    {
+      "id": "branch-005",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["branch", "lifecycle"],
+      "question": "Two open branches each settle how the tide simulation should spend less time on cells far from players. If both merged, which question would be left with two accepted answers?",
+      "answer": {
+        "kind": "record",
+        "value": "world.iss-tide-lod-q"
+      },
+      "evidence": [
+        "world.iss-tide-lod-q",
+        "world.dec-tide-lod-quarter",
+        "world.dec-tide-lod-freeze"
+      ],
+      "checks": [
+        {
+          "type": "conflicts",
+          "refs": ["kenji/tide-lod", "priya/skiff-cpu"],
+          "kind": "double-accept"
+        }
+      ],
+      "traps": [
+        "On main the question is open with one proposed answer, so main alone shows no conflict."
+      ]
+    },
+    {
+      "id": "branch-006",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["branch", "rejected-alternative"],
+      "question": "Two open branches pick different ways to make far-off tide cells cheaper. Which Decision is accepted on one of them and rejected on the other?",
+      "answer": {
+        "kind": "record",
+        "value": "world.dec-tide-lod-quarter"
+      },
+      "evidence": [
+        "world.dec-tide-lod-quarter",
+        "world.dec-tide-lod-freeze",
+        "world.iss-tide-lod-q"
+      ],
+      "checks": [
+        {
+          "type": "conflicts",
+          "refs": ["kenji/tide-lod", "priya/skiff-cpu"],
+          "kind": "state-differs"
+        },
+        {
+          "type": "atRef",
+          "ref": "kenji/tide-lod",
+          "check": {
+            "type": "field",
+            "record": "world.dec-tide-lod-quarter",
+            "field": "standing"
+          },
+          "expect": "accepted"
+        },
+        {
+          "type": "atRef",
+          "ref": "priya/skiff-cpu",
+          "check": {
+            "type": "field",
+            "record": "world.dec-tide-lod-quarter",
+            "field": "standing"
+          },
+          "expect": "rejected"
+        }
+      ],
+      "traps": [
+        "The freeze Decision exists only on priya/skiff-cpu, so its state cannot differ between branches."
+      ]
+    },
+    {
+      "id": "branch-007",
+      "tier": 1,
+      "hops": 1,
+      "pathRef": "priya/skiff-cpu",
+      "categories": ["branch", "rejected-alternative"],
+      "question": "Main has an open question about cheaper tide steps for distant cells, with one proposed answer. Which open branch adds a rival answer instead of accepting that one? Give its draft PR number.",
+      "answer": {
+        "kind": "value",
+        "value": "48",
+        "accept": ["#48"]
+      },
+      "evidence": [
+        "world.iss-tide-lod-q",
+        "world.dec-tide-lod-freeze",
+        "world.dec-tide-lod-quarter"
+      ],
+      "path": [
+        ["world.dec-tide-lod-freeze", "derives_from", "world.iss-tide-lod-q"]
+      ],
+      "checks": [
+        {
+          "type": "atRef",
+          "ref": "*",
+          "check": {
+            "type": "select",
+            "effort": "world",
+            "kinds": ["decision"],
+            "derivesFrom": "world.iss-tide-lod-q",
+            "where": {
+              "state": "accepted"
+            }
+          },
+          "equals": ["world.dec-tide-lod-freeze"],
+          "report": "pr"
+        }
+      ],
+      "traps": [
+        "kenji/tide-lod (#46) accepts the answer main already proposed."
+      ]
+    },
+    {
+      "id": "branch-008",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["branch", "retraction"],
+      "question": "An open branch retracts a measurement that main's Skiff tide-storm blocker rests on. Which record is it?",
+      "answer": {
+        "kind": "record",
+        "value": "ports.fnd-storm-capture"
+      },
+      "evidence": [
+        "ports.fnd-storm-capture",
+        "ports.iss-blk-storm",
+        "ports.fnd-storm-recapture"
+      ],
+      "path": [
+        ["ports.iss-blk-storm", "derives_from", "ports.fnd-storm-capture"]
+      ],
+      "checks": [
+        {
+          "type": "refDiff",
+          "ref": "*",
+          "change": "retracted"
+        },
+        {
+          "type": "edge",
+          "edge": [
+            "ports.iss-blk-storm",
+            "derives_from",
+            "ports.fnd-storm-capture"
+          ],
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The retail recapture that replaces it exists only on the branch and is not retracted."
+      ]
+    },
+    {
+      "id": "branch-009",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["branch", "lookup", "retraction"],
+      "question": "On the branch that caps tide-storm particles on Skiff, what peak CPU frame time does the new storm capture measure in the 40 Hz mode?",
+      "answer": {
+        "kind": "value",
+        "value": "27.0 ms",
+        "accept": ["27 ms"]
+      },
+      "evidence": ["ports.fnd-storm-recapture", "ports.fnd-storm-capture"],
+      "checks": [
+        {
+          "type": "atRef",
+          "ref": "priya/skiff-cpu",
+          "check": {
+            "type": "select",
+            "effort": "ports",
+            "kinds": ["finding"],
+            "live": true,
+            "bodyIncludes": "27.0 ms"
+          },
+          "expect": ["ports.fnd-storm-recapture"]
+        },
+        {
+          "type": "atRef",
+          "ref": "priya/skiff-cpu",
+          "check": {
+            "type": "field",
+            "record": "ports.fnd-storm-capture",
+            "field": "standing"
+          },
+          "expect": "retracted"
+        }
+      ],
+      "traps": [
+        "Main's capture says 28.4 ms; the branch retracts it because the particle debug overlay was on."
+      ]
+    },
+    {
+      "id": "branch-010",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["branch", "compaction", "aggregate"],
+      "question": "Which records are new summaries (compactions) written on open branches?",
+      "answer": {
+        "kind": "records",
+        "value": ["render.cmp-5", "world.cmp-5"]
+      },
+      "evidence": [
+        "render.cmp-5",
+        "world.cmp-5",
+        "render.cmp-4",
+        "world.cmp-4"
+      ],
+      "checks": [
+        {
+          "type": "refDiff",
+          "ref": "*",
+          "change": "added",
+          "where": {
+            "kind": "compaction"
+          }
+        },
+        {
+          "type": "conflicts",
+          "refs": ["ines/vsm-pool", "kenji/tide-lod"],
+          "kind": "compaction-fork",
+          "expect": []
+        }
+      ],
+      "traps": [
+        "Main's latest summaries are older; each branch supersedes its own Effort's head."
+      ]
+    },
+    {
+      "id": "branch-011",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["branch", "negative"],
+      "question": "Does any open branch change how the streaming pool picks cells to evict?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": ["world.dec-pool-forecast", "world.fnd-impl-pool-score-2"],
+      "checks": [
+        {
+          "type": "changedPaths",
+          "ref": "*",
+          "under": "engine/kestrel/streaming",
+          "count": true
+        },
+        {
+          "type": "atRef",
+          "ref": "*",
+          "check": {
+            "type": "field",
+            "record": "world.dec-pool-forecast",
+            "field": "standing"
+          },
+          "equals": "accepted",
+          "expect": [
+            "ines/vsm-pool",
+            "kenji/tide-lod",
+            "priya/skiff-cpu",
+            "tomasz/vsm-evict"
+          ]
+        }
+      ],
+      "traps": [
+        "The one-turn eviction fix is already on main, not on a branch."
+      ]
+    },
+    {
+      "id": "branch-012",
+      "tier": 1,
+      "hops": 1,
+      "pathRef": "ines/vsm-pool",
+      "categories": ["branch", "supersession"],
+      "question": "If ines/vsm-pool merged as it stands, what would the state of main's current sun-shadow Decision become?",
+      "answer": {
+        "kind": "value",
+        "value": "superseded"
+      },
+      "evidence": ["render.dec-vsm", "render.dec-vsm-grow"],
+      "path": [["render.dec-vsm", "superseded_by", "render.dec-vsm-grow"]],
+      "checks": [
+        {
+          "type": "atRef",
+          "ref": "ines/vsm-pool",
+          "check": {
+            "type": "field",
+            "record": "render.dec-vsm",
+            "field": "state"
+          }
+        },
+        {
+          "type": "atRef",
+          "ref": "main",
+          "check": {
+            "type": "field",
+            "record": "render.dec-vsm",
+            "field": "state"
+          },
+          "expect": "accepted"
+        }
+      ],
+      "traps": ["It is accepted on main today."]
+    },
+    {
+      "id": "branch-013",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["branch", "lifecycle"],
+      "question": "Which open branch accepts the far-cell tide Decision that main already proposed? Give the branch name.",
+      "answer": {
+        "kind": "value",
+        "value": "kenji/tide-lod"
+      },
+      "evidence": ["world.dec-tide-lod-quarter", "world.iss-tide-lod-q"],
+      "checks": [
+        {
+          "type": "atRef",
+          "ref": "*",
+          "check": {
+            "type": "field",
+            "record": "world.dec-tide-lod-quarter",
+            "field": "standing"
+          },
+          "equals": "accepted"
+        }
+      ],
+      "traps": ["priya/skiff-cpu rejects that Decision by accepting a rival."]
+    },
+    {
+      "id": "branch-014",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["branch", "lookup"],
+      "question": "Who opened the draft PR that freezes far-off tide cells instead of stepping them?",
+      "answer": {
+        "kind": "value",
+        "value": "Priya Natarajan",
+        "accept": ["priya-natarajan"]
+      },
+      "evidence": ["world.dec-tide-lod-freeze"],
+      "checks": [
+        {
+          "type": "atRef",
+          "ref": "*",
+          "check": {
+            "type": "field",
+            "record": "world.dec-tide-lod-freeze",
+            "field": "state"
+          },
+          "equals": "accepted",
+          "report": "author"
+        }
+      ],
+      "traps": [
+        "The question and the proposal on main came from Rhea Valdés and Kenji Arakawa."
+      ]
+    },
+    {
+      "id": "branch-015",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["branch", "aggregate"],
+      "question": "How many records that already exist on main does kenji/tide-lod change the standing of?",
+      "answer": {
+        "kind": "count",
+        "value": 3
+      },
+      "evidence": [
+        "world.dec-tide-lod-quarter",
+        "world.iss-tide-lod-q",
+        "world.cmp-4",
+        "world.cmp-5"
+      ],
+      "checks": [
+        {
+          "type": "refDiff",
+          "ref": "kenji/tide-lod",
+          "change": "restanded",
+          "count": true
+        },
+        {
+          "type": "refDiff",
+          "ref": "kenji/tide-lod",
+          "change": "restanded",
+          "expect": [
+            "world.cmp-4",
+            "world.dec-tide-lod-quarter",
+            "world.iss-tide-lod-q"
+          ]
+        }
+      ],
+      "traps": [
+        "The branch's new summary supersedes main's world summary, which counts.",
+        "The new summary itself is added, not changed."
+      ]
+    },
+    {
+      "id": "branch-016",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["branch", "current-state"],
+      "question": "On the branch that caps tide-storm particles on Skiff, what state is the proposal to drop to 30 Hz during storms left in?",
+      "answer": {
+        "kind": "value",
+        "value": "proposed"
+      },
+      "evidence": [
+        "ports.dec-storm-30",
+        "ports.dec-storm-cap",
+        "ports.iss-blk-storm"
+      ],
+      "checks": [
+        {
+          "type": "atRef",
+          "ref": "priya/skiff-cpu",
+          "check": {
+            "type": "field",
+            "record": "ports.dec-storm-30",
+            "field": "state"
+          }
+        },
+        {
+          "type": "atRef",
+          "ref": "priya/skiff-cpu",
+          "check": {
+            "type": "field",
+            "record": "ports.dec-storm-cap",
+            "field": "state"
+          },
+          "expect": "accepted"
+        }
+      ],
+      "traps": [
+        "The storm blocker is not a question Issue, so accepting the particle cap did not reject the 30 Hz option."
+      ]
+    },
+    {
+      "id": "branch-017",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["branch", "lookup"],
+      "question": "Two open branches both add engine/kestrel/tides/lod.rs. Which one keeps far cells stepping instead of freezing them? Give its draft PR number.",
+      "answer": {
+        "kind": "value",
+        "value": "46",
+        "accept": ["#46"]
+      },
+      "evidence": ["world.dec-tide-lod-quarter", "world.dec-tide-lod-freeze"],
+      "checks": [
+        {
+          "type": "atRef",
+          "ref": "*",
+          "check": {
+            "type": "select",
+            "effort": "world",
+            "kinds": ["decision"],
+            "where": {
+              "state": "accepted"
+            },
+            "titleIncludes": "quarter"
+          },
+          "equals": ["world.dec-tide-lod-quarter"],
+          "report": "pr"
+        },
+        {
+          "type": "changedPaths",
+          "ref": "*",
+          "under": "engine/kestrel/tides",
+          "expect": [
+            "engine/kestrel/tides/lod.rs",
+            "engine/kestrel/tides/mod.rs"
+          ]
+        }
+      ],
+      "traps": ["priya/skiff-cpu (#48) freezes them."]
+    },
+    {
+      "id": "branch-018",
+      "tier": 1,
+      "hops": 1,
+      "pathRef": "ines/vsm-pool",
+      "categories": ["branch", "compaction"],
+      "question": "Which accepted sun-shadow Decision does the new Lantern summary on an open branch rest on?",
+      "answer": {
+        "kind": "record",
+        "value": "render.dec-vsm-grow"
+      },
+      "evidence": [
+        "render.cmp-5",
+        "render.dec-vsm-grow",
+        "render.cmp-4",
+        "render.dec-vsm"
+      ],
+      "path": [["render.cmp-5", "derives_from", "render.dec-vsm-grow"]],
+      "checks": [
+        {
+          "type": "atRef",
+          "ref": "ines/vsm-pool",
+          "check": {
+            "type": "select",
+            "effort": "render",
+            "kinds": ["decision"],
+            "live": true,
+            "titleIncludes": "virtual shadow maps for the sun"
+          }
+        },
+        {
+          "type": "atRef",
+          "ref": "ines/vsm-pool",
+          "check": {
+            "type": "select",
+            "effort": "render",
+            "kinds": ["decision"],
+            "where": { "state": "accepted" },
+            "titleIncludes": ["sun", "shadow"]
+          },
+          "expect": ["render.dec-vsm-grow"]
+        },
+        {
+          "type": "atRef",
+          "ref": "ines/vsm-pool",
+          "check": {
+            "type": "edge",
+            "edge": ["render.cmp-5", "derives_from", "render.dec-vsm-grow"]
+          },
+          "expect": true
+        }
+      ],
+      "traps": [
+        "Main's Lantern summary lists the original sun-shadow Decision."
+      ]
+    },
+    {
+      "id": "branch-019",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["branch", "negative"],
+      "question": "Does any open branch change code under tools/shadercache/?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": ["tools.dec-key-v3"],
+      "checks": [
+        {
+          "type": "changedPaths",
+          "ref": "*",
+          "under": "tools/shadercache",
+          "count": true
+        },
+        {
+          "type": "refDiff",
+          "ref": "*",
+          "change": "changed",
+          "effort": "tools",
+          "expect": []
+        },
+        {
+          "type": "refDiff",
+          "ref": "*",
+          "change": "added",
+          "effort": "tools",
+          "expect": []
+        }
+      ],
+      "traps": [
+        "Both shader caches are called the shader cache; the Skiff pipeline cache is not under tools/ and no branch changes it either."
+      ]
+    },
+    {
+      "id": "branch-020",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["branch", "supersession", "aggregate"],
+      "question": "I'm about to build on main's accepted sun-shadow Decision. Which open branches would replace it? Give the branch names.",
+      "answer": {
+        "kind": "text",
+        "rubric": [["ines/vsm-pool"], ["tomasz/vsm-evict"]]
+      },
+      "evidence": [
+        "render.dec-vsm",
+        "render.dec-vsm-grow",
+        "render.dec-vsm-coarse"
+      ],
+      "checks": [
+        {
+          "type": "atRef",
+          "ref": "*",
+          "check": {
+            "type": "field",
+            "record": "render.dec-vsm",
+            "field": "standing"
+          },
+          "equals": "superseded",
+          "expect": ["ines/vsm-pool", "tomasz/vsm-evict"]
+        }
+      ],
+      "traps": [
+        "Only one of the two accepts its replacement; both supersede the Decision."
+      ]
+    },
+    {
+      "id": "branch-021",
+      "tier": 1,
+      "hops": 1,
+      "pathRef": "priya/skiff-cpu",
+      "categories": ["branch", "blocker"],
+      "question": "If priya/skiff-cpu merged, which Decision would resolve main's open Skiff tide-storm blocker?",
+      "answer": {
+        "kind": "record",
+        "value": "ports.dec-storm-cap"
+      },
+      "evidence": [
+        "ports.iss-blk-storm",
+        "ports.dec-storm-cap",
+        "ports.dec-storm-30"
+      ],
+      "path": [["ports.iss-blk-storm", "resolved_by", "ports.dec-storm-cap"]],
+      "checks": [
+        {
+          "type": "atRef",
+          "ref": "priya/skiff-cpu",
+          "check": {
+            "type": "select",
+            "effort": "ports",
+            "kinds": ["decision"],
+            "where": {
+              "state": "accepted"
+            },
+            "titleIncludes": "storm"
+          }
+        },
+        {
+          "type": "atRef",
+          "ref": "priya/skiff-cpu",
+          "check": {
+            "type": "edge",
+            "edge": [
+              "ports.iss-blk-storm",
+              "resolved_by",
+              "ports.dec-storm-cap"
+            ]
+          },
+          "expect": true
+        }
+      ],
+      "traps": ["The 30 Hz storm fallback stays proposed on the branch."]
+    },
+    {
+      "id": "branch-022",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["branch", "aggregate"],
+      "question": "Which open branch changes the standing of the most records that already exist on main? Give the branch name.",
+      "answer": {
+        "kind": "value",
+        "value": "priya/skiff-cpu"
+      },
+      "evidence": [
+        "ports.fnd-storm-capture",
+        "ports.dec-storm-cap",
+        "ports.iss-blk-storm",
+        "world.dec-tide-lod-quarter",
+        "world.iss-tide-lod-q"
+      ],
+      "checks": [
+        {
+          "type": "refDiff",
+          "ref": "priya/skiff-cpu",
+          "change": "restanded",
+          "count": true,
+          "expect": 5
+        },
+        {
+          "type": "refDiff",
+          "ref": "kenji/tide-lod",
+          "change": "restanded",
+          "count": true,
+          "expect": 3
+        },
+        {
+          "type": "refDiff",
+          "ref": "ines/vsm-pool",
+          "change": "restanded",
+          "count": true,
+          "expect": 3
+        },
+        {
+          "type": "refDiff",
+          "ref": "tomasz/vsm-evict",
+          "change": "restanded",
+          "count": true,
+          "expect": 1
+        }
+      ],
+      "traps": [
+        "A record the branch adds does not count; its retraction of the storm capture does."
+      ]
+    }
+  ]
+}

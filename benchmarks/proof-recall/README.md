@@ -18,7 +18,12 @@ Each question has a known answer and a stated path through the graph.
 | `questions/<effort>.json`  | That Effort's questions and answers                      |
 | `questions/cross.json`     | Questions that need two or more Efforts                  |
 | `questions/ambiguous.json` | Questions that name no Effort, asked only on request     |
+| `questions/code.json`      | Which records govern a code path, on the git test bed    |
+| `questions/branch.json`    | What open branches propose, on the git test bed          |
+| `spec/repo.mjs`            | The git test bed: code, commits, anchors, branches, PRs  |
 | `scripts/build.mjs`        | Replays every spec through the Proof writer              |
+| `scripts/build-repo.mjs`   | Builds the git test bed from `spec/repo.mjs`             |
+| `scripts/testbed.mjs`      | Checks that read the test bed's refs, log, and PRs       |
 | `scripts/check.mjs`        | Proves each answer against the built graph               |
 | `scripts/grade.mjs`        | Scores one run                                           |
 | `scripts/run.mjs`          | Runs one headless agent session per question             |
@@ -354,11 +359,14 @@ A benchmark agent must never see `spec/`, `questions/`, or `keymap.json`.
    `run.mjs` gives every question its own folder and its own fresh,
    headless `claude -p` session, once per strategy. `--strategies` picks
    them from `brief` (start from `proof brief`), `nobrief`, `find`
-   (start from `proof find`), and `findstate` (the `find` text plus one line
+   (start from `proof find`), `findstate` (the `find` text plus one line
    that says what `proof state` holds: exact counts, open Issues and
    blockers, Risks, Constraints in force, contested topics, Issues closed
    without a fix, dead evidence, other dated changes, and retractions, with
-   long lists cut); the default is `brief,nobrief`. A server started before
+   long lists cut), and `findcode` (the `find` text plus two lines: run
+   `proof find --path` before opening code, and `proof find --refs all`
+   before building on a Decision; for the test bed below); the default is
+   `brief,nobrief`. A server started before
    `proof state` existed refuses it, so stop the server and let the run
    start a new one after rebuilding. Each folder
    holds the graph without the key map, the config, a `./flatbread`
@@ -459,6 +467,96 @@ Three rules shaped this protocol, each learned from a pilot below:
 
 `scripts/prepare-run.mjs` and `scripts/collect.mjs` remain for runs
 driven by hand.
+
+**The git test bed: code and branch questions.** Two sets ask what the
+graph says about code and about unmerged work. They need a git repository,
+which `scripts/build-repo.mjs` builds from `spec/repo.mjs`:
+
+```bash
+node scripts/build-repo.mjs --out /tmp/p2-repo
+node scripts/check.mjs --only code --repo /tmp/p2-repo
+node scripts/check.mjs --only branch --repo /tmp/p2-repo
+```
+
+The repository holds about 35 source files for the studio's subsystems
+(`engine/kestrel/`, `engine/lantern/`, `platform/skiff/`, `net/coop/`,
+`tools/shadercache/`). Main has 29 commits. Most code commits carry one
+`Proof: <id>` trailer per record they implement, written when that record
+was current, so some trailers name records that were superseded later. One
+commit adds the committed 1x graph. A later one writes code anchors through
+the real Proof writer: Citations with `role: code` and a body of the form
+`<path>#<symbol>@<12-character commit hash>`, each cited by an
+implementation-note Finding or a Risk that derives from the governing
+record. A few records name a file path in their body instead. Four branches
+start at the tip of main, each with a draft PR in the gitignored
+`.flatbread/proof/prs.json` (the shape `gh pr list --json number,headRefName,isDraft,author,title` prints):
+
+| Branch             | PR  | What it does to the graph                                                                                                           |
+| ------------------ | --- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `ines/vsm-pool`    | #41 | Supersedes the sun-shadow Decision and accepts the new one, resolves the spring-low-tide blocker, writes a new Lantern compaction   |
+| `tomasz/vsm-evict` | #44 | Supersedes the same Decision with a different, proposed one                                                                         |
+| `kenji/tide-lod`   | #46 | Accepts the proposed answer to main's open far-cell tide question, resolves it, writes a new world compaction                       |
+| `priya/skiff-cpu`  | #48 | Retracts the storm capture main's Skiff blocker rests on, accepts the particle cap, and accepts a rival answer to the tide question |
+
+So merging the two VSM branches supersedes one record twice, and merging
+the two tide branches leaves one question Issue with two accepted Decisions
+and one Decision accepted on one side and rejected on the other. Commit
+authors, dates, and messages and record ids and times are fixed, so every
+build gives the same commit hashes. The builder writes the key map to
+`<out>.keymap.json`, beside the repository rather than in it. Branch
+records have keys like main's, and the spec says which branch adds each.
+
+`code` and `branch` are opt-in sets, loaded only by name (`--only code`,
+`--only branch`, or `--ids`), and multi-Effort sets like `cross`, so every
+key is `<effort>.<key>`. A plain `node scripts/check.mjs` skips them. Their
+questions name code paths, behaviors, and branch names the way an engineer
+would; `check.mjs` refuses one that contains a record id, a whole
+four-word title, or any run of five words from a longer title, on main or
+a branch. A question whose `path` runs
+through branch records names that branch in `pathRef`. With `--repo`,
+`check.mjs` reads the graph on main from the test bed and checks only
+these two sets (both, when `--only` is left out), and these check types
+become available (`scripts/testbed.mjs` documents every field):
+
+| `type`         | Returns                                                                                                                                                                                                                                  |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `atRef`        | Any other check's result on the graph at a git ref, written out with `git archive` into a temporary folder. `ref: "*"` returns the branches where it gives `equals`, or their PR numbers or authors                                      |
+| `trailer`      | Records named by `Proof:` trailers on commits that touch a file or folder: all commits, the latest, or the one that introduced a symbol                                                                                                  |
+| `codeAnchor`   | Records that cite a `role: code` Citation for a file or folder. Each anchor must be one `spec/repo.mjs` declares, and git must show that its commit is on the ref, touches the file, and holds the symbol                                |
+| `pr`           | A branch's draft PR number, author, login, or draft flag                                                                                                                                                                                 |
+| `refDiff`      | Records a branch adds, retracts, restands, or changes since it left main                                                                                                                                                                 |
+| `changedPaths` | Code files a branch changes since it left main                                                                                                                                                                                           |
+| `conflicts`    | What merging two refs would do: two accepted Decisions on one question Issue, a record superseded twice, a standing each side changed differently, a retraction that a record still live after the merge relies on, or a compaction fork |
+
+`trailer` and `codeAnchor` can step along a link field (`follow: "derives_from"`), resolve to the chain head (`resolve: "head"`), and filter
+like `select` (`kinds`, `where`, `live`, `titleIncludes`, `bodyIncludes`).
+
+To run them, pass the test bed to `run.mjs`:
+
+```bash
+node scripts/run.mjs /tmp/recall-code --name <run> --only code,branch \
+  --repo /tmp/p2-repo --strategies findcode,find,nobrief
+node scripts/grade.mjs runs/<run>-findcode.json --only code,branch --repo /tmp/p2-repo
+```
+
+With `--repo`, each session's folder is its own `git clone --no-hardlinks`
+of the test bed: main checked out, every branch as `origin/<name>`, the
+full log, and a copy of `prs.json`. The clone's `origin` points at a URL
+that leads nowhere and its reflogs are deleted, since the real path sits
+beside the key map; `prepareClone` fails if any file under `.git` still
+names it. Every arm's `TASK.md` then adds a section that allows read-only
+git (`git log`, `git show <ref>:<path>`, `git diff main...origin/<name>`,
+`git branch -a`) and points at `prs.json`, so the baselines can reach
+branch records, trailers, and PRs too; the four texts are unchanged for
+runs without `--repo`. The folder
+holds no key map, spec, or questions file, and the files a session adds
+are listed in `.git/info/exclude`. These runs use neither the shared graph
+copy nor the read server, since every clone is its own graph root.
+`run.mjs` refuses to mix these sets with the others in one run, since the
+test bed's graph holds records that could change their answers.
+`--prepare-only` builds every session folder and its `TASK.md`, then
+stops, without starting an agent, a server, or a shared graph copy; use it
+to see what a session would see.
 
 ## Pilot results
 

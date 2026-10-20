@@ -2,7 +2,7 @@
 // commands its strategy allows, and one question. Never the answer.
 import { join } from 'node:path';
 
-export const STRATEGIES = ['brief', 'nobrief', 'find', 'findstate'];
+export const STRATEGIES = ['brief', 'nobrief', 'find', 'findstate', 'findcode'];
 
 const BRIEF_LINE =
   '- `./flatbread proof brief <effortId>`: an Effort\'s latest summary (a "compaction") in full, plus every record that changed since. Its envelope\'s `compaction.stale` is true when a record the summary relies on has changed. Start each Effort you need here.';
@@ -16,21 +16,40 @@ const FIND_FIRST_STATE =
   '\nStart with `find`, or with `state` for counts and the lists it holds. Pass `--all` when the question names no Effort, and `--effort <effortId>` when it does (`list` gives Effort ids). Run `get` on a hit to read its full text. Use `records` to page through records. Do not use `proof brief`. Findings with `kind: compaction` are summaries; check what they claim.\n';
 const FIND_FIRST =
   '\nStart with `find`. Pass `--all` when the question names no Effort, and `--effort <effortId>` when it does (`list` gives Effort ids). Run `get` on a hit to read its full text. Use `records` only to count records or to page through them. Do not use `proof brief`. Findings with `kind: compaction` are summaries; check what they claim.\n';
+// `findcode` adds these to the `find` text, for runs on the git test bed.
+const FIND_CODE =
+  'Before opening code, run `proof find --path <file or dir>` to see the records that govern it; add `--refs all` when the file may exist only on a branch.\nBefore building on a Decision, run `proof find <words> --refs all` to see what open branches propose and where they conflict.\n';
+// Every arm of a test-bed run (`repo`) gets this section, so that what an
+// arm can answer depends on its read commands, not on a ban on git.
+const GIT_SECTION = `
+## This folder is a git clone
+Main is checked out, and the read commands above see only main's records. Each open branch exists only as \`origin/<name>\`. Draft PRs for them are listed in \`.flatbread/proof/prs.json\` (number, branch, title, author). Commits name the record they follow in a \`Proof:\` trailer.
+- You may read code files and run read-only git: \`git log\`, \`git show <ref>:<path>\` (records on a branch included), \`git diff main...origin/<name>\`, and \`git branch -a\`. Never change the clone: no checkout, switch, commit, merge, fetch, or reset.
+`;
 
-/** Markdown for TASK.md in `folder`, for one question and one strategy. */
-export function taskText({ folder, question, format, strategy }) {
+/**
+ * Markdown for TASK.md in `folder`, for one question and one strategy.
+ * With `repo`, the folder is a clone of the git test bed and the text also
+ * allows read-only git; without it the text is unchanged.
+ */
+export function taskText({ folder, question, format, strategy, repo = false }) {
   if (!STRATEGIES.includes(strategy))
     throw new Error(`Unknown strategy ${strategy}`);
   const brief = strategy === 'brief';
-  // `findstate` is the `find` text plus the `state` line.
-  const find = strategy === 'find' || strategy === 'findstate';
+  // `findstate` is the `find` text plus the `state` line, and `findcode`
+  // the `find` text plus the FIND_CODE lines.
+  const find = ['find', 'findstate', 'findcode'].includes(strategy);
   const state = strategy === 'findstate';
   return `# One-question recall test
 
-Answer one question about a project-memory graph, using only its read commands. Every command you run is counted, so be efficient, but a right answer matters most.
+Answer one question about a project-memory graph, using only its read commands${
+    repo ? ' and read-only git' : ''
+  }. Every command you run is counted, so be efficient, but a right answer matters most.
 
 ## Rules
-- Work only inside this folder: \`${folder}\`. Never read, list, or search anything outside it. Never open files under \`.flatbread-proof/\` directly.
+- Work only inside this folder: \`${folder}\`. Never read, list, or search anything outside it. Never open files under \`.flatbread-proof/\` directly${
+    repo ? ', except through `git show <ref>:<path>`' : ''
+  }.
 - Run one graph command per tool call. No shell loops, scripts, or chains (\`&&\`, \`;\`, \`|\` into another graph command) that run several graph commands at once.
 
 ## Read commands
@@ -44,9 +63,11 @@ ${
 - \`./flatbread proof get <id> [--resolve head]\` shows one record in full, Blob payloads included. \`--resolve head\` follows replacements to the newest version.
 - \`./flatbread proof relations <effortId> <fromId> --relations derives_from,supersedes,superseded_by,invalidates,invalidated_by,resolved_by,rejected_by,mitigated_by,evidence,cites\` follows one hop of links.
 - \`./flatbread proof blocking-decisions <effortId>\`.
-${brief ? '' : state ? FIND_FIRST_STATE : find ? FIND_FIRST : NO_BRIEF}
+${brief ? '' : state ? FIND_FIRST_STATE : find ? FIND_FIRST : NO_BRIEF}${
+    strategy === 'findcode' ? FIND_CODE : ''
+  }
 Records can be superseded (replaced), invalidated (shown wrong), rejected, reopened, or retracted (noise, hidden from browse reads unless asked; \`get\` still shows them). Titles repeat on purpose. Efforts never link to each other; one may name another's record by title in prose. A summary can be out of date; check its claims against the records.
-
+${repo ? GIT_SECTION : ''}
 ## The question
 ${question}
 

@@ -1,6 +1,7 @@
 // Loads a built benchmark graph and evaluates question checks against it.
 // Shared by check.mjs (authoring) and grade.mjs (scoring runs).
-import { readdir, readFile } from 'node:fs/promises';
+import { readdirSync, readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   compactionChanges,
@@ -19,17 +20,26 @@ const EXCERPT_LINES = 12;
 
 export async function loadGraph(root) {
   const keymap = JSON.parse(await readFile(join(root, 'keymap.json'), 'utf8'));
+  return readGraph(root, keymap);
+}
+
+/**
+ * The records under `root`, read synchronously, with a key map from
+ * elsewhere. The test bed keeps its key map outside the repository, and
+ * checks on a git ref read a graph that git has just written out.
+ */
+export function readGraph(root, keymap) {
   const keyById = new Map(Object.entries(keymap).map(([k, id]) => [id, k]));
   const records = new Map();
   for (const [kind, dir] of Object.entries(KIND_DIRECTORY)) {
     let files = [];
     try {
-      files = await readdir(join(root, dir));
+      files = readdirSync(join(root, dir));
     } catch {
       continue;
     }
     for (const file of files.filter((name) => name.endsWith('.md'))) {
-      const bytes = await readFile(join(root, dir, file));
+      const bytes = readFileSync(join(root, dir, file));
       const { frontmatter, body } = parseDocument(bytes, kind);
       records.set(frontmatter.id, {
         id: frontmatter.id,
@@ -162,7 +172,7 @@ export function hasEdge(graph, effort, [fromKey, relation, toKey]) {
   return list(from.frontmatter[relation]).includes(to.id);
 }
 
-function head(graph, rec) {
+export function headRecord(graph, rec) {
   const seen = new Set();
   let current = rec;
   while (current && list(current.frontmatter.superseded_by).length) {
@@ -184,7 +194,7 @@ function chain(graph, rec) {
   return out;
 }
 
-function matches(rec, where = {}) {
+export function matches(rec, where = {}) {
   return Object.entries(where).every(([field, want]) => {
     const value = field === 'standing' ? standing(rec) : rec.frontmatter[field];
     return list(want).map(String).includes(String(value));
@@ -241,7 +251,7 @@ export function runCheck(graph, effort, check) {
       return rec.frontmatter[check.field] ?? null;
     }
     case 'head':
-      return keyOf(head(graph, record(graph, effort, check.start)));
+      return keyOf(headRecord(graph, record(graph, effort, check.start)));
     case 'chain':
       return chain(graph, record(graph, effort, check.start)).map(keyOf);
     case 'asof': {
@@ -352,6 +362,18 @@ export function runCheck(graph, effort, check) {
     }
     case 'edge':
       return hasEdge(graph, effort, check.edge);
+    // Checks on the git test bed (scripts/testbed.mjs), for the code and
+    // branch question sets.
+    case 'atRef':
+    case 'trailer':
+    case 'codeAnchor':
+    case 'pr':
+    case 'refDiff':
+    case 'changedPaths':
+    case 'conflicts':
+      if (!graph.repo)
+        throw new Error(`check ${check.type} needs --repo <test bed>`);
+      return graph.repo.runCheck(graph, effort, check, runCheck);
     default:
       throw new Error(`bad check type ${check.type}`);
   }

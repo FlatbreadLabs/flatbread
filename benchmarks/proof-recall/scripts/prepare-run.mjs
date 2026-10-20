@@ -7,7 +7,18 @@
 //
 // The answering agent works only inside <out-dir>, running
 // `./flatbread proof …` there.
-import { cp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import {
+  appendFile,
+  cp,
+  mkdir,
+  readdir,
+  readFile,
+  rm,
+  stat,
+  symlink,
+  writeFile,
+} from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { pickQuestions } from './check.mjs';
@@ -70,6 +81,18 @@ export async function prepareFolder(
     join(BENCH, 'flatbread.config.js'),
     join(out, 'flatbread.config.js')
   );
+  await linkTools(out, server);
+  await writeFile(
+    join(out, 'questions.json'),
+    `${JSON.stringify(questions, null, 2)}\n`
+  );
+}
+
+/**
+ * Links the workspace's node_modules into `out` and writes its `./flatbread`
+ * wrapper. With `server`, the wrapper sends reads to that socket.
+ */
+async function linkTools(out, server) {
   await symlink(
     join(REPO, 'node_modules'),
     join(out, 'node_modules'),
@@ -88,9 +111,61 @@ export async function prepareFolder(
     )}" "$@"\n`,
     { mode: 0o755 }
   );
-  await writeFile(
-    join(out, 'questions.json'),
-    `${JSON.stringify(questions, null, 2)}\n`
+}
+
+// Files a session adds to its clone, kept out of `git status`.
+const SESSION_FILES = [
+  '/flatbread',
+  '/node_modules',
+  '/TASK.md',
+  '/answer.json',
+  '/transcript.jsonl',
+  '/stderr.txt',
+];
+
+/**
+ * Empties `out` and makes it a `git clone --no-hardlinks` of the test bed
+ * `repo` (from build-repo.mjs), so a session has main checked out, every
+ * branch as `origin/<name>`, and the full log. The clone gets the
+ * gitignored draft-PR file, the tool links, and nothing else: no key map,
+ * spec, or questions. Its `origin` is renamed to a URL that leads nowhere
+ * and its reflogs are deleted, since the real path sits beside the key map.
+ */
+export async function prepareClone(out, repo, { server } = {}) {
+  await rm(out, { recursive: true, force: true });
+  await mkdir(dirname(out), { recursive: true });
+  const git = (cwd, ...argv) =>
+    execFileSync('git', argv, {
+      cwd,
+      stdio: ['ignore', 'ignore', 'pipe'],
+      env: {
+        ...process.env,
+        GIT_CONFIG_NOSYSTEM: '1',
+        GIT_CONFIG_GLOBAL: '/dev/null',
+      },
+    });
+  git(dirname(out), 'clone', '--quiet', '--no-hardlinks', repo, out);
+  git(
+    out,
+    'remote',
+    'set-url',
+    'origin',
+    'https://git.tidewater.example/saltglass-reach.git'
+  );
+  // The reflogs record "clone: from <repo>", so they go too.
+  await rm(join(out, '.git', 'logs'), { recursive: true, force: true });
+  for (const file of await readdir(join(out, '.git'), { recursive: true })) {
+    const path = join(out, '.git', file);
+    if ((await stat(path)).isFile() && (await readFile(path)).includes(repo))
+      throw new Error(`${path} still names the test bed path ${repo}`);
+  }
+  const prs = join('.flatbread', 'proof', 'prs.json');
+  await mkdir(join(out, dirname(prs)), { recursive: true });
+  await cp(join(repo, prs), join(out, prs));
+  await linkTools(out, server);
+  await appendFile(
+    join(out, '.git', 'info', 'exclude'),
+    `${SESSION_FILES.join('\n')}\n`
   );
 }
 
