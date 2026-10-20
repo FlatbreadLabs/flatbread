@@ -11,31 +11,34 @@ Each question has a known answer and a stated path through the graph.
 
 ## Layout
 
-| Path                       | What it holds                                            |
-| -------------------------- | -------------------------------------------------------- |
-| `WORLD.md`                 | The shared facts every Effort must agree on              |
-| `spec/<effort>.mjs`        | One Effort's history, as an ordered list of mutations    |
-| `questions/<effort>.json`  | That Effort's questions and answers                      |
-| `questions/cross.json`     | Questions that need two or more Efforts                  |
-| `questions/ambiguous.json` | Questions that name no Effort, asked only on request     |
-| `questions/code.json`      | Which records govern a code path, on the git test bed    |
-| `questions/branch.json`    | What open branches propose, on the git test bed          |
-| `spec/repo.mjs`            | The git test bed: code, commits, anchors, branches, PRs  |
-| `spec/_repo-filler.mjs`    | Filler for the scaled git test bed (`--scale`)           |
-| `scripts/build.mjs`        | Replays every spec through the Proof writer              |
-| `scripts/build-repo.mjs`   | Builds the git test bed from `spec/repo.mjs`             |
-| `scripts/testbed.mjs`      | Checks that read the test bed's refs, log, and PRs       |
-| `scripts/check.mjs`        | Proves each answer against the built graph               |
-| `scripts/grade.mjs`        | Scores one run                                           |
-| `scripts/run.mjs`          | Runs one headless agent session per question             |
-| `scripts/task.mjs`         | The task text each session reads                         |
-| `scripts/compare.mjs`      | Compares two runs question by question                   |
-| `scripts/find-recall.mjs`  | Checks offline whether `proof find` reaches the evidence |
-| `scripts/state-recall.mjs` | Checks offline whether `proof state` shows the answer    |
-| `scripts/read-recall.mjs`  | Checks offline what `get` and `records` add for a reader |
-| `runs/`                    | Answers and costs from each pilot and full run           |
-| `.flatbread-proof/`        | The built graph, committed so runs need no build         |
-| `flatbread.config.js`      | Lets `flatbread proof …` read the graph from this folder |
+| Path                         | What it holds                                                 |
+| ---------------------------- | ------------------------------------------------------------- |
+| `WORLD.md`                   | The shared facts every Effort must agree on                   |
+| `spec/<effort>.mjs`          | One Effort's history, as an ordered list of mutations         |
+| `questions/<effort>.json`    | That Effort's questions and answers                           |
+| `questions/cross.json`       | Questions that need two or more Efforts                       |
+| `questions/ambiguous.json`   | Questions that name no Effort, asked only on request          |
+| `questions/code.json`        | Which records govern a code path, on the git test bed         |
+| `questions/branch.json`      | What open branches propose, on the git test bed               |
+| `questions/behaviour.json`   | Behaviour spread over several files, on the refactor bed      |
+| `questions/multibranch.json` | Questions over every open branch at once, on the refactor bed |
+| `spec/repo.mjs`              | The git test bed: code, commits, anchors, branches, PRs       |
+| `spec/_repo-filler.mjs`      | Filler for the scaled git test bed (`--scale`)                |
+| `spec/_repo-refactor.mjs`    | Refactor commits Proof never hears of (`--refactor`)          |
+| `scripts/build.mjs`          | Replays every spec through the Proof writer                   |
+| `scripts/build-repo.mjs`     | Builds the git test bed from `spec/repo.mjs`                  |
+| `scripts/testbed.mjs`        | Checks that read the test bed's refs, log, and PRs            |
+| `scripts/check.mjs`          | Proves each answer against the built graph                    |
+| `scripts/grade.mjs`          | Scores one run                                                |
+| `scripts/run.mjs`            | Runs one headless agent session per question                  |
+| `scripts/task.mjs`           | The task text each session reads                              |
+| `scripts/compare.mjs`        | Compares two runs question by question                        |
+| `scripts/find-recall.mjs`    | Checks offline whether `proof find` reaches the evidence      |
+| `scripts/state-recall.mjs`   | Checks offline whether `proof state` shows the answer         |
+| `scripts/read-recall.mjs`    | Checks offline what `get` and `records` add for a reader      |
+| `runs/`                      | Answers and costs from each pilot and full run                |
+| `.flatbread-proof/`          | The built graph, committed so runs need no build              |
+| `flatbread.config.js`        | Lets `flatbread proof …` read the graph from this folder      |
 
 ## Build and check
 
@@ -232,6 +235,8 @@ answers need at least one computing check.
 | `compaction` | `field`: `head`, `heads`, `stale`, `changes`, `changed`, `staleTargets`                                                            | the Effort's compaction state                      |
 | `body`       | `record`, `includes`, `afterExcerpt`                                                                                               | whether the text is present (and past the excerpt) |
 | `edge`       | `edge`                                                                                                                             | whether the edge exists                            |
+| `union`      | `checks`, `count`                                                                                                                  | the keys or values any inner check gives           |
+| `intersect`  | `checks`, `count`                                                                                                                  | the keys or values every inner check gives         |
 
 `bodyIncludes` and `titleIncludes` take one phrase or a list, and a record
 must contain every phrase. `invalidates` keeps records that invalidate the
@@ -558,6 +563,133 @@ tree around those routes, not against harder routes. Only reads wider
 than a real folder (a whole crate, the full log, word searches) and the
 branch set see more noise.
 
+**The refactor layer (`--refactor`).** `build-repo.mjs --refactor`, at any
+scale, adds a run of refactor commits on main by Dara Whitlock, from
+`spec/_repo-refactor.mjs`, after everything main already has and after the
+branches are cut. No refactor commit has a `Proof:` trailer or touches
+`.flatbread-proof/`, so every record, Citation and trailer stays as it was
+and names paths and symbols as they were before. They move two folders
+that real anchors and trailers name (`engine/kestrel/tides/` to
+`engine/kestrel/world/ocean/`, `tools/shadercache/` to
+`tools/shaders/cache/`), rename four files and four anchored functions
+(`vsm_pool.rs` to `page_pool.rs` and `evict_pages` to `reclaim_pages`,
+`pso_cache.rs` to `pipeline_cache.rs` and `warm_district` to
+`prewarm_district`, `save/upgrade.rs` to `save/migrate.rs` and
+`upgrade_steps` to `migration_steps`, `net/coop/checksum.rs` to
+`desync.rs` and `hash_blocks` to `hash_state_blocks`), split
+`apply_reactive_mask` out of `tern/history.rs` into `tern/reactive.rs`,
+and merge `platform/skiff/frame_modes.rs` and `dynres.rs` into
+`display.rs`. One commit only renames (`evict_pages`); the last one
+changes behaviour a Decision describes: the desync check now hashes every
+60 frames, where the accepted Decision and its implementation note say 30.
+On a scaled bed one more commit moves two filler folders
+(`engine/kestrel/flocks/`, `kites/`) into `engine/kestrel/world/`, so the
+new folder holds more than the tides. 7 of the 10 real code anchors on
+main no longer hold: 6 name a path main lacks, and the split leaves
+`tern/history.rs` without the function its anchor names. The anchors on
+`streaming/pool.rs` (two) and `io_queue.rs` still hold, for contrast. At
+1x that is 10 commits and 14 files moved; at 10x, 11 commits, 24 files
+moved, and 8 of the 50 anchors on main stale (the 7 real ones and one
+filler anchor in `kites/`). Two builds give the same hashes, and without
+`--refactor` both beds are byte for byte what they were.
+
+The builder writes `<out>.refactor.json` beside the key map, outside the
+repository: each commit's hash, subject and moves, every old path and its
+new one, every renamed or moved symbol with its new name and file, every
+code anchor on main with where its code is now and what no longer holds
+(`path`, `symbol` or both), and the behaviour change. The key map is the
+same with or without `--refactor`, and so is every commit before the
+refactor: the branches keep their content and still start at the old tip.
+So `git diff main...origin/<branch>` (three dots, from the merge base)
+shows the same files as before, under their old paths, while `git diff main origin/<branch>` (two dots) also shows the whole refactor undone.
+Merging a branch now is not clean everywhere: `ines/vsm-pool` merges, with
+git carrying her edit into `page_pool.rs`; `tomasz/vsm-evict` conflicts
+in `page_pool.rs`, since he rewrote the function the refactor renamed;
+`kenji/tide-lod` and `priya/skiff-cpu` add `engine/kestrel/tides/lod.rs`
+inside a folder main moved, which git reports as a file-location
+conflict.
+
+The 44 code and branch questions still pass `check.mjs` on a refactor bed,
+since `trailer` and `codeAnchor` read history and the branch checks start
+from the merge base. But 14 code questions and 3 branch questions name a
+path or symbol main no longer has, so their wording no longer fits main,
+and they are not used on a refactor bed: code-001, 002, 007, 008, 009,
+010, 013, 014, 015, 016, 017, 020, 021, 022 and branch-002, 017, 019. Each
+carries `"refactorStale": true`, and `run.mjs` leaves them out, and says
+so, when the bed has a refactor map; `check.mjs` still checks them. The
+other 8 code questions (003-006, 011, 012, 018, 019) name code the
+refactor left alone.
+
+`questions/refactor.json` (the `refactor` set, opt-in and checked only
+when named) asks about the refactored main in today's names: which
+Decision governs `page_pool.rs` or `world/ocean/`, which records' anchors
+no longer hold, whether `net/coop/desync.rs` still hashes as often as its
+Decision says, and where the code an old Citation names lives now, plus
+controls on `streaming/pool.rs`, `io_queue.rs` and the new `world/mod.rs`.
+Its 19 answers hold on the 10x refactor bed. Three of them (009, 010, 012)
+count the filler anchor in `kites/`, so they differ at 1x, and on a bed
+built without `--refactor` most of its checks fail. So `check.mjs` and
+`run.mjs` refuse the three refactor-bed sets (`refactor`, `behaviour`,
+`multibranch`) unless `<bed>.refactor.json` exists with scale 10.
+`node scripts/check.mjs --only refactor --repo <bed>` checks it.
+
+Git alone answers much of `refactor.json`. `git log --follow <new path>`
+crosses each file rename, including the merge into `display.rs` (git sees
+`dynres.rs` to `display.rs` as a 70% rename), and reaches the commit whose
+trailer names the governing Decision. Several refactor subjects also give
+the old and new names outright ("Rename evict_pages to reclaim_pages",
+"Hash co-op state blocks every 60 frames"). A small effect on these
+questions therefore says little about how Proof copes with a refactor.
+Each question has a `group`, and results should be reported by group:
+
+| `group`     | Questions               | What `git log --follow` does                                                                    |
+| ----------- | ----------------------- | ----------------------------------------------------------------------------------------------- |
+| `follow`    | 001-005, 007, 008       | Reaches the old trailer, or the old path a record names, from the new file                      |
+| `drift`     | 013, 014                | Reaches the old trailer and its "every 30 frames" subject; the answer compares it with the code |
+| `location`  | 015, 016                | Gives the answer once the Proof note names the function: these test git use more than recall    |
+| `no-follow` | 006, 009, 010, 011, 012 | Cannot help: a folder's log stops at the move, and stale anchors need every anchor at once      |
+| `control`   | 017, 018, 019           | Not needed: the refactor left the code alone, or created it                                     |
+
+`no-follow` is the group where a Proof read that does not know about the
+refactor should cost the most, and `drift` the one where Proof is wrong
+and git is right.
+
+Two more opt-in sets ask what the code-path questions cannot, because no
+single path answers them. `questions/behaviour.json` (16 questions) asks
+about a behaviour spread over several files or folders, the way an
+engineer would: which live Decisions decide what is thrown out when shadow
+pages or streamed cells run short, which accepted Decisions state a number
+the code now contradicts, which records still name a file main has moved,
+plus three negatives. Questions name a folder at most. Answers are sets of
+2 to 6 records, a few booleans, and checks combine `select`, `trailer`,
+`codeAnchor`, `codeAt` and `body` with `union` and `intersect`.
+`questions/multibranch.json` (12 questions) asks over every open branch at
+once: which records two branches would fight over, how many proposals would
+replace an accepted Decision, which branches change a file main no longer
+has, and how many anchors hold on every branch but not on main, through
+`refAll`, `atRef`, `refDiff` and `conflicts`. Both are written for the 10x
+refactor bed (`build-repo.mjs --scale 10 --refactor`): several answers
+count filler branches and records, and the refactor ones fail elsewhere.
+`node scripts/check.mjs --only behaviour,multibranch --repo <bed>` checks
+them. They were written from git and the graph without running `proof find`
+or reading its output.
+
+Not every behaviour question needs several folders. Each has a `group`:
+`spread` (001, 004, 009-013, 016) needs trailers or code from two or more
+folders, while `control` (002, 003, 005-008, 014, 015) is answered from
+Proof records alone, or, for 002, from one folder's log. The controls
+repeat what Phase 1 measured, so report the two groups apart; only
+`spread` says whether `--path` or `--refs` beats git on a behaviour no
+single path names. Where a records answer is a set chosen by reading, the
+question's `completeness` says how the set was shown to be complete, and
+a check lists the whole pool it was chosen from (every live hard
+Constraint, every accepted Decision that says "save", every number in the
+real code against the Decisions that state it). Some questions rest on the
+same fact as another set's: `overlaps` names them (behaviour-001, 004 and
+009, and multibranch-010, against refactor.json). When the sets are scored
+together, count a miss on an overlapping question once, or report each set
+on its own.
+
 `code` and `branch` are opt-in sets, loaded only by name (`--only code`,
 `--only branch`, or `--ids`), and multi-Effort sets like `cross`, so every
 key is `<effort>.<key>`. A plain `node scripts/check.mjs` skips them. Their
@@ -570,15 +702,21 @@ through branch records names that branch in `pathRef`. With `--repo`,
 these two sets (both, when `--only` is left out), and these check types
 become available (`scripts/testbed.mjs` documents every field):
 
-| `type`         | Returns                                                                                                                                                                                                                                  |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `atRef`        | Any other check's result on the graph at a git ref, written out with `git archive` into a temporary folder. `ref: "*"` returns the branches where it gives `equals`, or their PR numbers or authors                                      |
-| `trailer`      | Records named by `Proof:` trailers on commits that touch a file or folder: all commits, the latest, or the one that introduced a symbol                                                                                                  |
-| `codeAnchor`   | Records that cite a `role: code` Citation for a file or folder. Each anchor must be one `spec/repo.mjs` declares, or filler on a scaled bed, and git must show that its commit is on the ref, touches the file, and holds the symbol     |
-| `pr`           | A branch's draft PR number, author, login, or draft flag                                                                                                                                                                                 |
-| `refDiff`      | Records a branch adds, retracts, restands, or changes since it left main                                                                                                                                                                 |
-| `changedPaths` | Code files a branch changes since it left main                                                                                                                                                                                           |
-| `conflicts`    | What merging two refs would do: two accepted Decisions on one question Issue, a record superseded twice, a standing each side changed differently, a retraction that a record still live after the merge relies on, or a compaction fork |
+| `type`         | Returns                                                                                                                                                                                                                                                                                                                                                                                          |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `atRef`        | Any other check's result on the graph at a git ref, written out with `git archive` into a temporary folder. `ref: "*"` returns the branches where it gives `equals`, or their PR numbers or authors                                                                                                                                                                                              |
+| `trailer`      | Records named by `Proof:` trailers on commits that touch a file or folder: all commits, the latest, or the one that introduced a symbol                                                                                                                                                                                                                                                          |
+| `codeAnchor`   | Records that cite a `role: code` Citation for a file or folder. Each anchor must be one `spec/repo.mjs` declares, or filler on a scaled bed, and git must show that its commit is on the ref, touches the file, and holds the symbol                                                                                                                                                             |
+| `pr`           | A branch's draft PR number, author, login, or draft flag                                                                                                                                                                                                                                                                                                                                         |
+| `refDiff`      | Records a branch adds, retracts, restands, or changes since it left main                                                                                                                                                                                                                                                                                                                         |
+| `changedPaths` | Code files a branch changes since it left main; `gone: true` keeps those at a path main no longer has (the file, or a folder above it, was at the branch's base and is not on main)                                                                                                                                                                                                              |
+| `conflicts`    | What merging two refs would do: two accepted Decisions on one question Issue, a record superseded twice, a standing each side changed differently, a retraction that a record still live after the merge relies on, or a compaction fork                                                                                                                                                         |
+| `renamed`      | Where an old file or folder, and a symbol in it, are on a ref, or the subjects of the commits that moved them. Git's rename detection follows the file; the refactor map fills in a merged file and a renamed symbol, which git then confirms                                                                                                                                                    |
+| `staleAnchor`  | Records citing code anchors that no longer hold on a ref (the path is gone, or the symbol is not in it), the Citations, what they name, or where that code is now                                                                                                                                                                                                                                |
+| `codeAt`       | From a file on a ref, by its old path if `follow`: whether it exists, whether it holds a word, or a regular expression's first capture. A folder is refused                                                                                                                                                                                                                                      |
+| `anchorDrift`  | Subjects of the commits since an anchor's commit that touch its file under any name it has had; `content: true` drops pure moves                                                                                                                                                                                                                                                                 |
+| `goneText`     | Records whose title or body names a code file or folder that main has had and no longer has; `anchors: false` leaves out code anchors, `report: "paths"` gives the paths named                                                                                                                                                                                                                   |
+| `refAll`       | Any check on every branch (and main with `main: true`): the union, a table by ref, its count, what every ref gives, or the refs where it gives anything (`mode: "refs"`). A git check with no `ref` runs on each ref. Only a ref that lacks a record the check names by key may fail (null in a table, an empty set for `every`); any other error, or a ref that does not exist, fails the check |
 
 `trailer` and `codeAnchor` can step along a link field (`follow: "derives_from"`), resolve to the chain head (`resolve: "head"`), and filter
 like `select` (`kinds`, `where`, `live`, `titleIncludes`, `bodyIncludes`).
@@ -609,6 +747,29 @@ test bed's graph holds records that could change their answers.
 `--prepare-only` builds every session folder and its `TASK.md`, then
 stops, without starting an agent, a server, or a shared graph copy; use it
 to see what a session would see.
+
+**On the refactor bed.** Build it with
+`node scripts/build-repo.mjs --scale 10 --refactor --out <bed>` (about 20
+minutes), which also writes `<bed>.keymap.json` and `<bed>.refactor.json`
+beside it, outside the repository; a session clone holds neither. Check
+the three sets on it with
+`node scripts/check.mjs --only refactor,behaviour,multibranch --repo <bed>`,
+then run them like the code sets:
+
+```bash
+node scripts/run.mjs /tmp/recall-refactor --name <run> \
+  --only refactor,behaviour,multibranch --repo <bed> \
+  --strategies findcode,find,nobrief --timeout 1200
+node scripts/grade.mjs runs/<run>-findcode.json \
+  --only refactor,behaviour,multibranch --repo <bed>
+```
+
+`run.mjs` and `check.mjs` refuse these sets on any bed without a 10x
+refactor map. `--only code,branch` on a refactor bed runs the 27 code and
+branch questions that still fit main and leaves out the 17 marked
+`refactorStale`, printing their ids; run them on a bed built without
+`--refactor` instead. Report `refactor` and `behaviour` by `group`, and
+count an `overlaps` question once when sets are added up.
 
 These sessions read the graph locally. On the 10x bed one `proof` read
 takes about 10 seconds, against about 2.6 at 1x, so give a scaled bed

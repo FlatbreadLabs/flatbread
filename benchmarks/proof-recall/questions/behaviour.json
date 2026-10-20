@@ -1,0 +1,1283 @@
+{
+  "effort": "behaviour",
+  "questions": [
+    {
+      "id": "behaviour-001",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["behaviour", "code-context", "aggregate", "distractor"],
+      "group": "spread",
+      "question": "When the engine runs out of room for sun-shadow pages or for streamed world cells, which live Decisions on main decide what gets thrown out first?",
+      "answer": {
+        "kind": "records",
+        "value": ["render.dec-vsm", "world.dec-pool-forecast"]
+      },
+      "evidence": [
+        "render.dec-vsm",
+        "render.fnd-impl-vsm-evict",
+        "render.cit-code-vsm-evict",
+        "world.dec-pool-forecast",
+        "world.dec-pool-lru",
+        "world.fnd-impl-pool-score-2",
+        "world.cit-code-pool-score-2",
+        "world.bed-fnd-042"
+      ],
+      "checks": [
+        {
+          "type": "union",
+          "checks": [
+            {
+              "type": "codeAnchor",
+              "path": "engine/lantern/shadows",
+              "follow": "derives_from",
+              "kinds": ["decision"],
+              "live": true
+            },
+            {
+              "type": "codeAnchor",
+              "path": "engine/kestrel/streaming",
+              "symbol": "evict_score",
+              "follow": "derives_from",
+              "kinds": ["decision"],
+              "live": true
+            }
+          ]
+        },
+        {
+          "type": "union",
+          "checks": [
+            {
+              "type": "trailer",
+              "path": "engine/lantern/shadows",
+              "kinds": ["decision"],
+              "live": true
+            },
+            {
+              "type": "trailer",
+              "path": "engine/kestrel/streaming",
+              "symbol": "evict_score",
+              "kinds": ["decision"],
+              "live": true
+            }
+          ]
+        },
+        {
+          "type": "field",
+          "record": "world.dec-pool-lru",
+          "field": "standing",
+          "expect": "superseded"
+        }
+      ],
+      "traps": [
+        "The least-recently-used pool Decision once governed cell eviction; it is superseded.",
+        "The dock cranes cache also evicts its oldest entries, but it is a separate filler subsystem, not shadow pages or world cells.",
+        "Two open branches rewrite shadow page eviction, but neither is merged; on main the sun-shadow Decision still holds.",
+        "The streaming pool budget is a Constraint, not the Decision that orders eviction."
+      ],
+      "overlaps": ["refactor-001", "refactor-017"]
+    },
+    {
+      "id": "behaviour-002",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["behaviour", "code-context", "invalidation"],
+      "group": "control",
+      "question": "The streaming code gives cells the tide is about to uncover special treatment in more than one place. Which Decisions is that code carrying out?",
+      "answer": {
+        "kind": "records",
+        "value": ["world.dec-pool-forecast", "world.dec-io-tide-priority"]
+      },
+      "evidence": [
+        "world.dec-pool-forecast",
+        "world.dec-io-tide-priority",
+        "world.fnd-io-starve",
+        "world.fnd-impl-tide-push",
+        "world.fnd-impl-pool-score-2",
+        "world.dec-io-queue",
+        "world.dec-io-deadline"
+      ],
+      "checks": [
+        {
+          "type": "trailer",
+          "path": "engine/kestrel/streaming",
+          "bodyIncludes": "tide"
+        },
+        {
+          "type": "codeAnchor",
+          "path": "engine/kestrel/streaming",
+          "follow": "derives_from",
+          "kinds": ["decision"]
+        },
+        {
+          "type": "field",
+          "record": "world.dec-io-tide-priority",
+          "field": "standing",
+          "expect": "invalidated"
+        },
+        {
+          "type": "field",
+          "record": "world.dec-io-deadline",
+          "field": "standing",
+          "expect": "proposed"
+        }
+      ],
+      "traps": [
+        "The read-priority Decision is invalidated, yet the code still carries it out; it belongs in the answer.",
+        "The deadline scheduler that would replace it is only proposed and has no code.",
+        "The request-queue Decision and the old least-recently-used Decision are also behind streaming commits, but neither treats tide cells specially.",
+        "Marking tide-exposed instances visible for a frame is a rendering Decision, not streaming code."
+      ]
+    },
+    {
+      "id": "behaviour-003",
+      "tier": 4,
+      "hops": 0,
+      "categories": [
+        "behaviour",
+        "aggregate",
+        "supersession",
+        "cross-effort",
+        "distractor"
+      ],
+      "group": "control",
+      "question": "From when an autosave is allowed to run to how an old save is brought up to date on load, which accepted Decisions on main govern how the game saves the changed world and restores it?",
+      "answer": {
+        "kind": "records",
+        "value": [
+          "world.dec-save-delta-2",
+          "world.dec-save-defer-turn",
+          "world.dec-save-version",
+          "ports.dec-delta-save"
+        ]
+      },
+      "evidence": [
+        "world.dec-save-delta-2",
+        "world.dec-save-delta",
+        "world.dec-save-defer-turn",
+        "world.dec-save-version",
+        "ports.dec-delta-save",
+        "world.dec-save-harmonic-clock",
+        "world.dec-save-harmonic-zero"
+      ],
+      "checks": [
+        {
+          "type": "union",
+          "checks": [
+            {
+              "type": "select",
+              "effort": "world",
+              "kinds": ["decision"],
+              "where": {
+                "standing": "accepted"
+              },
+              "titleIncludes": "save"
+            },
+            {
+              "type": "select",
+              "effort": "ports",
+              "kinds": ["decision"],
+              "where": {
+                "standing": "accepted"
+              },
+              "titleIncludes": "delta save"
+            }
+          ]
+        },
+        {
+          "type": "trailer",
+          "path": "engine/kestrel/save",
+          "expect": ["world.dec-save-version"]
+        },
+        {
+          "type": "field",
+          "record": "world.dec-save-delta",
+          "field": "standing",
+          "expect": "superseded"
+        },
+        {
+          "type": "union",
+          "checks": [
+            {
+              "type": "select",
+              "effort": "*",
+              "kinds": ["decision"],
+              "where": {
+                "standing": "accepted"
+              },
+              "titleIncludes": "save"
+            },
+            {
+              "type": "select",
+              "effort": "*",
+              "kinds": ["decision"],
+              "where": {
+                "standing": "accepted"
+              },
+              "bodyIncludes": "save"
+            }
+          ],
+          "expect": [
+            "ports.dec-delta-save",
+            "ports.dec-kelp-skiff",
+            "ports.dec-pso-ondevice",
+            "ports.dec-tern-skiff",
+            "ports.fill-dec-0134",
+            "ports.fill-dec-0160",
+            "ports.fill-dec-0165",
+            "ports.fill-dec-0240",
+            "ports.fill-dec-0371",
+            "ports.fill-dec-0445",
+            "ports.fill-dec-0461",
+            "ports.fill-dec-0463",
+            "tools.fill-dec-0012",
+            "tools.fill-dec-0025",
+            "tools.fill-dec-0053",
+            "tools.fill-dec-0091",
+            "tools.fill-dec-0096",
+            "tools.fill-dec-0103",
+            "tools.fill-dec-0153",
+            "world.dec-save-defer-turn",
+            "world.dec-save-delta-2",
+            "world.dec-save-version"
+          ]
+        }
+      ],
+      "traps": [
+        "Deltas against the tide-free baseline once governed saves; that Decision is superseded by tide-keyed deltas.",
+        "The two Decisions about the missing harmonic phase in beta saves are only proposed.",
+        "Full world snapshots were rejected.",
+        "Only the schema-version Decision is named by a commit on the save code; the others have no code in the tree but still govern saves.",
+        "Filler Decisions about cloud save sync are about that feature's costs, not about how a save is written or loaded."
+      ],
+      "completeness": "The last check lists every accepted Decision on main whose title or body says \"save\". The other three real ones use \"save\" for memory or time saved; the filler ones are about cloud save sync or editor autosave and state only a measurement."
+    },
+    {
+      "id": "behaviour-004",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["behaviour", "code-drift", "code-context"],
+      "group": "spread",
+      "question": "Which accepted Decisions on main state a number that the code on main now contradicts?",
+      "answer": {
+        "kind": "records",
+        "value": ["render.dec-brine-3", "netcode.dec-checksum"]
+      },
+      "evidence": [
+        "render.dec-brine-3",
+        "render.dec-brine-2",
+        "netcode.dec-checksum",
+        "netcode.fnd-impl-checksum",
+        "netcode.cit-code-checksum"
+      ],
+      "checks": [
+        {
+          "type": "union",
+          "checks": [
+            {
+              "type": "trailer",
+              "path": "engine/lantern/tonemap",
+              "resolve": "head"
+            },
+            {
+              "type": "trailer",
+              "path": "net/coop",
+              "titleIncludes": "every 30 frames"
+            }
+          ]
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/lantern/tonemap/brine.rs",
+          "pattern": "HDR_SHOULDER_NITS: f32 = ([0-9.]+)",
+          "expect": "1000.0"
+        },
+        {
+          "type": "body",
+          "record": "render.dec-brine-3",
+          "includes": "800 nits",
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "net/coop/checksum.rs",
+          "follow": true,
+          "pattern": "HASH_INTERVAL_FRAMES: u64 = (\\d+)",
+          "expect": "60"
+        },
+        {
+          "type": "codeAt",
+          "path": "net/coop/checksum.rs",
+          "ref": "ines/vsm-pool",
+          "pattern": "HASH_INTERVAL_FRAMES: u64 = (\\d+)",
+          "expect": "30"
+        },
+        {
+          "type": "body",
+          "record": "netcode.dec-checksum",
+          "includes": "every 30 frames",
+          "expect": true
+        },
+        {
+          "type": "body",
+          "record": "render.dec-vsm",
+          "includes": "128-texel pages",
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/lantern/shadows/vsm_pool.rs",
+          "follow": true,
+          "pattern": "PAGE_TEXELS: u32 = (\\d+)",
+          "expect": "128"
+        },
+        {
+          "type": "body",
+          "record": "render.dec-vsm",
+          "includes": "4,096 pages",
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/lantern/shadows/vsm_pool.rs",
+          "follow": true,
+          "pattern": "POOL_PAGES: usize = (\\d+)",
+          "expect": "4096"
+        },
+        {
+          "type": "body",
+          "record": "ports.dec-dynres-3",
+          "includes": "from 504p to 720p",
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "platform/skiff/dynres.rs",
+          "follow": true,
+          "pattern": "FLOOR_LINES: u32 = (\\d+)",
+          "expect": "504"
+        },
+        {
+          "type": "codeAt",
+          "path": "platform/skiff/dynres.rs",
+          "follow": true,
+          "pattern": "CEILING_LINES: u32 = (\\d+)",
+          "expect": "720"
+        },
+        {
+          "type": "body",
+          "record": "ports.dec-skiff-40",
+          "includes": "40 Hz",
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "platform/skiff/frame_modes.rs",
+          "follow": true,
+          "pattern": "(\\d+) ms per frame",
+          "expect": "25"
+        },
+        {
+          "type": "body",
+          "record": "tools.dec-cap-jobs",
+          "includes": "6 parallel",
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "tools/shadercache/remote.py",
+          "follow": true,
+          "pattern": "MAX_JOBS_PER_AGENT = (\\d+)",
+          "expect": "6"
+        },
+        {
+          "type": "body",
+          "record": "tools.dec-timeout",
+          "includes": "30 seconds",
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "tools/shadercache/remote.py",
+          "follow": true,
+          "pattern": "FETCH_TIMEOUT_S = (\\d+)",
+          "expect": "30"
+        },
+        {
+          "type": "body",
+          "record": "render.dec-local-atlas",
+          "includes": "8k atlas",
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/lantern/shadows/local_atlas.rs",
+          "pattern": "ATLAS_SIZE: u32 = (\\d+)",
+          "expect": "8192"
+        },
+        {
+          "type": "body",
+          "record": "world.dec-tide-fixed",
+          "includes": "4,096-entry sine table",
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/kestrel/tides/sine_table.rs",
+          "follow": true,
+          "pattern": "ENTRIES: usize = (\\d+)",
+          "expect": "4096"
+        },
+        {
+          "type": "body",
+          "record": "world.dec-tide-fixed",
+          "includes": "steps at 10 Hz",
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/kestrel/tides/mod.rs",
+          "follow": true,
+          "pattern": "Steps at (\\d+) Hz",
+          "expect": "10"
+        },
+        {
+          "type": "body",
+          "record": "world.dec-tide-wrap",
+          "includes": "40-minute cycle",
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/kestrel/tides/phase.rs",
+          "follow": true,
+          "pattern": "the (\\d+)-minute cycle",
+          "expect": "40"
+        },
+        {
+          "type": "body",
+          "record": "world.dec-save-version",
+          "includes": "starts at 1",
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/kestrel/save/upgrade.rs",
+          "follow": true,
+          "pattern": "SAVE_SCHEMA_VERSION: u32 = (\\d+)",
+          "expect": "1"
+        },
+        {
+          "type": "body",
+          "record": "render.dec-slice-cut",
+          "includes": "For the slice build only",
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/lantern/gi/sdf_volumes.rs",
+          "pattern": "CASCADES: usize = (\\d+)",
+          "expect": "4"
+        }
+      ],
+      "traps": [
+        "The Brine shoulder in the code is still 1,000 nits, the value of the superseded Decision; the one in force says 800.",
+        "Co-op state blocks are hashed every 60 frames since an unrecorded commit, while the accepted Decision and its implementation note still say 30.",
+        "Many other files moved or were renamed in the same refactor without changing any number; a moved file is not a contradiction.",
+        "The slice-cut Decision drops the far GI cascade for the vertical slice build only and says the fourth cascade comes back after the slice, so four cascades in the code does not contradict it."
+      ],
+      "overlaps": ["refactor-013", "refactor-014"],
+      "completeness": "Every number in the real code on main was matched to the accepted Decisions that state one: the checks above show each agrees, apart from the Brine shoulder and the hash interval. The 719 accepted filler Decisions state only a measured value (\"The X is N on <platform>\"), never a setting that code holds."
+    },
+    {
+      "id": "behaviour-005",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["behaviour", "cross-effort", "distractor"],
+      "group": "control",
+      "question": "When a farm agent's shader cache fetch or a Meridian player's co-op connection stops responding, which accepted Decisions on main set how long to wait or what to do next?",
+      "answer": {
+        "kind": "records",
+        "value": ["tools.dec-timeout", "ports.dec-suspend"]
+      },
+      "evidence": [
+        "tools.dec-timeout",
+        "tools.iss-remote-retry",
+        "tools.fnd-flaky-net",
+        "ports.dec-suspend",
+        "ports.fnd-suspend",
+        "netcode.con-rtt"
+      ],
+      "checks": [
+        {
+          "type": "union",
+          "checks": [
+            {
+              "type": "select",
+              "effort": "tools",
+              "kinds": ["decision"],
+              "live": true,
+              "titleIncludes": "timeout"
+            },
+            {
+              "type": "select",
+              "effort": "ports",
+              "kinds": ["decision"],
+              "live": true,
+              "derivesFrom": "ports.fnd-suspend"
+            }
+          ]
+        },
+        {
+          "type": "codeAt",
+          "path": "tools/shadercache/remote.py",
+          "follow": true,
+          "pattern": "FETCH_TIMEOUT_S = (\\d+)",
+          "expect": "30"
+        },
+        {
+          "type": "field",
+          "record": "tools.iss-remote-retry",
+          "field": "standing",
+          "expect": "open"
+        },
+        {
+          "type": "union",
+          "checks": [
+            {
+              "type": "select",
+              "effort": "*",
+              "kinds": ["decision"],
+              "live": true,
+              "bodyIncludes": "timeout"
+            },
+            {
+              "type": "select",
+              "effort": "*",
+              "kinds": ["decision"],
+              "live": true,
+              "bodyIncludes": "resume"
+            }
+          ],
+          "expect": [
+            "netcode.fill-dec-0131",
+            "netcode.fill-dec-0146",
+            "netcode.fill-dec-0154",
+            "ports.dec-suspend",
+            "ports.fill-dec-0001",
+            "ports.fill-dec-0020",
+            "ports.fill-dec-0088",
+            "ports.fill-dec-0114",
+            "ports.fill-dec-0229",
+            "ports.fill-dec-0384",
+            "ports.fill-dec-0431",
+            "ports.fill-dec-0448",
+            "ports.fill-dec-0493",
+            "ports.fill-dec-0497",
+            "tools.dec-timeout"
+          ]
+        }
+      ],
+      "traps": [
+        "The open defect about retrying a timed-out fetch once is an Issue, not a Decision.",
+        "The finding the 30-second timeout was raised on was later shown wrong, but the Decision is still accepted and the code still uses 30 seconds.",
+        "Filler Decisions about the session timeout subsystem have timeout in their titles but set no network wait.",
+        "The 150 ms round-trip Constraint is a playability target, not a wait before giving up."
+      ],
+      "completeness": "The last check lists every live Decision on main that says \"timeout\" or \"resume\". The filler ones (session timeout, suspend and resume) state only a measurement and set no wait or next step."
+    },
+    {
+      "id": "behaviour-006",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["behaviour", "blocker", "aggregate"],
+      "group": "control",
+      "question": "Which open blockers on main are about engine code that cannot cope with spring tides?",
+      "answer": {
+        "kind": "records",
+        "value": ["render.iss-vsm-tide", "world.iss-blk-io-starve"]
+      },
+      "evidence": [
+        "render.iss-vsm-tide",
+        "render.fnd-vsm-overflow",
+        "world.iss-blk-io-starve",
+        "world.fnd-io-starve",
+        "world.iss-blk-save-harmonic",
+        "ports.iss-blk-storm"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["issue"],
+          "where": {
+            "kind": "blocker",
+            "standing": "open"
+          },
+          "bodyIncludes": "spring"
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["issue"],
+          "where": {
+            "kind": "blocker",
+            "standing": "open"
+          },
+          "count": true,
+          "expect": 8
+        }
+      ],
+      "traps": [
+        "The beta-save blocker comes from adding the second harmonic, not from what a spring tide does to running code.",
+        "The Skiff tide-storm blocker is about storm particles, not spring tides.",
+        "An open branch resolves the shadow page blocker, but on main it is open."
+      ]
+    },
+    {
+      "id": "behaviour-007",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["behaviour", "cross-effort", "distractor"],
+      "group": "control",
+      "question": "Which live hard Constraints, in any part of the project, require tide state to come out exactly the same on every machine?",
+      "answer": {
+        "kind": "records",
+        "value": ["world.con-tide-bitexact", "netcode.con-determinism"]
+      },
+      "evidence": [
+        "world.con-tide-bitexact",
+        "netcode.con-determinism",
+        "world.con-tide-step-alloc",
+        "tools.bed-con-087",
+        "world.dec-tide-fixed"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["constraint"],
+          "where": {
+            "kind": "hard"
+          },
+          "live": true,
+          "titleIncludes": ["tide", "bit"]
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["constraint"],
+          "where": {
+            "kind": "hard"
+          },
+          "live": true,
+          "bodyIncludes": "every peer",
+          "expect": ["netcode.con-determinism", "world.con-tide-step-alloc"]
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["constraint"],
+          "where": {
+            "kind": "hard"
+          },
+          "live": true,
+          "expect": [
+            "netcode.bed-con-117",
+            "netcode.con-determinism",
+            "ports.con-frame-2",
+            "ports.con-meridian-mem",
+            "ports.con-skiff-mem-8",
+            "ports.con-skiff-text",
+            "ports.con-skiff-write",
+            "render.con-120-2",
+            "render.con-budget-3",
+            "render.con-hdr-cert",
+            "render.con-mesh-skiff",
+            "render.con-vram",
+            "tools.bed-con-087",
+            "tools.con-farm",
+            "world.con-no-jit",
+            "world.con-pool-3",
+            "world.con-save-compat",
+            "world.con-tide-bitexact",
+            "world.con-tide-step-alloc"
+          ]
+        }
+      ],
+      "traps": [
+        "The tide-step allocation Constraint mentions every peer but forbids allocation; it does not require identical results.",
+        "A filler Constraint on the localization import debug drawing requires the same result on every peer, but it is not about tide state.",
+        "The fixed-point tide Decision is how the project meets these Constraints, not one of them."
+      ],
+      "completeness": "The last check lists all 19 live hard Constraints on main; each was read, and the answer is every one of them that fits."
+    },
+    {
+      "id": "behaviour-008",
+      "tier": 4,
+      "hops": 0,
+      "categories": [
+        "behaviour",
+        "cross-effort",
+        "supersession",
+        "current-state"
+      ],
+      "group": "control",
+      "question": "Which live hard Constraints on main cap how much memory the whole game, the streaming pool, and Lantern's render targets may use?",
+      "answer": {
+        "kind": "records",
+        "value": [
+          "ports.con-meridian-mem",
+          "ports.con-skiff-mem-8",
+          "render.con-vram",
+          "world.con-pool-3"
+        ]
+      },
+      "evidence": [
+        "ports.con-meridian-mem",
+        "ports.con-skiff-mem-8",
+        "ports.con-skiff-mem-9",
+        "render.con-vram",
+        "world.con-pool-3",
+        "world.con-pool-2",
+        "world.con-pool-1"
+      ],
+      "checks": [
+        {
+          "type": "union",
+          "checks": [
+            {
+              "type": "select",
+              "effort": "*",
+              "kinds": ["constraint"],
+              "where": {
+                "kind": "hard"
+              },
+              "live": true,
+              "titleIncludes": "memory budget"
+            },
+            {
+              "type": "select",
+              "effort": "*",
+              "kinds": ["constraint"],
+              "where": {
+                "kind": "hard"
+              },
+              "live": true,
+              "titleIncludes": "render-target memory"
+            },
+            {
+              "type": "select",
+              "effort": "*",
+              "kinds": ["constraint"],
+              "where": {
+                "kind": "hard"
+              },
+              "live": true,
+              "titleIncludes": "pool budget"
+            }
+          ]
+        },
+        {
+          "type": "head",
+          "start": "world.con-pool-1",
+          "expect": "world.con-pool-3"
+        },
+        {
+          "type": "head",
+          "start": "ports.con-skiff-mem-9",
+          "expect": "ports.con-skiff-mem-8"
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["constraint"],
+          "where": {
+            "kind": "hard"
+          },
+          "live": true,
+          "expect": [
+            "netcode.bed-con-117",
+            "netcode.con-determinism",
+            "ports.con-frame-2",
+            "ports.con-meridian-mem",
+            "ports.con-skiff-mem-8",
+            "ports.con-skiff-text",
+            "ports.con-skiff-write",
+            "render.con-120-2",
+            "render.con-budget-3",
+            "render.con-hdr-cert",
+            "render.con-mesh-skiff",
+            "render.con-vram",
+            "tools.bed-con-087",
+            "tools.con-farm",
+            "world.con-no-jit",
+            "world.con-pool-3",
+            "world.con-save-compat",
+            "world.con-tide-bitexact",
+            "world.con-tide-step-alloc"
+          ]
+        }
+      ],
+      "traps": [
+        "The 9 GB Skiff budget and the 2.0 GB and first 1.6 GB pool budgets are superseded.",
+        "The tide step's no-allocation Constraint is about allocating, not a memory cap.",
+        "A retracted draft put the pool at 1.8 GB."
+      ],
+      "completeness": "The last check lists all 19 live hard Constraints on main; each was read, and the answer is every one of them that fits."
+    },
+    {
+      "id": "behaviour-009",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["behaviour", "code-context", "moved-code", "aggregate"],
+      "group": "spread",
+      "question": "Which Decisions do the commits that built the tide simulation and the co-op sync code give as their reason?",
+      "answer": {
+        "kind": "records",
+        "value": [
+          "world.dec-tide-fixed",
+          "world.dec-tide-wrap",
+          "world.dec-tide-harmonic",
+          "netcode.dec-host",
+          "netcode.dec-checksum"
+        ]
+      },
+      "evidence": [
+        "world.dec-tide-fixed",
+        "world.dec-tide-wrap",
+        "world.dec-tide-harmonic",
+        "netcode.dec-host",
+        "netcode.dec-checksum"
+      ],
+      "checks": [
+        {
+          "type": "union",
+          "checks": [
+            {
+              "type": "trailer",
+              "path": "engine/kestrel/tides"
+            },
+            {
+              "type": "trailer",
+              "path": "net/coop"
+            }
+          ]
+        },
+        {
+          "type": "renamed",
+          "path": "engine/kestrel/tides",
+          "expect": "engine/kestrel/world/ocean"
+        },
+        {
+          "type": "trailer",
+          "path": "engine/kestrel/world/ocean",
+          "expect": []
+        }
+      ],
+      "traps": [
+        "The tide code now lives in another folder. Its history there starts with a move commit that names no Decision; the reasons are on the commits under the old folder.",
+        "The quarter-rate far-cell tide Decision is only proposed on main and no commit on main names it.",
+        "The rollback Decisions were never behind a commit; co-op ships host-authoritative sync."
+      ],
+      "overlaps": ["refactor-006"]
+    },
+    {
+      "id": "behaviour-010",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["behaviour", "dead-evidence", "code-context"],
+      "group": "spread",
+      "question": "Which accepted Decisions that commits on main say they implement now rest on a measurement or finding that has since been shown wrong?",
+      "answer": {
+        "kind": "records",
+        "value": [
+          "render.dec-tern-reactive",
+          "world.dec-pool-forecast",
+          "world.dec-save-version"
+        ]
+      },
+      "evidence": [
+        "render.dec-tern-reactive",
+        "render.fnd-tern-ghost-fix",
+        "world.dec-pool-forecast",
+        "world.fnd-pool-sim",
+        "world.dec-save-version",
+        "world.fnd-save-upgrade-cost",
+        "tools.dec-timeout",
+        "render.dec-gi-sdf"
+      ],
+      "checks": [
+        {
+          "type": "intersect",
+          "checks": [
+            {
+              "type": "trailer",
+              "path": ".",
+              "kinds": ["decision"],
+              "live": true
+            },
+            {
+              "type": "select",
+              "effort": "*",
+              "kinds": ["decision"],
+              "live": true,
+              "restsOn": ["invalidated"]
+            }
+          ]
+        },
+        {
+          "type": "field",
+          "record": "render.fnd-tern-ghost-fix",
+          "field": "standing",
+          "expect": "invalidated"
+        },
+        {
+          "type": "field",
+          "record": "world.fnd-pool-sim",
+          "field": "standing",
+          "expect": "invalidated"
+        },
+        {
+          "type": "field",
+          "record": "world.fnd-save-upgrade-cost",
+          "field": "standing",
+          "expect": "invalidated"
+        }
+      ],
+      "traps": [
+        "The tide-read priority Decision is behind a commit but is itself invalidated, not an accepted Decision resting on bad support.",
+        "The 30-second fetch timeout and SDF GI Decisions rest on findings shown wrong, but no commit names them.",
+        "Each of the three still has other, sound support; the question is whether any support was shown wrong."
+      ]
+    },
+    {
+      "id": "behaviour-011",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["behaviour", "moved-code", "aggregate"],
+      "group": "spread",
+      "question": "Setting code anchors aside, which live records on main name, in their text, a source file at a path that main no longer has?",
+      "answer": {
+        "kind": "records",
+        "value": [
+          "ports.iss-dynres-hold",
+          "tools.iss-remote-retry",
+          "world.con-tide-step-alloc",
+          "world.bed-fnd-040"
+        ]
+      },
+      "evidence": [
+        "ports.iss-dynres-hold",
+        "tools.iss-remote-retry",
+        "world.con-tide-step-alloc",
+        "world.bed-fnd-040"
+      ],
+      "checks": [
+        {
+          "type": "goneText",
+          "anchors": false,
+          "live": true
+        },
+        {
+          "type": "goneText",
+          "anchors": false,
+          "live": true,
+          "report": "paths",
+          "expect": [
+            "engine/kestrel/kites",
+            "engine/kestrel/kites/stats.rs",
+            "engine/kestrel/tides",
+            "engine/kestrel/tides/fixed.rs",
+            "platform/skiff/dynres.rs",
+            "tools/shadercache",
+            "tools/shadercache/remote.py"
+          ]
+        },
+        {
+          "type": "renamed",
+          "path": "platform/skiff/dynres.rs",
+          "expect": "platform/skiff/display.rs"
+        },
+        {
+          "type": "renamed",
+          "path": "tools/shadercache/remote.py",
+          "expect": "tools/shaders/cache/remote.py"
+        },
+        {
+          "type": "renamed",
+          "path": "engine/kestrel/tides/fixed.rs",
+          "expect": "engine/kestrel/world/ocean/fixed.rs"
+        },
+        {
+          "type": "renamed",
+          "path": "engine/kestrel/kites/stats.rs",
+          "expect": "engine/kestrel/world/kites/stats.rs"
+        }
+      ],
+      "traps": [
+        "Code anchors (code Citations) also name moved files, but the question sets them aside.",
+        "Records that name streaming or tonemapping files still point at real paths; those folders did not move.",
+        "The filler kite physics note counts: its file moved with the rest of the kites folder."
+      ],
+      "completeness": "The goneText check reads every record on main against every file and folder that a commit on main has had and main no longer has."
+    },
+    {
+      "id": "behaviour-012",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["behaviour", "negative", "branch"],
+      "group": "spread",
+      "question": "Is there an accepted Decision on main, and code on main, that holds tide-storm particles on Skiff below the count other platforms get?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": [
+        "ports.dec-storm-cap",
+        "ports.dec-storm-30",
+        "ports.iss-blk-storm"
+      ],
+      "checks": [
+        {
+          "type": "field",
+          "record": "ports.dec-storm-cap",
+          "field": "standing",
+          "expect": "proposed"
+        },
+        {
+          "type": "codeAt",
+          "path": "platform/skiff/storm.rs",
+          "symbol": "STORM_PARTICLES_SKIFF",
+          "expect": false
+        },
+        {
+          "type": "atRef",
+          "ref": "priya/skiff-cpu",
+          "check": {
+            "type": "field",
+            "record": "ports.dec-storm-cap",
+            "field": "standing"
+          },
+          "expect": "accepted"
+        }
+      ],
+      "traps": [
+        "The 6,000-particle cap is only proposed on main; an open branch accepts it and adds the Skiff count to the code.",
+        "On main the storm budget gives every platform the same 14,000 particles."
+      ]
+    },
+    {
+      "id": "behaviour-013",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["behaviour", "negative", "branch"],
+      "group": "spread",
+      "question": "Does anything on main, in code or in a live record, let the global illumination volumes hand memory to the sun-shadow page pool?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": [
+        "render.dec-vsm",
+        "render.iss-vsm-tide",
+        "render.dec-vsm-grow",
+        "render.fnd-vsm-overflow"
+      ],
+      "checks": [
+        {
+          "type": "codeAt",
+          "path": "engine/lantern/gi/sdf_volumes.rs",
+          "symbol": "lend_far_cascade",
+          "expect": false
+        },
+        {
+          "type": "select",
+          "effort": "render",
+          "live": true,
+          "bodyIncludes": ["cascade", "128 MB"],
+          "expect": []
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/lantern/gi/sdf_volumes.rs",
+          "ref": "ines/vsm-pool",
+          "symbol": "lend_far_cascade",
+          "expect": true
+        },
+        {
+          "type": "atRef",
+          "ref": "ines/vsm-pool",
+          "check": {
+            "type": "select",
+            "effort": "render",
+            "live": true,
+            "bodyIncludes": ["cascade", "128 MB"]
+          },
+          "expect": ["render.dec-vsm-grow"]
+        }
+      ],
+      "traps": [
+        "An open branch lends the far GI cascade's 128 MB to the shadow pool near spring low water, but it is not merged.",
+        "Dropping the far GI cascade for the vertical slice saved GPU time, not memory for shadows.",
+        "The spring-tide overflow Finding notes that 6,144 pages would cost another 128 MB the render-target budget does not have; it does not take memory from GI."
+      ]
+    },
+    {
+      "id": "behaviour-014",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["behaviour", "negative"],
+      "group": "control",
+      "question": "Has any accepted Decision on main given the build farm's shader cache a way to throw out old entries as its storage fills?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": ["tools.rsk-storage", "tools.dec-verify", "tools.con-farm"],
+      "checks": [
+        {
+          "type": "body",
+          "record": "tools.rsk-storage",
+          "includes": "nothing evicts old ones yet",
+          "expect": true
+        },
+        {
+          "type": "field",
+          "record": "tools.rsk-storage",
+          "field": "standing",
+          "expect": "accepted"
+        },
+        {
+          "type": "select",
+          "effort": "tools",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "accepted"
+          },
+          "bodyIncludes": "evict",
+          "expect": ["tools.dec-verify"]
+        }
+      ],
+      "traps": [
+        "The byte-compare sampling Decision evicts an entry whose bytes do not match, which is a correctness check, not an ageing policy.",
+        "The storage Risk was accepted without an eviction policy."
+      ]
+    },
+    {
+      "id": "behaviour-015",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["behaviour", "code-context", "lifecycle"],
+      "group": "control",
+      "question": "The upscaler's reactive-mask code does nothing for the caustic flicker. Which proposed Decisions on main would deal with that flicker instead?",
+      "answer": {
+        "kind": "records",
+        "value": ["render.dec-caustic-clamp", "render.dec-caustic-seed"]
+      },
+      "evidence": [
+        "render.dec-caustic-clamp",
+        "render.dec-caustic-seed",
+        "render.iss-caustic-flicker",
+        "render.fnd-impl-tern-reactive",
+        "render.fnd-caustic-clamp-test",
+        "render.fnd-caustic-seed-test"
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "render",
+          "kinds": ["decision"],
+          "where": {
+            "standing": "proposed"
+          },
+          "derivesFrom": "render.iss-caustic-flicker"
+        },
+        {
+          "type": "codeAnchor",
+          "path": "engine/lantern/tern",
+          "citations": true,
+          "expect": ["render.cit-code-tern-reactive"]
+        },
+        {
+          "type": "body",
+          "record": "render.fnd-impl-tern-reactive",
+          "includes": "Caustics do not write the mask",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The reactive-mask Decision is accepted and implemented, but caustics do not write the mask.",
+        "Each proposal has a test Finding showing a cost: lingering caustics for 9 frames, or caustics that stop crawling with the water.",
+        "Neither proposal has code on main."
+      ]
+    },
+    {
+      "id": "behaviour-016",
+      "tier": 4,
+      "hops": 1,
+      "categories": [
+        "behaviour",
+        "code-context",
+        "supersession",
+        "cross-effort"
+      ],
+      "group": "spread",
+      "question": "Which Decisions in force on main do the commits behind the Skiff platform code and the visibility-buffer material resolve name, once each is followed to its current version?",
+      "answer": {
+        "kind": "records",
+        "value": [
+          "ports.dec-pso-ondevice",
+          "ports.dec-dynres-3",
+          "render.dec-vb-6"
+        ]
+      },
+      "evidence": [
+        "ports.dec-pso-ondevice",
+        "ports.dec-dynres-3",
+        "render.dec-vb-3",
+        "render.dec-vb-6",
+        "ports.dec-skiff-40",
+        "ports.dec-storm-cap"
+      ],
+      "checks": [
+        {
+          "type": "union",
+          "checks": [
+            {
+              "type": "trailer",
+              "path": "platform/skiff",
+              "resolve": "head"
+            },
+            {
+              "type": "trailer",
+              "path": "engine/lantern/vb",
+              "resolve": "head"
+            }
+          ]
+        },
+        {
+          "type": "trailer",
+          "path": "engine/lantern/vb",
+          "expect": ["render.dec-vb-3"]
+        },
+        {
+          "type": "chain",
+          "start": "render.dec-vb-3",
+          "expect": [
+            "render.dec-vb-1",
+            "render.dec-vb-2",
+            "render.dec-vb-3",
+            "render.dec-vb-4",
+            "render.dec-vb-5",
+            "render.dec-vb-6"
+          ]
+        }
+      ],
+      "traps": [
+        "The only trailer on the material resolve names an early visibility-buffer Decision, superseded three times since.",
+        "The commits that added Skiff's half-rate resolve, its 40 Hz mode and its storm budget carry no trailer, so they name nothing.",
+        "The storm particle cap is proposed, and no commit on main names it."
+      ]
+    }
+  ]
+}

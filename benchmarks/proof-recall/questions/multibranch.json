@@ -1,0 +1,931 @@
+{
+  "effort": "multibranch",
+  "questions": [
+    {
+      "id": "multibranch-001",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["multibranch", "branch", "negative"],
+      "question": "Do any of the open branches propose anything for the world streaming pool or the streaming read queue, in code or in Proof?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": [
+        "world.dec-pool-forecast",
+        "world.dec-io-tide-priority",
+        "world.dec-io-deadline",
+        "world.con-pool-3",
+        "world.cmp-5"
+      ],
+      "checks": [
+        {
+          "type": "changedPaths",
+          "ref": "*",
+          "under": "engine/kestrel/streaming",
+          "expect": []
+        },
+        {
+          "type": "refAll",
+          "mode": "every",
+          "check": {
+            "type": "field",
+            "record": "world.dec-io-deadline",
+            "field": "standing"
+          },
+          "expect": ["proposed"]
+        },
+        {
+          "type": "refAll",
+          "mode": "every",
+          "check": {
+            "type": "head",
+            "start": "world.dec-pool-forecast"
+          },
+          "expect": ["world.dec-pool-forecast"]
+        },
+        {
+          "type": "refAll",
+          "mode": "every",
+          "check": {
+            "type": "head",
+            "start": "world.con-pool-3"
+          },
+          "expect": ["world.con-pool-3"]
+        },
+        {
+          "type": "refAll",
+          "check": {
+            "type": "refDiff",
+            "change": "added",
+            "effort": "world"
+          },
+          "expect": [
+            "world.bed-cit-127",
+            "world.bed-fnd-128",
+            "world.cmp-5",
+            "world.dec-tide-lod-freeze"
+          ]
+        }
+      ],
+      "traps": [
+        "The world summary on kenji/tide-lod restates the 1.6 GB pool, but it proposes nothing new for it.",
+        "rhea/ambient-chatter-limit lowers a queue depth, but that is the filler ambient chatter queue, not the streaming read queue.",
+        "Main's own open proposal for the read queue, deadline scheduling, is untouched on every branch."
+      ]
+    },
+    {
+      "id": "multibranch-002",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["multibranch", "branch", "aggregate", "supersession"],
+      "question": "If every open branch merged, which records would two branches fight over: superseded by two different records, settled two different ways, or left in two different states?",
+      "answer": {
+        "kind": "records",
+        "value": [
+          "render.dec-vsm",
+          "render.fill-dec-0467",
+          "world.iss-tide-lod-q",
+          "world.dec-tide-lod-quarter",
+          "netcode.bed-iss-refresh-q",
+          "netcode.bed-dec-refresh-timer"
+        ]
+      },
+      "evidence": [
+        "render.dec-vsm",
+        "render.dec-vsm-grow",
+        "render.dec-vsm-coarse",
+        "render.fill-dec-0467",
+        "render.bed-dec-125",
+        "render.bed-dec-126",
+        "world.iss-tide-lod-q",
+        "world.dec-tide-lod-quarter",
+        "world.dec-tide-lod-freeze",
+        "netcode.bed-iss-refresh-q",
+        "netcode.bed-dec-refresh-timer",
+        "netcode.bed-dec-refresh-open"
+      ],
+      "checks": [
+        {
+          "type": "union",
+          "checks": [
+            {
+              "type": "conflicts",
+              "refs": ["ines/vsm-pool", "tomasz/vsm-evict"],
+              "kind": "double-supersede"
+            },
+            {
+              "type": "conflicts",
+              "refs": [
+                "dara/tooltip-renderer-worker",
+                "yusuf/tooltip-renderer-cap"
+              ],
+              "kind": "double-supersede"
+            },
+            {
+              "type": "conflicts",
+              "refs": ["kenji/tide-lod", "priya/skiff-cpu"],
+              "kind": "double-accept"
+            },
+            {
+              "type": "conflicts",
+              "refs": ["kenji/tide-lod", "priya/skiff-cpu"],
+              "kind": "state-differs"
+            },
+            {
+              "type": "conflicts",
+              "refs": [
+                "sofia/party-invites-refresh-timer",
+                "marta/party-invites-refresh-on-open"
+              ],
+              "kind": "double-accept"
+            },
+            {
+              "type": "conflicts",
+              "refs": [
+                "sofia/party-invites-refresh-timer",
+                "marta/party-invites-refresh-on-open"
+              ],
+              "kind": "state-differs"
+            }
+          ]
+        },
+        {
+          "type": "conflicts",
+          "refs": ["ines/vsm-pool", "kenji/tide-lod"],
+          "kind": "compaction-fork",
+          "expect": []
+        },
+        {
+          "type": "conflicts",
+          "refs": ["priya/skiff-cpu", "kenji/tide-lod"],
+          "kind": "retracted-relied",
+          "expect": []
+        }
+      ],
+      "traps": [
+        "The two new summaries are for different Efforts, so they do not fork one summary chain.",
+        "priya/skiff-cpu retracts a storm capture, but no other branch relies on it.",
+        "Two of the six are filler: a tooltip renderer Decision two branches each supersede, and the party invites question and its timer proposal."
+      ]
+    },
+    {
+      "id": "multibranch-003",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["multibranch", "branch"],
+      "question": "Which pair of open branches conflicts in Proof without changing any code file in common? Give both branch names.",
+      "answer": {
+        "kind": "text",
+        "rubric": [
+          ["marta/party-invites-refresh-on-open"],
+          ["sofia/party-invites-refresh-timer"]
+        ]
+      },
+      "evidence": [
+        "netcode.bed-iss-refresh-q",
+        "netcode.bed-dec-refresh-timer",
+        "netcode.bed-dec-refresh-open"
+      ],
+      "checks": [
+        {
+          "type": "conflicts",
+          "refs": [
+            "sofia/party-invites-refresh-timer",
+            "marta/party-invites-refresh-on-open"
+          ],
+          "kind": "double-accept",
+          "expect": ["netcode.bed-iss-refresh-q"]
+        },
+        {
+          "type": "refAll",
+          "mode": "table",
+          "refs": [
+            "sofia/party-invites-refresh-timer",
+            "marta/party-invites-refresh-on-open",
+            "ines/vsm-pool",
+            "tomasz/vsm-evict",
+            "kenji/tide-lod",
+            "priya/skiff-cpu",
+            "dara/tooltip-renderer-worker",
+            "yusuf/tooltip-renderer-cap"
+          ],
+          "check": {
+            "type": "changedPaths"
+          },
+          "expect": {
+            "sofia/party-invites-refresh-timer": ["net/party/stats.rs"],
+            "marta/party-invites-refresh-on-open": ["net/party/loader.rs"],
+            "ines/vsm-pool": [
+              "engine/lantern/gi/sdf_volumes.rs",
+              "engine/lantern/shadows/vsm_pool.rs"
+            ],
+            "tomasz/vsm-evict": ["engine/lantern/shadows/vsm_pool.rs"],
+            "kenji/tide-lod": [
+              "engine/kestrel/tides/lod.rs",
+              "engine/kestrel/tides/mod.rs"
+            ],
+            "priya/skiff-cpu": [
+              "engine/kestrel/tides/lod.rs",
+              "engine/kestrel/tides/mod.rs",
+              "platform/skiff/storm.rs"
+            ],
+            "dara/tooltip-renderer-worker": [
+              "engine/lantern/impostors/queue.rs",
+              "engine/lantern/tooltips/events.rs"
+            ],
+            "yusuf/tooltip-renderer-cap": ["engine/lantern/tooltips/events.rs"]
+          }
+        }
+      ],
+      "traps": [
+        "The other three conflicting pairs each change a file in common: the shadow page pool, the tide level-of-detail files, and the tooltip renderer events.",
+        "Both party invites branches change code under the same folder, but not the same file."
+      ]
+    },
+    {
+      "id": "multibranch-004",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["multibranch", "branch", "code-context"],
+      "question": "Which open branches touch code that the shadow Decisions on main govern? Give their draft PR numbers.",
+      "answer": {
+        "kind": "text",
+        "rubric": [
+          ["#41", "PR 41", "ines/vsm-pool"],
+          ["#44", "PR 44", "tomasz/vsm-evict"]
+        ]
+      },
+      "evidence": [
+        "render.dec-vsm",
+        "render.dec-local-atlas",
+        "render.fnd-impl-vsm-evict",
+        "render.cit-code-vsm-evict"
+      ],
+      "checks": [
+        {
+          "type": "refAll",
+          "mode": "refs",
+          "check": {
+            "type": "changedPaths",
+            "under": "engine/lantern/shadows"
+          },
+          "expect": ["ines/vsm-pool", "tomasz/vsm-evict"]
+        },
+        {
+          "type": "trailer",
+          "path": "engine/lantern/shadows",
+          "expect": ["render.dec-vsm"]
+        },
+        {
+          "type": "codeAnchor",
+          "path": "engine/lantern/shadows",
+          "follow": "derives_from",
+          "expect": ["render.dec-vsm"]
+        },
+        {
+          "type": "pr",
+          "branch": "ines/vsm-pool",
+          "field": "number",
+          "expect": 41
+        },
+        {
+          "type": "pr",
+          "branch": "tomasz/vsm-evict",
+          "field": "number",
+          "expect": 44
+        }
+      ],
+      "traps": [
+        "No branch touches the local-light shadow atlas.",
+        "ines/vsm-pool also changes the GI volumes, but that is GI code, not shadow code; it still counts once.",
+        "The tooltip and impostor branches change other Lantern code."
+      ]
+    },
+    {
+      "id": "multibranch-005",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["multibranch", "branch", "aggregate", "supersession"],
+      "question": "Across all open branches, how many new Decisions would replace a Decision that is accepted on main?",
+      "answer": {
+        "kind": "count",
+        "value": 4
+      },
+      "evidence": [
+        "render.dec-vsm",
+        "render.dec-vsm-grow",
+        "render.dec-vsm-coarse",
+        "render.fill-dec-0467",
+        "render.bed-dec-125",
+        "render.bed-dec-126",
+        "world.dec-tide-lod-freeze",
+        "netcode.bed-dec-refresh-open"
+      ],
+      "checks": [
+        {
+          "type": "union",
+          "count": true,
+          "checks": [
+            {
+              "type": "atRef",
+              "ref": "ines/vsm-pool",
+              "check": {
+                "type": "head",
+                "start": "render.dec-vsm"
+              }
+            },
+            {
+              "type": "atRef",
+              "ref": "tomasz/vsm-evict",
+              "check": {
+                "type": "head",
+                "start": "render.dec-vsm"
+              }
+            },
+            {
+              "type": "atRef",
+              "ref": "dara/tooltip-renderer-worker",
+              "check": {
+                "type": "head",
+                "start": "render.fill-dec-0467"
+              }
+            },
+            {
+              "type": "atRef",
+              "ref": "yusuf/tooltip-renderer-cap",
+              "check": {
+                "type": "head",
+                "start": "render.fill-dec-0467"
+              }
+            }
+          ]
+        },
+        {
+          "type": "refAll",
+          "check": {
+            "type": "refDiff",
+            "change": "restanded",
+            "kinds": ["decision"],
+            "where": {
+              "standing": "superseded"
+            }
+          },
+          "expect": ["render.dec-vsm", "render.fill-dec-0467"]
+        },
+        {
+          "type": "refAll",
+          "mode": "refs",
+          "check": {
+            "type": "refDiff",
+            "change": "restanded",
+            "kinds": ["decision"],
+            "where": {
+              "standing": "superseded"
+            }
+          },
+          "expect": [
+            "dara/tooltip-renderer-worker",
+            "ines/vsm-pool",
+            "tomasz/vsm-evict",
+            "yusuf/tooltip-renderer-cap"
+          ]
+        },
+        {
+          "type": "refAll",
+          "check": {
+            "type": "refDiff",
+            "change": "added",
+            "kinds": ["decision"]
+          },
+          "expect": [
+            "netcode.bed-dec-refresh-open",
+            "render.bed-dec-125",
+            "render.bed-dec-126",
+            "render.dec-vsm-coarse",
+            "render.dec-vsm-grow",
+            "world.dec-tide-lod-freeze"
+          ]
+        }
+      ],
+      "traps": [
+        "Only two accepted Decisions are targeted, but each by two branches, so there are four proposals.",
+        "The freeze Decision on priya/skiff-cpu rejects a proposed Decision and supersedes nothing; the on-demand refresh Decision on marta's branch also rejects a proposal.",
+        "Two of the four replacements are still only proposed on their branches; they still supersede the accepted Decision there."
+      ]
+    },
+    {
+      "id": "multibranch-006",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["multibranch", "branch", "moved-code", "aggregate"],
+      "question": "Main has moved and renamed code since the open branches were cut. How many open branches change a file at a path main no longer has?",
+      "answer": {
+        "kind": "count",
+        "value": 4
+      },
+      "evidence": [
+        "render.dec-vsm",
+        "world.dec-tide-lod-quarter",
+        "world.dec-tide-lod-freeze"
+      ],
+      "checks": [
+        {
+          "type": "union",
+          "count": true,
+          "checks": [
+            {
+              "type": "refAll",
+              "mode": "refs",
+              "check": {
+                "type": "changedPaths",
+                "gone": true
+              }
+            }
+          ]
+        },
+        {
+          "type": "refAll",
+          "check": {
+            "type": "changedPaths",
+            "gone": true
+          },
+          "expect": [
+            "engine/kestrel/tides/lod.rs",
+            "engine/kestrel/tides/mod.rs",
+            "engine/lantern/shadows/vsm_pool.rs"
+          ]
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/kestrel/tides/mod.rs",
+          "exists": true,
+          "expect": false
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/lantern/shadows/vsm_pool.rs",
+          "exists": true,
+          "expect": false
+        },
+        {
+          "type": "refAll",
+          "check": {
+            "type": "changedPaths"
+          },
+          "expect": [
+            "engine/kestrel/chatter/queue.rs",
+            "engine/kestrel/tides/lod.rs",
+            "engine/kestrel/tides/mod.rs",
+            "engine/lantern/gi/sdf_volumes.rs",
+            "engine/lantern/impostors/queue.rs",
+            "engine/lantern/shadows/vsm_pool.rs",
+            "engine/lantern/tooltips/events.rs",
+            "net/party/loader.rs",
+            "net/party/stats.rs",
+            "platform/skiff/storm.rs",
+            "tools/review_bot/cache.py",
+            "tools/review_bot/queue.py"
+          ]
+        },
+        {
+          "type": "codeAt",
+          "path": "platform/skiff/storm.rs",
+          "exists": true,
+          "expect": true
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/lantern/gi/sdf_volumes.rs",
+          "exists": true,
+          "expect": true
+        }
+      ],
+      "traps": [
+        "ines/vsm-pool and tomasz/vsm-evict change the shadow page pool file under its old name; main renamed it.",
+        "kenji/tide-lod and priya/skiff-cpu add a file to the tide folder and change its module list, and main moved that whole folder.",
+        "priya/skiff-cpu also changes the storm budget file, which did not move; it still counts once.",
+        "The six filler branches change files that never moved."
+      ]
+    },
+    {
+      "id": "multibranch-007",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["multibranch", "branch", "moved-code"],
+      "question": "Two open branches each add a tide level-of-detail file to the tide simulation's folder. Main has since moved that folder. Where is it on main now?",
+      "answer": {
+        "kind": "value",
+        "value": "engine/kestrel/world/ocean",
+        "accept": ["engine/kestrel/world/ocean/", "world/ocean"]
+      },
+      "evidence": ["world.dec-tide-lod-quarter", "world.dec-tide-lod-freeze"],
+      "checks": [
+        {
+          "type": "renamed",
+          "path": "engine/kestrel/tides"
+        },
+        {
+          "type": "renamed",
+          "path": "engine/kestrel/tides",
+          "report": "commit",
+          "expect": "Move tides into world/ocean"
+        },
+        {
+          "type": "refAll",
+          "mode": "refs",
+          "check": {
+            "type": "changedPaths",
+            "under": "engine/kestrel/tides/lod.rs"
+          },
+          "expect": ["kenji/tide-lod", "priya/skiff-cpu"]
+        },
+        {
+          "type": "codeAt",
+          "path": "engine/kestrel/world/ocean/lod.rs",
+          "exists": true,
+          "expect": false
+        }
+      ],
+      "traps": [
+        "Proof still names the old tide folder in a hard Constraint and in its code anchor for the phase wrap.",
+        "Neither branch's lod.rs exists on main, under either folder."
+      ]
+    },
+    {
+      "id": "multibranch-008",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["multibranch", "branch", "blocker", "aggregate"],
+      "question": "Which blockers that are open on main would some open branch close?",
+      "answer": {
+        "kind": "records",
+        "value": ["render.iss-vsm-tide", "ports.iss-blk-storm"]
+      },
+      "evidence": [
+        "render.iss-vsm-tide",
+        "render.dec-vsm-grow",
+        "ports.iss-blk-storm",
+        "ports.dec-storm-cap",
+        "world.iss-blk-io-starve",
+        "world.iss-blk-save-harmonic"
+      ],
+      "checks": [
+        {
+          "type": "refAll",
+          "check": {
+            "type": "refDiff",
+            "change": "restanded",
+            "kinds": ["issue"],
+            "where": {
+              "kind": "blocker"
+            }
+          }
+        },
+        {
+          "type": "refAll",
+          "mode": "refs",
+          "check": {
+            "type": "refDiff",
+            "change": "restanded",
+            "kinds": ["issue"],
+            "where": {
+              "kind": "blocker"
+            }
+          },
+          "expect": ["ines/vsm-pool", "priya/skiff-cpu"]
+        }
+      ],
+      "traps": [
+        "tomasz/vsm-evict answers the same shadow page blocker with a proposal, but does not resolve it.",
+        "The far-cell tide question two branches settle is a question, not a blocker.",
+        "The streaming starvation and beta-save blockers stay open on every branch."
+      ]
+    },
+    {
+      "id": "multibranch-009",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["multibranch", "branch", "aggregate"],
+      "question": "Which questions that are open on main does more than one open branch settle, each in its own way?",
+      "answer": {
+        "kind": "records",
+        "value": ["world.iss-tide-lod-q", "netcode.bed-iss-refresh-q"]
+      },
+      "evidence": [
+        "world.iss-tide-lod-q",
+        "world.dec-tide-lod-quarter",
+        "world.dec-tide-lod-freeze",
+        "netcode.bed-iss-refresh-q",
+        "netcode.bed-dec-refresh-timer",
+        "netcode.bed-dec-refresh-open"
+      ],
+      "checks": [
+        {
+          "type": "union",
+          "checks": [
+            {
+              "type": "conflicts",
+              "refs": ["kenji/tide-lod", "priya/skiff-cpu"],
+              "kind": "double-accept"
+            },
+            {
+              "type": "conflicts",
+              "refs": [
+                "sofia/party-invites-refresh-timer",
+                "marta/party-invites-refresh-on-open"
+              ],
+              "kind": "double-accept"
+            }
+          ]
+        },
+        {
+          "type": "refAll",
+          "check": {
+            "type": "refDiff",
+            "change": "restanded",
+            "kinds": ["issue"],
+            "where": {
+              "kind": "question"
+            }
+          },
+          "expect": ["netcode.bed-iss-refresh-q", "world.iss-tide-lod-q"]
+        }
+      ],
+      "traps": [
+        "One branch in each pair accepts main's existing proposal; the other accepts a rival and rejects that proposal.",
+        "No other question open on main is settled on any branch."
+      ]
+    },
+    {
+      "id": "multibranch-010",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["multibranch", "branch", "stale-anchor", "aggregate"],
+      "question": "How many of main's code anchors still hold on every open branch but no longer hold on main itself?",
+      "answer": {
+        "kind": "count",
+        "value": 8
+      },
+      "evidence": [
+        "render.cit-code-vsm-evict",
+        "render.cit-code-tern-reactive",
+        "world.cit-code-save-upgrade",
+        "world.cit-code-tide-wrap",
+        "ports.cit-code-pso-warm",
+        "tools.cit-code-cache-key",
+        "netcode.cit-code-checksum",
+        "world.bed-cit-039"
+      ],
+      "checks": [
+        {
+          "type": "intersect",
+          "count": true,
+          "checks": [
+            {
+              "type": "refAll",
+              "mode": "every",
+              "check": {
+                "type": "staleAnchor",
+                "stale": "fresh",
+                "citations": true
+              }
+            },
+            {
+              "type": "staleAnchor",
+              "ref": "main",
+              "citations": true
+            }
+          ]
+        },
+        {
+          "type": "refAll",
+          "mode": "table",
+          "main": true,
+          "check": {
+            "type": "staleAnchor",
+            "citations": true,
+            "count": true
+          },
+          "expect": {
+            "main": 8,
+            "dara/tooltip-renderer-worker": 0,
+            "ines/vsm-pool": 0,
+            "kenji/tide-lod": 0,
+            "liam/review-bot-cleanup": 0,
+            "marta/party-invites-refresh-on-open": 0,
+            "priya/skiff-cpu": 0,
+            "rhea/ambient-chatter-limit": 0,
+            "sofia/party-invites-refresh-timer": 0,
+            "tomasz/vsm-evict": 0,
+            "yusuf/tooltip-renderer-cap": 0
+          }
+        }
+      ],
+      "traps": [
+        "Every branch was cut before main's refactor commits, so on every branch all anchors still hold.",
+        "Seven of the eight are real anchors; the eighth is a filler anchor in the kites folder, which moved too.",
+        "The Tern reactive-mask anchor's file still exists on main, but its function moved to another file; it counts."
+      ],
+      "overlaps": ["refactor-009", "refactor-010", "refactor-012"]
+    },
+    {
+      "id": "multibranch-011",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["multibranch", "branch", "distractor"],
+      "question": "Which open branch changes code but adds or changes no Proof record at all? Give its draft PR number.",
+      "answer": {
+        "kind": "value",
+        "value": "50",
+        "accept": ["#50", "PR 50", "liam/review-bot-cleanup"]
+      },
+      "evidence": ["tools.fill-dec-0131"],
+      "checks": [
+        {
+          "type": "refAll",
+          "mode": "refs",
+          "check": {
+            "type": "changedPaths"
+          },
+          "expect": [
+            "dara/tooltip-renderer-worker",
+            "ines/vsm-pool",
+            "kenji/tide-lod",
+            "liam/review-bot-cleanup",
+            "marta/party-invites-refresh-on-open",
+            "priya/skiff-cpu",
+            "rhea/ambient-chatter-limit",
+            "sofia/party-invites-refresh-timer",
+            "tomasz/vsm-evict",
+            "yusuf/tooltip-renderer-cap"
+          ]
+        },
+        {
+          "type": "union",
+          "checks": [
+            {
+              "type": "refAll",
+              "mode": "refs",
+              "check": {
+                "type": "refDiff",
+                "change": "added"
+              }
+            },
+            {
+              "type": "refAll",
+              "mode": "refs",
+              "check": {
+                "type": "refDiff",
+                "change": "changed"
+              }
+            }
+          ],
+          "expect": [
+            "dara/tooltip-renderer-worker",
+            "ines/vsm-pool",
+            "kenji/tide-lod",
+            "marta/party-invites-refresh-on-open",
+            "priya/skiff-cpu",
+            "rhea/ambient-chatter-limit",
+            "sofia/party-invites-refresh-timer",
+            "tomasz/vsm-evict",
+            "yusuf/tooltip-renderer-cap"
+          ]
+        },
+        {
+          "type": "pr",
+          "branch": "liam/review-bot-cleanup",
+          "field": "number",
+          "expect": 50
+        }
+      ],
+      "traps": [
+        "One of its commits carries a Proof trailer naming an existing filler Decision, but a trailer is not a record change.",
+        "sofia/party-invites-refresh-timer adds no record, but it accepts a proposal and resolves a question, which changes two.",
+        "rhea/ambient-chatter-limit has no trailers, but it writes a new anchor and note."
+      ]
+    },
+    {
+      "id": "multibranch-012",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["multibranch", "branch", "code-context", "aggregate"],
+      "question": "Which of main's code anchors point at a file that some open branch changes?",
+      "answer": {
+        "kind": "records",
+        "value": ["render.cit-code-vsm-evict", "world.bed-cit-032"]
+      },
+      "evidence": [
+        "render.cit-code-vsm-evict",
+        "world.bed-cit-032",
+        "world.bed-cit-127",
+        "world.bed-fnd-128",
+        "world.bed-fnd-033"
+      ],
+      "checks": [
+        {
+          "type": "union",
+          "checks": [
+            {
+              "type": "codeAnchor",
+              "citations": true,
+              "path": "engine/kestrel/chatter/queue.rs"
+            },
+            {
+              "type": "codeAnchor",
+              "citations": true,
+              "path": "engine/kestrel/tides/lod.rs"
+            },
+            {
+              "type": "codeAnchor",
+              "citations": true,
+              "path": "engine/kestrel/tides/mod.rs"
+            },
+            {
+              "type": "codeAnchor",
+              "citations": true,
+              "path": "engine/lantern/gi/sdf_volumes.rs"
+            },
+            {
+              "type": "codeAnchor",
+              "citations": true,
+              "path": "engine/lantern/impostors/queue.rs"
+            },
+            {
+              "type": "codeAnchor",
+              "citations": true,
+              "path": "engine/lantern/shadows/vsm_pool.rs"
+            },
+            {
+              "type": "codeAnchor",
+              "citations": true,
+              "path": "engine/lantern/tooltips/events.rs"
+            },
+            {
+              "type": "codeAnchor",
+              "citations": true,
+              "path": "net/party/loader.rs"
+            },
+            {
+              "type": "codeAnchor",
+              "citations": true,
+              "path": "net/party/stats.rs"
+            },
+            {
+              "type": "codeAnchor",
+              "citations": true,
+              "path": "platform/skiff/storm.rs"
+            },
+            {
+              "type": "codeAnchor",
+              "citations": true,
+              "path": "tools/review_bot/cache.py"
+            },
+            {
+              "type": "codeAnchor",
+              "citations": true,
+              "path": "tools/review_bot/queue.py"
+            }
+          ]
+        },
+        {
+          "type": "refAll",
+          "check": {
+            "type": "changedPaths"
+          },
+          "expect": [
+            "engine/kestrel/chatter/queue.rs",
+            "engine/kestrel/tides/lod.rs",
+            "engine/kestrel/tides/mod.rs",
+            "engine/lantern/gi/sdf_volumes.rs",
+            "engine/lantern/impostors/queue.rs",
+            "engine/lantern/shadows/vsm_pool.rs",
+            "engine/lantern/tooltips/events.rs",
+            "net/party/loader.rs",
+            "net/party/stats.rs",
+            "platform/skiff/storm.rs",
+            "tools/review_bot/cache.py",
+            "tools/review_bot/queue.py"
+          ]
+        },
+        {
+          "type": "atRef",
+          "ref": "rhea/ambient-chatter-limit",
+          "check": {
+            "type": "codeAnchor",
+            "ref": "rhea/ambient-chatter-limit",
+            "citations": true,
+            "path": "engine/kestrel/chatter/queue.rs"
+          },
+          "expect": ["world.bed-cit-032", "world.bed-cit-127"]
+        }
+      ],
+      "traps": [
+        "Two branches change the shadow page pool file, but it is one anchor.",
+        "rhea/ambient-chatter-limit writes a second anchor for its own commit; that anchor is on the branch, not on main.",
+        "The tide branches change the tide folder's module list, which no anchor names; the phase-wrap anchor is on another file."
+      ]
+    }
+  ]
+}

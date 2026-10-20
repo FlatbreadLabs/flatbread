@@ -46,6 +46,7 @@
       "tier": 4,
       "hops": 0,
       "categories": ["branch", "supersession"],
+      "refactorStale": true,
       "question": "Two open branches each rewrite how engine/lantern/shadows/vsm_pool.rs copes with spring low tide. If both merged, which record would end up superseded by two different records?",
       "answer": {
         "kind": "record",
@@ -579,6 +580,7 @@
       "tier": 0,
       "hops": 0,
       "categories": ["branch", "lookup"],
+      "refactorStale": true,
       "question": "Two open branches both add engine/kestrel/tides/lod.rs. Which one keeps far cells stepping instead of freezing them? Give its draft PR number.",
       "answer": {
         "kind": "value",
@@ -675,6 +677,7 @@
       "tier": 4,
       "hops": 0,
       "categories": ["branch", "negative"],
+      "refactorStale": true,
       "question": "Does any open branch change code under tools/shadercache/?",
       "answer": {
         "kind": "boolean",

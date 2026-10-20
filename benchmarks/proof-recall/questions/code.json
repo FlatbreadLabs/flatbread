@@ -6,6 +6,7 @@
       "tier": 0,
       "hops": 0,
       "categories": ["code-context", "current-state"],
+      "refactorStale": true,
       "question": "Before I edit engine/lantern/shadows/vsm_pool.rs, which live Decision on main governs how the shadow page pool is sized and evicted?",
       "answer": {
         "kind": "record",
@@ -41,6 +42,7 @@
       "tier": 1,
       "hops": 1,
       "categories": ["code-context", "supersession", "current-state"],
+      "refactorStale": true,
       "question": "Before I change how tools/shadercache/key.py builds the cache key, which Decision about the key is in force?",
       "answer": {
         "kind": "record",
@@ -245,6 +247,7 @@
       "tier": 0,
       "hops": 0,
       "categories": ["code-context", "lookup"],
+      "refactorStale": true,
       "question": "Before I change how many shader compiles tools/shadercache/remote.py runs at once on one farm agent, which Decision sets that limit?",
       "answer": {
         "kind": "record",
@@ -272,6 +275,7 @@
       "tier": 0,
       "hops": 0,
       "categories": ["code-context", "lookup"],
+      "refactorStale": true,
       "question": "Which open defect names tools/shadercache/remote.py?",
       "answer": {
         "kind": "record",
@@ -296,6 +300,7 @@
       "tier": 0,
       "hops": 0,
       "categories": ["code-context", "current-state"],
+      "refactorStale": true,
       "question": "Before I touch platform/skiff/dynres.rs: by the Decision in force, below what resolution does Skiff's 30 Hz mode rarely drop?",
       "answer": {
         "kind": "value",
@@ -330,6 +335,7 @@
       "tier": 0,
       "hops": 0,
       "categories": ["code-context", "lookup"],
+      "refactorStale": true,
       "question": "Is there an open defect about how platform/skiff/dynres.rs recovers after a single slow frame? Which record is it?",
       "answer": {
         "kind": "record",
@@ -430,6 +436,7 @@
       "tier": 4,
       "hops": 0,
       "categories": ["code-context", "aggregate"],
+      "refactorStale": true,
       "question": "Which Decisions do the commits on main under engine/kestrel/tides/ give as their reason?",
       "answer": {
         "kind": "records",
@@ -472,6 +479,7 @@
       "tier": 0,
       "hops": 0,
       "categories": ["code-context", "lookup"],
+      "refactorStale": true,
       "question": "Which hard Constraint names engine/kestrel/tides/fixed.rs?",
       "answer": {
         "kind": "record",
@@ -498,6 +506,7 @@
       "tier": 1,
       "hops": 1,
       "categories": ["code-context", "lookup"],
+      "refactorStale": true,
       "question": "Before I change how engine/kestrel/save/upgrade.rs adds upgrade steps, which hard Constraint must the change keep?",
       "answer": {
         "kind": "record",
@@ -534,6 +543,7 @@
       "tier": 0,
       "hops": 0,
       "categories": ["code-context", "lookup"],
+      "refactorStale": true,
       "question": "According to its Proof notes, does the reactive-mask code in engine/lantern/tern/history.rs do anything for the caustic flicker blocker?",
       "answer": {
         "kind": "boolean",
@@ -566,6 +576,7 @@
       "tier": 0,
       "hops": 0,
       "categories": ["code-context", "lookup"],
+      "refactorStale": true,
       "question": "Before I edit net/coop/checksum.rs: according to the Decision behind it, what does a checksum mismatch tell you?",
       "answer": {
         "kind": "text",
@@ -678,6 +689,7 @@
       "tier": 1,
       "hops": 1,
       "categories": ["code-context", "supersession"],
+      "refactorStale": true,
       "question": "The cache in platform/skiff/pso_cache.rs replaced an earlier plan for avoiding first-use pipeline compiles. Which superseded Decision was that plan?",
       "answer": {
         "kind": "record",
@@ -713,6 +725,7 @@
       "tier": 3,
       "hops": 3,
       "categories": ["code-context", "blocker"],
+      "refactorStale": true,
       "question": "Before I edit engine/lantern/shadows/vsm_pool.rs, which open blocker on main is about the pool that file manages?",
       "answer": {
         "kind": "record",
@@ -756,6 +769,7 @@
       "tier": 0,
       "hops": 0,
       "categories": ["code-context", "lookup"],
+      "refactorStale": true,
       "question": "Which record says what evict_pages in engine/lantern/shadows/vsm_pool.rs never evicts?",
       "answer": {
         "kind": "record",
