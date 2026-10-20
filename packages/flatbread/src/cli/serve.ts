@@ -37,8 +37,10 @@ export const SERVED_READS: Readonly<Record<string, number>> = {
 /** Options that take no value. */
 const BOOLEAN_FLAGS = new Set(['all']);
 /**
- * Reads whose positionals are words of one query. They take one or more, and
- * the words are joined with spaces, as the local CLI joins them.
+ * Reads whose positionals are words of one query. They take any number, and
+ * the words are joined with spaces, as the local CLI joins them. `find` with
+ * no words is valid with `--path` or `--refs`; the handler refuses it
+ * otherwise, as the local CLI does.
  */
 const JOINED_POSITIONALS = new Set(['find']);
 
@@ -101,7 +103,7 @@ export function parseReadArgs(argv: readonly string[]): {
     else if (i + 1 < rest.length) options[arg.slice(2)] = rest[++i];
     else invalid(`Option ${arg} needs a value`);
   }
-  if (JOINED_POSITIONALS.has(command) && positional.length)
+  if (JOINED_POSITIONALS.has(command))
     return { command, positional: [positional.join(' ')], options };
   if (positional.length !== SERVED_READS[command])
     invalid(

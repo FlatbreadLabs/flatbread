@@ -129,7 +129,9 @@ Critical semantics:
   `superseded_by` and `invalidated_by` reverse projections; `derives_from`
   writes no reverse edge.
 - External sources: create a `WriteCitation` record (its body may be a URL,
-  with optional `blob` and `role` fields), then add
+  with optional `blob` and `role` fields; `role: code` with a body such as
+  `src/a.ts#symbol@sha` ties the citing records to that code for
+  `proof find --path`), then add
   `cites: ["<cit-id>"]` when creating an Issue, Finding, Decision,
   Constraint, or Risk. Both the Citation in `cites` and the Blob in
   `Citation.blob` must belong to the same Effort as the record that links to
@@ -194,7 +196,23 @@ Pick the read by what you need, in this order:
 3. **Read one record in full: `proof get <id>`.** On a compaction, `get`
    also says whether it is stale, and why, gives the exact number of
    records that changed since it was written, and lists up to 25 of them.
-4. **Page through records: `proof records`.** `find` shows only the top
+4. **Before opening code: `proof find --path <file|dir|symbol>`.** It
+   lists the records that govern that code, each at its chain head, with a
+   `via:` line naming the tie: a code Citation (`role: code`, body
+   `src/a.ts#symbol@sha`) the record cites, a commit touching the path with
+   a `Proof: <id>` trailer, or a body that names the path. Add words to
+   rank them. Run it before you change a file, so you build on the accepted
+   Decisions and Constraints instead of crawling the codebase or the graph.
+5. **Before building on a Decision: `proof find --refs all`.** It overlays
+   the Proof records other branches change, without a checkout, tags each
+   card `main`, `only on <ref>`, or `differs on <ref>: <here> vs <there>`
+   (with the draft PR when `proof branches --refresh-prs` has run), and ends
+   with a `CONFLICTS` block: two accepted Decisions on one question, one
+   Issue resolved two ways, a record superseded twice, a state two branches changed differently, a
+   retraction of something another branch relies on, two head compactions.
+   Without words it lists what the branches propose. It composes with
+   `--path` and `--effort`.
+6. **Page through records: `proof records`.** `find` shows only the top
    hits, so never count from it; count from `state`. `--state` and
    `--status` match only the stored field. `--standing invalidated` (or
    `superseded`, `retracted`, any standing a card prints) lists records by
@@ -212,6 +230,14 @@ byte cap). Zoom in with `get`, then Read/grep that digest — do not open
 # Find records by what they say (one Effort, or all when --effort is left out)
 flatbread proof find "tern history buffer precision" --effort <effortId>
 flatbread proof find "shadow pool overflow" --as-of 2026-03-01T00:00:00Z
+
+# The records that govern a file, folder, or symbol, before you open it
+flatbread proof find --path src/render/shadows.ts
+flatbread proof find "pool size" --path src/render/shadows.ts#allocate
+
+# What other branches propose, and where they conflict, without a checkout
+flatbread proof find --refs all --effort <effortId>
+flatbread proof find "shadow pool" --refs feat/pool-v2,origin/feat/atlas
 
 # Counts, open blockers, Risks, contested topics, dead evidence, lifecycles
 flatbread proof state <effortId>
@@ -273,7 +299,10 @@ server-side.
    `dec-adopt-a-bounded-status-briefing-fast-path-for-ef--kcw0rw39g3b2ym2h`).
 2. **When you need a particular record or fact:** run `proof find` first,
    then `proof get` the hit whose card fits. Do not page through `records`
-   to look for it. **When you need a count, a list of open, closed, or
+   to look for it. **When you are about to change code:** run
+   `proof find --path <file>` first. **When you are about to build on a
+   Decision, or accept one:** run `proof find --refs all` (scoped with
+   `--effort`) and read its `CONFLICTS` block. **When you need a count, a list of open, closed, or
    rejected records, a status history, the blockers, or what rests on dead
    evidence:** run `proof state <effortId>` instead.
 3. **When a browse digest shows `[…truncated]` and you need the body:** run

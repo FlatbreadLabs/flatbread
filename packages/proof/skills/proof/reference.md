@@ -254,6 +254,9 @@ flatbread proof relations <effortId> <fromId> --relations r1,r2 [--limit n] [--c
 flatbread proof blocking-decisions <effortId> [consistency flags]
 flatbread proof brief <effortId> [consistency flags]
 flatbread proof find "<words>" [--effort <effortId> | --all] [--kinds k1,k2] [--as-of iso] [--retracted exclude|include|only] [--limit n] [consistency flags]
+flatbread proof find ["<words>"] --path <file|dir|symbol|file#symbol> [--refs r1,r2|all] [find flags]
+flatbread proof find ["<words>"] --refs <r1,r2|all> [find flags]
+flatbread proof branches [--refresh-prs]
 flatbread proof state <effortId> [consistency flags]
 flatbread proof cache prune
 flatbread proof serve [--socket .flatbread/proof/serve.sock]
@@ -420,8 +423,122 @@ Each card has these lines:
 ```
 
 The card header reads `find "<words>" in <effortId|all Efforts> (<searched> records searched, <matched> matched, <shown> shown)`, then `matched: … | missing: …`. The envelope adds `cards` (that Markdown) and `find`:
-`{"query","effort_id","searched","matched","shown","terms":{"matched","missing"},"efforts"?,"hits":[{"id","matched_id"?,"score"}]}`.
+`{"query","effort_id","searched","matched","shown","terms":{"matched","missing"},"efforts"?,"hits":[{"id","matched_id"?,"score","via"?,"branch"?}],"path"?,"refs"?,"conflicts"?,"conflicts_total"?}`.
 `find` shows only the top hits; use `state` or `records` to count.
+
+### `proof find --path`: the records that govern a piece of code
+
+`--path <target>` returns the records that govern that code, without
+reading the code or the whole graph. Words are optional. The target is a
+file or folder (relative to the current folder when it exists there, else
+to the repository root), a symbol (`startFrame`, `startFrame()`,
+`Planner.plan`), or both (`src/fuse.ts#budget`). A folder matches the files
+under it. The repository root itself (`.`) is refused. Three sources tie a record to code, strongest first:
+
+1. **Code Citations:** a Citation with `role: code` whose body names the
+   code as `<path>`, `<path>#<symbol>`, or `<path>#<symbol>@<sha>`. The
+   records that cite it govern the code, and so do the records it
+   `derives_from`; a code Citation nothing cites stands for itself. A file
+   anchor with no symbol covers every symbol in the file. Write one when a
+   Decision or Constraint is about specific code:
+   `{"type":"WriteCitation","effort":"<eff-id>","title":"Fuse budget","body":"src/fuse.ts#budget@1a2b3c4","role":"code"}`,
+   then put its id in the record's `cites`.
+2. **Commit trailers:** commits that touch the path and carry one or more
+   `Proof: <id>` trailers (`git log` from the Proof root's repository;
+   skipped quietly outside git, and for a bare symbol).
+3. **Body text:** a record body that names the path as a whole token
+   (`src/a.ts` does not match `src/a.tsx`), or the symbol as `name(`,
+   `obj.name(`, or `#name`.
+
+Each governed record resolves to its chain head, as `find` shows chains;
+retracted records follow `--retracted`. With words, BM25 ranks the
+governed set (records no word matches still list, after the matches).
+Without words, the strongest tie ranks them, then the newest; the header
+drops `score` and the `matched:` line. Default 5 cards, `--limit` up to 10.
+Each card adds, after its title:
+
+```text
+   via: cites <cit-id>: src/fuse.ts#budget@1a2b3c4; commit 1a2b3c4 "<subject>" (on <older version id>); body names src/fuse.ts
+```
+
+The header reads `find ["<words>"] --path <target> in <scope> (<n> governing, <shown> shown)`.
+
+### `proof find --refs`: what other branches propose
+
+`--refs feat/a,origin/feat/b` or `--refs all` overlays records from other
+git refs without checking them out (`git ls-tree` and `git cat-file`,
+cached by commit). No git command it runs fetches: in a partial clone, a
+record whose blob is not on disk is left out, and the `refs:` line says
+`N records not available locally`. `all` skips local and remote branches
+whose Proof folder HEAD's history already had, looks at the 50 others with
+the newest commits (the `refs:` line says so when there are more), and
+keeps those that change a Proof record, at most 12. Of a local branch and
+its remote-tracking ref, `all` keeps only the newer one when one contains
+the other. A ref counts only for the records it changed since its merge
+base with HEAD, so a branch that is merely behind adds nothing, and a
+version already in HEAD's history does not count, so a branch left behind
+after a squash merge adds nothing. When two refs hold different versions
+of a record and one is the version at the two refs' own merge base, as
+with a branch stacked on another, the older version is dropped. With no
+merge base (a shallow clone), HEAD stands in for it, the `refs:` line says
+`no merge base: shallow clone?`, and `git fetch --deepen=200` finds one.
+The base is the working tree. In the combined graph, supersession and invalidation come
+from the forward edges (`supersedes`, `invalidates`) of every version; the
+stored `superseded_by` and `invalidated_by` on either side are ignored. An
+Issue's `resolved_by` is the union over every version, so a Decision that
+resolves a question only on a branch still shows `in: resolves`. With
+words, `find` searches the combined graph; without words or `--path`, the
+cards are the records the refs add or change, newest first. Each card adds
+a `branch:` line:
+
+```text
+   branch: main                                     (same as the working tree)
+   branch: only on feat/a (draft #12 by ana)        (draft PR from prs.json)
+   branch: differs on feat/a: proposed vs accepted  (<base standing> vs <ref standing>)
+   branch: deleted on feat/a                        (the ref removed the record file)
+   branch: only on feat/b; rival heads: <id> (only on feat/a)
+```
+
+The last form is a chain that two branches each supersede: the chain line
+marks every head `(head)`, and no head replaces the other.
+
+A `refs:` line after the header names each ref, its commit, and how many
+records it adds, changes, or deletes (Efforts counted apart). The cards end
+with `CONFLICTS (<n>)` and one `- ` line each (at most 12, then
+`+n more`), or `CONFLICTS: none`. With `--effort`,
+only that Effort's conflicts show. A conflict names its refs (`base` is the
+working tree) and ids:
+
+- two accepted Decisions on one question Issue, tied to it by
+  `derives_from` or by the Issue's `resolved_by` on any side (a ref that
+  accepted one and rejected the base's accepted one is a proposal, not a
+  conflict);
+- one Issue resolved by different records on two sides, when the line
+  above does not already name it;
+- one record superseded by two different records;
+- one id with a different stored `state` or `status` on two sides that
+  both changed it since they split (a change only one ref made shows on its
+  card's `branch:` line instead);
+- a retraction on one side of a record another side relies on
+  (`derives_from`, `cites`, `evidence`), when that side added or changed
+  the relying record since they split;
+- two head compactions for one Effort.
+
+`--refs` composes with `--path`, `--effort`, and `--all`; with `--path`,
+commit trailers on the refs count too. The envelope's `find` adds `refs`
+(`[{"name","sha","changed","pr"?}]`), `conflicts` (the same 12 the cards
+list), and `conflicts_total`. Narrow with `--effort` or fewer refs to see
+the rest.
+
+`proof branches` lists the refs `--refs all` would overlay, with their
+pull requests. Pull requests come from a gitignored
+`.flatbread/proof/prs.json` (an array of
+`{number, headRefName, isDraft, author}`). A ref matches a pull request
+whose `headRefName` is its branch, or is its branch with a remote name in
+front (`origin/feat/a`). `proof branches --refresh-prs`
+rewrites it from `gh pr list --json number,headRefName,isDraft,author`, the
+only step that uses the network; it fails with a plain message when `gh` is
+missing or not signed in, and warns when the file is not gitignored.
 
 ### `proof state`
 

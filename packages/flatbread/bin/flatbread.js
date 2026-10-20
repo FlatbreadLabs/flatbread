@@ -26,7 +26,9 @@ function loadCli() {
 }
 
 // Reads `flatbread proof serve` answers. Keep in step with SERVED_READS in
-// src/cli/serve.ts; anything else, writes included, runs locally.
+// src/cli/serve.ts; anything else, writes included, runs locally. Options
+// are forwarded as given, so `find --path` and `find --refs` are served too.
+// `proof branches` runs locally: `--refresh-prs` calls gh and writes a file.
 const SERVED_READS = new Set([
   'list',
   'records',

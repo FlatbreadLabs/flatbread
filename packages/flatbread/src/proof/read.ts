@@ -37,8 +37,32 @@ import {
   findRecords,
   renderFindCards,
   standingOf,
+  headsOf,
+  type FindHit,
   type FindIndex,
+  type FindResult,
+  type FindVia,
 } from './find.js';
+import {
+  git,
+  governingRecords,
+  parseCodeTarget,
+  trailerCommits,
+  type CodeTarget,
+  type TrailerCommit,
+} from './anchors.js';
+import {
+  branchCandidates,
+  buildOverlay,
+  changeCounts,
+  conflictsInScope,
+  pathInTrees,
+  proofRepository,
+  readRefSides,
+  refsLine,
+  type Overlay,
+  type RefSide,
+} from './refs.js';
 import {
   buildEffortState,
   DEAD_STANDINGS,
@@ -364,6 +388,10 @@ class EngineProjection {
   readonly provider: FlatbreadProvider;
   private fieldsPromise?: Promise<Map<Collection, Set<string>>>;
   private findIndexPromise?: Promise<FindIndex>;
+  private overlays = new Map<
+    string,
+    Promise<{ overlay: Overlay; index: FindIndex }>
+  >();
 
   constructor(config: LoadedFlatbreadConfig) {
     this.provider = new FlatbreadProvider(config);
@@ -460,6 +488,42 @@ class EngineProjection {
       this.findIndexPromise.catch(() => (this.findIndexPromise = undefined));
     }
     return this.findIndexPromise;
+  }
+
+  /**
+   * The `find` index over the base records and the given refs, kept for the
+   * last few ref sets. Keyed by each ref's commit, so a moved ref builds anew.
+   */
+  overlayIndex(
+    sides: readonly RefSide[]
+  ): Promise<{ overlay: Overlay; index: FindIndex }> {
+    // The pull request and the per-side id sets go in the key too: tags and
+    // conflicts read them, and the sets follow the working tree.
+    const sorted = (set?: ReadonlySet<string>) => [...(set ?? [])].sort();
+    const key = sides
+      .map(
+        (side) =>
+          `${side.name}@${side.sha}${JSON.stringify([
+            side.pr ?? {},
+            sorted(side.baseChanged),
+            sorted(side.sameAsBase),
+            sorted(side.older),
+            sorted(side.deleted),
+          ])}`
+      )
+      .join('\0');
+    let found = this.overlays.get(key);
+    if (!found) {
+      found = this.findIndex().then((base) => {
+        const overlay = buildOverlay([...base.records.values()], sides);
+        return { overlay, index: buildFindIndex(overlay.records) };
+      });
+      found.catch(() => this.overlays.delete(key));
+      if (this.overlays.size >= 4)
+        this.overlays.delete(this.overlays.keys().next().value as string);
+      this.overlays.set(key, found);
+    }
+    return found;
   }
 
   async one(
@@ -1370,7 +1434,33 @@ export interface FindEnvelope extends ReadEnvelope {
     /** Searching every Effort: the Efforts whose best 3 hits score highest. */
     efforts?: { id: string; mass: number }[];
     /** In card order; `matched_id` names an older version when it matched. */
-    hits: { id: string; matched_id?: string; score: number }[];
+    hits: {
+      id: string;
+      matched_id?: string;
+      score: number;
+      /** With `--path`: what ties the hit's chain to the code. */
+      via?: string[];
+      /** With `--refs`: `main`, `only on <ref>`, or `differs on <ref>: …`. */
+      branch?: string;
+    }[];
+    /** With `--path`: the code searched, as the header prints it. */
+    path?: string;
+    /**
+     * With `--path` and no hits: the path is not in the working tree, and
+     * which refs have it.
+     */
+    note?: string;
+    /** With `--refs`: the refs overlaid. */
+    refs?: {
+      name: string;
+      sha: string;
+      changed: number;
+      pr?: { number: number; draft: boolean; author: string };
+    }[];
+    /** With `--refs`: the first 12 conflicts in scope, as the cards list them. */
+    conflicts?: string[];
+    /** With `--refs`: how many conflicts there are in scope. */
+    conflicts_total?: number;
   };
   /** The hit cards as Markdown, so the agent needs no second Read. */
   cards: string;
@@ -1412,6 +1502,10 @@ export async function effortFind(
     asOf?: string;
     retracted?: RetractedMode;
     limit?: number;
+    /** `--path`: a file, folder, symbol, or `file#symbol`. */
+    path?: string;
+    /** `--refs`: ref names, or `all`. */
+    refs?: readonly string[] | 'all';
   }
 ): Promise<FindEnvelope> {
   const invalid = (message: string): never => {
@@ -1445,18 +1539,158 @@ export async function effortFind(
       )}. Expected ${FIND_KINDS.join(', ')}.`
     );
   const text = String(query ?? '').trim();
-  if (!text) invalid('find needs at least one word to search for');
+  const codePath = options.path?.trim() || undefined;
+  if (options.path !== undefined && !codePath)
+    invalid('--path needs a file, folder, or symbol');
+  const refs =
+    options.refs === 'all'
+      ? 'all'
+      : options.refs?.length
+      ? options.refs
+      : undefined;
+  if (options.refs !== undefined && !refs)
+    invalid('--refs needs ref names or all');
+  if (!text && !codePath && !refs)
+    invalid('find needs at least one word to search for');
   const projection = await makeProjection(options);
-  const index = await projection.findIndex();
+  let index = await projection.findIndex();
+  let overlay: Overlay | undefined;
+  let refSet: Awaited<ReturnType<typeof readRefSides>> | undefined;
+  let sides: RefSide[] = [];
+  if (refs) {
+    refSet = await readRefSides(options.rootDir, options.cacheRoot, refs);
+    sides = refSet.sides;
+    ({ overlay, index } = await projection.overlayIndex(sides));
+  }
+  const conflicts = overlay
+    ? conflictsInScope(overlay, options.effort)
+    : undefined;
   if (options.effort && index.records.get(options.effort)?.kind !== 'effort')
     invalid(`Effort ${options.effort} does not exist`);
-  const result = findRecords(index, text, {
+  let governed: Map<string, FindVia[]> | undefined;
+  let pathLabel: string | undefined;
+  let pathNote: (() => Promise<string | undefined>) | undefined;
+  if (codePath) {
+    const repo = await proofRepository(options.rootDir);
+    // For a path the working tree lacks: the refs that hold it, from the
+    // named refs, or else from the branches `--refs all` looks at. Each
+    // path costs one `cat-file --batch-check`, and only when asked.
+    let pool: Promise<{ name: string; sha: string }[]> | undefined;
+    const refPool = () =>
+      (pool ??= !repo
+        ? Promise.resolve([])
+        : refs && refs !== 'all'
+        ? Promise.resolve(sides.map(({ name, sha }) => ({ name, sha })))
+        : git(repo.top, ['rev-parse', '--verify', '-q', 'HEAD'])
+            .then((head) =>
+              branchCandidates(repo.top, head?.trim() || undefined)
+            )
+            .then((list) =>
+              list.map(({ short, sha }) => ({ name: short, sha }))
+            ));
+    const held = new Map<
+      string,
+      Promise<{ name: string; sha: string; kind: 'file' | 'dir' }[]>
+    >();
+    const holdersOf = (path: string) => {
+      let list = held.get(path);
+      if (!list) {
+        list = refPool().then(async (pooled) => {
+          const kinds = repo
+            ? await pathInTrees(
+                repo.top,
+                pooled.map(({ sha }) => sha),
+                path
+              )
+            : new Map<string, 'file' | 'dir'>();
+          return pooled.flatMap((ref) => {
+            const kind = kinds.get(ref.sha);
+            return kind ? [{ ...ref, kind }] : [];
+          });
+        });
+        held.set(path, list);
+      }
+      return list;
+    };
+    // With --refs, a path only a ref has is read from that ref's tree.
+    const target = await parseCodeTarget(
+      codePath,
+      options.cwd,
+      repo?.top ?? options.cwd,
+      refs && repo
+        ? async (path) => (await holdersOf(path))[0]?.kind
+        : undefined
+    );
+    pathLabel = target.label;
+    // Trailers need a path; a bare symbol has none to give git log. With
+    // --refs, the commits of every ref that holds the path count too, so a
+    // branch that changes code and no record still ties its trailers.
+    const holders =
+      refs && target.absent && target.path !== undefined
+        ? await holdersOf(target.path)
+        : [];
+    const commits: TrailerCommit[] =
+      repo && target.path !== undefined
+        ? await trailerCommits(
+            repo.top,
+            [
+              ...new Set([
+                'HEAD',
+                ...sides.map((side) => side.sha),
+                ...holders.map((holder) => holder.sha),
+              ]),
+            ],
+            target.path
+          )
+        : [];
+    pathNote = () => codeTargetNote(target, codePath, refs, repo, holdersOf);
+    governed = governingRecords(
+      index,
+      target,
+      commits,
+      (record) =>
+        retracted !== 'exclude' || record.frontmatter.retracted !== true
+    );
+  } else if (overlay && !text)
+    governed = new Map(
+      [...overlay.proposed].map((id) => [
+        id,
+        [{ strength: 0, record: id, text: '' }],
+      ])
+    );
+  const found = findRecords(index, text, {
     effort: options.effort,
     kinds,
     asOf: options.asOf,
     retracted,
     limit,
+    ...(governed ? { governed } : {}),
   });
+  const note = pathNote && !found.matched ? await pathNote() : undefined;
+  const result: FindResult =
+    codePath || overlay
+      ? {
+          ...found,
+          header: findHeader(
+            text,
+            pathLabel,
+            options.refs,
+            found,
+            options.effort
+          ),
+          ...(note ? { notes: [note] } : {}),
+          ...(overlay && refSet && conflicts
+            ? {
+                notes: [refsLine(refSet), ...(note ? [note] : [])],
+                hits: found.hits.map((hit) =>
+                  branchOf(overlay as Overlay, hit)
+                ),
+                conflicts: conflicts.texts,
+                conflictsTotal: conflicts.total,
+              }
+            : {}),
+        }
+      : found;
   const cards = renderFindCards(index, result);
   const envelope = await render(
     options,
@@ -1468,6 +1702,8 @@ export async function effortFind(
       ...(options.asOf ? { as_of: options.asOf } : {}),
       ...(retracted === 'exclude' ? {} : { retracted }),
       limit,
+      ...(codePath ? { path: codePath } : {}),
+      ...(refs ? { refs: refs === 'all' ? 'all' : [...refs].sort() } : {}),
     },
     result.hits.map((hit) => hit.record),
     [],
@@ -1482,6 +1718,8 @@ export async function effortFind(
     result.searched
   } searched); matched: ${result.found.join(' ') || 'none'}; missing: ${
     result.missing.join(' ') || 'none'
+  }${conflicts ? `; refs ${sides.length}; conflicts ${conflicts.total}` : ''}${
+    note ? `; ${note}` : ''
   }`;
   return {
     ...envelope,
@@ -1510,10 +1748,138 @@ export async function effortFind(
           ? { matched_id: hit.matched.id }
           : {}),
         score: roundScore(hit.score),
+        ...(codePath
+          ? {
+              via: (hit.via ?? []).map((via) =>
+                via.record === hit.record.id
+                  ? via.text
+                  : `${via.text} (on ${via.record})`
+              ),
+            }
+          : {}),
+        ...(hit.branch ? { branch: hit.branch } : {}),
       })),
+      ...(pathLabel ? { path: pathLabel } : {}),
+      ...(note ? { note } : {}),
+      ...(overlay
+        ? {
+            refs: sides.map((side) => ({
+              name: side.name,
+              sha: side.sha,
+              changed: changeCounts(side).records,
+              ...(side.pr
+                ? {
+                    pr: {
+                      number: side.pr.number,
+                      draft: side.pr.isDraft,
+                      author: side.pr.author,
+                    },
+                  }
+                : {}),
+            })),
+            conflicts: conflicts?.texts ?? [],
+            conflicts_total: conflicts?.total ?? 0,
+          }
+        : {}),
     },
     cards,
   };
+}
+
+/**
+ * A hit with its `branch:` line. When branches each supersede one version,
+ * the combined chain has several heads; the line then names every other
+ * head and where it lives, and the chain line marks each head.
+ */
+function branchOf(overlay: Overlay, hit: FindHit): FindHit {
+  const heads = headsOf(hit.chain);
+  const tag = overlay.tag(hit.record.id);
+  if (heads.length < 2) return { ...hit, branch: tag };
+  const others = heads.filter((head) => head.id !== hit.record.id);
+  return {
+    ...hit,
+    branch: `${tag}; rival heads: ${others
+      .map((head) => `${head.id} (${overlay.tag(head.id)})`)
+      .join(', ')}`,
+    heads: heads.map((head) => head.id),
+  };
+}
+
+const REFS_ALL_HINT =
+  '--refs all overlays branches, with their records and commit trailers.';
+
+/** Ref names for a note: the first five, then how many more. */
+function refNames(list: readonly { name: string }[]): string {
+  const names = list.slice(0, 5).map((ref) => ref.name);
+  return `${names.join(', ')}${
+    list.length > 5 ? ` and ${list.length - 5} more` : ''
+  }`;
+}
+
+/**
+ * Why `--path` found nothing, when the working tree lacks the path: which
+ * refs have it, and that `--refs all` reads them. A bare word read as a
+ * symbol gets a note only when a branch holds it as a path.
+ */
+async function codeTargetNote(
+  target: CodeTarget,
+  value: string,
+  refs: readonly string[] | 'all' | undefined,
+  repo: { top: string } | undefined,
+  holdersOf: (path: string) => Promise<{ name: string }[]>
+): Promise<string | undefined> {
+  const { label } = target;
+  if (target.path === undefined) {
+    if (refs || !repo || value.includes('#') || value.endsWith('()'))
+      return undefined;
+    const list = await holdersOf(label);
+    return list.length
+      ? `note: ${label} is not in the working tree; ${refNames(list)} ${
+          list.length > 1 ? 'have' : 'has'
+        } it as a path. ${REFS_ALL_HINT}`
+      : undefined;
+  }
+  if (!target.absent) return undefined;
+  if (!repo) return `note: ${label} is not in the working tree.`;
+  const list = await holdersOf(target.path);
+  if (!refs)
+    return list.length
+      ? `note: ${label} is not in the working tree; ${refNames(list)} ${
+          list.length > 1 ? 'have' : 'has'
+        } it. ${REFS_ALL_HINT}`
+      : `note: ${label} is not in the working tree or on any branch. ${REFS_ALL_HINT}`;
+  if (list.length)
+    return `note: ${label} is not in the working tree; read from ${refNames(
+      list
+    )}.`;
+  return refs === 'all'
+    ? `note: ${label} is not in the working tree or on any branch.`
+    : `note: ${label} is not in the working tree or on ${refs.join(
+        ', '
+      )}; --refs all overlays every branch.`;
+}
+
+/** The first card line for `--path` and `--refs`. */
+function findHeader(
+  text: string,
+  path: string | undefined,
+  refs: readonly string[] | 'all' | undefined,
+  result: FindResult,
+  effort: string | undefined
+): string {
+  const words = text
+    ? ` "${text.length > 120 ? `${text.slice(0, 119)}…` : text}"`
+    : '';
+  const flags = `${path ? ` --path ${path}` : ''}${
+    refs ? ` --refs ${refs === 'all' ? 'all' : refs.join(',')}` : ''
+  }`;
+  const scope = effort ? `in ${effort}` : 'in all Efforts';
+  const counts = path
+    ? `${result.matched} governing, ${result.hits.length} shown`
+    : !text
+    ? `${result.matched} changed on refs, ${result.hits.length} shown`
+    : `${result.searched} records searched, ${result.matched} matched, ${result.hits.length} shown`;
+  return `find${words}${flags} ${scope} (${counts})`;
 }
 
 /** A `state` envelope: the usual read fields plus the state inline. */
