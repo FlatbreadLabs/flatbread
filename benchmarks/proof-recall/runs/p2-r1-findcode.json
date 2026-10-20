@@ -1,0 +1,373 @@
+{
+  "run": {
+    "name": "p2-r1-findcode",
+    "protocol": "one fresh session per question",
+    "models": ["claude-haiku-5-5"],
+    "find_hash": "c80612938d90f14747e3be3341c6434f3d78efcbd611bf5085facc8653eee5c2",
+    "state_hash": "be19faeb18e0059bde6482cc2b7e2f1df8368d691e4a903ce1b63cc9aa5a177b",
+    "read_hash": "6e94ef68632e522abca8eaf873b3238cf4ae45394a4810e66f1595c3fe2ee839"
+  },
+  "answers": {
+    "branch-001": {
+      "answer": 41,
+      "tokens": 12417,
+      "fixed_tokens": 2730,
+      "processed_tokens": 83595,
+      "tool_calls": 6,
+      "turns": 7
+    },
+    "branch-002": {
+      "answer": "dec-use-virtual-shadow-maps-for-the-sun--x8nqkn9q7eaf1ap4",
+      "tokens": 17155,
+      "fixed_tokens": 2736,
+      "processed_tokens": 147605,
+      "tool_calls": 9,
+      "turns": 10
+    },
+    "branch-003": {
+      "answer": "proposed",
+      "tokens": 12402,
+      "fixed_tokens": 2731,
+      "processed_tokens": 98949,
+      "tool_calls": 7,
+      "turns": 8
+    },
+    "branch-004": {
+      "answer": "ines/vsm-pool",
+      "tokens": 11569,
+      "fixed_tokens": 1107,
+      "processed_tokens": 103615,
+      "tool_calls": 8,
+      "turns": 9
+    },
+    "branch-005": {
+      "answer": "iss-how-should-the-tide-simulation-save-time-in-cell--72k2mwf4nb3g978p",
+      "tokens": 18214,
+      "fixed_tokens": 1112,
+      "processed_tokens": 86232,
+      "tool_calls": 6,
+      "turns": 6
+    },
+    "branch-006": {
+      "answer": "dec-step-tide-cells-beyond-600-m-at-a-quarter-of-the--1zccsxxw2014sh20",
+      "tokens": 13243,
+      "fixed_tokens": 1103,
+      "processed_tokens": 118836,
+      "tool_calls": 10,
+      "turns": 9
+    },
+    "branch-007": {
+      "answer": 48,
+      "tokens": 11219,
+      "fixed_tokens": 1105,
+      "processed_tokens": 55240,
+      "tool_calls": 4,
+      "turns": 5
+    },
+    "branch-008": {
+      "answer": "fnd-tide-storms-push-skiff-40-hz-frames-to-28-4-ms-o--28gemvtznv4zztdc",
+      "tokens": 10229,
+      "fixed_tokens": 1103,
+      "processed_tokens": 77173,
+      "tool_calls": 6,
+      "turns": 7
+    },
+    "branch-009": {
+      "answer": "27.0 ms",
+      "tokens": 15945,
+      "fixed_tokens": 1106,
+      "processed_tokens": 118937,
+      "tool_calls": 11,
+      "turns": 9
+    },
+    "branch-010": {
+      "answer": [
+        "fnd-world-core-state-with-tide-level-of-detail--x947x5kj16hcngef",
+        "fnd-lantern-after-the-spring-tide-page-pool-change--9zbcsqh53mgv7h4p"
+      ],
+      "tokens": 20542,
+      "fixed_tokens": 1104,
+      "processed_tokens": 187207,
+      "tool_calls": 15,
+      "turns": 11
+    },
+    "branch-011": {
+      "answer": false,
+      "tokens": 11326,
+      "fixed_tokens": 1105,
+      "processed_tokens": 70380,
+      "tool_calls": 5,
+      "turns": 6
+    },
+    "branch-012": {
+      "answer": "superseded",
+      "tokens": 16603,
+      "fixed_tokens": 1107,
+      "processed_tokens": 117576,
+      "tool_calls": 8,
+      "turns": 8
+    },
+    "branch-013": {
+      "answer": "kenji/tide-lod",
+      "tokens": 12013,
+      "fixed_tokens": 1107,
+      "processed_tokens": 56957,
+      "tool_calls": 4,
+      "turns": 5
+    },
+    "branch-014": {
+      "answer": "Priya Natarajan",
+      "tokens": 9130,
+      "fixed_tokens": 1105,
+      "processed_tokens": 53014,
+      "tool_calls": 4,
+      "turns": 5
+    },
+    "branch-015": {
+      "answer": 3,
+      "tokens": 17935,
+      "fixed_tokens": 1103,
+      "processed_tokens": 146488,
+      "tool_calls": 10,
+      "turns": 10
+    },
+    "branch-016": {
+      "answer": "proposed",
+      "tokens": 14322,
+      "fixed_tokens": 1105,
+      "processed_tokens": 81055,
+      "tool_calls": 5,
+      "turns": 6
+    },
+    "branch-017": {
+      "answer": 46,
+      "tokens": 7610,
+      "fixed_tokens": 1104,
+      "processed_tokens": 48341,
+      "tool_calls": 5,
+      "turns": 5
+    },
+    "branch-018": {
+      "answer": "dec-use-virtual-shadow-maps-for-the-sun-with-a-6-144--gnxz9wk2q9xsxc96",
+      "tokens": 19648,
+      "fixed_tokens": 1106,
+      "processed_tokens": 127915,
+      "tool_calls": 7,
+      "turns": 8
+    },
+    "branch-019": {
+      "answer": false,
+      "tokens": 11853,
+      "fixed_tokens": 1108,
+      "processed_tokens": 64181,
+      "tool_calls": 9,
+      "turns": 6
+    },
+    "branch-020": {
+      "answer": "origin/ines/vsm-pool and origin/tomasz/vsm-evict would replace main's accepted sun-shadow Decision dec-use-virtual-shadow-maps-for-the-sun--x8nqkn9q7eaf1ap4.",
+      "tokens": 11042,
+      "fixed_tokens": 1103,
+      "processed_tokens": 68511,
+      "tool_calls": 5,
+      "turns": 6
+    },
+    "branch-021": {
+      "answer": "dec-cap-tide-storm-particles-at-6-000-on-skiff--resze52afjxyxys1",
+      "tokens": 14154,
+      "fixed_tokens": 1100,
+      "processed_tokens": 95002,
+      "tool_calls": 6,
+      "turns": 7
+    },
+    "branch-022": {
+      "answer": "priya/skiff-cpu",
+      "tokens": 29585,
+      "fixed_tokens": 1108,
+      "processed_tokens": 155971,
+      "tool_calls": 11,
+      "turns": 9
+    },
+    "code-001": {
+      "answer": "dec-use-virtual-shadow-maps-for-the-sun--x8nqkn9q7eaf1ap4",
+      "tokens": 10633,
+      "fixed_tokens": 1099,
+      "processed_tokens": 78878,
+      "tool_calls": 6,
+      "turns": 7
+    },
+    "code-002": {
+      "answer": "dec-key-the-shader-cache-on-preprocessed-source-defi--3a05ff0r954vxh30",
+      "tokens": 11541,
+      "fixed_tokens": 1100,
+      "processed_tokens": 55852,
+      "tool_calls": 4,
+      "turns": 5
+    },
+    "code-003": {
+      "answer": [
+        "rsk-eviction-scoring-asks-the-tide-forecast-about-ev--zfwghmgds54h8y46"
+      ],
+      "tokens": 19059,
+      "fixed_tokens": 1102,
+      "processed_tokens": 160501,
+      "tool_calls": 10,
+      "turns": 11
+    },
+    "code-004": {
+      "answer": "fnd-pool-eviction-keeps-cells-the-tide-exposes-withi--tzseexbv0m0qw2jk",
+      "tokens": 15547,
+      "fixed_tokens": 1101,
+      "processed_tokens": 124477,
+      "tool_calls": 9,
+      "turns": 10
+    },
+    "code-005": {
+      "answer": false,
+      "tokens": 16487,
+      "fixed_tokens": 1100,
+      "processed_tokens": 120990,
+      "tool_calls": 10,
+      "turns": 9
+    },
+    "code-006": {
+      "answer": "fnd-tide-priority-reads-starve-player-proximity-load--by0d7b0bk39xz3rk",
+      "tokens": 8293,
+      "fixed_tokens": 1105,
+      "processed_tokens": 60761,
+      "tool_calls": 5,
+      "turns": 6
+    },
+    "code-007": {
+      "answer": "dec-cap-each-farm-agent-at-6-parallel-shader-compile--q5w4sfjm73tsj8x8",
+      "tokens": 13180,
+      "fixed_tokens": 1103,
+      "processed_tokens": 92205,
+      "tool_calls": 6,
+      "turns": 7
+    },
+    "code-008": {
+      "answer": "iss-a-timed-out-cache-fetch-is-retried-once-and-then--sn5thmgf02v8rfe4",
+      "tokens": 12751,
+      "fixed_tokens": 1102,
+      "processed_tokens": 99584,
+      "tool_calls": 7,
+      "turns": 8
+    },
+    "code-009": {
+      "answer": "600p",
+      "tokens": 13254,
+      "fixed_tokens": 1098,
+      "processed_tokens": 83004,
+      "tool_calls": 6,
+      "turns": 7
+    },
+    "code-010": {
+      "answer": "iss-skiff-stays-at-the-lowest-resolution-for-two-sec--erke2h7xf7vepdv2",
+      "tokens": 11672,
+      "fixed_tokens": 1104,
+      "processed_tokens": 71187,
+      "tool_calls": 6,
+      "turns": 6
+    },
+    "code-011": {
+      "answer": "dec-visibility-buffer-on-all-platforms-skiff-resolve--k1ackk3c3275r5y1",
+      "tokens": 19582,
+      "fixed_tokens": 1103,
+      "processed_tokens": 111356,
+      "tool_calls": 8,
+      "turns": 8
+    },
+    "code-012": {
+      "answer": "dec-ship-four-tern-quality-presets-adding-ultra-perf--3jg1wyq3bshv839c",
+      "tokens": 10744,
+      "fixed_tokens": 1099,
+      "processed_tokens": 61613,
+      "tool_calls": 6,
+      "turns": 6
+    },
+    "code-013": {
+      "answer": [
+        "dec-add-a-second-tide-harmonic-for-spring-and-neap-t--1c3s7dtyxvj70gvw",
+        "dec-wrap-the-tide-phase-accumulator-at-each-40-minut--hx88m4hbg27n0xwy",
+        "dec-run-the-tide-simulation-in-32-32-fixed-point--c5rjfcnmhne4h05e"
+      ],
+      "tokens": 8455,
+      "fixed_tokens": 1102,
+      "processed_tokens": 56327,
+      "tool_calls": 9,
+      "turns": 6
+    },
+    "code-014": {
+      "answer": "con-the-tide-step-allocates-no-memory--bgce2y8wndwrwe0r",
+      "tokens": 10473,
+      "fixed_tokens": 1098,
+      "processed_tokens": 82387,
+      "tool_calls": 6,
+      "turns": 7
+    },
+    "code-015": {
+      "answer": "con-saves-from-beta-onward-must-load-in-every-later--v6z856sxtgc5sb09",
+      "tokens": 7743,
+      "fixed_tokens": 1101,
+      "processed_tokens": 59385,
+      "tool_calls": 5,
+      "turns": 6
+    },
+    "code-016": {
+      "answer": "false, fnd-tern-zeroes-history-weight-wherever-saltglass-se--hhgcrcq2n03rwr53",
+      "tokens": 13111,
+      "fixed_tokens": 1108,
+      "processed_tokens": 90747,
+      "tool_calls": 6,
+      "turns": 7
+    },
+    "code-017": {
+      "answer": "A checksum mismatch names the state block (Tide, physics, or Gull state) that diverged and the frame window in which it happened. Record: dec-hash-tide-physics-and-gull-state-every-30-frames--yqf2m6hqbjhwvkzq",
+      "tokens": 6962,
+      "fixed_tokens": 1101,
+      "processed_tokens": 55361,
+      "tool_calls": 5,
+      "turns": 6
+    },
+    "code-018": {
+      "answer": "unknown",
+      "tokens": 10562,
+      "fixed_tokens": 1102,
+      "processed_tokens": 61306,
+      "tool_calls": 5,
+      "turns": 6
+    },
+    "code-019": {
+      "answer": "800 nits",
+      "tokens": 9499,
+      "fixed_tokens": 1110,
+      "processed_tokens": 49980,
+      "tool_calls": 4,
+      "turns": 5
+    },
+    "code-020": {
+      "answer": "dec-ship-prebuilt-pipeline-blobs-in-the-skiff-packag--3vjysjgy9qkvzebn",
+      "tokens": 6577,
+      "fixed_tokens": 1103,
+      "processed_tokens": 54358,
+      "tool_calls": 5,
+      "turns": 6
+    },
+    "code-021": {
+      "answer": "iss-shadow-pages-run-out-at-spring-low-tide--f4fgy6b44jbkrsmh",
+      "tokens": 11949,
+      "fixed_tokens": 1100,
+      "processed_tokens": 94976,
+      "tool_calls": 7,
+      "turns": 8
+    },
+    "code-022": {
+      "answer": "fnd-sun-shadow-pages-are-evicted-oldest-sampled-firs--ndrr54bv4nvr1mbx",
+      "tokens": 12232,
+      "fixed_tokens": 1104,
+      "processed_tokens": 80999,
+      "tool_calls": 6,
+      "turns": 7
+    }
+  }
+}
