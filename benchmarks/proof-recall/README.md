@@ -1428,3 +1428,28 @@ on both sets. The 10x test showed that accuracy separates only once
 crawling stops scaling; the same test is needed here, on a test bed with
 the 10x graph, a larger codebase and more branches, before claiming more
 than the saving.
+
+### Phase 2 at scale
+
+The same trial on the scaled test bed (`build-repo.mjs --scale 10`: the 10x
+graph, about 470 code files, ten branches), Haiku, twice, with
+`--timeout 1200`. Run files: `runs/p2x10-r{1,2}-*.json`.
+
+| Test bed            | `findcode` correct | no-brief correct | Read tokens, `findcode` / no-brief | Tool calls |
+| ------------------- | ------------------ | ---------------- | ---------------------------------- | ---------- |
+| small (524 records) | 85 of 88           | 84 of 88         | 11,642 / 26,283                    | 7 / 13     |
+| scaled (5,131)      | 85 of 88           | 85 of 88         | 13,422 / 22,829                    | 7 / 15     |
+
+On the scaled bed the arms disagree on two question-runs, one each way.
+`findcode` read 41% fewer tokens (code set 11,384 against 24,642; branch
+set 15,460 against 21,016). No session timed out; one no-brief session
+was flagged for reading outside its folder, and it was reading its own
+background task's output, not anything from the benchmark.
+
+So scale does not separate the arms here, unlike search on the 10x graph.
+Git is already a precise index for code: `git log -- <path>` and
+`git diff main...origin/<branch>` stay small however large the graph and
+codebase grow, and the filler never touches a real file. `--path` and
+`--refs` earn their place by cost, about half the reading and half the
+tool calls, not by accuracy. A test that could show more would ask about
+code no single path names, or about many branches at once.
