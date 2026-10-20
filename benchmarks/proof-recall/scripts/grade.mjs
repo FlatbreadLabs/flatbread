@@ -2,7 +2,7 @@
 // Scores one benchmark run.
 //
 //   node scripts/grade.mjs runs/<name>.json [--only ambiguous]
-//        [--split tune|holdout|all]
+//        [--split tune|holdout|all] [--repo <test bed>]
 //
 // It scores the original 246 questions that the run answered. `--only`
 // names the sets to score instead, as run.mjs takes them: `ambiguous` for
@@ -10,7 +10,9 @@
 // scores only the tune or holdout questions, split by a hash of each id as
 // in find-recall.mjs. A read that was changed after reading tune misses,
 // such as `proof state`, should be judged on holdout. `bySplit` always
-// reports both halves.
+// reports both halves. The code and branch sets name records that exist
+// only in the git test bed, so score them with `--repo <dir>`, the folder
+// build-repo.mjs wrote; its key map sits beside it.
 //
 // A run file holds one entry per question id:
 //   { "run": { "strategy": "brief", "model": "..." },
@@ -23,7 +25,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadQuestions } from './check.mjs';
 import { splitOf } from './find-recall.mjs';
-import { loadGraph, qualify, sameAnswer } from './graph.mjs';
+import { loadGraph, qualify, readGraph, sameAnswer } from './graph.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -130,6 +132,8 @@ async function main() {
   const only = at >= 0 ? argv.splice(at, 2)[1].split(',') : [];
   const atSplit = argv.indexOf('--split');
   const split = atSplit >= 0 ? argv.splice(atSplit, 2)[1] : 'all';
+  const atRepo = argv.indexOf('--repo');
+  const repo = atRepo >= 0 ? resolve(argv.splice(atRepo, 2)[1]) : null;
   if (!['tune', 'holdout', 'all'].includes(split))
     throw new Error('--split must be one of tune, holdout, all');
   const [runPath] = argv;
@@ -138,7 +142,12 @@ async function main() {
       'usage: grade.mjs <run.json> [--only sets] [--split tune|holdout|all]'
     );
   const run = JSON.parse(await readFile(resolve(runPath), 'utf8'));
-  const graph = await loadGraph(join(BENCH, '.flatbread-proof'));
+  const graph = repo
+    ? readGraph(
+        join(repo, '.flatbread-proof'),
+        JSON.parse(await readFile(`${repo}.keymap.json`, 'utf8'))
+      )
+    : await loadGraph(join(BENCH, '.flatbread-proof'));
   const rows = [];
   for (const set of await loadQuestions(only))
     for (const q of set.questions) {

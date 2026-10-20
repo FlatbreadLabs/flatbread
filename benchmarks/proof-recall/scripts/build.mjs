@@ -31,6 +31,7 @@ import {
   mergeEvents,
   overlapTerms,
 } from '../spec/_filler.mjs';
+import { REPO_SETS } from './check.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SPEC_DIR = join(BENCH, 'spec');
@@ -103,9 +104,24 @@ function args(argv) {
   return out;
 }
 
+/**
+ * Question files about the built graph. The test-bed sets (REPO_SETS) are
+ * asked only of build-repo.mjs output, never of a filler graph, so they
+ * neither constrain filler nor change its redraws.
+ */
+async function graphQuestionFiles() {
+  const dir = join(BENCH, 'questions');
+  const out = [];
+  for (const name of (await readdir(dir)).filter((n) => n.endsWith('.json'))) {
+    const set = JSON.parse(await readFile(join(dir, name), 'utf8'));
+    if (!REPO_SETS.includes(set.effort)) out.push(name);
+  }
+  return out;
+}
+
 /** Filler may never name a subsystem a spec or question talks about. */
 async function assertFillerIsDisjoint(specs) {
-  const questions = await readdir(join(BENCH, 'questions'));
+  const questions = await graphQuestionFiles();
   const text = [
     ...specs.map((spec) => JSON.stringify(spec)),
     ...(await Promise.all(
@@ -123,7 +139,7 @@ async function assertFillerIsDisjoint(specs) {
 /** The question sets, and each spec as text, for the overlap checks. */
 async function readContent(specs) {
   const dir = join(BENCH, 'questions');
-  const files = (await readdir(dir)).filter((name) => name.endsWith('.json'));
+  const files = await graphQuestionFiles();
   const sets = await Promise.all(
     files.map(async (name) =>
       JSON.parse(await readFile(join(dir, name), 'utf8'))
@@ -242,8 +258,11 @@ export function benchId(kind, title, qualifiedKey) {
 }
 
 export async function loadSpecs(only = []) {
+  // repo.mjs describes the git test bed (scripts/build-repo.mjs), not an
+  // Effort.
   const names = (await readdir(SPEC_DIR)).filter(
-    (name) => !name.startsWith('_') && !name.startsWith('.')
+    (name) =>
+      !name.startsWith('_') && !name.startsWith('.') && name !== 'repo.mjs'
   );
   const specs = [];
   for (const name of names.sort()) {

@@ -5,7 +5,7 @@
 //   node scripts/run.mjs <work-dir> --name <run> [--model haiku]
 //        [--strategies brief,nobrief,find,findstate] [--only render] [--ids a,b]
 //        [--jobs 8] [--timeout 600] [--graph <built-graph-dir>]
-//        [--server <socket>] [--no-serve]
+//        [--server <socket>] [--no-serve] [--repo <test bed>] [--prepare-only]
 //   node scripts/run.mjs --stop-server [--server <socket>]
 //
 // --strategies names the task texts in task.mjs to run; the default is
@@ -34,6 +34,18 @@
 //   with --stop-server, or restart it after rebuilding the CLI so it runs
 //   the new code. --no-serve makes every read run locally instead.
 //
+// --repo <dir> runs the code and branch sets (`--only code`, `--only
+// branch`) on the git test bed from build-repo.mjs. Each session's folder is
+// then its own `git clone --no-hardlinks` of the test bed, so git log, the
+// branches, and the draft-PR file are there for every strategy. It holds no
+// key map, spec, or questions file. These runs use neither the shared graph
+// copy nor the read server: every clone is a different graph root, so
+// reads run locally.
+//
+// --prepare-only builds every session folder and TASK.md, then stops. It
+// starts no agent session and no server, and makes no shared graph copy, so
+// it is the way to inspect what sessions would see.
+//
 // Sessions get only the Bash, Read, and Write tools, no MCP servers, and no
 // settings files, so an agent cannot reach other sessions or services.
 import { spawn } from 'node:child_process';
@@ -56,10 +68,11 @@ import { fileURLToPath } from 'node:url';
 import { collect, findHash, readHash, stateHash } from './collect.mjs';
 import {
   copyPublicGraph,
+  prepareClone,
   prepareFolder,
   publicQuestions,
 } from './prepare-run.mjs';
-import { RUNS_DIR } from './check.mjs';
+import { pickQuestions, REPO_SETS, RUNS_DIR } from './check.mjs';
 import { STRATEGIES, taskText } from './task.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -105,6 +118,8 @@ function args(argv) {
     serve: true,
     server: join(SHARED, 'proof.sock'),
     stopServer: false,
+    repo: null,
+    prepareOnly: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
@@ -120,6 +135,8 @@ function args(argv) {
     else if (flag === '--no-serve') out.serve = false;
     else if (flag === '--server') out.server = resolve(next());
     else if (flag === '--stop-server') out.stopServer = true;
+    else if (flag === '--repo') out.repo = resolve(next());
+    else if (flag === '--prepare-only') out.prepareOnly = true;
     else if (!flag.startsWith('--') && !out.dir) out.dir = resolve(flag);
     else throw new Error(`Unknown argument ${flag}`);
   }
@@ -133,6 +150,12 @@ function args(argv) {
     throw new Error('usage: run.mjs <work-dir> --name <run> [options]');
   if (out.dir.startsWith(resolve(BENCH, '..', '..') + '/'))
     throw new Error('Keep <work-dir> outside the repository');
+  if (out.repo && out.dir.startsWith(`${out.repo}/`))
+    throw new Error('Keep <work-dir> outside the test bed');
+  if (out.repo && out.graph)
+    throw new Error(
+      '--repo sessions read the graph in their clone; drop --graph'
+    );
   return out;
 }
 
@@ -336,6 +359,15 @@ function runSession(folder, model, timeoutSeconds) {
 async function main() {
   const options = args(process.argv.slice(2));
   if (options.stopServer) return stopServer(options.server);
+  // The test-bed sets need the test bed, and its graph holds records that
+  // could change other sets' answers, so the two never share a run.
+  const onBed = (await pickQuestions(options)).map((set) =>
+    REPO_SETS.includes(set.effort)
+  );
+  if (options.repo && onBed.includes(false))
+    throw new Error('--repo runs only the code and branch sets');
+  if (!options.repo && onBed.includes(true))
+    throw new Error('The code and branch sets need --repo <test bed>');
   const questions = await publicQuestions(options);
   const find_hash = await findHash();
   const state_hash = await stateHash();
@@ -360,23 +392,42 @@ async function main() {
     `${sessions.length} sessions, ${todo.length} to run, ${options.jobs} at a time`
   );
   // Copying a large graph per session would fill the disk, so every session
-  // links to one read-only copy.
-  const { dir: shared, hash } = await sharedGraph(options.graph);
-  const socket = options.serve ? options.server : undefined;
+  // links to one read-only copy. A test-bed session reads the graph in its
+  // own clone instead, and --prepare-only touches nothing shared.
+  const shareGraph = !options.repo && !options.prepareOnly;
+  const { dir: shared, hash } = shareGraph
+    ? await sharedGraph(options.graph)
+    : {};
+  const socket = options.serve && shareGraph ? options.server : undefined;
   if (socket)
     console.log(`proof serve on ${socket}: ${await ensureServer(socket)}`);
-  let done = 0;
-  const failures = [];
-  const worker = async () => {
-    for (let s = todo.shift(); s; s = todo.shift()) {
+  const prepare = async (s) => {
+    if (options.repo) await prepareClone(s.folder, options.repo);
+    else
       await prepareFolder(s.folder, [s.q], options.graph, {
         linkTo: shared,
         server: socket,
       });
-      await writeFile(
-        join(s.folder, 'TASK.md'),
-        taskText({ folder: s.folder, strategy: s.strategy, ...s.q })
-      );
+    await writeFile(
+      join(s.folder, 'TASK.md'),
+      taskText({
+        folder: s.folder,
+        strategy: s.strategy,
+        repo: Boolean(options.repo),
+        ...s.q,
+      })
+    );
+  };
+  if (options.prepareOnly) {
+    for (const s of todo) await prepare(s);
+    console.log(`Prepared ${todo.length} session folders; started no sessions`);
+    return;
+  }
+  let done = 0;
+  const failures = [];
+  const worker = async () => {
+    for (let s = todo.shift(); s; s = todo.shift()) {
+      await prepare(s);
       const result = await runSession(s.folder, options.model, options.timeout);
       done++;
       if (result !== 0) failures.push(`${s.strategy}/${s.id}: ${result}`);
@@ -386,7 +437,7 @@ async function main() {
   await Promise.all(Array.from({ length: options.jobs }, worker));
   if (failures.length) console.warn(`Failed:\n${failures.join('\n')}`);
   // Root ignores file modes, so check that no session changed the graph.
-  if ((await treeHash(shared)) !== hash)
+  if (shared && (await treeHash(shared)) !== hash)
     console.warn(`The shared graph in ${shared} changed during the run`);
   await mkdir(RUNS_DIR, { recursive: true });
   for (const strategy of options.strategies)

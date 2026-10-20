@@ -5,13 +5,18 @@
 //   node scripts/check.mjs                    all question files
 //   node scripts/check.mjs --only render      one question set
 //   node scripts/check.mjs --graph /tmp/x     a graph built elsewhere
+//   node scripts/check.mjs --only code,branch --repo /tmp/p2-repo
+//                                             the sets about the git test
+//                                             bed from build-repo.mjs
 //
-// This script checks every file, including the opt-in sets in OPT_IN_SETS.
-// Other scripts load those only when asked for them by name.
+// This script checks every file, including the opt-in sets in OPT_IN_SETS,
+// except the sets in REPO_SETS, which need --repo and load only when named.
+// Other scripts load opt-in sets only when asked for them by name.
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { isCompaction } from '@flatbread/proof';
+import { openTestBed } from './testbed.mjs';
 import {
   hasEdge,
   idFor,
@@ -60,13 +65,23 @@ export const CATEGORIES = [
   // Rewritten so it names no Effort and uses words several Efforts share;
   // the reader must find the right Effort first. Only in ambiguous.json.
   'ambiguous-effort',
+  // The record that governs a code path, through commit trailers, code
+  // anchors, or a path named in a body. Only in code.json.
+  'code-context',
+  // The answer exists only on an unmerged branch, or comes from merging two.
+  // Only in branch.json.
+  'branch',
 ];
 // Question files whose `effort` names no Effort: their questions span
 // several, so every key is qualified as `<effort>.<key>`.
-export const MULTI_EFFORT_SETS = ['cross', 'ambiguous'];
+export const MULTI_EFFORT_SETS = ['cross', 'ambiguous', 'code', 'branch'];
 // Sets that load only when a script names them (`--only ambiguous`) or asks
 // for one of their ids, so every default keeps the original 246 questions.
-export const OPT_IN_SETS = ['ambiguous'];
+export const OPT_IN_SETS = ['ambiguous', 'code', 'branch'];
+// Sets about the git test bed from build-repo.mjs. Their checks read git
+// history and branches, so they need `--repo <dir>`, and check.mjs checks
+// them only when --only names them.
+export const REPO_SETS = ['code', 'branch'];
 // Names that point at one Effort without its title: the engine and renderer
 // code names that Effort titles use.
 const EFFORT_NAMES = ['Kestrel', 'Lantern'];
@@ -74,12 +89,18 @@ const ANSWER_KINDS = ['record', 'records', 'value', 'boolean', 'count', 'text'];
 const NEEDS_CHECK = new Set(['record', 'records', 'count']);
 
 function args(argv) {
-  const out = { only: [], graph: join(BENCH, '.flatbread-proof') };
+  const out = { only: [], graph: join(BENCH, '.flatbread-proof'), repo: null };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--only') out.only.push(...argv[++i].split(','));
     else if (argv[i] === '--graph') out.graph = resolve(argv[++i]);
+    else if (argv[i] === '--repo') out.repo = resolve(argv[++i]);
     else throw new Error(`Unknown argument ${argv[i]}`);
   }
+  // The test bed's main graph adds records that change other sets'
+  // answers, so --repo checks only the sets about it.
+  if (out.repo && !out.only.length) out.only.push(...REPO_SETS);
+  if (out.repo && out.only.some((name) => !REPO_SETS.includes(name)))
+    throw new Error('--repo runs only the code and branch sets');
   return out;
 }
 
@@ -204,6 +225,40 @@ function qualifiedAnswer({ effort, q }) {
   return q.answer;
 }
 
+// Words in the order they appear, lowercased, with punctuation dropped.
+const words = (text) =>
+  text.toLowerCase().match(/[a-z0-9]+(?:['.-][a-z0-9]+)*/g) ?? [];
+
+/**
+ * A test-bed question must not name a record: no id, no title of four
+ * words, and no run of five words from a longer title, on main or any
+ * branch, since a reader could search for it.
+ */
+function leakErrors(graph, q) {
+  const text = (q.question ?? '').toLowerCase();
+  const padded = ` ${words(text).join(' ')} `;
+  const out = [];
+  const refs = graph.repo ? ['main', ...graph.repo.branches()] : [];
+  const seen = new Set();
+  const report = (name) => {
+    if (seen.has(name)) return;
+    seen.add(name);
+    out.push(`names "${name}"`);
+  };
+  for (const ref of refs)
+    for (const rec of graph.repo.graphAt(ref).records.values()) {
+      if (text.includes(rec.id)) report(rec.id);
+      const title = words(String(rec.frontmatter.title ?? ''));
+      if (title.length < 4) continue;
+      const run = Math.min(5, title.length);
+      for (let i = 0; i + run <= title.length; i++) {
+        const phrase = title.slice(i, i + run).join(' ');
+        if (padded.includes(` ${phrase} `)) report(phrase);
+      }
+    }
+  return out;
+}
+
 function validate(
   graph,
   set,
@@ -264,6 +319,15 @@ function validate(
   if (answer.kind === 'record') keysOk([answer.value], 'answer');
   if (answer.kind === 'records') keysOk(answer.value, 'answer');
   const path = q.path ?? [];
+  // A test-bed question's path may run through records that exist only on
+  // one branch; `pathRef` names the ref whose graph holds its edges.
+  let pathGraph = graph;
+  if (q.pathRef) {
+    if (!graph.repo) err('`pathRef` needs --repo');
+    else pathGraph = graph.repo.graphAt(q.pathRef);
+  }
+  if (REPO_SETS.includes(set.effort))
+    for (const message of leakErrors(graph, q)) err(message);
   if (q.tier >= 1 && q.tier <= 3) {
     if (!path.length) err('tiers 1-3 need a path');
     else if (path.length !== q.hops)
@@ -344,7 +408,7 @@ function validate(
     // would otherwise end on the record before it.
     const end = answer.kind === 'record' ? answer.value : path.at(-1)[2];
     try {
-      const shortest = shortestHops(graph, set.effort, start, end);
+      const shortest = shortestHops(pathGraph, set.effort, start, end);
       if (start !== end && shortest < q.hops)
         warnings.push(
           `${set.file} ${q.id}: a ${shortest}-edge route joins ${start} and ${end}; the path has ${q.hops}`
@@ -355,7 +419,8 @@ function validate(
   }
   for (const edge of path) {
     try {
-      if (!hasEdge(graph, set.effort, edge)) err(`no edge ${edge.join(' ')}`);
+      if (!hasEdge(pathGraph, set.effort, edge))
+        err(`no edge ${edge.join(' ')}`);
     } catch (error) {
       err(`edge ${edge.join(' ')}: ${error.message}`);
     }
@@ -452,8 +517,18 @@ export function graphStats(graph, effortKey) {
 
 async function main() {
   const options = args(process.argv.slice(2));
-  const graph = await loadGraph(options.graph);
-  const sets = await loadQuestions(options.only, { optIn: true });
+  const graph = options.repo
+    ? openTestBed(options.repo).graphAt('main')
+    : await loadGraph(options.graph);
+  const sets = (await loadQuestions(options.only, { optIn: true })).filter(
+    (set) =>
+      !REPO_SETS.includes(set.effort) || options.only.includes(set.effort)
+  );
+  for (const set of sets)
+    if (REPO_SETS.includes(set.effort) && !options.repo)
+      throw new Error(
+        `${set.file} needs --repo <dir>, a test bed from build-repo.mjs`
+      );
   // Ambiguous questions are checked against their sources, so load every
   // Effort file even under --only.
   const sources = new Map();

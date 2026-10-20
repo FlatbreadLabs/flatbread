@@ -1,0 +1,777 @@
+{
+  "effort": "code",
+  "questions": [
+    {
+      "id": "code-001",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "current-state"],
+      "question": "Before I edit engine/lantern/shadows/vsm_pool.rs, which live Decision on main governs how the shadow page pool is sized and evicted?",
+      "answer": {
+        "kind": "record",
+        "value": "render.dec-vsm"
+      },
+      "evidence": [
+        "render.dec-vsm",
+        "render.fnd-impl-vsm-evict",
+        "render.cit-code-vsm-evict"
+      ],
+      "checks": [
+        {
+          "type": "trailer",
+          "path": "engine/lantern/shadows/vsm_pool.rs",
+          "kinds": ["decision"],
+          "live": true
+        },
+        {
+          "type": "codeAnchor",
+          "path": "engine/lantern/shadows/vsm_pool.rs",
+          "follow": "derives_from",
+          "kinds": ["decision"],
+          "live": true
+        }
+      ],
+      "traps": [
+        "Two open branches, ines/vsm-pool and tomasz/vsm-evict, each supersede this Decision, but neither is merged; on main it still holds.",
+        "The cascaded shadow map Decision it replaced is superseded."
+      ]
+    },
+    {
+      "id": "code-002",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["code-context", "supersession", "current-state"],
+      "question": "Before I change how tools/shadercache/key.py builds the cache key, which Decision about the key is in force?",
+      "answer": {
+        "kind": "record",
+        "value": "tools.dec-key-v3"
+      },
+      "evidence": [
+        "tools.dec-key-v2",
+        "tools.dec-key-v3",
+        "tools.dec-key-v1",
+        "tools.fnd-impl-cache-key",
+        "tools.cit-code-cache-key"
+      ],
+      "path": [["tools.dec-key-v2", "superseded_by", "tools.dec-key-v3"]],
+      "checks": [
+        {
+          "type": "trailer",
+          "path": "tools/shadercache/key.py",
+          "resolve": "head"
+        },
+        {
+          "type": "trailer",
+          "path": "tools/shadercache/key.py",
+          "expect": ["tools.dec-key-v1", "tools.dec-key-v2"]
+        },
+        {
+          "type": "trailer",
+          "path": "tools/shadercache/key.py",
+          "commit": "latest",
+          "expect": []
+        },
+        {
+          "type": "codeAnchor",
+          "path": "tools/shadercache/key.py",
+          "follow": "derives_from",
+          "kinds": ["decision"],
+          "live": true
+        }
+      ],
+      "traps": [
+        "The trailers on this file name only the first two key Decisions, both superseded. The latest commit, which hashes the compiler binary, has no trailer.",
+        "The rejected modification-time key was never in force."
+      ]
+    },
+    {
+      "id": "code-003",
+      "tier": 4,
+      "hops": 1,
+      "categories": ["code-context", "aggregate"],
+      "question": "Which Findings or Risks rest on the code anchor for the commit that added forecast-based eviction to engine/kestrel/streaming/pool.rs?",
+      "answer": {
+        "kind": "records",
+        "value": ["world.fnd-impl-pool-score", "world.rsk-pool-score-cost"]
+      },
+      "evidence": [
+        "world.cit-code-pool-score",
+        "world.fnd-impl-pool-score",
+        "world.rsk-pool-score-cost",
+        "world.cit-code-pool-score-2",
+        "world.fnd-impl-pool-score-2"
+      ],
+      "checks": [
+        {
+          "type": "codeAnchor",
+          "path": "engine/kestrel/streaming/pool.rs",
+          "symbol": "evict_score",
+          "commit": "introducing"
+        },
+        {
+          "type": "codeAnchor",
+          "path": "engine/kestrel/streaming/pool.rs",
+          "symbol": "evict_score",
+          "commit": "introducing",
+          "citations": true,
+          "expect": ["world.cit-code-pool-score"]
+        }
+      ],
+      "traps": [
+        "The later one-turn fix has its own code anchor and note; those cite the fix commit, not the one that added forecast eviction.",
+        "The commit that first added the file brought least-recently-used eviction, not the forecast score."
+      ]
+    },
+    {
+      "id": "code-004",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["code-context", "supersession"],
+      "question": "Of the records that cite the commit that added forecast-based eviction to engine/kestrel/streaming/pool.rs, which one has since been superseded?",
+      "answer": {
+        "kind": "record",
+        "value": "world.fnd-impl-pool-score"
+      },
+      "evidence": [
+        "world.cit-code-pool-score",
+        "world.fnd-impl-pool-score",
+        "world.fnd-impl-pool-score-2",
+        "world.rsk-pool-score-cost"
+      ],
+      "path": [
+        ["world.cit-code-pool-score", "cited_by", "world.fnd-impl-pool-score"]
+      ],
+      "checks": [
+        {
+          "type": "codeAnchor",
+          "path": "engine/kestrel/streaming/pool.rs",
+          "symbol": "evict_score",
+          "commit": "introducing",
+          "where": {
+            "standing": "superseded"
+          }
+        },
+        {
+          "type": "head",
+          "start": "world.fnd-impl-pool-score",
+          "expect": "world.fnd-impl-pool-score-2"
+        }
+      ],
+      "traps": [
+        "The eviction-cost Risk cites the same commit and is still open.",
+        "The note that replaced it cites the fix commit and is live."
+      ]
+    },
+    {
+      "id": "code-005",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "invalidation"],
+      "question": "Before I edit engine/kestrel/streaming/io_queue.rs, is the Decision behind push_tide_read, which lets tide reads jump the queue, still sound?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": [
+        "world.dec-io-tide-priority",
+        "world.fnd-io-starve",
+        "world.fnd-impl-tide-push",
+        "world.cit-code-tide-push"
+      ],
+      "checks": [
+        {
+          "type": "trailer",
+          "path": "engine/kestrel/streaming/io_queue.rs",
+          "symbol": "push_tide_read",
+          "commit": "introducing",
+          "expect": ["world.dec-io-tide-priority"]
+        },
+        {
+          "type": "codeAnchor",
+          "path": "engine/kestrel/streaming/io_queue.rs",
+          "symbol": "push_tide_read",
+          "follow": "derives_from",
+          "expect": ["world.dec-io-tide-priority"]
+        },
+        {
+          "type": "field",
+          "record": "world.dec-io-tide-priority",
+          "field": "standing",
+          "expect": "invalidated"
+        }
+      ],
+      "traps": [
+        "The single-request-queue Decision the file started from is still accepted, but it is not the one behind push_tide_read."
+      ]
+    },
+    {
+      "id": "code-006",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["code-context", "invalidation"],
+      "question": "Which Finding showed that the tide-read ordering in engine/kestrel/streaming/io_queue.rs is wrong?",
+      "answer": {
+        "kind": "record",
+        "value": "world.fnd-io-starve"
+      },
+      "evidence": [
+        "world.dec-io-tide-priority",
+        "world.fnd-io-starve",
+        "world.fnd-impl-tide-push"
+      ],
+      "path": [
+        ["world.dec-io-tide-priority", "invalidated_by", "world.fnd-io-starve"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "world",
+          "kinds": ["finding"],
+          "invalidates": "world.dec-io-tide-priority"
+        },
+        {
+          "type": "trailer",
+          "path": "engine/kestrel/streaming/io_queue.rs",
+          "symbol": "push_tide_read",
+          "expect": ["world.dec-io-tide-priority"]
+        }
+      ],
+      "traps": [
+        "The implementation note on push_tide_read describes the code; it does not show the rule wrong."
+      ]
+    },
+    {
+      "id": "code-007",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "lookup"],
+      "question": "Before I change how many shader compiles tools/shadercache/remote.py runs at once on one farm agent, which Decision sets that limit?",
+      "answer": {
+        "kind": "record",
+        "value": "tools.dec-cap-jobs"
+      },
+      "evidence": ["tools.dec-cap-jobs", "tools.dec-remote"],
+      "checks": [
+        {
+          "type": "trailer",
+          "path": "tools/shadercache/remote.py",
+          "titleIncludes": "parallel"
+        },
+        {
+          "type": "trailer",
+          "path": "tools/shadercache/remote.py",
+          "expect": ["tools.dec-cap-jobs", "tools.dec-remote"]
+        }
+      ],
+      "traps": [
+        "The same commit also names the remote-execution Decision, which fans misses out but sets no per-agent limit."
+      ]
+    },
+    {
+      "id": "code-008",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "lookup"],
+      "question": "Which open defect names tools/shadercache/remote.py?",
+      "answer": {
+        "kind": "record",
+        "value": "tools.iss-remote-retry"
+      },
+      "evidence": ["tools.iss-remote-retry", "tools.iss-flaky"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["issue"],
+          "where": {
+            "status": "open"
+          },
+          "bodyIncludes": "tools/shadercache/remote.py"
+        }
+      ],
+      "traps": ["The nightly timeout defect is resolved and names no file."]
+    },
+    {
+      "id": "code-009",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "current-state"],
+      "question": "Before I touch platform/skiff/dynres.rs: by the Decision in force, below what resolution does Skiff's 30 Hz mode rarely drop?",
+      "answer": {
+        "kind": "value",
+        "value": "600p",
+        "accept": ["600"]
+      },
+      "evidence": [
+        "ports.dec-dynres-3",
+        "ports.dec-dynres-2",
+        "ports.dec-dynres-1"
+      ],
+      "checks": [
+        {
+          "type": "trailer",
+          "path": "platform/skiff/dynres.rs",
+          "expect": ["ports.dec-dynres-3"]
+        },
+        {
+          "type": "body",
+          "record": "ports.dec-dynres-3",
+          "includes": "The 30 Hz mode rarely drops below 600p.",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The code and the commit subject give only the 504p floor and the 720p ceiling; only the Decision says how low the 30 Hz mode usually goes.",
+        "Earlier versions set 540p and then 576p floors; both are superseded."
+      ]
+    },
+    {
+      "id": "code-010",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "lookup"],
+      "question": "Is there an open defect about how platform/skiff/dynres.rs recovers after a single slow frame? Which record is it?",
+      "answer": {
+        "kind": "record",
+        "value": "ports.iss-dynres-hold"
+      },
+      "evidence": ["ports.iss-dynres-hold", "ports.dec-dynres-3"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["issue"],
+          "live": true,
+          "bodyIncludes": "platform/skiff/dynres.rs"
+        }
+      ],
+      "traps": [
+        "The dynamic resolution question Issue is resolved and is not a defect."
+      ]
+    },
+    {
+      "id": "code-011",
+      "tier": 2,
+      "hops": 3,
+      "categories": ["code-context", "supersession", "current-state"],
+      "question": "The commits on engine/lantern/vb/resolve.rs name one visibility-buffer Decision. Which version of that Decision is in force now?",
+      "answer": {
+        "kind": "record",
+        "value": "render.dec-vb-6"
+      },
+      "evidence": [
+        "render.dec-vb-3",
+        "render.dec-vb-4",
+        "render.dec-vb-5",
+        "render.dec-vb-6"
+      ],
+      "path": [
+        ["render.dec-vb-3", "superseded_by", "render.dec-vb-4"],
+        ["render.dec-vb-4", "superseded_by", "render.dec-vb-5"],
+        ["render.dec-vb-5", "superseded_by", "render.dec-vb-6"]
+      ],
+      "checks": [
+        {
+          "type": "trailer",
+          "path": "engine/lantern/vb/resolve.rs",
+          "resolve": "head"
+        },
+        {
+          "type": "trailer",
+          "path": "engine/lantern/vb/resolve.rs",
+          "expect": ["render.dec-vb-3"]
+        },
+        {
+          "type": "trailer",
+          "path": "engine/lantern/vb/resolve.rs",
+          "commit": "latest",
+          "expect": []
+        }
+      ],
+      "traps": [
+        "Only the first commit has a trailer, and it names the third version, which is three replacements old.",
+        "The uber-shader resolve Decision governs how materials are shaded, not which version of the visibility buffer is in force."
+      ]
+    },
+    {
+      "id": "code-012",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "supersession"],
+      "question": "Before I edit engine/lantern/tern/presets.rs, which Decision sets the presets it must offer?",
+      "answer": {
+        "kind": "record",
+        "value": "render.dec-presets-4b"
+      },
+      "evidence": [
+        "render.dec-presets-4b",
+        "render.dec-presets-3",
+        "render.dec-presets-4"
+      ],
+      "checks": [
+        {
+          "type": "trailer",
+          "path": "engine/lantern/tern/presets.rs",
+          "resolve": "head"
+        },
+        {
+          "type": "trailer",
+          "path": "engine/lantern/tern/presets.rs",
+          "expect": ["render.dec-presets-3", "render.dec-presets-4b"]
+        }
+      ],
+      "traps": [
+        "The first commit names the three-preset Decision, which is superseded.",
+        "A rejected four-preset Decision has nearly the same title."
+      ]
+    },
+    {
+      "id": "code-013",
+      "tier": 4,
+      "hops": 0,
+      "categories": ["code-context", "aggregate"],
+      "question": "Which Decisions do the commits on main under engine/kestrel/tides/ give as their reason?",
+      "answer": {
+        "kind": "records",
+        "value": [
+          "world.dec-tide-fixed",
+          "world.dec-tide-harmonic",
+          "world.dec-tide-wrap"
+        ]
+      },
+      "evidence": [
+        "world.dec-tide-fixed",
+        "world.dec-tide-harmonic",
+        "world.dec-tide-wrap",
+        "world.con-tide-step-alloc",
+        "world.dec-tide-lod-quarter"
+      ],
+      "checks": [
+        {
+          "type": "trailer",
+          "path": "engine/kestrel/tides",
+          "kinds": ["decision"]
+        },
+        {
+          "type": "trailer",
+          "path": "engine/kestrel/tides",
+          "expect": [
+            "world.dec-tide-fixed",
+            "world.dec-tide-harmonic",
+            "world.dec-tide-wrap"
+          ]
+        }
+      ],
+      "traps": [
+        "A Constraint names engine/kestrel/tides/fixed.rs in its body, but no commit names it.",
+        "The far-cell tide Decision is only proposed on main, and only branches add code for it."
+      ]
+    },
+    {
+      "id": "code-014",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "lookup"],
+      "question": "Which hard Constraint names engine/kestrel/tides/fixed.rs?",
+      "answer": {
+        "kind": "record",
+        "value": "world.con-tide-step-alloc"
+      },
+      "evidence": ["world.con-tide-step-alloc", "world.con-tide-bitexact"],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "*",
+          "kinds": ["constraint"],
+          "where": {
+            "kind": "hard"
+          },
+          "bodyIncludes": "engine/kestrel/tides/fixed.rs"
+        }
+      ],
+      "traps": [
+        "The bit-identical tide Constraint governs the same code but names no file."
+      ]
+    },
+    {
+      "id": "code-015",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["code-context", "lookup"],
+      "question": "Before I change how engine/kestrel/save/upgrade.rs adds upgrade steps, which hard Constraint must the change keep?",
+      "answer": {
+        "kind": "record",
+        "value": "world.con-save-compat"
+      },
+      "evidence": [
+        "world.dec-save-version",
+        "world.con-save-compat",
+        "world.fnd-impl-save-upgrade"
+      ],
+      "path": [
+        ["world.dec-save-version", "derives_from", "world.con-save-compat"]
+      ],
+      "checks": [
+        {
+          "type": "codeAnchor",
+          "path": "engine/kestrel/save/upgrade.rs",
+          "follow": "derives_from",
+          "kinds": ["constraint"]
+        },
+        {
+          "type": "trailer",
+          "path": "engine/kestrel/save/upgrade.rs",
+          "follow": "derives_from",
+          "kinds": ["constraint"]
+        }
+      ],
+      "traps": [
+        "The no-allocation Constraint is about the tide step, not saves."
+      ]
+    },
+    {
+      "id": "code-016",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "lookup"],
+      "question": "According to its Proof notes, does the reactive-mask code in engine/lantern/tern/history.rs do anything for the caustic flicker blocker?",
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "evidence": [
+        "render.fnd-impl-tern-reactive",
+        "render.cit-code-tern-reactive",
+        "render.iss-caustic-flicker"
+      ],
+      "checks": [
+        {
+          "type": "codeAnchor",
+          "path": "engine/lantern/tern/history.rs",
+          "expect": ["render.fnd-impl-tern-reactive"]
+        },
+        {
+          "type": "body",
+          "record": "render.fnd-impl-tern-reactive",
+          "includes": "does nothing for the caustic flicker blocker",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The reactive mask fixed Tern ghosting on saltglass, which makes it look like a fix for caustics too."
+      ]
+    },
+    {
+      "id": "code-017",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "lookup"],
+      "question": "Before I edit net/coop/checksum.rs: according to the Decision behind it, what does a checksum mismatch tell you?",
+      "answer": {
+        "kind": "text",
+        "rubric": [
+          ["block"],
+          ["frame window", "window of frames", "frames it happened"]
+        ]
+      },
+      "evidence": [
+        "netcode.dec-checksum",
+        "netcode.dec-host",
+        "netcode.fnd-impl-checksum"
+      ],
+      "checks": [
+        {
+          "type": "trailer",
+          "path": "net/coop/checksum.rs",
+          "titleIncludes": "Hash",
+          "expect": ["netcode.dec-checksum"]
+        },
+        {
+          "type": "trailer",
+          "path": "net/coop/checksum.rs",
+          "expect": ["netcode.dec-checksum", "netcode.dec-host"]
+        },
+        {
+          "type": "body",
+          "record": "netcode.dec-checksum",
+          "includes": "A mismatch names the block that diverged and the frame window it happened in.",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The code and the commit subject say how often state is hashed, but not what a mismatch reports.",
+        "The same commit names the host-authoritative sync Decision."
+      ]
+    },
+    {
+      "id": "code-018",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "negative"],
+      "question": "Before I edit engine/kestrel/ecs/names.rs, which Decision governs it?",
+      "answer": {
+        "kind": "value",
+        "value": "unknown"
+      },
+      "evidence": ["world.iss-ecs-names", "world.dec-ecs-hybrid"],
+      "checks": [
+        {
+          "type": "trailer",
+          "path": "engine/kestrel/ecs/names.rs",
+          "expect": []
+        },
+        {
+          "type": "codeAnchor",
+          "path": "engine/kestrel/ecs/names.rs",
+          "expect": []
+        },
+        {
+          "type": "select",
+          "effort": "*",
+          "bodyIncludes": "ecs/names.rs",
+          "expect": []
+        }
+      ],
+      "traps": [
+        "An Issue about missing entity debug names exists, but it is an Issue closed as wontfix, not a Decision, and names no file.",
+        "The ECS storage Decision governs component storage, not debug names."
+      ]
+    },
+    {
+      "id": "code-019",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["code-context", "supersession"],
+      "question": "Before I change engine/lantern/tonemap/brine.rs, at how many nits should the HDR shoulder start?",
+      "answer": {
+        "kind": "value",
+        "value": "800 nits",
+        "accept": ["800"]
+      },
+      "evidence": ["render.dec-brine-2", "render.dec-brine-3"],
+      "path": [["render.dec-brine-2", "superseded_by", "render.dec-brine-3"]],
+      "checks": [
+        {
+          "type": "trailer",
+          "path": "engine/lantern/tonemap/brine.rs",
+          "resolve": "head",
+          "expect": ["render.dec-brine-3"]
+        },
+        {
+          "type": "trailer",
+          "path": "engine/lantern/tonemap/brine.rs",
+          "expect": ["render.dec-brine-2"]
+        },
+        {
+          "type": "body",
+          "record": "render.dec-brine-3",
+          "includes": "800 nits",
+          "expect": true
+        }
+      ],
+      "traps": [
+        "The code still starts the shoulder at 1,000 nits, and so does the only commit with a trailer, which names the superseded 1,000-nit Decision. The newest commit on the file has no trailer and leaves the shoulder alone."
+      ]
+    },
+    {
+      "id": "code-020",
+      "tier": 1,
+      "hops": 1,
+      "categories": ["code-context", "supersession"],
+      "question": "The cache in platform/skiff/pso_cache.rs replaced an earlier plan for avoiding first-use pipeline compiles. Which superseded Decision was that plan?",
+      "answer": {
+        "kind": "record",
+        "value": "ports.dec-pso-ship"
+      },
+      "evidence": [
+        "ports.dec-pso-ondevice",
+        "ports.dec-pso-ship",
+        "ports.dec-pso-uber",
+        "ports.fnd-impl-pso-warm"
+      ],
+      "path": [["ports.dec-pso-ondevice", "supersedes", "ports.dec-pso-ship"]],
+      "checks": [
+        {
+          "type": "trailer",
+          "path": "platform/skiff/pso_cache.rs",
+          "follow": "supersedes"
+        },
+        {
+          "type": "codeAnchor",
+          "path": "platform/skiff/pso_cache.rs",
+          "follow": "derives_from",
+          "expect": ["ports.dec-pso-ondevice"]
+        }
+      ],
+      "traps": [
+        "The ubershader option was rejected, not superseded.",
+        "The build farm shader compile cache is a different cache."
+      ]
+    },
+    {
+      "id": "code-021",
+      "tier": 3,
+      "hops": 3,
+      "categories": ["code-context", "blocker"],
+      "question": "Before I edit engine/lantern/shadows/vsm_pool.rs, which open blocker on main is about the pool that file manages?",
+      "answer": {
+        "kind": "record",
+        "value": "render.iss-vsm-tide"
+      },
+      "evidence": [
+        "render.dec-vsm",
+        "render.rsk-vsm-overflow",
+        "render.fnd-vsm-overflow",
+        "render.iss-vsm-tide",
+        "render.fnd-impl-vsm-evict"
+      ],
+      "path": [
+        ["render.dec-vsm", "supports", "render.rsk-vsm-overflow"],
+        ["render.rsk-vsm-overflow", "supports", "render.fnd-vsm-overflow"],
+        ["render.fnd-vsm-overflow", "supports", "render.iss-vsm-tide"]
+      ],
+      "checks": [
+        {
+          "type": "select",
+          "effort": "render",
+          "kinds": ["issue"],
+          "where": {
+            "status": "open",
+            "kind": "blocker"
+          },
+          "derivesFrom": "render.fnd-vsm-overflow"
+        },
+        {
+          "type": "trailer",
+          "path": "engine/lantern/shadows/vsm_pool.rs",
+          "expect": ["render.dec-vsm"]
+        }
+      ],
+      "traps": [
+        "ines/vsm-pool resolves this blocker, but only on that branch; on main it is open."
+      ]
+    },
+    {
+      "id": "code-022",
+      "tier": 0,
+      "hops": 0,
+      "categories": ["code-context", "lookup"],
+      "question": "Which record says what evict_pages in engine/lantern/shadows/vsm_pool.rs never evicts?",
+      "answer": {
+        "kind": "record",
+        "value": "render.fnd-impl-vsm-evict"
+      },
+      "evidence": ["render.fnd-impl-vsm-evict", "render.cit-code-vsm-evict"],
+      "checks": [
+        {
+          "type": "codeAnchor",
+          "path": "engine/lantern/shadows/vsm_pool.rs",
+          "symbol": "evict_pages"
+        }
+      ],
+      "traps": [
+        "The sun-shadow Decision describes the moving-object page set, but not what eviction skips."
+      ]
+    }
+  ]
+}
