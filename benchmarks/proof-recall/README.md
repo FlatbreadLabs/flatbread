@@ -1334,3 +1334,33 @@ The accuracy gain is all on the tune questions this round was chosen from
 before and had little room. The saving in reading carries over: 15% fewer
 tokens on holdout. So this round is kept for clearer, cheaper reads; it has
 not shown that it raises accuracy on questions it was not built from.
+
+### Phase 2 trial: code context and branches
+
+Haiku, twice, on the 22 code-context and 22 branch questions of the git
+test bed (`build-repo.mjs`), each session in its own clone:
+`run.mjs --repo <bed> --strategies findcode,nobrief --only code,branch`.
+In this mode every arm may use read-only git, so no-brief can run
+`git log`, `git show <ref>:<path>` and `git diff main...origin/<branch>`;
+`findcode` adds `proof find --path` and `--refs all`. Run files:
+`runs/p2-r{1,2}-*.json`.
+
+Pooled over both runs (88 question-runs per arm):
+
+| Measure                         | `findcode`  | no-brief    |
+| ------------------------------- | ----------- | ----------- |
+| Correct                         | 85          | 84          |
+| Only this arm right             | 2           | 1           |
+| Mean read tokens                | 11,642      | 26,283      |
+| Mean tool calls                 | 7           | 13          |
+| Code set: correct / read tok.   | 42 / 10,186 | 41 / 29,912 |
+| Branch set: correct / read tok. | 43 / 13,097 | 43 / 22,654 |
+
+Both arms are near the ceiling, so this trial cannot show an accuracy
+gain: with git on a 524-record graph and about 40 source files, an agent
+finds these answers by grepping and reading branches directly. What the
+new reads change is cost: 56% fewer read tokens and half the tool calls,
+on both sets. The 10x test showed that accuracy separates only once
+crawling stops scaling; the same test is needed here, on a test bed with
+the 10x graph, a larger codebase and more branches, before claiming more
+than the saving.
