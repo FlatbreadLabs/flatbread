@@ -25,6 +25,12 @@ import {
   listEfforts,
   type RetractedMode,
 } from '../proof/read.js';
+import {
+  changeCounts,
+  readRefSides,
+  refreshPullRequests,
+  refsLine,
+} from '../proof/refs.js';
 import type { PrimitiveKind, ReadRelation } from '@flatbread/proof';
 import { handleEffortInstallSkill } from './installSkill.js';
 
@@ -48,6 +54,9 @@ export interface EffortCliOptions {
   effort?: string;
   all?: boolean;
   asOf?: string;
+  path?: string;
+  refs?: string[] | 'all';
+  refreshPrs?: boolean;
   verify?: boolean;
   dryRun?: boolean;
 }
@@ -93,6 +102,17 @@ export function mapEffortCliOptions(
         typeof options['as-of'] === 'string' ||
         typeof options['as-of'] === 'number'
           ? String(options['as-of'])
+          : undefined,
+      path: typeof options.path === 'string' ? options.path : undefined,
+      refs:
+        options.refs === 'all'
+          ? 'all'
+          : typeof options.refs === 'string'
+          ? split(options.refs) ?? []
+          : undefined,
+      refreshPrs:
+        options['refresh-prs'] === true || options['refresh-prs'] === 'true'
+          ? true
           : undefined,
       verify: options.verify === true ? true : undefined,
       dryRun:
@@ -304,7 +324,55 @@ export async function handleEffortFind(
     asOf: options.asOf,
     retracted: options.retracted,
     limit: options.limit,
+    path: options.path,
+    refs: options.refs,
   });
+}
+
+/**
+ * `proof branches`: the refs `proof find --refs all` overlays, each with how
+ * many Proof records it changes and its pull request, if
+ * `.flatbread/proof/prs.json` names one. `--refresh-prs` first rewrites that
+ * file from `gh pr list`, the only step that uses the network.
+ */
+export async function handleProofBranches(options: EffortCliOptions = {}) {
+  const cwd = options.cwd ?? process.cwd();
+  const rootDir = await rootFor(cwd);
+  const cacheRoot = resolve(cwd, '.flatbread/proof');
+  const refreshed = options.refreshPrs
+    ? await refreshPullRequests(rootDir, cacheRoot)
+    : undefined;
+  const refSet = await readRefSides(rootDir, cacheRoot, 'all');
+  return {
+    ...(refreshed
+      ? {
+          prs: {
+            path: refreshed.path,
+            count: refreshed.count,
+            ...(refreshed.ignored
+              ? {}
+              : {
+                  warning: `${refreshed.path} is not gitignored; add .flatbread/proof/prs.json to .gitignore`,
+                }),
+          },
+        }
+      : {}),
+    summary: refsLine(refSet),
+    refs: refSet.sides.map((side) => ({
+      name: side.name,
+      sha: side.sha,
+      changed: changeCounts(side).records,
+      ...(side.pr
+        ? {
+            pr: {
+              number: side.pr.number,
+              draft: side.pr.isDraft,
+              author: side.pr.author,
+            },
+          }
+        : {}),
+    })),
+  };
 }
 
 /** `proof state`: where one Effort stands, from frontmatter and links. */
@@ -612,10 +680,18 @@ export function registerProofCommands(prog: any): void {
   );
   consistencyOptions(
     prog.command(
-      'proof find <words>',
+      'proof find [words]',
       'Find records by what they say, ranked; one card per supersession chain'
     )
   )
+    .option(
+      '--path <target>',
+      'Records that govern this file, folder, symbol, or file#symbol; words optional'
+    )
+    .option(
+      '--refs <refs>',
+      'Overlay records from these comma-separated git refs, or all changed branches, without a checkout'
+    )
     .option('--effort <effortId>', 'Search one Effort')
     .option(
       '--all',
@@ -648,6 +724,19 @@ export function registerProofCommands(prog: any): void {
     .option('--as-of <iso>', 'Not supported; refused with a pointer to find')
     .action(async (effortId: string, options: Record<string, unknown>) =>
       printResult(handleEffortState(effortId, mapEffortCliOptions(options)))
+    );
+  prog
+    .command(
+      'proof branches',
+      'List the branches proof find --refs all overlays, with their pull requests'
+    )
+    .option(
+      '--refresh-prs',
+      'First rewrite .flatbread/proof/prs.json from gh pr list (uses the network)',
+      false
+    )
+    .action(async (options: Record<string, unknown>) =>
+      printResult(handleProofBranches(mapEffortCliOptions(options)))
     );
   paginationOptions(
     consistencyOptions(

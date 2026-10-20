@@ -459,6 +459,24 @@ export interface FindOptions {
   readonly asOf?: string;
   readonly retracted?: 'exclude' | 'include' | 'only';
   readonly limit?: number;
+  /**
+   * Search only these records, each with what ties it to the query's code
+   * or ref (`--path`, `--refs`). Every chain that holds one is a candidate,
+   * even when no query word matches it. With words, BM25 ranks them; without,
+   * the strongest tie ranks them, then the newest shown version. There is no
+   * per-Effort cap.
+   */
+  readonly governed?: ReadonlyMap<string, readonly FindVia[]>;
+}
+
+/** What ties a record to the code or ref a query names. */
+export interface FindVia {
+  /** citation 3, trailer 2, text 1; 0 for a record only a ref changed. */
+  readonly strength: number;
+  /** The record the tie is on; a card for a newer version names it. */
+  readonly record: string;
+  /** As the card prints it, such as `cites cit-a: src/a.ts#run@1a2b3c4`. */
+  readonly text: string;
 }
 
 export interface FindLink {
@@ -498,6 +516,15 @@ export interface FindHit {
   readonly outbound: readonly FindLink[];
   readonly inbound: readonly FindLink[];
   readonly code: readonly string[];
+  /** With `governed`: the ties of every chain member, strongest first. */
+  readonly via?: readonly FindVia[];
+  /** With `--refs`: where the shown version lives, as `only on feat/a`. */
+  readonly branch?: string;
+  /**
+   * With `--refs`, when branches each supersede one version: every head of
+   * the combined chain, which the chain line marks as rival heads.
+   */
+  readonly heads?: readonly string[];
 }
 
 /** A window of a body, with its offsets in the normalized body. */
@@ -532,6 +559,16 @@ export interface FindResult {
   readonly found: readonly string[];
   /** Query words that no shown hit, nor a Blob a card quotes, contains. */
   readonly missing: readonly string[];
+  /** With `governed` and no query words: hits carry no score. */
+  readonly unscored?: true;
+  /** Replaces the cards' first line, for `--path` and `--refs`. */
+  readonly header?: string;
+  /** Lines after the header, such as the refs a query overlaid. */
+  readonly notes?: readonly string[];
+  /** With `--refs`: the first conflicts across the base and the refs. */
+  readonly conflicts?: readonly string[];
+  /** With `--refs`: how many conflicts there are in all. */
+  readonly conflictsTotal?: number;
 }
 
 export interface QueryTerm {
@@ -786,7 +823,7 @@ function inScope(record: ReadRecord, options: FindOptions): boolean {
 }
 
 /** Chain members that no other member supersedes, in link order. */
-function headsOf(chain: readonly ReadRecord[]): ReadRecord[] {
+export function headsOf(chain: readonly ReadRecord[]): ReadRecord[] {
   const superseded = new Set(
     [...olderVersions(chain).values()].flatMap((ids) => [...ids])
   );
@@ -893,11 +930,19 @@ export function findRecords(
     inScope(record, options) && (asOf === undefined || time(record) <= asOf);
   let searched = 0;
   const best = new Map<string, { record: ReadRecord; score: number }>();
+  const governed = options.governed;
   for (const doc of index.docs.values()) {
     if (!eligible(doc.record)) continue;
+    if (governed) {
+      // Every eligible version of a governed chain is a candidate, so the
+      // card can show a head that the tie itself is not on.
+      const chainId = index.chainOf.get(doc.record.id) as string;
+      const chain = index.chains.get(chainId) as readonly ReadRecord[];
+      if (!chain.some((member) => governed.has(member.id))) continue;
+    }
     searched++;
     const score = bm25(index, doc, termList);
-    if (score <= 0) continue;
+    if (score <= 0 && !governed) continue;
     const chainId = index.chainOf.get(doc.record.id) as string;
     const current = best.get(chainId);
     if (
@@ -909,28 +954,40 @@ export function findRecords(
       best.set(chainId, { record: doc.record, score });
   }
   const ranked = [...best.entries()]
-    .flatMap(([chainId, { record: matched, score }]) => {
+    .flatMap(([chainId, { record: best, score }]) => {
       const chain = index.chains.get(chainId) as readonly ReadRecord[];
       const heads = headsOf(chain);
       const head = heads.at(-1) ?? (chain.at(-1) as ReadRecord);
       const versions = chain.filter(eligible);
       // The card shows an eligible version: the newest head that is in
       // scope, else the newest version that is. With `asOf`, the last version
-      // in link order created by then. `matched` is always eligible.
+      // in link order created by then. `best`, the version that scored best, is always eligible.
       const record =
         (asOf === undefined ? heads.filter(eligible).at(-1) : undefined) ??
         versions.at(-1) ??
-        matched;
-      return [{ chain, versions, head, record, matched, score }];
+        best;
+      // A governed chain no query word matched quotes the shown version.
+      const matched = score > 0 || !governed ? best : record;
+      const via = governed ? chainVias(chain, governed) : undefined;
+      return [{ chain, versions, head, record, matched, score, via }];
     })
-    .sort((a, b) => b.score - a.score || compareIds(a.head.id, b.head.id));
+    .sort(
+      governed
+        ? (a, b) =>
+            b.score - a.score ||
+            (b.via?.[0]?.strength ?? 0) - (a.via?.[0]?.strength ?? 0) ||
+            time(b.record) - time(a.record) ||
+            compareIds(a.head.id, b.head.id)
+        : (a, b) => b.score - a.score || compareIds(a.head.id, b.head.id)
+    );
   const effortOf = (record: ReadRecord) =>
     typeof record.frontmatter.effort === 'string'
       ? record.frontmatter.effort
       : null;
   let selected = ranked;
   let efforts: FindEffortMass[] | undefined;
-  if (!options.effort) {
+  if (governed) selected = selected.slice(0, limit);
+  else if (!options.effort) {
     const perEffort = new Map<string, number[]>();
     for (const hit of ranked) {
       const effort = effortOf(hit.record) ?? '';
@@ -1041,6 +1098,7 @@ export function findRecords(
       outbound: outboundLinks(hit.record),
       inbound: inboundLinks(index, hit.record),
       code,
+      ...(hit.via ? { via: hit.via } : {}),
     };
   });
   // A hyphenated query word is searched joined and split. When every part
@@ -1060,7 +1118,33 @@ export function findRecords(
     ...(efforts ? { efforts: efforts.slice(0, EFFORTS_SHOWN) } : {}),
     found: surfaces((entry) => foundTerms.has(entry.term)),
     missing: surfaces(missed),
+    ...(governed && !termList.length ? { unscored: true as const } : {}),
   };
+}
+
+/**
+ * The ties of a chain's members, strongest first, then in text order, each
+ * text once.
+ */
+function chainVias(
+  chain: readonly ReadRecord[],
+  governed: ReadonlyMap<string, readonly FindVia[]>
+): FindVia[] {
+  const seen = new Set<string>();
+  return chain
+    .flatMap((member) => governed.get(member.id) ?? [])
+    .sort(
+      (a, b) =>
+        b.strength - a.strength ||
+        compareIds(a.text, b.text) ||
+        compareIds(a.record, b.record)
+    )
+    .filter((via) => {
+      const key = `${via.text}\0${via.record}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 function cut(value: string, max: number): string {
@@ -1149,7 +1233,7 @@ function chainLine(hit: FindHit, shape: CardShape): string | undefined {
     if (skipped) parts.push(`(${skipped} more)`);
     skipped = 0;
     const marks = [
-      member.id === hit.head.id ? 'head' : '',
+      member.id === hit.head.id || hit.heads?.includes(member.id) ? 'head' : '',
       member.id === hit.record.id && member.id !== hit.head.id ? 'as of' : '',
     ].filter(Boolean);
     const killer = [
@@ -1179,9 +1263,34 @@ function attachedLine(attached: NonNullable<FindHit['attached']>): string {
   }" [chars ${passage.start}-${passage.end} of ${passage.length}]`;
 }
 
-/** Characters of a card's passage lines, with their line breaks. */
+const VIAS_SHOWN = 3;
+
+/** The `via:` and `branch:` lines, which are never cut. */
+function tieLines(hit: FindHit): string[] {
+  const lines: string[] = [];
+  const vias = (hit.via ?? []).filter((via) => via.text);
+  if (vias.length)
+    lines.push(
+      `   via: ${vias
+        .slice(0, VIAS_SHOWN)
+        .map(
+          (via) =>
+            `${via.text}${
+              via.record !== hit.record.id ? ` (on ${via.record})` : ''
+            }`
+        )
+        .join('; ')}${
+        vias.length > VIAS_SHOWN ? `; +${vias.length - VIAS_SHOWN} more` : ''
+      }`
+    );
+  if (hit.branch) lines.push(`   branch: ${hit.branch}`);
+  return lines;
+}
+
+/** Characters of a card's passage and tie lines, with their line breaks. */
 function passageChars(hit: FindHit): number {
   const lines = [
+    ...tieLines(hit),
     ...hit.passages.map(passageLine),
     ...(hit.attached ? [attachedLine(hit.attached)] : []),
   ];
@@ -1192,7 +1301,8 @@ function renderCard(
   index: FindIndex,
   hit: FindHit,
   n: number,
-  shape: CardShape
+  shape: CardShape,
+  unscored = false
 ): string[] {
   const { record } = hit;
   const standing = standingOf(record);
@@ -1203,7 +1313,7 @@ function renderCard(
       retracted ? 'RETRACTED' : standing
     }${
       record.id === hit.head.id && hit.chain.length > 1 ? ' (head)' : ''
-    } | ${date(record)} | score ${hit.score.toFixed(1)}`,
+    } | ${date(record)}${unscored ? '' : ` | score ${hit.score.toFixed(1)}`}`,
     `   "${cut(text(record.frontmatter.title), 100)}"`,
     ...(retracted
       ? [
@@ -1217,6 +1327,7 @@ function renderCard(
           )}; not live, kept for audit only`,
         ]
       : []),
+    ...tieLines(hit),
     ...(hit.matched.id !== record.id
       ? [`   matched: v${version + 1} ${hit.matched.id}`]
       : []),
@@ -1262,16 +1373,35 @@ const SHRINK_STEPS: readonly (CardShape & { efforts: boolean })[] = [
  */
 export function renderFindCards(index: FindIndex, result: FindResult): string {
   const scope = result.effort ? `in ${result.effort}` : 'in all Efforts';
+  // Notes and conflicts are never cut, so they count apart too.
+  const conflictTotal = result.conflictsTotal ?? result.conflicts?.length ?? 0;
+  const conflictLines = result.conflicts
+    ? conflictTotal
+      ? [
+          `CONFLICTS (${conflictTotal})`,
+          ...result.conflicts.map((conflict) => `- ${conflict}`),
+          ...(conflictTotal > result.conflicts.length
+            ? [`- +${conflictTotal - result.conflicts.length} more`]
+            : []),
+        ]
+      : ['CONFLICTS: none']
+    : [];
   const render = (shape: typeof SHRINK_STEPS[number]) => {
     const lines = [
-      `find "${cut(result.query, 120)}" ${scope} (${
-        result.searched
-      } records searched, ${result.matched} matched, ${
-        result.hits.length
-      } shown)`,
-      `matched: ${result.found.join(' ') || 'none'} | missing: ${
-        result.missing.join(' ') || 'none'
-      }`,
+      result.header ??
+        `find "${cut(result.query, 120)}" ${scope} (${
+          result.searched
+        } records searched, ${result.matched} matched, ${
+          result.hits.length
+        } shown)`,
+      ...(result.unscored
+        ? []
+        : [
+            `matched: ${result.found.join(' ') || 'none'} | missing: ${
+              result.missing.join(' ') || 'none'
+            }`,
+          ]),
+      ...(result.notes ?? []),
     ];
     if (shape.efforts && result.efforts?.length)
       lines.push(
@@ -1295,15 +1425,20 @@ export function renderFindCards(index: FindIndex, result: FindResult): string {
           )}"`
         );
       }
-      lines.push(...renderCard(index, hit, i + 1, shape));
+      lines.push(...renderCard(index, hit, i + 1, shape, result.unscored));
     });
     if (!result.hits.length) lines.push('no records matched');
+    lines.push(...conflictLines);
     return lines.join('\n');
   };
   const limit =
     CARDS_HEADER_CHARS +
     CARD_CHARS * result.hits.length +
-    result.hits.reduce((sum, hit) => sum + passageChars(hit), 0);
+    result.hits.reduce((sum, hit) => sum + passageChars(hit), 0) +
+    [...(result.notes ?? []), ...conflictLines].reduce(
+      (sum, line) => sum + line.length + 1,
+      0
+    );
   let markdown = '';
   for (const shape of SHRINK_STEPS) {
     markdown = render(shape);
