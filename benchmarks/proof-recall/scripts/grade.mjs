@@ -161,6 +161,8 @@ async function main() {
         score: score(graph, q, set.effort, entry.answer),
         tokens: entry.tokens,
         tool_calls: entry.tool_calls,
+        timed_out: entry.timed_out === true,
+        left_folder: entry.left_folder === true,
       });
     }
   console.log(
@@ -175,6 +177,10 @@ async function main() {
         byEffort: summarize(rows, (r) => r.effort),
         byCategory: summarize(rows, (r) => r.categories),
         misses: rows.filter((r) => r.score < 1).map((r) => r.id),
+        // Sessions that never finished, and sessions that reached outside
+        // their folder: read those transcripts before trusting the score.
+        timed_out: rows.filter((r) => r.timed_out).map((r) => r.id),
+        left_folder: rows.filter((r) => r.left_folder).map((r) => r.id),
       },
       null,
       2

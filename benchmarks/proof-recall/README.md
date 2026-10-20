@@ -21,6 +21,7 @@ Each question has a known answer and a stated path through the graph.
 | `questions/code.json`      | Which records govern a code path, on the git test bed    |
 | `questions/branch.json`    | What open branches propose, on the git test bed          |
 | `spec/repo.mjs`            | The git test bed: code, commits, anchors, branches, PRs  |
+| `spec/_repo-filler.mjs`    | Filler for the scaled git test bed (`--scale`)           |
 | `scripts/build.mjs`        | Replays every spec through the Proof writer              |
 | `scripts/build-repo.mjs`   | Builds the git test bed from `spec/repo.mjs`             |
 | `scripts/testbed.mjs`      | Checks that read the test bed's refs, log, and PRs       |
@@ -506,6 +507,57 @@ build gives the same commit hashes. The builder writes the key map to
 `<out>.keymap.json`, beside the repository rather than in it. Branch
 records have keys like main's, and the spec says which branch adds each.
 
+`--scale <n>` builds a larger bed with the same 44 questions:
+`node scripts/build-repo.mjs --scale 10 --out /tmp/p2-repo-x10`. It first
+runs `build.mjs --scale 10` into a temporary folder, about 15 minutes, and
+starts from that graph instead of the committed one. Then it adds filler
+from `spec/_repo-filler.mjs`. At 10x that is 437 more files (472
+in all on main). Each filler subsystem in `spec/_filler.mjs` gets its own
+folder beside the real ones (`engine/kestrel/kites/`, `platform/rumble/`,
+`tools/texview/`), with short modules named for what they do (`cache.rs`,
+`queue.py`). Each of the 15 module kinds has its own code, using its
+constant the way that kind would. Some folders have a `mod.rs`, every
+tools folder has an `__init__.py` and some a `README.md`, as the real ones
+do, and each new engine folder is added to its crate's `lib.rs`. Those two
+`lib.rs` files are the only real files filler writes: no real commit but
+the first writes them, and no question names them. Main gets 319 more
+commits, on the hour and in working hours like the real ones. Most add or
+edit filler files: the second function, a new value for the constant, an
+unused helper removed, sometimes two files at once. 122 of them
+have `Proof:` trailers, each naming a filler Decision about the same
+subsystem that was accepted by the commit's date. Then one commit per
+Effort, after the graph moves in, supersedes four filler Decisions that
+earlier trailers name, so some filler trailers name an old version, as
+some real ones do. The same commit writes code anchors on filler files,
+with the implementation notes, Risks, defects, and hard Constraints that
+cite them or name a filler path. Last come six filler branches with draft
+PRs: #42 and #45 supersede one filler Decision two ways, #47 and #49
+accept rival answers to one open filler question, #50 changes only tools
+code, and #51 renews a filler anchor. Filler never names a real path or
+symbol and never links to a real record; the builder refuses filler that
+does. Filler branches change no file under a folder a branch question
+reads as a whole, add no compaction, retract nothing, write no `tools`
+record, and change the standing of at most two main records. The four
+real branches keep their commits, code changes, and record keys. The
+compactions on `ines/vsm-pool` and `kenji/tide-lod` also cover the
+filler, and every hash changes because main's do. Two builds at one scale
+give the same hashes, and `--scale 1`, the default, builds the bed
+described above with the same hashes. The builder packs the repository
+when it is done (`git gc`), so each session's clone copies a few MB, not
+thousands of loose objects. `testbed.mjs` accepts filler code anchors
+(keys starting `bed-`) without a declaration in `spec/repo.mjs`, but
+checks them against git like the real ones.
+
+What scale does not change: filler never edits a real file, and no filler
+record names one, so `git log` on a real file, the records whose body
+names it, and `proof find --path` on it give the same results as at 1x.
+21 of the 22 code questions name one real file, and the 22nd names
+`engine/kestrel/tides/`, which filler never enters. So the scaled bed
+tests the code questions against a ten-times graph and a larger log and
+tree around those routes, not against harder routes. Only reads wider
+than a real folder (a whole crate, the full log, word searches) and the
+branch set see more noise.
+
 `code` and `branch` are opt-in sets, loaded only by name (`--only code`,
 `--only branch`, or `--ids`), and multi-Effort sets like `cross`, so every
 key is `<effort>.<key>`. A plain `node scripts/check.mjs` skips them. Their
@@ -522,7 +574,7 @@ become available (`scripts/testbed.mjs` documents every field):
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `atRef`        | Any other check's result on the graph at a git ref, written out with `git archive` into a temporary folder. `ref: "*"` returns the branches where it gives `equals`, or their PR numbers or authors                                      |
 | `trailer`      | Records named by `Proof:` trailers on commits that touch a file or folder: all commits, the latest, or the one that introduced a symbol                                                                                                  |
-| `codeAnchor`   | Records that cite a `role: code` Citation for a file or folder. Each anchor must be one `spec/repo.mjs` declares, and git must show that its commit is on the ref, touches the file, and holds the symbol                                |
+| `codeAnchor`   | Records that cite a `role: code` Citation for a file or folder. Each anchor must be one `spec/repo.mjs` declares, or filler on a scaled bed, and git must show that its commit is on the ref, touches the file, and holds the symbol     |
 | `pr`           | A branch's draft PR number, author, login, or draft flag                                                                                                                                                                                 |
 | `refDiff`      | Records a branch adds, retracts, restands, or changes since it left main                                                                                                                                                                 |
 | `changedPaths` | Code files a branch changes since it left main                                                                                                                                                                                           |
@@ -557,6 +609,18 @@ test bed's graph holds records that could change their answers.
 `--prepare-only` builds every session folder and its `TASK.md`, then
 stops, without starting an agent, a server, or a shared graph copy; use it
 to see what a session would see.
+
+These sessions read the graph locally. On the 10x bed one `proof` read
+takes about 10 seconds, against about 2.6 at 1x, so give a scaled bed
+`--timeout 1200` or fewer `--jobs`. `collect.mjs` marks a session whose
+transcript has no final result as `timed_out`, and one with a tool call
+that reaches outside its folder (an absolute path elsewhere, a `..` step,
+the benchmark sources, or a key map) as `left_folder`. `grade.mjs` lists
+both, so a timeout is not mistaken for a wrong answer. Read a
+`left_folder` transcript before trusting its score: the `./flatbread`
+wrapper and the `node_modules` link point into this repository, where the
+questions and answers are, and only `TASK.md` tells the agent to stay in
+its folder.
 
 ## Pilot results
 

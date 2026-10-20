@@ -5,6 +5,10 @@
 // and four engineer branches, each with a draft PR.
 //
 //   node scripts/build-repo.mjs --out /tmp/p2-repo
+//   node scripts/build-repo.mjs --scale 10 --out /tmp/p2-repo-x10
+//                             the same spec on the 10x graph, with filler
+//                             code, commits, anchors and six more branches
+//                             from spec/_repo-filler.mjs
 //
 // It writes:
 //   <out>/                    the repository, with main checked out
@@ -16,15 +20,21 @@
 //                             repository so no agent session sees it.
 //
 // Every commit has a fixed author, date and message, and every record a
-// fixed id and time, so two builds give the same commit hashes.
+// fixed id and time, so two builds at one scale give the same commit hashes.
+// A scaled build first runs `build.mjs --scale <n>` into a temporary folder
+// and starts from that graph instead of the committed one.
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createProofWriter, ProofMutationSchema } from '@flatbread/proof';
 import { benchId } from './build.mjs';
-import spec, { PEOPLE, specCommits } from '../spec/repo.mjs';
+import { readGraph } from './graph.mjs';
+import spec, { PEOPLE } from '../spec/repo.mjs';
+import { repoFiller } from '../spec/_repo-filler.mjs';
+import { fillerTerms } from '../spec/_filler.mjs';
 
 const BENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const REPO_ROOT = resolve(BENCH, '..', '..');
@@ -61,12 +71,16 @@ const REF_FIELDS = [
 ];
 
 function args(argv) {
-  const out = { out: null };
+  const out = { out: null, scale: 1 };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--out') out.out = resolve(argv[++i]);
+    else if (argv[i] === '--scale') out.scale = Number(argv[++i]);
     else throw new Error(`Unknown argument ${argv[i]}`);
   }
-  if (!out.out) throw new Error('usage: build-repo.mjs --out <dir>');
+  if (!out.out)
+    throw new Error('usage: build-repo.mjs [--scale <n>] --out <dir>');
+  if (!Number.isInteger(out.scale) || out.scale < 1)
+    throw new Error('--scale must be a whole number, 1 or more');
   // The key map is written next to the repository, so both must stay out
   // of this one, where an agent working here could find them.
   if (`${out.out}/`.startsWith(`${REPO_ROOT}/`))
@@ -99,8 +113,18 @@ export function email(person) {
   return `${PEOPLE[person].login}@tidewater.example`;
 }
 
-function checkSpec() {
-  const commits = specCommits();
+/** Every commit on main and the branches, each with its branch name. */
+function allCommits(main, branches) {
+  return [
+    ...main.map((c) => ({ ...c, branch: 'main' })),
+    ...branches.flatMap((b) =>
+      b.commits.map((c) => ({ ...c, branch: b.name }))
+    ),
+  ];
+}
+
+function checkSpec(main, branches) {
+  const commits = allCommits(main, branches);
   const keys = new Set();
   const subjects = new Set();
   for (const c of commits) {
@@ -111,11 +135,12 @@ function checkSpec() {
     keys.add(c.key);
     subjects.add(c.subject);
   }
+  const names = new Set(branches.map((b) => b.name));
+  const prs = new Set(branches.map((b) => b.pr));
+  if (names.size < branches.length || prs.size < branches.length)
+    throw new Error('branch names and PR numbers must be unique');
   // Each line of history must move forward in time.
-  const lines = [
-    spec.main,
-    ...spec.branches.map((b) => [spec.main.at(-1), ...b.commits]),
-  ];
+  const lines = [main, ...branches.map((b) => [main.at(-1), ...b.commits])];
   for (const line of lines)
     for (let i = 1; i < line.length; i++)
       if (line[i].at < line[i - 1].at)
@@ -200,10 +225,10 @@ async function replay(dir, commit, keymap, shas) {
   await rm(join(dir, PROOF_DIR, '.journal'), { recursive: true, force: true });
 }
 
-async function commitOne(dir, commit, keymap, shas) {
+async function commitOne(dir, commit, keymap, shas, graph) {
   await writeFiles(dir, commit.files);
   if (commit.graph)
-    await cp(GRAPH, join(dir, PROOF_DIR), {
+    await cp(graph, join(dir, PROOF_DIR), {
       recursive: true,
       filter: (src) => !src.endsWith('keymap.json'),
     });
@@ -234,24 +259,163 @@ async function commitOne(dir, commit, keymap, shas) {
   return sha;
 }
 
+/**
+ * Filler must stay clear of everything the code and branch questions ask
+ * about: no filler path or text holds a real path, a real file's path holds
+ * no filler path, filler names no symbol a question or anchor names, and no
+ * filler subsystem name appears in spec/repo.mjs or those questions. The
+ * one exception is `filler.shared`, the crate lib.rs files filler adds its
+ * folders to: no question may name them, and only the first real commit
+ * may write them. Real files at the top level (README.md, Cargo.toml) are
+ * matched by their whole path, so a filler tools/<x>/README.md is allowed.
+ */
+async function assertFillerIsDisjoint(filler) {
+  const realPaths = new Set(
+    allCommits(spec.main, spec.branches).flatMap((c) =>
+      Object.keys(c.files ?? {})
+    )
+  );
+  const questions = await Promise.all(
+    ['code.json', 'branch.json'].map((name) =>
+      readFile(join(BENCH, 'questions', name), 'utf8')
+    )
+  );
+  const realText = [JSON.stringify(spec), ...questions].join('\n');
+  const shared = new Set(filler.shared);
+  for (const path of shared) {
+    if (questions.some((text) => text.includes(path)))
+      throw new Error(`a question names ${path}, which filler writes`);
+    const writers = allCommits(spec.main, spec.branches).filter(
+      (c) => c.files?.[path] !== undefined
+    );
+    if (writers.length !== 1 || writers[0].key !== spec.main[0].key)
+      throw new Error(`${path}: only the first real commit may write it`);
+  }
+  // Paths and symbols the questions and the real anchors name.
+  const named = new Set(
+    ['ecs/names.rs', ...realPaths].filter(
+      (path) => path.includes('/') && !shared.has(path)
+    )
+  );
+  const symbols = new Set();
+  for (const text of questions)
+    for (const q of JSON.parse(text).questions)
+      for (const check of q.checks) {
+        if (check.symbol) symbols.add(check.symbol);
+        for (const value of [check.path, check.bodyIncludes].flat())
+          if (typeof value === 'string' && value.includes('/'))
+            named.add(value);
+      }
+  for (const c of allCommits(spec.main, spec.branches))
+    for (const e of c.events ?? [])
+      if (e.type === 'Anchor') symbols.add(e.symbol);
+  for (const path of filler.files) {
+    if (realPaths.has(path) || shared.has(path))
+      throw new Error(`filler overwrites ${path}`);
+    for (const real of named)
+      if (path.includes(real) || real.includes(path))
+        throw new Error(`filler path ${path} overlaps ${real}`);
+  }
+  for (const c of allCommits(filler.main, filler.branches))
+    for (const path of Object.keys(c.files ?? {}))
+      if (!filler.files.includes(path) && !shared.has(path))
+        throw new Error(`${c.key} writes ${path}, which is not filler`);
+  const fillerText = JSON.stringify(
+    allCommits(filler.main, filler.branches).map((c) => [
+      c.subject,
+      c.body,
+      c.files,
+      c.events,
+    ])
+  );
+  for (const real of named)
+    if (fillerText.includes(real))
+      throw new Error(`filler names the real path ${real}`);
+  for (const symbol of symbols)
+    if (new RegExp(`\\b${symbol}\\b`).test(fillerText))
+      throw new Error(`filler names the real symbol ${symbol}`);
+  const lower = realText.toLowerCase();
+  for (const effort of ['render', 'world', 'ports', 'tools', 'netcode'])
+    for (const term of fillerTerms(effort))
+      if (lower.includes(term.toLowerCase()))
+        throw new Error(`filler subsystem "${term}" appears in real content`);
+}
+
+/** Main's commits with the filler merged in by time; real ones win ties. */
+function mergeByTime(real, filler) {
+  const tagged = [
+    ...real.map((c, i) => ({ c, i, filler: 0 })),
+    ...filler.map((c, i) => ({ c, i, filler: 1 })),
+  ];
+  tagged.sort(
+    (a, b) =>
+      new Date(a.c.at) - new Date(b.c.at) || a.filler - b.filler || a.i - b.i
+  );
+  return tagged.map((t) => t.c);
+}
+
+/**
+ * The graph to start from: the committed one, or for --scale above 1 a
+ * fresh `build.mjs --scale <n>` build in a temporary folder.
+ */
+async function startGraph(scale) {
+  if (scale === 1) return { graph: GRAPH, done: async () => {} };
+  const graph = await mkdtemp(join(tmpdir(), 'proof-recall-bed-graph-'));
+  console.log(`building the ${scale}x graph in ${graph}`);
+  execFileSync(
+    process.execPath,
+    [
+      join(BENCH, 'scripts', 'build.mjs'),
+      '--scale',
+      String(scale),
+      '--out',
+      graph,
+    ],
+    { stdio: ['ignore', 'ignore', 'inherit'] }
+  );
+  return {
+    graph,
+    done: () => rm(graph, { recursive: true, force: true }),
+  };
+}
+
 async function main() {
   const options = args(process.argv.slice(2));
-  checkSpec();
+  const { graph, done } = await startGraph(options.scale);
+  try {
+    await buildBed(options, graph);
+  } finally {
+    await done();
+  }
+}
+
+async function buildBed(options, graph) {
+  const keymap = JSON.parse(await readFile(join(graph, 'keymap.json'), 'utf8'));
+  const graphKeys = Object.keys(keymap).length;
+  const filler = repoFiller({
+    scale: options.scale,
+    graph: readGraph(graph, keymap),
+    spec: { ...spec, PEOPLE },
+  });
+  if (options.scale > 1) await assertFillerIsDisjoint(filler);
+  const history = mergeByTime(spec.main, filler.main);
+  const branches = [...spec.branches, ...filler.branches];
+  checkSpec(history, branches);
   const dir = options.out;
   await rm(dir, { recursive: true, force: true });
   await mkdir(dir, { recursive: true });
   git(dir, ['init', '-q', '-b', 'main']);
   git(dir, ['config', 'commit.gpgsign', 'false']);
   git(dir, ['config', 'core.autocrlf', 'false']);
-  const keymap = JSON.parse(await readFile(join(GRAPH, 'keymap.json'), 'utf8'));
   const shas = new Map();
-  for (const commit of spec.main) await commitOne(dir, commit, keymap, shas);
-  const tip = shas.get(spec.main.at(-1).key);
-  console.log(`main: ${spec.main.length} commits, tip ${short(tip)}`);
-  for (const branch of spec.branches) {
+  for (const commit of history)
+    await commitOne(dir, commit, keymap, shas, graph);
+  const tip = shas.get(history.at(-1).key);
+  console.log(`main: ${history.length} commits, tip ${short(tip)}`);
+  for (const branch of branches) {
     git(dir, ['checkout', '-q', '-b', branch.name, tip]);
     for (const commit of branch.commits)
-      await commitOne(dir, commit, keymap, shas);
+      await commitOne(dir, commit, keymap, shas, graph);
     console.log(
       `${branch.name} (draft #${branch.pr}): ${
         branch.commits.length
@@ -260,7 +424,7 @@ async function main() {
     git(dir, ['checkout', '-q', 'main']);
   }
   // What `gh pr list --json number,headRefName,isDraft,author,title` gives.
-  const prs = spec.branches.map((b) => ({
+  const prs = branches.map((b) => ({
     number: b.pr,
     headRefName: b.name,
     isDraft: true,
@@ -278,12 +442,21 @@ async function main() {
     Object.entries(keymap).sort(([a], [b]) => a.localeCompare(b))
   );
   await writeFile(`${dir}.keymap.json`, `${JSON.stringify(sorted, null, 2)}\n`);
-  const added =
-    Object.keys(sorted).length -
-    Object.keys(JSON.parse(await readFile(join(GRAPH, 'keymap.json'), 'utf8')))
-      .length;
+  const added = Object.keys(sorted).length - graphKeys;
   console.log(`${added} records added; key map in ${dir}.keymap.json`);
   if (!existsSync(join(dir, PROOF_DIR))) throw new Error('no graph on main');
+  // Pack the objects, so each session's `git clone --no-hardlinks` copies a
+  // few MB instead of thousands of loose objects. Hashes do not change.
+  git(dir, ['gc', '--quiet', '--prune=now']);
+  if (options.scale > 1) {
+    const tracked = git(dir, ['ls-files']).split('\n');
+    const code = tracked.filter((p) => !p.startsWith(`${PROOF_DIR}/`));
+    console.log(
+      `main holds ${code.length} code files (${
+        filler.files.length
+      } filler) and ${tracked.length - code.length} graph files`
+    );
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)

@@ -65,13 +65,41 @@ export const stateHash = () => hashOf(STATE_SOURCES);
 export const readHash = () => hashOf(READ_SOURCES);
 
 /**
+ * True when a tool call's input reaches outside the session's `folder`: an
+ * absolute path elsewhere, a `..` step, the benchmark sources, or a key
+ * map. The `./flatbread` wrapper and `node_modules` link point into this
+ * repository, so an agent could follow them to the questions and answers.
+ */
+function leavesFolder(input, folder) {
+  const text = JSON.stringify(input ?? {});
+  if (
+    text.includes(ROOT) ||
+    text.includes('benchmarks/proof-recall') ||
+    text.includes('keymap') ||
+    /(^|[\s'"=:/])\.\.(?=$|[\s'"/])/.test(text)
+  )
+    return true;
+  return [input?.file_path, input?.path].some(
+    (path) =>
+      typeof path === 'string' &&
+      path.startsWith('/') &&
+      folder &&
+      path !== folder &&
+      !path.startsWith(`${folder}/`)
+  );
+}
+
+/**
  * `context_tokens` counts what entered the context once (new input, cache
  * writes, output): how much the agent had to read. `processed_tokens` adds
  * cache reads, which grow with every turn the context is re-read.
  * `fixed_tokens` is the first turn alone: the system prompt and task, paid
- * before any graph read.
+ * before any graph read. `finished` is false when the transcript has no
+ * final `result` entry, as when run.mjs stops a session at its timeout.
+ * `left_folder` is true when a tool call reached outside `folder` (see
+ * leavesFolder).
  */
-export async function sessionCost(transcriptPath) {
+export async function sessionCost(transcriptPath, folder) {
   const lines = (await readFile(transcriptPath, 'utf8')).split('\n');
   const seen = new Set();
   const models = new Set();
@@ -81,6 +109,8 @@ export async function sessionCost(transcriptPath) {
     context_tokens: 0,
     processed_tokens: 0,
     fixed_tokens: 0,
+    finished: false,
+    left_folder: false,
   };
   for (const line of lines) {
     let entry;
@@ -89,11 +119,15 @@ export async function sessionCost(transcriptPath) {
     } catch {
       continue;
     }
+    if (entry.type === 'result') cost.finished = true;
     const message = entry.type === 'assistant' ? entry.message : null;
     if (!message) continue;
     if (message.model) models.add(message.model);
     for (const part of message.content ?? [])
-      if (part.type === 'tool_use') cost.tool_calls++;
+      if (part.type === 'tool_use') {
+        cost.tool_calls++;
+        if (leavesFolder(part.input, folder)) cost.left_folder = true;
+      }
     // One assistant message can span several log lines; count usage once.
     if (!message.usage || seen.has(message.id)) continue;
     seen.add(message.id);
@@ -126,7 +160,7 @@ export async function collect(manifest, name, outPath, about = {}) {
     } catch {
       // A missing or broken answer file scores zero.
     }
-    const cost = await sessionCost(session.transcript);
+    const cost = await sessionCost(session.transcript, session.folder);
     cost.models.forEach((m) => models.add(m));
     answers[session.id] = {
       answer,
@@ -135,6 +169,8 @@ export async function collect(manifest, name, outPath, about = {}) {
       processed_tokens: cost.processed_tokens,
       tool_calls: cost.tool_calls,
       turns: cost.turns,
+      timed_out: !cost.finished,
+      left_folder: cost.left_folder,
     };
   }
   const run = {

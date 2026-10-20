@@ -220,7 +220,7 @@ const QUESTIONS = [
 ];
 
 /** Small seeded generator, so the same Effort always gets the same filler. */
-function random(seedText) {
+export function random(seedText) {
   let seed = 2166136261;
   for (const ch of seedText)
     seed = Math.imul(seed ^ ch.charCodeAt(0), 16777619);
