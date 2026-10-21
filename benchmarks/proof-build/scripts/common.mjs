@@ -79,6 +79,20 @@ export function splitOf(id) {
 export const isUnder = (path, dir) =>
   path === dir || path.startsWith(dir.endsWith(sep) ? dir : dir + sep);
 
+/** Whether `path` lies in another session's clone beside `clone`. */
+export function isSiblingClone(path, clone) {
+  const parent = dirname(clone);
+  if (!isUnder(path, parent) || path === parent) return false;
+  const name = path.slice(parent.length + 1).split(sep)[0];
+  const own = clone.slice(parent.length + 1);
+  return (
+    name !== own &&
+    name.length === own.length &&
+    /^[0-9a-f]+$/.test(name) &&
+    /^[0-9a-f]+$/.test(own)
+  );
+}
+
 /** Every task under `dir`: one folder per task holding task.json. */
 export function loadTasks(dir) {
   const tasks = [];
@@ -331,7 +345,10 @@ const PROOF_CLI = /flatbread\s+proof\b/;
  * - `left_folder`: a file tool's path, a Glob or Grep path or absolute
  *   pattern, or a path in a Bash command lies outside `clone`. In Bash, a
  *   relative path starts at the shell's folder, which follows `cd` inside
- *   the clone; a `cd` out of it counts as leaving. Absolute paths outside the
+ *   the clone; a `cd` out of it counts as leaving. A relative path outside
+ *   the clone counts only when it names one of the clone's parent folders,
+ *   another session's clone, or something that exists under a protected
+ *   root, since it may be a search pattern or a miscounted `../`. Absolute paths outside the
  *   clone count only when they are the clone's ancestors or fall under a
  *   `protected` root (the work, task, grade, hidden and bed folders, the
  *   p4 folder and this repository), so `/dev/null` or `/usr/bin/env` do
@@ -378,8 +395,17 @@ export function scanCalls(
   const outside = (path, fromShell, cwd = clone) => {
     const abs = resolve(cwd, path);
     if (isUnder(abs, clone)) return false;
-    if (!fromShell || !path.startsWith('/')) return true;
-    return isProtected(abs);
+    if (!fromShell) return true;
+    if (path.startsWith('/')) return isProtected(abs);
+    // A relative path in a shell command may be a pattern or a string
+    // (`grep "from '../src/x"`) or a miscounted `../`, so it counts only when
+    // it reaches the clone's folders, another session's clone, or something
+    // that exists under a protected root.
+    return (
+      isUnder(clone, abs) ||
+      isSiblingClone(abs, clone) ||
+      (protectedRoots.some((root) => isUnder(abs, root)) && existsSync(abs))
+    );
   };
   let shellCwd = clone;
   const flag = (path, call) => {
