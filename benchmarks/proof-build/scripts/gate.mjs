@@ -81,6 +81,13 @@ function options(argv) {
   if (o.x10) o.x10 = resolve(o.x10);
   o.tasks = resolve(o.out ?? join(dirname(o.hidden), 'tasks'));
   o.grade = resolve(o.grade ?? join(dirname(o.tasks), 'grade'));
+  // The assembled folder is rebuilt from scratch, so it must never be the
+  // task sources themselves (the default when --hidden is ./hidden).
+  const src = join(BENCH, 'tasks');
+  if (
+    [o.tasks, o.grade].some((dir) => src === dir || src.startsWith(dir + '/'))
+  )
+    throw new Error(`gate.mjs would delete ${src}; pass --out outside it`);
   return o;
 }
 

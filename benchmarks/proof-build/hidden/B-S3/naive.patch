@@ -1,0 +1,43 @@
+diff --git a/src/keys/bindings/canvas.ts b/src/keys/bindings/canvas.ts
+index d550730..c4e1d4d 100644
+--- a/src/keys/bindings/canvas.ts
++++ b/src/keys/bindings/canvas.ts
+@@ -3,6 +3,7 @@ import { command } from '../../commands/types.ts';
+ import type { Direction } from '../../commands/builtin/nudge.ts';
+ import { nudgeDelta } from '../../commands/builtin/nudge.ts';
+ import { lockItems } from '../../commands/builtin/lock.ts';
++import { visibilityItems } from '../../commands/builtin/visibility.ts';
+ 
+ function palette(chord: string, title: string): Binding {
+   return { chord, run: (ctx) => void ctx.palette.run(title) };
+@@ -40,6 +41,18 @@ export const canvasBindings: readonly Binding[] = [
+       });
+     },
+   },
++  {
++    chord: 'Mod+Shift+H',
++    run(ctx) {
++      const ids = ctx.selection.ids();
++      if (!ids.length) return;
++      const show = ids.every((id) => !ctx.doc.require(id).visible);
++      ctx.dispatch(
++        command('set-visibility', { items: visibilityItems(ids, show) }),
++        { label: show ? 'Show' : 'Hide' }
++      );
++    },
++  },
+   nudge('ArrowLeft', 'left', false),
+   nudge('ArrowRight', 'right', false),
+   nudge('ArrowUp', 'up', false),
+diff --git a/src/keys/keymap.ts b/src/keys/keymap.ts
+index 6412152..9904eab 100644
+--- a/src/keys/keymap.ts
++++ b/src/keys/keymap.ts
+@@ -29,6 +29,7 @@ export const DEFAULT_KEYMAP: Keymap = deepFreeze({
+     'Mod+Shift+]': 'bring-to-front',
+     'Mod+Shift+[': 'send-to-back',
+     'Mod+Shift+L': 'toggle-lock',
++    'Mod+Shift+H': 'toggle-visibility',
+     ArrowLeft: 'nudge-left',
+     ArrowRight: 'nudge-right',
+     ArrowUp: 'nudge-up',

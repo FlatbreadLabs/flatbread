@@ -1,0 +1,89 @@
+diff --git a/src/commands/palette.ts b/src/commands/palette.ts
+index 874d40e..55c3ce8 100644
+--- a/src/commands/palette.ts
++++ b/src/commands/palette.ts
+@@ -1,5 +1,5 @@
+ import { fail } from '../util/assert.ts';
+-import type { EditorContext } from './types.ts';
++import type { EditorContext, Json } from './types.ts';
+ import { command } from './types.ts';
+ import { groupNodes } from './builtin/group.ts';
+ import { arrangeCommands } from './builtin/reorder.ts';
+@@ -10,6 +10,8 @@ import { alignCommand, distributeCommand } from './builtin/align.ts';
+ import type { Alignment, Axis } from './builtin/align.ts';
+ import { walk } from '../model/query.ts';
+ import { isInteractive } from '../selection/rules.ts';
++import type { Paint, Stroke } from '../model/types.ts';
++import { isStyled } from '../model/types.ts';
+ 
+ /** A command as the palette lists it, by its title. */
+ export interface PaletteEntry {
+@@ -92,6 +94,40 @@ function arrange(title: string, how: Arrange, hint: string): PaletteEntry {
+   };
+ }
+ 
++/** A layer's look, as Copy style takes it and Paste style gives it. */
++interface CopiedStyle {
++  fills: Paint[];
++  strokes: Stroke[];
++  opacity: number;
++}
++
++/** The style each editor last copied, by its document. */
++const copiedStyles = new WeakMap<object, CopiedStyle>();
++
++const styledSelection = (ctx: EditorContext) =>
++  ctx.selection.ids().filter((id) => {
++    const node = ctx.doc.get(id);
++    return node !== undefined && isStyled(node);
++  });
++
++/** Gives every selected layer but groups the copied style, as one entry. */
++function pasteStyle(ctx: EditorContext): void {
++  const style = copiedStyles.get(ctx.doc);
++  const targets = styledSelection(ctx);
++  if (!style || !targets.length) return;
++  ctx.batch('Paste style', () => {
++    for (const id of targets)
++      for (const key of ['fills', 'strokes', 'opacity'] as const)
++        ctx.dispatch(
++          command('set-prop', {
++            id,
++            key,
++            value: structuredClone(style[key]) as unknown as Json,
++          })
++        );
++  });
++}
++
+ export const BUILTIN_ENTRIES: readonly PaletteEntry[] = [
+   { title: 'Undo', hint: 'Mod+Z', run: (ctx) => void ctx.undo() },
+   { title: 'Redo', hint: 'Mod+Shift+Z', run: (ctx) => void ctx.redo() },
+@@ -191,6 +227,27 @@ export const BUILTIN_ENTRIES: readonly PaletteEntry[] = [
+       );
+     },
+   },
++  {
++    title: 'Copy style',
++    enabled: (ctx) =>
++      ctx.selection.size === 1 && styledSelection(ctx).length === 1,
++    run(ctx) {
++      const [id] = styledSelection(ctx);
++      const node = ctx.doc.require(id);
++      if (!isStyled(node)) return;
++      copiedStyles.set(ctx.doc, {
++        fills: structuredClone(node.fills),
++        strokes: structuredClone(node.strokes),
++        opacity: node.opacity,
++      });
++    },
++  },
++  {
++    title: 'Paste style',
++    enabled: (ctx) =>
++      copiedStyles.has(ctx.doc) && styledSelection(ctx).length > 0,
++    run: (ctx) => pasteStyle(ctx),
++  },
+   {
+     title: 'Rename layer',
+     enabled: (ctx) => ctx.selection.size === 1,

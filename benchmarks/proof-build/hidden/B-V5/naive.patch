@@ -1,0 +1,59 @@
+diff --git a/src/commands/types.ts b/src/commands/types.ts
+index e3308ec..a84b366 100644
+--- a/src/commands/types.ts
++++ b/src/commands/types.ts
+@@ -43,6 +43,8 @@ export interface EditorContext {
+   dispatch(command: Command, options?: DispatchOptions): void;
+   batch(label: string, run: () => void): void;
+   newGesture(): string;
++  /** The editor's clock, in ms. */
++  now(): number;
+   undo(): boolean;
+   redo(): boolean;
+ }
+diff --git a/src/editor.ts b/src/editor.ts
+index 3ff92fa..7272a63 100644
+--- a/src/editor.ts
++++ b/src/editor.ts
+@@ -65,6 +65,7 @@ export function createEditor(options: EditorOptions = {}) {
+     dispatch: (c: Command, o?: DispatchOptions) => bus.dispatch(c, o),
+     batch: (label: string, run: () => void) => batch(bus, label, run),
+     newGesture: () => gestures.next(),
++    now: options.clock ?? Date.now,
+     undo: () => bus.undo(),
+     redo: () => bus.redo(),
+   };
+diff --git a/src/keys/bindings/canvas.ts b/src/keys/bindings/canvas.ts
+index d550730..832513a 100644
+--- a/src/keys/bindings/canvas.ts
++++ b/src/keys/bindings/canvas.ts
+@@ -8,13 +8,27 @@ function palette(chord: string, title: string): Binding {
+   return { chord, run: (ctx) => void ctx.palette.run(title) };
+ }
+ 
++/** Key repeats closer together than this belong to one hold. */
++export const REPEAT_WINDOW_MS = 400;
++
++const lastNudge = new WeakMap<KeyContext, { gesture: string; at: number }>();
++
+ function nudge(chord: string, direction: Direction, large: boolean): Binding {
+   return {
+     chord,
+-    run(ctx: KeyContext) {
++    run(ctx: KeyContext, event) {
+       const ids = ctx.selection.ids();
+       if (!ids.length) return;
+-      ctx.dispatch(command('nudge', { ids, ...nudgeDelta(direction, large) }));
++      const now = ctx.now();
++      const last = lastNudge.get(ctx);
++      const gesture =
++        event.repeat && last && now - last.at <= REPEAT_WINDOW_MS
++          ? last.gesture
++          : ctx.newGesture();
++      lastNudge.set(ctx, { gesture, at: now });
++      ctx.dispatch(command('nudge', { ids, ...nudgeDelta(direction, large) }), {
++        gesture,
++      });
+     },
+   };
+ }

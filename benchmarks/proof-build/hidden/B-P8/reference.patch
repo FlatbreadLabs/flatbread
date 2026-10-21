@@ -1,0 +1,93 @@
+diff --git a/src/persist/migrations/index.ts b/src/persist/migrations/index.ts
+index 2c4c725..807cc3c 100644
+--- a/src/persist/migrations/index.ts
++++ b/src/persist/migrations/index.ts
+@@ -3,6 +3,7 @@ import { v1ToV2 } from './v1-v2.ts';
+ import { v2ToV3 } from './v2-v3.ts';
+ import { v3ToV4 } from './v3-v4.ts';
+ import { v4ToV5 } from './v4-v5.ts';
++import { v5ToV6 } from './v5-v6.ts';
+ 
+ export type RawFile = Record<string, unknown>;
+ 
+@@ -17,6 +18,7 @@ export const MIGRATIONS: readonly Migration[] = [
+   { from: 2, to: 3, run: v2ToV3 },
+   { from: 3, to: 4, run: v3ToV4 },
+   { from: 4, to: 5, run: v4ToV5 },
++  { from: 5, to: 6, run: v5ToV6 },
+ ];
+ 
+ export const LATEST = MIGRATIONS[MIGRATIONS.length - 1].to;
+diff --git a/src/persist/migrations/v5-v6.ts b/src/persist/migrations/v5-v6.ts
+new file mode 100644
+index 0000000..d0b0d7c
+--- /dev/null
++++ b/src/persist/migrations/v5-v6.ts
+@@ -0,0 +1,54 @@
++import type { RawFile } from './index.ts';
++
++/** The basic colour names early files could hold, as upper-case hex. */
++export const BASIC_COLOURS: Readonly<Record<string, string>> = {
++  BLACK: '#000000',
++  SILVER: '#C0C0C0',
++  GRAY: '#808080',
++  WHITE: '#FFFFFF',
++  MAROON: '#800000',
++  RED: '#FF0000',
++  PURPLE: '#800080',
++  FUCHSIA: '#FF00FF',
++  GREEN: '#008000',
++  LIME: '#00FF00',
++  OLIVE: '#808000',
++  YELLOW: '#FFFF00',
++  NAVY: '#000080',
++  BLUE: '#0000FF',
++  TEAL: '#008080',
++  AQUA: '#00FFFF',
++};
++
++const hex = (color: unknown): unknown =>
++  typeof color === 'string'
++    ? BASIC_COLOURS[color.toUpperCase()] ?? color
++    : color;
++
++const paints = (list: unknown): unknown =>
++  Array.isArray(list)
++    ? list.map((paint) =>
++        paint && typeof paint === 'object'
++          ? { ...paint, color: hex((paint as { color?: unknown }).color) }
++          : paint
++      )
++    : list;
++
++/**
++ * Version 1 and 2 files could name a colour instead of giving its hex code,
++ * and the version 2 to 3 step kept the name, upper-cased. Version 6 holds
++ * hex only: every fill and stroke colour that is a basic colour name becomes
++ * its hex code.
++ */
++export function v5ToV6(file: RawFile): RawFile {
++  const nodes: Record<string, Record<string, unknown>> = {};
++  for (const [id, node] of Object.entries(
++    file.nodes as Record<string, Record<string, unknown>>
++  )) {
++    const out = { ...node };
++    if ('fills' in out) out.fills = paints(out.fills);
++    if ('strokes' in out) out.strokes = paints(out.strokes);
++    nodes[id] = out;
++  }
++  return { ...file, version: 6, nodes };
++}
+diff --git a/src/persist/schema.ts b/src/persist/schema.ts
+index 9223a6e..9efcd69 100644
+--- a/src/persist/schema.ts
++++ b/src/persist/schema.ts
+@@ -3,7 +3,7 @@ import { NODE_TYPES, isContainer } from '../model/types.ts';
+ import { fail } from '../util/assert.ts';
+ 
+ /** The version `files.save()` writes. Older files are migrated up to it. */
+-export const SCHEMA_VERSION = 5;
++export const SCHEMA_VERSION = 6;
+ 
+ export interface SavedFile extends DocumentData {
+   version: number;

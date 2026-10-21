@@ -69,6 +69,7 @@ import {
   pickTasks,
   readJson,
   ROOT,
+  BENCH,
   runCommand,
   scanCalls,
   TEST_FILE,
@@ -359,7 +360,15 @@ async function gradeSession(o, s, task, cited) {
       o.p4,
       ROOT,
     ].filter(Boolean),
-    hiddenRoots: [o.tasks, o.grade, o.hidden, join(o.p4, 'gate.log')],
+    // The committed copies of the hidden tests, patches and plans count too.
+    hiddenRoots: [
+      o.tasks,
+      o.grade,
+      o.hidden,
+      join(o.p4, 'gate.log'),
+      join(BENCH, 'hidden'),
+      join(BENCH, 'tasks'),
+    ],
     citedPaths: cited,
   });
   const flags = {

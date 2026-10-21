@@ -1,0 +1,55 @@
+diff --git a/src/panel/properties.ts b/src/panel/properties.ts
+index 4623d29..b4ee8b8 100644
+--- a/src/panel/properties.ts
++++ b/src/panel/properties.ts
+@@ -11,6 +11,7 @@ import { fillSection } from './sections/fill.ts';
+ import { strokeSection } from './sections/stroke.ts';
+ import { textSection } from './sections/text.ts';
+ import { appearanceSection } from './sections/appearance.ts';
++import { textInfoSection } from './sections/text-info.ts';
+ 
+ export interface FieldView {
+   label: string;
+@@ -38,6 +39,7 @@ export const DEFAULT_SECTIONS: readonly SectionDescriptor[] = [
+   fillSection,
+   strokeSection,
+   textSection,
++  textInfoSection,
+ ];
+ 
+ /**
+diff --git a/src/panel/sections/text-info.ts b/src/panel/sections/text-info.ts
+new file mode 100644
+index 0000000..d832b34
+--- /dev/null
++++ b/src/panel/sections/text-info.ts
+@@ -0,0 +1,29 @@
++import type { SectionDescriptor } from '../schema.ts';
++import { field } from '../schema.ts';
++import type { TextNode } from '../../model/types.ts';
++import { isText } from '../../model/types.ts';
++
++/** Read-only counts for text layers. */
++export const textInfoSection: SectionDescriptor = {
++  name: 'text-info',
++  title: 'Text info',
++  fields: [
++    field({
++      label: 'Characters',
++      kind: 'number',
++      readonly: true,
++      appliesTo: isText,
++      read: (node) => (node as TextNode).text.replace(/\n/g, '').length,
++      write: () => [],
++    }),
++    field({
++      label: 'Words',
++      kind: 'number',
++      readonly: true,
++      appliesTo: isText,
++      read: (node) =>
++        (node as TextNode).text.split(/\s+/).filter(Boolean).length,
++      write: () => [],
++    }),
++  ],
++};

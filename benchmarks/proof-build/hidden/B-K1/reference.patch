@@ -1,0 +1,56 @@
+diff --git a/src/model/text.ts b/src/model/text.ts
+index 38b5335..89abef2 100644
+--- a/src/model/text.ts
++++ b/src/model/text.ts
+@@ -54,6 +54,16 @@ export function autoHeight(
+   return lineCount(node) * node.fontSize * node.lineHeight;
+ }
+ 
++/** Characters in `text`, spaces included and line breaks left out. */
++export function characterCount(text: string): number {
++  return [...text.replace(/\r?\n/g, '')].length;
++}
++
++/** Runs of non-space characters in `text`. */
++export function wordCount(text: string): number {
++  return text.split(/\s+/).filter(Boolean).length;
++}
++
+ export function isBlank(text: string): boolean {
+   return text.trim().length === 0;
+ }
+diff --git a/src/panel/sections/text.ts b/src/panel/sections/text.ts
+index 65960b1..8681237 100644
+--- a/src/panel/sections/text.ts
++++ b/src/panel/sections/text.ts
+@@ -3,7 +3,7 @@ import { field } from '../schema.ts';
+ import { command } from '../../commands/types.ts';
+ import type { TextNode } from '../../model/types.ts';
+ import { isText } from '../../model/types.ts';
+-import { autoHeight } from '../../model/text.ts';
++import { autoHeight, characterCount, wordCount } from '../../model/text.ts';
+ 
+ function setText(
+   node: TextNode,
+@@ -52,5 +52,21 @@ export const textSection: SectionDescriptor = {
+       write: (node, value) =>
+         setText(node as TextNode, 'lineHeight', value as number),
+     }),
++    field({
++      label: 'Characters',
++      kind: 'number',
++      readonly: true,
++      appliesTo: isText,
++      read: (node) => characterCount((node as TextNode).text),
++      write: () => [],
++    }),
++    field({
++      label: 'Words',
++      kind: 'number',
++      readonly: true,
++      appliesTo: isText,
++      read: (node) => wordCount((node as TextNode).text),
++      write: () => [],
++    }),
+   ],
+ };

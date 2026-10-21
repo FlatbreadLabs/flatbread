@@ -1,0 +1,40 @@
+diff --git a/src/model/style.ts b/src/model/style.ts
+index 3ed3bac..79cb00a 100644
+--- a/src/model/style.ts
++++ b/src/model/style.ts
+@@ -6,11 +6,32 @@ import { clamp } from '../util/math.ts';
+ export const DEFAULT_FILL = '#D9D9D9';
+ 
+ const HEX6 = /^#?([0-9a-f]{6})$/i;
++const HEX3 = /^#?([0-9a-f])([0-9a-f])([0-9a-f])$/i;
++const RGB = /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i;
+ 
+-/** Parses `#rrggbb` in any case. Returns `#RRGGBB`, or null. */
++/**
++ * Parses `#rrggbb`, `#rgb` or `rgb(r, g, b)` in any case. Returns
++ * `#RRGGBB`, or null.
++ */
+ export function parseColor(text: string): string | null {
+-  const match = HEX6.exec(text.trim());
+-  return match ? `#${match[1].toUpperCase()}` : null;
++  const clean = text.trim();
++  const match = HEX6.exec(clean);
++  if (match) return `#${match[1].toUpperCase()}`;
++  const short = HEX3.exec(clean);
++  if (short)
++    return `#${short
++      .slice(1)
++      .map((d) => d + d)
++      .join('')
++      .toUpperCase()}`;
++  const rgb = RGB.exec(clean);
++  if (!rgb) return null;
++  const channels = rgb.slice(1).map(Number);
++  if (channels.some((c) => c > 255)) return null;
++  return `#${channels
++    .map((c) => c.toString(16).padStart(2, '0'))
++    .join('')
++    .toUpperCase()}`;
+ }
+ 
+ export function formatColor(color: string): string {

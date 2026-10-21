@@ -1,0 +1,76 @@
+diff --git a/src/commands/palette.ts b/src/commands/palette.ts
+index 874d40e..2768772 100644
+--- a/src/commands/palette.ts
++++ b/src/commands/palette.ts
+@@ -1,5 +1,5 @@
+ import { fail } from '../util/assert.ts';
+-import type { EditorContext } from './types.ts';
++import type { EditorContext, Json } from './types.ts';
+ import { command } from './types.ts';
+ import { groupNodes } from './builtin/group.ts';
+ import { arrangeCommands } from './builtin/reorder.ts';
+@@ -9,6 +9,11 @@ import { lockItems } from './builtin/lock.ts';
+ import { alignCommand, distributeCommand } from './builtin/align.ts';
+ import type { Alignment, Axis } from './builtin/align.ts';
+ import { walk } from '../model/query.ts';
++import { descendants, topmostOnly } from '../model/tree.ts';
++import { selectionBounds } from '../selection/bounds.ts';
++import { centre } from '../model/geometry.ts';
++import { parseExpression } from '../units/expr.ts';
++import type { GeometryItem } from './builtin/resize.ts';
+ import { isInteractive } from '../selection/rules.ts';
+ 
+ /** A command as the palette lists it, by its title. */
+@@ -57,6 +62,40 @@ export class Palette {
+ 
+ const hasSelection = (ctx: EditorContext) => !ctx.selection.isEmpty();
+ 
++/**
++ * Scales the selected layers, and everything inside them, by `percent`
++ * about the centre of the selection, as one resize command. Stored values
++ * are not rounded.
++ */
++function scaleSelection(ctx: EditorContext, input?: string): void {
++  const percent = parseExpression((input ?? '').replace(/%\s*$/, ''));
++  if (percent === null || !(percent > 0)) return;
++  const { doc } = ctx;
++  const ids = topmostOnly(
++    doc,
++    ctx.selection.ids().filter((id) => doc.has(id))
++  );
++  const bounds = selectionBounds(doc, ids);
++  if (!bounds) return;
++  const c = centre(bounds);
++  const k = percent / 100;
++  const items: GeometryItem[] = [];
++  for (const id of ids)
++    for (const node of [doc.require(id), ...descendants(doc, id)])
++      if (node.type !== 'group')
++        items.push({
++          id: node.id,
++          x: c.x + (node.x - c.x) * k,
++          y: c.y + (node.y - c.y) * k,
++          width: node.width * k,
++          height: node.height * k,
++        });
++  if (items.length)
++    ctx.dispatch(command('resize', { items: items as unknown as Json[] }), {
++      label: 'Scale selection',
++    });
++}
++
+ function align(title: string, how: Alignment): PaletteEntry {
+   return {
+     title,
+@@ -142,6 +181,11 @@ export const BUILTIN_ENTRIES: readonly PaletteEntry[] = [
+   align('Align bottom', 'bottom'),
+   distribute('Distribute horizontally', 'horizontal'),
+   distribute('Distribute vertically', 'vertical'),
++  {
++    title: 'Scale selection',
++    enabled: hasSelection,
++    run: (ctx, input) => scaleSelection(ctx, input),
++  },
+   {
+     title: 'Hide',
+     enabled: hasSelection,

@@ -1,0 +1,66 @@
+diff --git a/src/editor.ts b/src/editor.ts
+index 3ff92fa..402203d 100644
+--- a/src/editor.ts
++++ b/src/editor.ts
+@@ -101,6 +101,7 @@ export function createEditor(options: EditorOptions = {}) {
+       doc.replace(data);
+       ids.reserve(doc.ids());
+       viewState = parseViewState(savedViewState ?? null);
++      layers.restoreExpanded();
+     },
+     viewState: (): ViewState => structuredClone(viewState),
+     saveViewState: (): string => serializeViewState(viewState),
+diff --git a/src/layers/layers.ts b/src/layers/layers.ts
+index 1b60bc7..2805ab9 100644
+--- a/src/layers/layers.ts
++++ b/src/layers/layers.ts
+@@ -41,11 +41,26 @@ export class LayersPanel {
+   }
+ 
+   expand(id: string): void {
+-    if (isContainer(this.ctx.doc.require(id))) this.expanded.add(id);
++    if (!isContainer(this.ctx.doc.require(id))) return;
++    this.expanded.add(id);
++    this.ctx.doc.update(id, { expanded: true });
+   }
+ 
+   collapse(id: string): void {
+     this.expanded.delete(id);
++    const node = this.ctx.doc.get(id);
++    if (node && isContainer(node) && node.expanded)
++      this.ctx.doc.update(id, { expanded: false });
++  }
++
++  /** Expands the containers a loaded document marks as expanded. */
++  restoreExpanded(): void {
++    this.expanded = new Set(
++      this.ctx.doc
++        .all()
++        .filter((node) => isContainer(node) && node.expanded)
++        .map((node) => node.id)
++    );
+   }
+ 
+   toggle(id: string): void {
+diff --git a/src/model/types.ts b/src/model/types.ts
+index e891d73..b28f5a8 100644
+--- a/src/model/types.ts
++++ b/src/model/types.ts
+@@ -54,6 +54,8 @@ export interface FrameNode extends BaseNode, Styled {
+   type: 'frame';
+   children: string[];
+   clip: boolean;
++  /** Shown expanded in the layers panel. */
++  expanded?: boolean;
+ }
+ 
+ export type TextAlign = 'left' | 'center' | 'right';
+@@ -70,6 +72,8 @@ export interface GroupNode extends BaseNode {
+   type: 'group';
+   children: string[];
+   opacity: number;
++  /** Shown expanded in the layers panel. */
++  expanded?: boolean;
+ }
+ 
+ export type SceneNode =

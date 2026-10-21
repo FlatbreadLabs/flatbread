@@ -1,0 +1,29 @@
+diff --git a/src/commands/palette.ts b/src/commands/palette.ts
+index 874d40e..684a2d5 100644
+--- a/src/commands/palette.ts
++++ b/src/commands/palette.ts
+@@ -191,6 +191,24 @@ export const BUILTIN_ENTRIES: readonly PaletteEntry[] = [
+       );
+     },
+   },
++  {
++    title: 'Rename layers',
++    enabled: (ctx) => ctx.selection.size >= 2,
++    run(ctx, input) {
++      const base = (input ?? '').trim();
++      if (!base) return;
++      const ids = ctx.selection.ids();
++      ctx.batch('Rename layers', () =>
++        ids.forEach((id, i) => {
++          const n = String(i + 1);
++          const name = base.includes('#')
++            ? base.replace('#', n)
++            : `${base} ${n}`;
++          ctx.dispatch(command('rename', { id, name }));
++        })
++      );
++    },
++  },
+   {
+     title: 'Rename layer',
+     enabled: (ctx) => ctx.selection.size === 1,

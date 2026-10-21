@@ -1,0 +1,129 @@
+diff --git a/src/editor.ts b/src/editor.ts
+index 3ff92fa..27b1fe8 100644
+--- a/src/editor.ts
++++ b/src/editor.ts
+@@ -71,7 +71,7 @@ export function createEditor(options: EditorOptions = {}) {
+ 
+   const palette = createPalette(ctx);
+   const panel = new PropertiesPanel(ctx, () => viewState);
+-  const layers = new LayersPanel(ctx);
++  const layers = new LayersPanel(ctx, () => viewState);
+   const keys = createDispatcher({ ...ctx, palette, layers });
+   const viewport = new Viewport(() => viewState);
+   const canvas = new CanvasGestures(ctx, viewport);
+diff --git a/src/layers/layers.ts b/src/layers/layers.ts
+index 1b60bc7..4669448 100644
+--- a/src/layers/layers.ts
++++ b/src/layers/layers.ts
+@@ -7,6 +7,8 @@ import { buildRows, rowIndex } from './tree-view.ts';
+ import type { DropPosition } from './drag.ts';
+ import { dropPlacement } from './drag.ts';
+ import { normalizeLayerName } from './rename.ts';
++import type { ViewState } from '../persist/viewstate.ts';
++import { defaultViewState } from '../persist/viewstate.ts';
+ 
+ export interface RowClick {
+   /** Toggle this row in the selection. */
+@@ -18,11 +20,25 @@ export interface RowClick {
+ /** The layers panel: rows, expand and collapse, selection, rename, drag. */
+ export class LayersPanel {
+   private ctx: EditorContext;
+-  private expanded = new Set<string>();
++  private viewState: () => ViewState;
+   private anchor: string | null = null;
+ 
+-  constructor(ctx: EditorContext) {
++  /**
++   * Which layers are expanded is view state: it is kept in `viewState()`,
++   * which the shell saves beside the document, never in the document.
++   */
++  constructor(ctx: EditorContext, viewState?: () => ViewState) {
+     this.ctx = ctx;
++    const own = defaultViewState();
++    this.viewState = viewState ?? (() => own);
++  }
++
++  private get expanded(): Set<string> {
++    return new Set(this.viewState().expandedLayers);
++  }
++
++  private set expanded(ids: Set<string>) {
++    this.viewState().expandedLayers = [...ids];
+   }
+ 
+   view(): LayerRow[] {
+@@ -41,11 +57,14 @@ export class LayersPanel {
+   }
+ 
+   expand(id: string): void {
+-    if (isContainer(this.ctx.doc.require(id))) this.expanded.add(id);
++    if (isContainer(this.ctx.doc.require(id)))
++      this.expanded = this.expanded.add(id);
+   }
+ 
+   collapse(id: string): void {
+-    this.expanded.delete(id);
++    const ids = this.expanded;
++    ids.delete(id);
++    this.expanded = ids;
+   }
+ 
+   toggle(id: string): void {
+@@ -55,7 +74,9 @@ export class LayersPanel {
+ 
+   /** Expands every ancestor of `id`, so its row is listed. */
+   reveal(id: string): void {
+-    for (const a of ancestors(this.ctx.doc, id)) this.expanded.add(a.id);
++    const ids = this.expanded;
++    for (const a of ancestors(this.ctx.doc, id)) ids.add(a.id);
++    this.expanded = ids;
+   }
+ 
+   click(id: string, how: RowClick = {}): void {
+@@ -98,7 +119,7 @@ export class LayersPanel {
+         label: 'Move layer',
+       }
+     );
+-    if (position === 'inside') this.expanded.add(target);
++    if (position === 'inside') this.expanded = this.expanded.add(target);
+     return true;
+   }
+ }
+diff --git a/src/persist/viewstate.ts b/src/persist/viewstate.ts
+index c4db7c2..fce5bb5 100644
+--- a/src/persist/viewstate.ts
++++ b/src/persist/viewstate.ts
+@@ -4,19 +4,22 @@ export interface ViewState {
+   zoom: number;
+   /** Properties-panel sections the user collapsed, by name. */
+   collapsedSections: string[];
++  /** Ids of the groups and frames the layers panel shows expanded. */
++  expandedLayers: string[];
+ }
+ 
+ export const MIN_ZOOM = 0.02;
+ export const MAX_ZOOM = 64;
+ 
+ export function defaultViewState(): ViewState {
+-  return { zoom: 1, collapsedSections: [] };
++  return { zoom: 1, collapsedSections: [], expandedLayers: [] };
+ }
+ 
+ export function serializeViewState(state: ViewState): string {
+   return JSON.stringify({
+     zoom: state.zoom,
+     collapsedSections: [...state.collapsedSections].sort(),
++    expandedLayers: [...state.expandedLayers].sort(),
+   });
+ }
+ 
+@@ -41,5 +44,8 @@ export function parseViewState(
+   const collapsedSections = Array.isArray(raw.collapsedSections)
+     ? raw.collapsedSections.filter((s): s is string => typeof s === 'string')
+     : [];
+-  return { zoom, collapsedSections };
++  const expandedLayers = Array.isArray(raw.expandedLayers)
++    ? raw.expandedLayers.filter((s): s is string => typeof s === 'string')
++    : [];
++  return { zoom, collapsedSections, expandedLayers };
+ }

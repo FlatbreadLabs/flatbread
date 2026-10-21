@@ -1,0 +1,196 @@
+diff --git a/src/panel/commit.ts b/src/panel/commit.ts
+index c24ca8c..3ec552d 100644
+--- a/src/panel/commit.ts
++++ b/src/panel/commit.ts
+@@ -1,12 +1,16 @@
+ import type { EditorContext } from '../commands/types.ts';
+-import type { FieldDescriptor } from './schema.ts';
++import type { FieldDescriptor, FieldValue } from './schema.ts';
+ import { clampField, parseFieldInput } from './fields.ts';
+ 
+ export type CommitResult =
+   | { ok: true; changed: number }
+   | { ok: false; error: string };
+ 
+-/** Commits typed text to one field for every selected node it applies to. */
++/**
++ * Commits typed text to one field for every selected node it applies to.
++ * A field that reads units reads the text once per node, since `%` depends
++ * on where the node sits; if any node cannot take it, nothing changes.
++ */
+ export function commitField(
+   ctx: EditorContext,
+   field: FieldDescriptor,
+@@ -14,10 +18,12 @@ export function commitField(
+ ): CommitResult {
+   if (field.readonly)
+     return { ok: false, error: `${field.label} is read-only` };
+-  const parsed = parseFieldInput(field.kind, text);
+-  if (parsed === null)
+-    return { ok: false, error: `cannot read "${text}" as ${field.kind}` };
+-  const value = clampField(field, parsed);
++  const refused: CommitResult = {
++    ok: false,
++    error: `cannot read "${text}" as ${field.kind}`,
++  };
++  if (!field.units && parseFieldInput(field.kind, text) === null)
++    return refused;
+   const nodes = ctx.selection
+     .ids()
+     .map((id) => ctx.doc.require(id))
+@@ -27,10 +33,20 @@ export function commitField(
+       ok: false,
+       error: `${field.label} does not apply to the selection`,
+     };
++  const values = new Map<string, FieldValue>();
++  for (const node of nodes) {
++    const parsed = parseFieldInput(
++      field.kind,
++      text,
++      field.units?.(node, ctx.doc)
++    );
++    if (parsed === null) return refused;
++    values.set(node.id, clampField(field, parsed));
++  }
+   const gesture = ctx.newGesture();
+   let changed = 0;
+   for (const node of nodes)
+-    for (const c of field.write(node, value, ctx.doc)) {
++    for (const c of field.write(node, values.get(node.id)!, ctx.doc)) {
+       ctx.dispatch(c, { label: `Set ${field.label}`, gesture });
+       changed += 1;
+     }
+diff --git a/src/panel/fields.ts b/src/panel/fields.ts
+index 2643eef..7d7d15f 100644
+--- a/src/panel/fields.ts
++++ b/src/panel/fields.ts
+@@ -1,5 +1,7 @@
+ import type { FieldDescriptor, FieldKind, FieldValue } from './schema.ts';
+ import { parseExpression } from '../units/expr.ts';
++import { parseLength } from '../units/parse.ts';
++import type { UnitContext } from '../units/registry.ts';
+ import { displayNumber } from '../units/precision.ts';
+ import { formatAngle, formatLength, formatPercent } from '../units/format.ts';
+ import { formatColor, parseColor } from '../model/style.ts';
+@@ -8,10 +10,12 @@ import { clamp, degToRad } from '../util/math.ts';
+ /** Reads what the user typed into a field. Returns null when it cannot. */
+ export function parseFieldInput(
+   kind: FieldKind,
+-  text: string
++  text: string,
++  units?: UnitContext
+ ): FieldValue | null {
+   switch (kind) {
+     case 'length':
++      return units ? toLength(text, units) : parseExpression(text);
+     case 'number':
+       return parseExpression(text);
+     case 'angle': {
+@@ -46,6 +50,11 @@ export function formatFieldValue(kind: FieldKind, value: FieldValue): string {
+   }
+ }
+ 
++/** A typed length: a number with a unit through parseLength, else an expression. */
++export function toLength(text: string, units: UnitContext): number | null {
++  return parseLength(text, units) ?? parseExpression(text);
++}
++
+ /** Applies the field's bounds, if it has any. */
+ export function clampField(
+   field: FieldDescriptor,
+diff --git a/src/panel/schema.ts b/src/panel/schema.ts
+index 397b4d5..9d40c65 100644
+--- a/src/panel/schema.ts
++++ b/src/panel/schema.ts
+@@ -1,6 +1,7 @@
+ import type { Document } from '../model/document.ts';
+ import type { SceneNode } from '../model/types.ts';
+ import type { Command } from '../commands/types.ts';
++import type { UnitContext } from '../units/registry.ts';
+ 
+ /**
+  * How a field reads and writes its value:
+@@ -29,6 +30,11 @@ export interface FieldDescriptor {
+   min?: number;
+   max?: number;
+   appliesTo(node: SceneNode): boolean;
++  /**
++   * For a length field that reads units (in, pt, px, %): what `%` is
++   * relative to for `node`. Typed text is then read once per node.
++   */
++  units?(node: SceneNode, doc: Document): UnitContext;
+   read(node: SceneNode, doc: Document): FieldValue;
+   /** The commands that give `node` this value. */
+   write(node: SceneNode, value: FieldValue, doc: Document): Command[];
+diff --git a/src/panel/sections/layout.ts b/src/panel/sections/layout.ts
+index ca071d4..7e5925c 100644
+--- a/src/panel/sections/layout.ts
++++ b/src/panel/sections/layout.ts
+@@ -6,9 +6,19 @@ import { scaledSubtree } from '../../commands/builtin/resize.ts';
+ import { rectOf } from '../../model/geometry.ts';
+ import type { SceneNode } from '../../model/types.ts';
+ import { normalizeAngle } from '../../model/transform.ts';
++import type { Document } from '../../model/document.ts';
++import { ancestors } from '../../model/tree.ts';
+ 
+ const any = () => true;
+ 
++/** What `%` in W or H means: a share of the nearest frame around the node. */
++function frameShare(axis: 'width' | 'height') {
++  return (node: SceneNode, doc: Document) => {
++    const frame = ancestors(doc, node.id).find((a) => a.type === 'frame');
++    return frame ? { reference: frame[axis] } : {};
++  };
++}
++
+ function moveTo(node: SceneNode, axis: 'x' | 'y', value: number) {
+   const delta = value - node[axis];
+   if (delta === 0) return [];
+@@ -44,6 +54,7 @@ export const layoutSection: SectionDescriptor = {
+       kind: 'length',
+       min: 1,
+       appliesTo: any,
++      units: frameShare('width'),
+       read: (node) => node.width,
+       write: (node, value, doc) => [
+         command('resize', {
+@@ -59,6 +70,7 @@ export const layoutSection: SectionDescriptor = {
+       kind: 'length',
+       min: 1,
+       appliesTo: (node) => node.type !== 'line',
++      units: frameShare('height'),
+       read: (node) => node.height,
+       write: (node, value, doc) => [
+         command('resize', {
+diff --git a/src/units/parse.ts b/src/units/parse.ts
+index cda1196..e25c13f 100644
+--- a/src/units/parse.ts
++++ b/src/units/parse.ts
+@@ -1,13 +1,23 @@
+ // Reads a length written as a string, such as `12`, `12px` or ` 4.5 px `.
+ // Version 1 files stored lengths this way; the v1→v2 migration reads them
+-// through here.
++// through here. Panel fields read typed lengths through here too, with a
++// unit context, so `2in`, `18pt` and `50%` are read as px.
++
++import type { UnitContext, UnitId } from './registry.ts';
++import { toPx, unitFor } from './registry.ts';
+ 
+ const LENGTH = /^\s*(-?(?:\d+(?:\.\d*)?|\.\d+))\s*(px)?\s*$/i;
++const LENGTH_WITH_UNIT = /^\s*(-?(?:\d+(?:\.\d*)?|\.\d+))\s*(px|pt|in|%)?\s*$/i;
+ 
+-export function parseLength(text: string): number | null {
+-  const match = LENGTH.exec(text);
++export function parseLength(text: string, units?: UnitContext): number | null {
++  const match = (units ? LENGTH_WITH_UNIT : LENGTH).exec(text);
+   if (!match) return null;
+-  const value = Number(match[1]);
++  let value = Number(match[1]);
++  if (units && match[2]) {
++    const px = toPx(value, unitFor(match[2])!.id as UnitId, units);
++    if (px === null) return null;
++    value = px;
++  }
+   return Number.isFinite(value) ? value : null;
+ }
+ 

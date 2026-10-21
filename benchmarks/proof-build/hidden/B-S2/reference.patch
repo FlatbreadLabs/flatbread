@@ -1,0 +1,52 @@
+diff --git a/src/canvas/gestures.ts b/src/canvas/gestures.ts
+index 13b0785..4bef122 100644
+--- a/src/canvas/gestures.ts
++++ b/src/canvas/gestures.ts
+@@ -10,6 +10,9 @@ import { selectionBounds } from '../selection/bounds.ts';
+ import type { Viewport } from './viewport.ts';
+ import { handleAt } from './handles.ts';
+ 
++/** With Shift, the rotation handle snaps each layer's angle to this step (15°). */
++export const ROTATE_SNAP = Math.PI / 12;
++
+ export interface Modifiers {
+   shift?: boolean;
+   alt?: boolean;
+@@ -96,7 +99,7 @@ export class CanvasGestures {
+     this.drag = { kind: 'move', gesture: this.ctx.newGesture(), last: p };
+   }
+ 
+-  move(screen: Point, _mods: Modifiers = {}): void {
++  move(screen: Point, mods: Modifiers = {}): void {
+     const p = this.viewport.toDocument(screen);
+     const drag = this.drag;
+     if (drag.kind === 'move') {
+@@ -122,18 +125,16 @@ export class CanvasGestures {
+       );
+     } else if (drag.kind === 'rotate') {
+       const delta = angleAround(drag.centre, p) - drag.startAngle;
+-      for (const [id, start] of drag.from)
+-        this.ctx.dispatch(
+-          command('set-prop', {
+-            id,
+-            key: 'rotation',
+-            value: normalizeAngle(start + delta),
+-          }),
+-          {
+-            label: 'Rotate',
+-            gesture: drag.gesture,
+-          }
+-        );
++      for (const [id, start] of drag.from) {
++        const free = normalizeAngle(start + delta);
++        const value = mods.shift
++          ? normalizeAngle(Math.round(free / ROTATE_SNAP) * ROTATE_SNAP)
++          : free;
++        this.ctx.dispatch(command('set-prop', { id, key: 'rotation', value }), {
++          label: 'Rotate',
++          gesture: drag.gesture,
++        });
++      }
+     }
+   }
+ 

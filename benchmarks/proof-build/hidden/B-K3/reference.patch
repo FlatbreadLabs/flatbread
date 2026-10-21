@@ -1,0 +1,78 @@
+diff --git a/src/commands/builtin/align.ts b/src/commands/builtin/align.ts
+index 2e81ed7..0417970 100644
+--- a/src/commands/builtin/align.ts
++++ b/src/commands/builtin/align.ts
+@@ -94,11 +94,16 @@ export function alignCommand(
+     : null;
+ }
+ 
+-/** One resize command that spaces three or more nodes evenly between the outermost two. */
++/**
++ * One resize command that spaces three or more nodes evenly between the
++ * outermost two, or, given a `gap`, lays them out from the first one with
++ * exactly `gap` px between neighbours.
++ */
+ export function distributeCommand(
+   doc: Document,
+   ids: readonly string[],
+-  axis: Axis
++  axis: Axis,
++  gap?: number
+ ): Command | null {
+   const members = topmostOnly(
+     doc,
+@@ -113,16 +118,20 @@ export function distributeCommand(
+   const first = boxes[0].box;
+   const last = boxes[boxes.length - 1].box;
+   const used = boxes.reduce((total, b) => total + b.box[size], 0);
+-  const gap = (last[key] + last[size] - first[key] - used) / (boxes.length - 1);
++  const space =
++    gap ?? (last[key] + last[size] - first[key] - used) / (boxes.length - 1);
+   const items: GeometryItem[] = [];
+-  let cursor = first[key] + first[size] + gap;
+-  for (const { id, box } of boxes.slice(1, -1)) {
++  let cursor = first[key] + first[size] + space;
++  for (const { id, box } of boxes.slice(
++    1,
++    gap === undefined ? -1 : undefined
++  )) {
+     const delta = cursor - box[key];
+     if (delta)
+       items.push(
+         ...shifted(doc, id, key === 'x' ? delta : 0, key === 'y' ? delta : 0)
+       );
+-    cursor += box[size] + gap;
++    cursor += box[size] + space;
+   }
+   return items.length
+     ? command('resize', { items: items as unknown as Json[] })
+diff --git a/src/commands/palette.ts b/src/commands/palette.ts
+index 874d40e..3599a7f 100644
+--- a/src/commands/palette.ts
++++ b/src/commands/palette.ts
+@@ -10,6 +10,7 @@ import { alignCommand, distributeCommand } from './builtin/align.ts';
+ import type { Alignment, Axis } from './builtin/align.ts';
+ import { walk } from '../model/query.ts';
+ import { isInteractive } from '../selection/rules.ts';
++import { parseExpression } from '../units/expr.ts';
+ 
+ /** A command as the palette lists it, by its title. */
+ export interface PaletteEntry {
+@@ -72,8 +73,15 @@ function distribute(title: string, axis: Axis): PaletteEntry {
+   return {
+     title,
+     enabled: (ctx) => ctx.selection.size >= 3,
+-    run(ctx) {
+-      const c = distributeCommand(ctx.doc, ctx.selection.ids(), axis);
++    run(ctx, input) {
++      // A typed number is the gap in px; with nothing typed, space evenly.
++      let gap: number | undefined;
++      if (input !== undefined && input.trim()) {
++        const typed = parseExpression(input);
++        if (typed === null) return;
++        gap = typed;
++      }
++      const c = distributeCommand(ctx.doc, ctx.selection.ids(), axis, gap);
+       if (c) ctx.dispatch(c, { label: title });
+     },
+   };

@@ -1,0 +1,62 @@
+diff --git a/src/model/style.ts b/src/model/style.ts
+index 3ed3bac..fef0f9d 100644
+--- a/src/model/style.ts
++++ b/src/model/style.ts
+@@ -13,6 +13,35 @@ export function parseColor(text: string): string | null {
+   return match ? `#${match[1].toUpperCase()}` : null;
+ }
+ 
++const HEX3 = /^#?([0-9a-f])([0-9a-f])([0-9a-f])$/i;
++const RGB = /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i;
++
++/**
++ * Reads a colour as people type it into a field: `#rrggbb` or `rrggbb`,
++ * the shorthand `#rgb` or `rgb`, or `rgb(r, g, b)` with 0–255 channels.
++ * Returns `#RRGGBB`, or null.
++ */
++export function parseColorInput(text: string): string | null {
++  const clean = text.trim();
++  const full = parseColor(clean);
++  if (full) return full;
++  const short = HEX3.exec(clean);
++  if (short)
++    return `#${short
++      .slice(1)
++      .map((d) => d + d)
++      .join('')
++      .toUpperCase()}`;
++  const rgb = RGB.exec(clean);
++  if (!rgb) return null;
++  const channels = rgb.slice(1).map(Number);
++  if (channels.some((c) => c > 255)) return null;
++  return `#${channels
++    .map((c) => c.toString(16).padStart(2, '0'))
++    .join('')
++    .toUpperCase()}`;
++}
++
+ export function formatColor(color: string): string {
+   return color.toUpperCase();
+ }
+diff --git a/src/panel/fields.ts b/src/panel/fields.ts
+index 2643eef..16b8f08 100644
+--- a/src/panel/fields.ts
++++ b/src/panel/fields.ts
+@@ -2,7 +2,7 @@ import type { FieldDescriptor, FieldKind, FieldValue } from './schema.ts';
+ import { parseExpression } from '../units/expr.ts';
+ import { displayNumber } from '../units/precision.ts';
+ import { formatAngle, formatLength, formatPercent } from '../units/format.ts';
+-import { formatColor, parseColor } from '../model/style.ts';
++import { formatColor, parseColorInput } from '../model/style.ts';
+ import { clamp, degToRad } from '../util/math.ts';
+ 
+ /** Reads what the user typed into a field. Returns null when it cannot. */
+@@ -23,7 +23,7 @@ export function parseFieldInput(
+       return percent === null ? null : percent / 100;
+     }
+     case 'color':
+-      return parseColor(text);
++      return parseColorInput(text);
+     case 'text':
+       return text;
+   }

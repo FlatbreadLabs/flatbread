@@ -47,9 +47,13 @@ reach the hidden tests.
 
 ## Build the beds
 
-Beds and hidden tests live outside the repository, in `<p4>` (the key
-maps hold the answers). Builds are deterministic: a rebuild gives the same
-hashes.
+Beds are built outside the repository, in `<p4>` (the key maps hold the
+answers). Builds are deterministic: a rebuild gives the same hashes. The
+hidden tests and the reference and naive patches are committed in `hidden/`
+since the first full run; copy them to `<p4>/hidden` before running, so a
+session never needs a path into this repository, and pass `--out` to
+`gate.mjs` (it refuses to rebuild `tasks/` in place). `grade.mjs` flags any
+session that reads `hidden/` or `tasks/` here.
 
 ```sh
 node scripts/gen-bed.mjs --out <p4>/bed
@@ -130,7 +134,7 @@ node scripts/judge.mjs --gate --tasks $P4/tasks --out $P4/gate-judge.json
 ```
 
 The full run is 420 primary sessions (build tasks 3 runs, plan tasks 2)
-and 26 `dump10x` sessions, about $65 to $85 and 7.5 hours at 8 jobs:
+and 26 `dump10x` sessions, about 6 hours of wall time at 8 jobs:
 
 ```sh
 for r in r1 r2; do
@@ -145,6 +149,80 @@ for r in r1 r2 r3; do
 done
 node scripts/compare.mjs $P4/runs --runs r1,r2,r3 --out $P4/runs/compare.json
 ```
+
+## Results: Haiku, full run (2026-10-21)
+
+18 build tasks × 3 runs and 8 plan tasks × 2 runs in each of the six primary
+arms, plus `dump10x` once per task: 446 sessions on `claude-haiku-5-5`, after
+a 30-session pilot. Per-session rows are in `results/haiku-sessions.json`
+(no transcripts); the `compare.mjs` output is `results/haiku-compare.json`.
+No session timed out or hit an API error. 23 sessions were flagged for leaving
+their folder (scratch files, `cd /tmp`, reading the prettier binary), none for
+reading hidden tests, and no `none` session found Proof. The tables keep the
+flagged sessions; dropping their pairs gives the same picture.
+
+**Build tasks: all-green, of 54 per arm** (proof-only 18, code-visible 15,
+stale 12, control 9; `dump10x` ran each task once: 6, 5, 4 and 3):
+
+| Arm        | proof-only | code-visible | stale  | control | all          | context tokens | processed tokens |
+| ---------- | ---------- | ------------ | ------ | ------- | ------------ | -------------- | ---------------- |
+| `none`     | 17         | 12           | **12** | 6       | **47** (87%) | 42k            | 594k             |
+| `skill`    | 18         | 9            | 8      | 6       | 41 (76%)     | 51k            | 781k             |
+| `find`     | 18         | 7            | 9      | 6       | 40 (74%)     | 46k            | 668k             |
+| `findcode` | 18         | 8            | 9      | 6       | 41 (76%)     | 53k            | 798k             |
+| `brief`    | 18         | 6            | 7      | 6       | 37 (69%)     | 60k            | 901k             |
+| `dump`     | 18         | 6            | 6      | 6       | 36 (67%)     | 78k            | 1,197k           |
+| `dump10x`  | 6 of 6     | 2 of 5       | 2 of 4 | 2 of 3  | 12 of 18     | 255k           | 3,887k           |
+
+- **One stale Decision did almost all the harm.** It says shortcuts are
+  registered in `keys/keymap.ts`. A later refactor moved registration to the
+  scope bindings and left that file as the frozen table plugins read, with no
+  Proof update. Every task that adds a shortcut met it: B-S3 (`none` 3 of 3,
+  every Proof arm 0 of 3), B-V4 (Proof arms 0 to 1 of 3) and B-V3 (0 to 2 of
+  3). In B-S1 a second stale record, on group opacity, also caught `dump` (0 of
+  3). The sessions edited the frozen table and broke plugin API v1.
+- **A stale-anchor note did not stop it.** `findcode` sessions read
+  `#registerBinding renamed to legacyAction in bc1c5b5; 4 commits touched it since` and still followed the accepted Decision.
+- **More forced Proof, more harm and more cost.** All-green falls from 74–76%
+  (`skill`, `find`, `findcode`) to 69% (`brief`) and 67% (`dump`), while
+  processed tokens rise to 1.1–1.3×, 1.5× and 2.0× those of `none`.
+- **Proof-only tasks showed no gain.** `none` passed 17 of 18. Haiku inferred
+  one undo step per gesture, unedited shipped migrations and frozen plugin
+  payloads from the patterns already in the code, so these tasks cannot yet
+  show a benefit.
+- **Two tasks fail in every arm.** B-K2 breaks a colour-parsing regression and
+  B-V2 fails exact round-trip scaling, so neither says anything about Proof.
+- **Statistics.** Pooled all-green against `none`, pair level and
+  Holm-corrected: `dump` p = 0.059, `brief` 0.086, the others 0.21 to 0.29.
+  The pre-registered primary tests (proof-only and stale, Holm-corrected) are
+  not significant (best: stale `dump`, 0.31). Counting each task once gives
+  1 task against 4 (p = 0.375): the harm sits in a few tasks that share one
+  stale record, so pair-level p-values overstate it.
+
+**Plan tasks: mean rubric score** (proof-only 6, code-visible 2, stale 4 and
+control 4 plans per arm; `dump10x` half as many):
+
+| Arm        | proof-only | code-visible | stale | control | all  |
+| ---------- | ---------- | ------------ | ----- | ------- | ---- |
+| `none`     | 0.90       | 0.57         | 1.00  | 1.00    | 0.91 |
+| `skill`    | 0.91       | 0.86         | 0.94  | 0.93    | 0.91 |
+| `find`     | 0.89       | 0.79         | 1.00  | 0.93    | 0.91 |
+| `findcode` | 0.91       | 0.86         | 0.93  | 1.00    | 0.93 |
+| `brief`    | 0.98       | 0.79         | 0.91  | 0.96    | 0.93 |
+| `dump`     | 1.00       | 0.86         | 0.76  | 0.96    | 0.91 |
+| `dump10x`  | 0.96       | 0.71         | 0.52  | 0.93    | 0.81 |
+
+Plans show both edges. Pasted Proof lifts proof-only plans (`dump` 1.00 and
+`brief` 0.98, against 0.90) and drags down stale ones (`dump` 0.76 and
+`dump10x` 0.52, against 1.00), so overall they cancel. No plan difference is
+significant (Wilcoxon p ≥ 0.30).
+
+So on this bed Proof in context never raised build quality, and an
+out-of-date record lowered it wherever its area was touched, most when Proof
+was pasted in. A plan gains from rules it is told, but the code already
+teaches a builder most of them. The changes this points to are a read that
+marks a Decision itself as suspect when the code it rests on has moved, and
+proof-only tasks whose rules the code does not hint at.
 
 ## Layout
 

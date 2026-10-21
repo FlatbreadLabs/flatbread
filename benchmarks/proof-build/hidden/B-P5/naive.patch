@@ -1,0 +1,82 @@
+diff --git a/docs/plugins.md b/docs/plugins.md
+index 34a6933..f59d25d 100644
+--- a/docs/plugins.md
++++ b/docs/plugins.md
+@@ -31,11 +31,12 @@ Plugin API v1 is frozen.
+ 
+ ## Events
+ 
+-| Event            | Payload                |
+-| ---------------- | ---------------------- |
+-| `documentchange` | `{ ids }`              |
+-| `documentload`   | `{ name }`             |
+-| `historychange`  | `{ canUndo, canRedo }` |
++| Event             | Payload                                                                                                      |
++| ----------------- | ------------------------------------------------------------------------------------------------------------ |
++| `documentchange`  | `{ ids }`                                                                                                    |
++| `documentload`    | `{ name }`                                                                                                   |
++| `historychange`   | `{ canUndo, canRedo }`                                                                                       |
++| `selectionchange` | `{ layers }`: each selected layer's `id`, `name`, `type`, `x`, `y`, `width` and `height`, in selection order |
+ 
+ ## Capabilities
+ 
+diff --git a/src/editor.ts b/src/editor.ts
+index c964d1d..1146ee8 100644
+--- a/src/editor.ts
++++ b/src/editor.ts
+@@ -95,6 +95,15 @@ export function createEditor(options: EditorOptions = {}) {
+   history.events.on('change', ({ canUndo, canRedo }) =>
+     plugins.emit('historychange', Object.freeze({ canUndo, canRedo }))
+   );
++  selection.events.on('change', ({ ids: selected }) => {
++    const layers = selected
++      .filter((id) => doc.has(id))
++      .map((id) => {
++        const { name, type, x, y, width, height } = doc.require(id);
++        return { id, name, type, x, y, width, height };
++      });
++    plugins.emit('selectionchange', Object.freeze({ layers }));
++  });
+ 
+   const files = {
+     /** The document as a file string. */
+diff --git a/src/plugin/events.ts b/src/plugin/events.ts
+index ef5b406..3680754 100644
+--- a/src/plugin/events.ts
++++ b/src/plugin/events.ts
+@@ -1,5 +1,18 @@
+ // Events a plugin can listen to, and their payloads.
+ 
++import type { NodeType } from '../model/types.ts';
++
++/** A selected layer as a plugin sees it. */
++export interface LayerSnapshot {
++  readonly id: string;
++  readonly name: string;
++  readonly type: NodeType;
++  readonly x: number;
++  readonly y: number;
++  readonly width: number;
++  readonly height: number;
++}
++
+ export interface PluginEvents {
+   /** Nodes were added, removed or changed. */
+   documentchange: { ids: string[] };
+@@ -7,6 +20,8 @@ export interface PluginEvents {
+   documentload: { name: string };
+   /** Undo or redo availability changed. */
+   historychange: { canUndo: boolean; canRedo: boolean };
++  /** The selection changed; the selected layers in selection order. */
++  selectionchange: { readonly layers: readonly LayerSnapshot[] };
+ }
+ 
+ export type PluginEventName = keyof PluginEvents;
+@@ -15,6 +30,7 @@ export const PLUGIN_EVENTS: readonly PluginEventName[] = [
+   'documentchange',
+   'documentload',
+   'historychange',
++  'selectionchange',
+ ];
+ 
+ export function isPluginEvent(name: string): name is PluginEventName {

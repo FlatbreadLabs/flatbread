@@ -1,0 +1,169 @@
+diff --git a/src/model/factory.ts b/src/model/factory.ts
+index 95ec59c..da53518 100644
+--- a/src/model/factory.ts
++++ b/src/model/factory.ts
+@@ -101,6 +101,7 @@ export function createFrame(
+     height: 300,
+     children: [],
+     clip: true,
++    layoutGrid: 0,
+     ...props,
+     type: 'frame',
+   } as FrameNode;
+diff --git a/src/model/types.ts b/src/model/types.ts
+index e891d73..49b8614 100644
+--- a/src/model/types.ts
++++ b/src/model/types.ts
+@@ -54,6 +54,8 @@ export interface FrameNode extends BaseNode, Styled {
+   type: 'frame';
+   children: string[];
+   clip: boolean;
++  /** Layout grid size in px; 0 when the grid is off. */
++  layoutGrid: number;
+ }
+ 
+ export type TextAlign = 'left' | 'center' | 'right';
+diff --git a/src/panel/fields.ts b/src/panel/fields.ts
+index 2643eef..b19b56d 100644
+--- a/src/panel/fields.ts
++++ b/src/panel/fields.ts
+@@ -26,6 +26,8 @@ export function parseFieldInput(
+       return parseColor(text);
+     case 'text':
+       return text;
++    case 'grid':
++      return /^\s*off\s*$/i.test(text) ? 0 : parseExpression(text);
+   }
+ }
+ 
+@@ -43,6 +45,8 @@ export function formatFieldValue(kind: FieldKind, value: FieldValue): string {
+       return formatColor(value as string);
+     case 'text':
+       return String(value);
++    case 'grid':
++      return value === 0 ? 'Off' : formatLength(value as number);
+   }
+ }
+ 
+diff --git a/src/panel/properties.ts b/src/panel/properties.ts
+index 4623d29..d5336b4 100644
+--- a/src/panel/properties.ts
++++ b/src/panel/properties.ts
+@@ -11,6 +11,7 @@ import { fillSection } from './sections/fill.ts';
+ import { strokeSection } from './sections/stroke.ts';
+ import { textSection } from './sections/text.ts';
+ import { appearanceSection } from './sections/appearance.ts';
++import { gridSection } from './sections/grid.ts';
+ 
+ export interface FieldView {
+   label: string;
+@@ -34,6 +35,7 @@ export interface PanelView {
+ 
+ export const DEFAULT_SECTIONS: readonly SectionDescriptor[] = [
+   layoutSection,
++  gridSection,
+   appearanceSection,
+   fillSection,
+   strokeSection,
+diff --git a/src/panel/schema.ts b/src/panel/schema.ts
+index 397b4d5..3ebd74e 100644
+--- a/src/panel/schema.ts
++++ b/src/panel/schema.ts
+@@ -10,6 +10,7 @@ import type { Command } from '../commands/types.ts';
+  * - `number`: a plain number, typed as an expression
+  * - `color`: `#RRGGBB`
+  * - `text`: any string
++ * - `grid`: a size in px, or 0 for off; typed as a size or `off`, shown as Off
+  */
+ export type FieldKind =
+   | 'length'
+@@ -17,7 +18,8 @@ export type FieldKind =
+   | 'percent'
+   | 'number'
+   | 'color'
+-  | 'text';
++  | 'text'
++  | 'grid';
+ 
+ export type FieldValue = number | string;
+ 
+diff --git a/src/panel/sections/grid.ts b/src/panel/sections/grid.ts
+new file mode 100644
+index 0000000..0a1c61b
+--- /dev/null
++++ b/src/panel/sections/grid.ts
+@@ -0,0 +1,21 @@
++import type { SectionDescriptor } from '../schema.ts';
++import { field } from '../schema.ts';
++import { command } from '../../commands/types.ts';
++import type { FrameNode } from '../../model/types.ts';
++
++export const gridSection: SectionDescriptor = {
++  name: 'grid',
++  title: 'Layout grid',
++  fields: [
++    field({
++      label: 'Layout grid',
++      kind: 'grid',
++      min: 0,
++      appliesTo: (node) => node.type === 'frame',
++      read: (node) => (node as FrameNode).layoutGrid,
++      write: (node, value) => [
++        command('set-prop', { id: node.id, key: 'layoutGrid', value }),
++      ],
++    }),
++  ],
++};
+diff --git a/src/persist/migrations/index.ts b/src/persist/migrations/index.ts
+index 2c4c725..807cc3c 100644
+--- a/src/persist/migrations/index.ts
++++ b/src/persist/migrations/index.ts
+@@ -3,6 +3,7 @@ import { v1ToV2 } from './v1-v2.ts';
+ import { v2ToV3 } from './v2-v3.ts';
+ import { v3ToV4 } from './v3-v4.ts';
+ import { v4ToV5 } from './v4-v5.ts';
++import { v5ToV6 } from './v5-v6.ts';
+ 
+ export type RawFile = Record<string, unknown>;
+ 
+@@ -17,6 +18,7 @@ export const MIGRATIONS: readonly Migration[] = [
+   { from: 2, to: 3, run: v2ToV3 },
+   { from: 3, to: 4, run: v3ToV4 },
+   { from: 4, to: 5, run: v4ToV5 },
++  { from: 5, to: 6, run: v5ToV6 },
+ ];
+ 
+ export const LATEST = MIGRATIONS[MIGRATIONS.length - 1].to;
+diff --git a/src/persist/migrations/v5-v6.ts b/src/persist/migrations/v5-v6.ts
+new file mode 100644
+index 0000000..13a324f
+--- /dev/null
++++ b/src/persist/migrations/v5-v6.ts
+@@ -0,0 +1,14 @@
++import type { RawFile } from './index.ts';
++
++/** Version 6 gives every frame a layout grid size, 0 meaning the grid is off. */
++export function v5ToV6(file: RawFile): RawFile {
++  const nodes: Record<string, Record<string, unknown>> = {};
++  for (const [id, node] of Object.entries(
++    file.nodes as Record<string, Record<string, unknown>>
++  ))
++    nodes[id] =
++      node.type === 'frame'
++        ? { ...node, layoutGrid: node.layoutGrid ?? 0 }
++        : node;
++  return { ...file, version: 6, nodes };
++}
+diff --git a/src/persist/schema.ts b/src/persist/schema.ts
+index 9223a6e..9efcd69 100644
+--- a/src/persist/schema.ts
++++ b/src/persist/schema.ts
+@@ -3,7 +3,7 @@ import { NODE_TYPES, isContainer } from '../model/types.ts';
+ import { fail } from '../util/assert.ts';
+ 
+ /** The version `files.save()` writes. Older files are migrated up to it. */
+-export const SCHEMA_VERSION = 5;
++export const SCHEMA_VERSION = 6;
+ 
+ export interface SavedFile extends DocumentData {
+   version: number;
