@@ -41,6 +41,8 @@ export interface StateLimits {
   readonly compactionTargets: number;
   /** Records the head compaction no longer matches, listed by id. */
   readonly compactionChanges: number;
+  /** Suspect Decisions and Constraints, listed with why. */
+  readonly suspect: number;
 }
 
 export const STATE_LIMITS: StateLimits = {
@@ -57,6 +59,7 @@ export const STATE_LIMITS: StateLimits = {
   retractions: 10,
   compactionTargets: 10,
   compactionChanges: 10,
+  suspect: 10,
 };
 /**
  * Characters the Markdown aims for: under 4,000 tokens at 4 characters a
@@ -251,14 +254,20 @@ function changeRef(change: CompactionChange): string {
  */
 export function buildEffortState(
   index: FindIndex,
-  effortId: string
+  effortId: string,
+  /**
+   * Suspect records and why, from git history at HEAD: live Decisions and
+   * Constraints whose code changed after they were recorded, or that rest
+   * on dead evidence. Listed after the counts when there are any.
+   */
+  suspect: ReadonlyMap<string, readonly string[]> = new Map()
 ): EffortState {
   let limits = STATE_LIMITS;
-  let state = stateWithin(index, effortId, limits);
+  let state = stateWithin(index, effortId, limits, suspect);
   for (const step of SHRINK_STEPS) {
     if (state.markdown.length <= STATE_CHARS) break;
     limits = { ...limits, ...step };
-    state = stateWithin(index, effortId, limits);
+    state = stateWithin(index, effortId, limits, suspect);
   }
   return state;
 }
@@ -266,7 +275,8 @@ export function buildEffortState(
 function stateWithin(
   index: FindIndex,
   effortId: string,
-  limits: StateLimits
+  limits: StateLimits,
+  suspect: ReadonlyMap<string, readonly string[]>
 ): EffortState {
   const effort = index.records.get(effortId);
   const all = [...index.records.values()]
@@ -483,6 +493,35 @@ function stateWithin(
     total: countLines.length,
     shown: countLines.length,
   });
+
+  // Suspect records: live Decisions and Constraints whose code moved on
+  // after they were recorded, or that rest on dead evidence. Only when
+  // there are any.
+  const suspects = records([...suspect.keys()]);
+  if (suspects.length)
+    section(
+      'Suspect records',
+      [
+        `**SUSPECT**: ${count(
+          suspects.length,
+          'live record'
+        )} may be out of date: the code ${
+          suspects.length === 1 ? 'it rests' : 'they rest'
+        } on changed after ${
+          suspects.length === 1 ? 'it was' : 'they were'
+        } recorded, or ${
+          suspects.length === 1 ? 'it rests' : 'they rest'
+        } on dead evidence. Read the code first; where they disagree, the code is the current behaviour.`,
+      ],
+      suspects.map((record) => ({
+        ids: [record.id],
+        lines: [
+          `- ${ref(record.id)}: ${(suspect.get(record.id) ?? []).join('; ')}`,
+        ],
+      })),
+      limits.suspect,
+      `suspect records; \`proof records ${effortId} --suspect\``
+    );
 
   // Open Issues, blockers first, each with what it gates and comes from.
   const openIssues = all

@@ -522,6 +522,12 @@ export interface FindHit {
    * was renamed. The renderer prints them as given and never cuts them.
    */
   readonly codeNotes?: readonly string[];
+  /**
+   * Set by the caller: the warning for a live Decision or Constraint whose
+   * code changed after it was recorded, or that rests on dead evidence.
+   * Printed under the title and never cut.
+   */
+  readonly suspect?: string;
   /** With `governed`: the ties of every chain member, strongest first. */
   readonly via?: readonly FindVia[];
   /** With `--refs`: where the shown version lives, as `only on feat/a`. */
@@ -1271,9 +1277,9 @@ function attachedLine(attached: NonNullable<FindHit['attached']>): string {
 
 const VIAS_SHOWN = 3;
 
-/** The `via:`, `branch:`, and code note lines, which are never cut. */
+/** The suspect, `via:`, `branch:`, and code note lines, which are never cut. */
 function tieLines(hit: FindHit): string[] {
-  const lines: string[] = [];
+  const lines: string[] = hit.suspect ? [`   ${hit.suspect}`] : [];
   const vias = (hit.via ?? []).filter((via) => via.text);
   if (vias.length)
     lines.push(

@@ -415,7 +415,10 @@ test.serial(
       cwd
     );
     t.is(resting.code, 0, resting.stderr);
-    t.regex(JSON.parse(resting.stdout).summary, /^1 record; proposed 1;/);
+    t.regex(
+      JSON.parse(resting.stdout).summary,
+      /^SUSPECT — this Decision rests on records that are no longer live: .* \| 1 record; proposed 1;/
+    );
     const refused = await runRead(
       ['records', effortId, '--state', 'invalidated'],
       cwd

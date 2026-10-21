@@ -1853,12 +1853,21 @@ export default { source: source(), transformer: transformer(), content: proofCon
     );
     t.true((await digest(secondId)).includes('- Stale: no.'));
 
-    // Other records print what they printed before.
+    // Other records print what they printed before, but for the warning
+    // that the Decision now rests on a replaced record.
     const decisionAfter = await digest(decision);
     t.false(decisionAfter.includes('## Compaction'));
     t.false(decisionAfter.includes('## Changes since compaction'));
+    t.true(
+      decisionAfter.includes(
+        `> SUSPECT — this Decision rests on records that are no longer live: ${measured} (superseded).`
+      )
+    );
     t.is(
-      decisionAfter.replace(/^served_generation: .*$/m, ''),
+      decisionAfter
+        .replace(/^served_generation: .*$/m, '')
+        .replace(' (suspect: dead evidence)', '')
+        .replace(/^> SUSPECT — .*\n\n/m, ''),
       decisionBefore.replace(/^served_generation: .*$/m, '')
     );
   }
@@ -1959,7 +1968,11 @@ export default { source: source(), transformer: transformer(), content: proofCon
       'invalidated,rejected'
     );
     t.is(spawned.code, 0, spawned.stderr);
-    t.regex(JSON.parse(spawned.stdout).summary, /^1 record;/);
+    // A lone suspect record's warning leads the summary.
+    t.regex(
+      JSON.parse(spawned.stdout).summary,
+      /^SUSPECT — this Decision rests on records that are no longer live: .* \| 1 record;/
+    );
     const refused = await runCli(
       cwd,
       'proof',

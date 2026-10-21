@@ -212,6 +212,20 @@ Pick the read by what you need, in this order:
    commits' subjects. Read those commits before you rely on what the record
    says the code does. An anchor that still holds, and code on disk that is
    not committed yet, add nothing.
+
+   **SUSPECT means the code wins.** A live Decision or Constraint whose code
+   moved on after it was recorded prints `SUSPECT — the code this Decision rests on changed after it was recorded: <reasons>. Read the code first; where they disagree, the code is the current behaviour.` before its body
+   in `get`, on its find card, above the head compaction in `brief`, in
+   `state`, and as `(suspect: …)` on listings. The reasons: a code Citation
+   it cites or names went stale, a code file it names was deleted, or a
+   quarter of the lines a code file it names had then is rewritten or
+   removed since. One that rests on a dead record says so instead. A
+   listing with `suspect_limit` in `cap_reasons` checked only part of its
+   records; `proof get` checks one. Do not follow a suspect record past the code: read the
+   files and commits it names, build on what the code does now, and say in
+   your answer which recorded rule the code no longer follows.
+   `proof records <effortId> --suspect` lists them.
+
 5. **Before building on a Decision: `proof find --refs all`.** It overlays
    the Proof records other branches change, without a checkout, tags each
    card `main`, `only on <ref>`, or `differs on <ref>: <here> vs <there>`
@@ -227,7 +241,8 @@ Pick the read by what you need, in this order:
    `superseded`, `retracted`, any standing a card prints) lists records by
    where they stand, links included. `--rests-on invalidated` lists the live
    records that derive from, cite, or give as evidence a record in that
-   standing.
+   standing. `--suspect` lists the live Decisions and Constraints that read
+   as SUSPECT.
 
 Browse digests (`list`, `records`, `relations`, `blocking-decisions`) excerpt
 each body at 600 chars / 12 lines (`[…truncated]`). **`proof get` digests

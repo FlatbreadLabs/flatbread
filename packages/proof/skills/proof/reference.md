@@ -241,8 +241,11 @@ order:
 3. If `cap_reasons` is not empty, narrow the query or fail closed. It can hold
    several sorted, duplicate-free values from `primary_records`,
    `displayed_edges`, `bytes`, `find_limit` (`proof find` matched more
-   records than it shows), and `state_limit` (`proof state` cut at least one
-   list short; each cut list says how many it left out).
+   records than it shows), `state_limit` (`proof state` cut at least one
+   list short; each cut list says how many it left out), and
+   `suspect_limit` (the suspect check stopped at a cap or its git budget,
+   so a record it did not flag may still be suspect; `proof get <id>`
+   checks one record on its own).
 4. A hard cap alone leaves `page.has_more: false` and `next_cursor: null`.
    Paging and hard caps can occur together, but caps never create a cursor.
 
@@ -254,7 +257,7 @@ digest or `summary` as a data feed.
 ```bash
 flatbread proof get <id> [--resolve exact|head] [consistency flags]
 flatbread proof list [--status active,paused,...] [--limit n] [--cursor c] [consistency flags]
-flatbread proof records <effortId> [--kinds k1,k2] [--state s1,s2] [--status s1,s2] [--standing s1,s2] [--rests-on s1,s2] [--kind k1,k2] [--since iso] [--until iso] [--retracted exclude|include|only] [--limit n] [--cursor c] [consistency flags]
+flatbread proof records <effortId> [--kinds k1,k2] [--state s1,s2] [--status s1,s2] [--standing s1,s2] [--rests-on s1,s2] [--suspect] [--kind k1,k2] [--since iso] [--until iso] [--retracted exclude|include|only] [--limit n] [--cursor c] [consistency flags]
 flatbread proof relations <effortId> <fromId> --relations r1,r2 [--limit n] [--cursor c] [consistency flags]
 flatbread proof blocking-decisions <effortId> [consistency flags]
 flatbread proof brief <effortId> [consistency flags]
@@ -298,6 +301,9 @@ flatbread proof serve [--socket .flatbread/proof/serve.sock]
   give as evidence a record in one of those standings, in any Effort. The
   record that overturned it does not count. This is the rule behind the
   count in `proof state`'s Dead evidence.
+- `--suspect` keeps the live Decisions and Constraints that are suspect
+  (see [Suspect Decisions and Constraints](#suspect-decisions-and-constraints)).
+  The envelope's `suspect` maps each id on the page to its warning.
 - `--relations` values: `derives_from`, `supersedes`, `superseded_by`,
   `invalidates`, `invalidated_by`, `rejected_by`, `mitigated_by`,
   `resolved_by`, `evidence`, `cites` (one hop, explicit only). Missing targets
@@ -539,6 +545,74 @@ the last 500 commits. Path-limited walks have no cap on length, as for
 any `git log -- <path>`: `--follow` on the target file, trailer reads, and
 the deletion lookup for a path HEAD lacks.
 
+### Suspect Decisions and Constraints
+
+A live Decision or Constraint is **suspect** when the code it rests on
+moved or changed after it was recorded, or when it rests on dead evidence.
+Every read that shows one prints, before its body (under its heading in a
+digest, under its title on a find card):
+
+```text
+SUSPECT — the code this Decision rests on changed after it was recorded: src/keys/keymap.ts: #registerBinding renamed to legacyAction in bc1c5b5 "Split key bindings by scope"; src/keys/keymap.ts: 20 of the 57 lines it had when this was recorded are rewritten or removed (git diff 1722a2a HEAD); since then: bc1c5b5 "Split key bindings by scope", 07b910e "…", 54dc6ec "…", +1 more. Read the code first; where they disagree, the code is the current behaviour.
+SUSPECT — this Decision rests on records that are no longer live: fnd-… (invalidated). Check what replaced them before relying on it.
+```
+
+**The code wins.** The record says what was true when it was written; a
+suspect one may describe code that has since been replaced. Read the files
+and commits the warning names before following it, build on what the code
+does now, and say which recorded rule the code no longer follows. Only a
+person, or a new Decision that supersedes it, changes the record.
+
+It is suspect when any of these holds:
+
+1. **A code Citation tied to it is stale** at HEAD: its path is gone, or
+   its symbol is gone or renamed, by the checks in
+   [Code anchors at HEAD](#code-anchors-at-head) (a `changed since` anchor
+   alone does not count). Tied means it cites the Citation, the Citation
+   cites it, derives from it, or is evidence for it, the Citation is
+   within 2 `derives_from`, `evidence`, or `cites` links of it, or its
+   title or body names the Citation's symbol as code **and** it, or a
+   record within those 2 links, names the Citation's file. A symbol is
+   named as a whole word when the name can only be an identifier
+   (`registerBinding`, `DEFAULT_KEYMAP`, `parse2`), otherwise only as
+   `name(`, `.name`, `#name`, or `` `name` ``, so a symbol that is also an
+   English word is not found in prose, and the dotted parts of a file name
+   (`package.json`, `vite.config.ts`) are not `.name`. The same name in
+   another file is another symbol.
+2. **A code file its title or body names was deleted or largely
+   rewritten.** A named file is the file at HEAD with that path, or the one
+   file whose path ends with it (`keys/keymap.ts`, `transform.ts`); docs
+   (`.md`, `.mdx`, `.txt`, `.rst`, `.adoc`) are left out. Deleted: HEAD and
+   the working tree lack it and history has the commit that deleted it; a
+   bare name (`legacy.ts`) counts when history deleted exactly one file of
+   that name. A file that only moved is followed to its new path.
+   Rewritten: at least max(10, min(100, a quarter of the lines the file had
+   then)) of the lines it had at the commit that added the record's file
+   are rewritten or removed at HEAD, by one `git diff --numstat` between
+   that commit and HEAD, so work merged from a branch counts whenever it
+   was committed. Lines only added (implementing the record, appending to
+   the file) never count, nor does a file that did not exist yet, nor a
+   record whose file is not committed. The warning gives the lines, the
+   diff to read, and up to 3 subjects of the newest commits since.
+3. **It rests on dead evidence:** the `--rests-on` rule, as `proof state`'s
+   Dead evidence counts it, less a record superseded by a live revision of
+   itself (a `superseded_by` chain through records of the same kind and
+   title that ends at a live one).
+
+Where: `get` (and its summary, which leads with the warning), each digest
+record (`records`, `relations`, `blocking-decisions`), find cards and the
+find summary, `brief` (a block above the head compaction listing the
+Effort's suspect records, and how many of them the head derives from),
+`state` (a `Suspect records` section after the counts, only when there are
+any), and the index line of every digest as `(suspect: code changed)` or
+`(suspect: dead evidence)`. A check reads at most 24 anchors, asks
+history about at most 6 gone paths, diffs at most 16 record commits
+against HEAD, and has its own budget of 60 local git commands; reads that
+walk history stop after 5 seconds. A check that hits any of these says
+so: `cap_reasons` holds `suspect_limit`, `complete` is false, and the
+summary says a record not flagged may still be suspect. `proof get <id>`
+checks one record on its own.
+
 ### `proof find --refs`: what other branches propose
 
 `--refs feat/a,origin/feat/b` or `--refs all` overlays records from other
@@ -632,6 +706,9 @@ The Markdown has these sections, in order:
   Findings, and Constraints also by their own `kind` (`blocker`, `question`,
   `hard`, …), how many Decisions were ever reopened, and how many records
   are live or retracted. Exact numbers, never cut.
+- **Suspect records:** shown only when the Effort has any. Each live
+  Decision or Constraint that is suspect, with why (see
+  [Suspect Decisions and Constraints](#suspect-decisions-and-constraints)).
 - **Open Issues and blockers:** each open Issue, blockers first, with the
   live Decisions that derive from it (`gates`), other live records built on
   it, and what it comes from.
