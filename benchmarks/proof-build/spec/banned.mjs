@@ -6,10 +6,18 @@
 // panel", "undo" or "layers" are allowed. Matching is case-insensitive and
 // by substring, so keep entries specific.
 //
-// BANNED_IN_CODE: the wording of the six proof-only rules (R1 to R6). The
-// code, tests and docs of both variants must not state a rule or its reason;
-// the commit messages are covered by BANNED_IN_PROOF's scan as well, since
-// gen-bed.mjs scans them with both lists.
+// The proof-only-hard tasks are the exception: their rules are product
+// decisions recorded before the feature existed, so their records name the
+// feature's area on purpose. What Proof may not hold for them is the
+// prompt's own product names (palette titles, the event name), listed
+// after the older tasks' words; gate.mjs also checks that no prompt echoes
+// its rule's records.
+//
+// BANNED_IN_CODE: the wording of the proof-only rules (R1 to R6) and of the
+// proof-only-hard rules (U1 to U8). The code, tests and docs of both variants
+// must not state a rule or its reason; the commit messages are covered by
+// BANNED_IN_PROOF's scan as well, since gen-bed.mjs scans them with both
+// lists.
 export const BANNED_IN_PROOF = [
   'corner radius',
   'radius',
@@ -70,6 +78,17 @@ export const BANNED_IN_PROOF = [
   'fuchsia',
   'maroon',
   'navy',
+  // proof-only-hard: the prompts' product names
+  'layerrename',
+  'increase font size',
+  'decrease font size',
+  'frame selection',
+  'replace colour',
+  'replace color',
+  'select same fill',
+  'round to pixels',
+  'review comments',
+  'hand to developers',
 ];
 
 export const BANNED_IN_CODE = [
@@ -101,4 +120,51 @@ export const BANNED_IN_CODE = [
   'never goes into',
   'dirty',
   'marked it changed',
+  // U1: names and text only for plugins with export
+  'northwind',
+  'security review',
+  'document content',
+  'granted export',
+  'cleared for export',
+  // U2: text size steps follow the type scale
+  'type scale',
+  'halden',
+  'token check',
+  'next size on',
+  // U3: a frame made around layers has no fill and no clipping
+  'wrap in frame',
+  'empty fills list',
+  'clip off',
+  'white fill',
+  'no clipping',
+  // U4: document-wide edits skip locked layers, include hidden ones
+  'brightline',
+  'signed off',
+  'legal-approved',
+  'hover states',
+  'sweep the whole document',
+  // U5: picking similar layers stays in the top-level frame
+  'pick-similar',
+  'top-level frame that holds',
+  'outside every frame',
+  'off-screen',
+  'starting layer',
+  // U6: a whole-pixel fit rounds edges, not sizes
+  'abutting',
+  'pixel fit',
+  'seams',
+  'rounds edges',
+  'whole-pixel',
+  // U7: comments outside the file, out of history, outliving layers
+  'not deliverables',
+  'working notes',
+  'keyed by the document',
+  'detached',
+  'outlives',
+  'review notes',
+  // U8: exporter plugins; no layer names or hidden layers in exports
+  'exporter plugin',
+  'export module',
+  'working names',
+  'client sites',
 ];

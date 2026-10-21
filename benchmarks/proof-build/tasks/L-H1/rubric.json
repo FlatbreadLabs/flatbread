@@ -1,0 +1,14 @@
+{
+  "include": [
+    "Comments and their threads are stored apart from the document, in their own store keyed by the document; files.save() never writes them and the saved file format does not change for them.",
+    "Adding, replying to, resolving, reopening or deleting a comment is never a history entry: Undo and Redo never add or remove a comment.",
+    "A comment pinned to a layer records the layer id and its point on the canvas; deleting the layer does not delete the comment, which stays at its last point, marked as detached from its layer.",
+    "Plugins with the export capability get comment text in comment events; plugins without it get the comment and layer ids only.",
+    "Plugin API v1 gains no new member: plugins hear about comments through a new event."
+  ],
+  "avoid": [
+    "Storing comments in the document file, for example as a comments list beside the nodes or on each node, or adding them to the saved schema with a migration.",
+    "Making comment actions commands on the history, so that Undo can remove or bring back a comment.",
+    "Deleting a layer's comments when the layer is deleted."
+  ]
+}

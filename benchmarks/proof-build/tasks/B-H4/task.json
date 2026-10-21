@@ -1,0 +1,22 @@
+{
+  "id": "B-H4",
+  "kind": "build",
+  "category": "proof-only-hard",
+  "rules": ["U4"],
+  "records": ["commands.iss-recolour-request", "commands.dec-sweeping-edits"],
+  "prompt": "I'd like Replace colour in the palette, for swapping one colour for another across a document. I type the colour to find and the colour to use, separated by a space, for example #FF0000 #00AA00. Fills and strokes in the first colour then get the second, in groups and frames too, whatever is selected. If I type something it can't read, nothing changes, and one Undo puts the old colour back everywhere.",
+  "featureWords": ["replace colour"],
+  "leakWords": [
+    "brightline",
+    "signed off",
+    "legal-approved",
+    "hover states",
+    "sweep the whole document"
+  ],
+  "visibleIn": [],
+  "reference": "Walks the document and replaces the colour in fills and strokes in one batch, skipping locked layers and everything inside a locked group or frame; hidden layers change.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Replaces the colour on every layer, locked ones included."
+  }
+}

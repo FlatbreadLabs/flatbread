@@ -29,9 +29,11 @@
 // empty diff would otherwise pass them; `constraints_raw` is the plain
 // count, for reference.
 //
-// Primary endpoints (DESIGN.md §7): all-green on proof-only tasks (H1)
-// and on stale tasks (H3), each arm against `none`, ten sign tests
-// Holm-corrected together (`holm_primary`, keyed `<category>:<arm>`). The
+// Primary endpoints (DESIGN.md §7): all-green on proof-only tasks (H1),
+// on stale tasks (H3) and, from v2 of the bed, on proof-only-hard tasks
+// (H5), each arm against `none`, fifteen sign tests Holm-corrected
+// together (`holm_primary`, keyed `<category>:<arm>`); a run without
+// proof-only-hard tasks keeps the original ten. The
 // pooled all-green over every build task is secondary, Holm-corrected
 // across the five primary arms (`holm_all_green`). `dump10x` is compared
 // with `dump` too, without correction.
@@ -63,7 +65,7 @@ import { ARMS } from './arms.mjs';
 import { listSessions, parseArgs, readJson, splitOf } from './common.mjs';
 
 const PRIMARY = ['skill', 'brief', 'find', 'findcode', 'dump'];
-const PRIMARY_CATEGORIES = ['proof-only', 'stale'];
+const PRIMARY_CATEGORIES = ['proof-only', 'stale', 'proof-only-hard'];
 const BUILD_GROUPS = [
   'all_green',
   'acceptance',

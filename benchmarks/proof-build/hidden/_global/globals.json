@@ -1,1 +1,1 @@
-{ "global-rules.test.ts": ["proof-only", "stale"] }
+{ "global-rules.test.ts": ["proof-only", "stale", "proof-only-hard"] }

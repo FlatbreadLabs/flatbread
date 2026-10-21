@@ -1,0 +1,22 @@
+{
+  "id": "B-H5",
+  "kind": "build",
+  "category": "proof-only-hard",
+  "rules": ["U5"],
+  "records": ["layers.fnd-offscreen-picks", "layers.dec-likeness-scope"],
+  "prompt": "Add Select same fill to the palette. With one layer selected, it selects the layers whose fill is the same colour as that one's, the original included, so I can change them together, even when they sit inside groups. It's offered only when exactly one layer with a fill is selected.",
+  "featureWords": ["select same fill"],
+  "leakWords": [
+    "pick-similar",
+    "top-level frame that holds",
+    "outside every frame",
+    "off-screen",
+    "starting layer"
+  ],
+  "visibleIn": [],
+  "reference": "Searches only the top-level frame that holds the selected layer, at any depth, or, for a layer outside every frame, the other layers outside frames.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Searches the whole document, so matching layers on every other screen are selected too."
+  }
+}

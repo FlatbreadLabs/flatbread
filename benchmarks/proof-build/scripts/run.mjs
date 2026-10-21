@@ -5,7 +5,7 @@
 //   node scripts/run.mjs <work-dir> --name <run> --bed <p4/bed>
 //        [--none <p4/bed-none>] [--bed10x <p4/bed-x10>]
 //        [--tasks <p4/tasks>] [--arms none,skill,brief,find,findcode,dump]
-//        [--only build|plan|proof-only|code-visible|stale|control]
+//        [--only build|plan|proof-only|code-visible|stale|control|proof-only-hard]
 //        [--ids B-P1,L-K1] [--jobs 8] [--timeout 1500] [--model haiku]
 //        [--effort <level>] [--prepare-only] [--keep]
 //
@@ -449,10 +449,10 @@ async function main() {
   const tasks = pickTasks(loadTasks(o.tasks), o);
   if (!tasks.length) throw new Error('No tasks picked');
   // Alternate arms task by task, so a change in API speed over the run
-  // falls on every arm alike.
+  // falls on every arm alike. A task's `skipArms` (task.json) are left out.
   const sessions = [];
   for (const task of tasks)
-    for (const arm of o.arms)
+    for (const arm of o.arms.filter((a) => !task.skipArms?.includes(a)))
       sessions.push({
         task,
         arm,
@@ -465,7 +465,7 @@ async function main() {
     if (!meta?.done) todo.push(s);
   }
   console.log(
-    `${sessions.length} sessions (${tasks.length} tasks x ${o.arms.length} arms), ${todo.length} to run, ${o.jobs} at a time`
+    `${sessions.length} sessions (${tasks.length} tasks x ${o.arms.length} arms, less skipped arms), ${todo.length} to run, ${o.jobs} at a time`
   );
   const cache = join(o.dir, '.inject');
   if (o.prepareOnly) {

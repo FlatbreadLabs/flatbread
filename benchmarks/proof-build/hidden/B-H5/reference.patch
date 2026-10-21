@@ -1,0 +1,73 @@
+diff --git a/src/commands/palette.ts b/src/commands/palette.ts
+index 874d40e..061721d 100644
+--- a/src/commands/palette.ts
++++ b/src/commands/palette.ts
+@@ -10,6 +10,8 @@ import { alignCommand, distributeCommand } from './builtin/align.ts';
+ import type { Alignment, Axis } from './builtin/align.ts';
+ import { walk } from '../model/query.ts';
+ import { isInteractive } from '../selection/rules.ts';
++import { sameFill } from '../selection/same.ts';
++import { firstFill } from '../model/style.ts';
+ 
+ /** A command as the palette lists it, by its title. */
+ export interface PaletteEntry {
+@@ -108,6 +110,18 @@ export const BUILTIN_ENTRIES: readonly PaletteEntry[] = [
+       ctx.selection.set(ids);
+     },
+   },
++  {
++    title: 'Select same fill',
++    enabled(ctx) {
++      if (ctx.selection.size !== 1) return false;
++      const node = ctx.doc.get(ctx.selection.ids()[0]);
++      return node !== undefined && firstFill(node) !== null;
++    },
++    run(ctx) {
++      const ids = sameFill(ctx.doc, ctx.selection.ids()[0]);
++      if (ids.length) ctx.selection.set(ids);
++    },
++  },
+   {
+     title: 'Deselect all',
+     hint: 'Escape',
+diff --git a/src/selection/same.ts b/src/selection/same.ts
+new file mode 100644
+index 0000000..77b8123
+--- /dev/null
++++ b/src/selection/same.ts
+@@ -0,0 +1,35 @@
++import type { Document } from '../model/document.ts';
++import type { SceneNode } from '../model/types.ts';
++import { firstFill } from '../model/style.ts';
++import { walk } from '../model/query.ts';
++import { ancestors, descendants } from '../model/tree.ts';
++import { isInteractive } from './rules.ts';
++
++/** The top-level frame that holds `id`, or null when it sits outside every frame. */
++function topFrame(doc: Document, id: string): string | null {
++  const frames = ancestors(doc, id).filter((a) => a.type === 'frame');
++  return frames.length ? frames[frames.length - 1].id : null;
++}
++
++/**
++ * `id` and the layers whose fill is the same colour as its fill. The search
++ * stays inside the top-level frame that holds `id`, at any depth; a layer
++ * outside every frame looks only at the other layers outside frames.
++ */
++export function sameFill(doc: Document, id: string): string[] {
++  const color = firstFill(doc.require(id))?.color;
++  if (!color) return [];
++  const frame = topFrame(doc, id);
++  const pool: SceneNode[] = [];
++  if (frame !== null) pool.push(...descendants(doc, frame));
++  else
++    walk(doc, (node) => {
++      if (node.type === 'frame') return false;
++      pool.push(node);
++    });
++  const matches = pool
++    .filter((node) => node.id !== id && firstFill(node)?.color === color)
++    .filter((node) => isInteractive(doc, node.id))
++    .map((node) => node.id);
++  return [id, ...matches];
++}

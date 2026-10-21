@@ -14,15 +14,30 @@ alternatives, Constraints, Findings, Risks, code Citations) sit in the
 graph. The none variant has the same code and no Proof at all. The 10x
 variant adds 9 filler Efforts, about ten times the records.
 
-There are 26 tasks: 18 build tasks graded by hidden tests and 8 plan tasks
-scored by a blind rubric. Each task belongs to one category:
+There are 34 tasks: 24 build tasks graded by hidden tests and 10 plan
+tasks scored by a blind rubric. Each task belongs to one category:
 
-| Category     | What makes a solution right                           | Build | Plan |
-| ------------ | ----------------------------------------------------- | ----- | ---- |
-| proof-only   | a rule that only Proof states                         | 6     | 3    |
-| code-visible | a rule Proof states and the code also shows           | 5     | 1    |
-| stale        | the code, where Proof is out of date                  | 4     | 2    |
-| control      | nothing about Proof; measures the cost of carrying it | 3     | 2    |
+| Category        | What makes a solution right                                                       | Build | Plan |
+| --------------- | --------------------------------------------------------------------------------- | ----- | ---- |
+| proof-only      | a rule that only Proof states (the code's patterns turned out to teach it)        | 6     | 3    |
+| proof-only-hard | a product decision Proof recorded before the feature existed; nothing hints at it | 6     | 2    |
+| code-visible    | a rule Proof states and the code also shows                                       | 5     | 1    |
+| stale           | the code, where Proof is out of date                                              | 4     | 2    |
+| control         | nothing about Proof; measures the cost of carrying it                             | 3     | 2    |
+
+The proof-only-hard tasks were added for v2 of the bed, after the first full
+run showed that the proof-only rules can be copied from the code:
+
+| Id   | Kind  | Request (gist)                                                                         | The rule only Proof holds                                                                                                  |
+| ---- | ----- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| B-H1 | build | a `layerrename` plugin event with `{ id, before, after }`                              | layer names reach only plugins with the `export` capability; the others get `{ id }` (a customer's security review)        |
+| B-H2 | build | Increase font size and Decrease font size in the palette                               | a step goes to the next size on the type scale (16 to 18, 13 to 14), not 1 px (a deferred customer request)                |
+| B-H3 | build | Frame selection: wrap the selection in a new frame that fits it                        | the new frame has no fill and does not clip (a usability finding: the white fill hid layers)                               |
+| B-H4 | build | Replace colour: swap one colour for another across the document                        | locked layers and their contents keep their colour; hidden layers change (agreed with two customers)                       |
+| B-H5 | build | Select same fill: select the layers with the selected layer's fill colour              | the search stays inside the selected layer's top-level frame (a usability finding: edits on screens nobody saw)            |
+| B-H6 | build | Round to pixels: X, Y, W and H of the selection become whole numbers                   | edges are rounded, not sizes, so shapes that touched still touch (a finding on the prototype's seams)                      |
+| L-H1 | plan  | review comments pinned to points or layers, with threads, resolving and a plugin event | comments live outside the document file, are never undo steps, outlive their layer; comment text only for `export` plugins |
+| L-H2 | plan  | export a frame as SVG for developers                                                   | exporters are plugins on the export capability; no layer names and no hidden layers in the output                          |
 
 Every session gets the same code and the same request. The arms differ in
 how Proof reaches the agent:
@@ -150,6 +165,29 @@ done
 node scripts/compare.mjs $P4/runs --runs r1,r2,r3 --out $P4/runs/compare.json
 ```
 
+### v2: the proof-only-hard tasks on Sonnet
+
+Pre-registered in DESIGN.md §8: the eight proof-only-hard tasks on
+`claude-sonnet-5-5` in the six primary arms (build 3 runs, plan 2,
+`dump10x` once per build task), 138 sessions, about $170 with judging.
+L-H1 and L-H2 skip `dump10x` (`skipArms` in their task.json), since the
+10x filler has Efforts on comments and on export. Rebuild the beds
+first (the proof beds changed in v2; the none bed did not), pilot on B-H1
+and B-H4, then:
+
+```sh
+node scripts/run.mjs $P4/runs --name h1 --bed $P4/bed --only proof-only-hard \
+  --model claude-sonnet-5-5 --jobs 8
+node scripts/run.mjs $P4/runs --name h2 --bed $P4/bed --only proof-only-hard \
+  --model claude-sonnet-5-5 --jobs 8
+node scripts/run.mjs $P4/runs --name h3 --bed $P4/bed --only proof-only-hard \
+  --ids B-H1,B-H2,B-H3,B-H4,B-H5,B-H6 --model claude-sonnet-5-5 --jobs 8
+node scripts/run.mjs $P4/runs --name h1 --bed $P4/bed --only proof-only-hard \
+  --arms dump10x --model claude-sonnet-5-5 --jobs 4
+```
+
+then grade, judge and compare `h1,h2,h3` as above.
+
 ## Results: Haiku, full run (2026-10-21)
 
 18 build tasks × 3 runs and 8 plan tasks × 2 runs in each of the six primary
@@ -224,6 +262,76 @@ teaches a builder most of them. The changes this points to are a read that
 marks a Decision itself as suspect when the code it rests on has moved, and
 proof-only tasks whose rules the code does not hint at.
 
+## Results: v2 (2026-10-21)
+
+Two runs on bed v2. Per-session rows and `compare.mjs` output are in
+`results/` (`sonnet-hard-*`, `haiku-suspect-*`).
+
+### Proof-only-hard tasks on Sonnet 5.5
+
+6 build tasks × 3 runs and 2 plan tasks × 2 runs in the six primary arms,
+`dump10x` once per build task except B-H1, plus a 12-session pilot: 149
+sessions on `claude-sonnet-5-5`. No session timed out; one `none` session
+was flagged and its pair dropped.
+
+| Arm        | B-H1 | B-H2 | B-H3 | B-H4 | B-H5 | B-H6 | builds all-green | plans (L-H1, L-H2) | context tokens |
+| ---------- | ---- | ---- | ---- | ---- | ---- | ---- | ---------------- | ------------------ | -------------- |
+| `none`     | 0/3  | 0/3  | 2/3  | 0/3  | 0/3  | 1/3  | **3 of 18**      | 0.25, 0.25         | 20k            |
+| `skill`    | 3/3  | 3/3  | 3/3  | 2/3  | 1/3  | 3/3  | 15 of 18         | 0.88, 1.00         | 24k            |
+| `find`     | 3/3  | 3/3  | 3/3  | 3/3  | 0/3  | 3/3  | 15 of 18         | 1.00, 1.00         | 26k            |
+| `findcode` | 3/3  | 0/3  | 2/3  | 3/3  | 0/3  | 3/3  | 11 of 18         | 1.00, 1.00         | 26k            |
+| `brief`    | 1/3  | 2/3  | 1/3  | 2/3  | 2/3  | 3/3  | 11 of 18         | 1.00, 1.00         | 34k            |
+| `dump`     | 3/3  | 3/3  | 3/3  | 3/3  | 3/3  | 3/3  | **18 of 18**     | 0.94, 1.00         | 59k            |
+| `dump10x`  | -    | 1/1  | 1/1  | 1/1  | 1/1  | 1/1  | 5 of 5           | -                  | 239k           |
+
+- **When the rule lives only in Proof, Proof decides the outcome.** Without it
+  Sonnet built the feature and broke the recorded rule (names sent to every
+  plugin, 1 px font steps, locked layers recoloured, a page-wide search).
+  Every Proof arm beats `none` on the pre-registered primary test after Holm
+  correction: `dump` p = 0.0005, `skill` and `find` 0.002, `brief` and
+  `findcode` 0.043. Counted per task, `skill` and `dump` win 6 tasks to 0
+  (p = 0.031).
+- **Pasting every record wins here** (18 of 18), the reverse of the stale
+  tasks, where it did worst. Search arms miss when the query does not reach
+  the record: `findcode` searched "increase decrease font size palette" and
+  never met the type-scale Issue (0 of 3 on B-H2, where `find` got 3 of 3), and
+  B-H5's frame rule was found by few arms.
+- **Plans:** every Proof arm scores 0.88 to 1.00 against 0.25 for `none`
+  (Wilcoxon p = 0.25 with four pairs).
+
+### The suspect warning on Haiku
+
+The stale and code-visible tasks (9 build × 3 runs, 3 plan × 2 runs) in the
+six primary arms on bed v2 with the suspect reads: 216 sessions on
+`claude-haiku-5-5`, set against v1 (old reads, bed v1). Build all-green of
+27:
+
+| Arm        | v1 (old reads) | v2 (suspect reads) | B-S3 v1 → v2 |
+| ---------- | -------------- | ------------------ | ------------ |
+| `none`     | 24             | 23                 | 3/3 → 3/3    |
+| `skill`    | 17             | 17                 | 0/3 → 1/3    |
+| `find`     | 16             | 16                 | 0/3 → 1/3    |
+| `findcode` | 17             | **20**             | 0/3 → 3/3    |
+| `brief`    | 13             | **18**             | 0/3 → 2/3    |
+| `dump`     | 12             | 12                 | 0/3 → 0/3    |
+
+- **It works when the agent reads the record.** `findcode` sessions on B-S3
+  opened the stale Decision, read the warning, followed the code and passed
+  all three runs; `findcode` stale tasks went from 9 to 12 of 12.
+- **It does not when the record is peripheral.** On B-V4, where the shortcut
+  is a side detail, sessions saw only the summary line of `find` and still
+  edited the frozen table (0 of 3).
+- **Pasted in full, it is lost.** One warning inside 89k characters of
+  records changed nothing for `dump`, and one stale plan got worse (L-S1
+  `dump` 0.64 to 0.29).
+- Bed v2 carries 18 more records than v1, so brief and dump are slightly
+  larger; the none bed is the same.
+
+So Proof's value turns on whether its record is right. Where it holds a rule
+the code cannot teach, any way of reading it lifts builds from 3 to 11–18 of
+18; where it is out of date, the more of it is pasted in, the worse builds
+get. The warning recovers the cost only for agents that open the record.
+
 ## Layout
 
 | Path                    | What it holds                                                                 |
@@ -235,6 +343,7 @@ proof-only tasks whose rules the code does not hint at.
 | `spec/filler.mjs`       | the 9 filler Efforts of the 10x graph                                         |
 | `spec/banned.mjs`       | words no record or commit may hold, so Proof never names a task               |
 | `tasks/<id>/`           | `task.json`; plan tasks also `rubric.json` and `plans/`                       |
+| `hidden/<id>/`          | hidden tests and reference and naive patches; `hidden/_global/` invariants    |
 | `scripts/gen-bed.mjs`   | builds a bed                                                                  |
 | `scripts/check-bed.mjs` | checks built beds against each other and the design                           |
 | `scripts/gate.mjs`      | the offline gate                                                              |
@@ -243,6 +352,8 @@ proof-only tasks whose rules the code does not hint at.
 | `scripts/judge.mjs`     | blinds and judges plans; the rubric gate                                      |
 | `scripts/compare.mjs`   | compares each arm with `none`                                                 |
 
-Hidden tests and the reference and naive patches are in
-`<p4>/hidden/<id>/`, never in this repository. `FLATBREAD_PROOF_SERVER`
-must stay unset; Proof reads run locally against each clone's own graph.
+Hidden tests and the reference and naive patches are in `hidden/<id>/`
+(committed since the first full run) and are copied to `<p4>/hidden/<id>/`
+for a run, so no session needs a path into this repository.
+`FLATBREAD_PROOF_SERVER` must stay unset; Proof reads run locally against
+each clone's own graph.

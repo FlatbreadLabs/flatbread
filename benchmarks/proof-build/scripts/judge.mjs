@@ -20,7 +20,7 @@
 // plausible.md (a realistic plan written from the code alone, with no
 // Proof). It passes when every good plan scores at least 0.8 and every trap
 // plan at most 0.5; the plausible scores are reported, and on proof-only
-// tasks a plausible plan scoring as high as the good one means the rubric
+// and proof-only-hard tasks a plausible plan scoring as high as the good one means the rubric
 // does not reward what only Proof says. It exits 1 when the gate fails.
 //
 // --dry-run (also --prepare-only) writes each session's judge-input.md,
@@ -398,7 +398,9 @@ async function rubricGate(o, tasks) {
       );
     }
   if (o.dryRun) return;
-  for (const task of tasks.filter((t) => t.category === 'proof-only')) {
+  for (const task of tasks.filter((t) =>
+    ['proof-only', 'proof-only-hard'].includes(t.category)
+  )) {
     const score = (w) =>
       rows.find((r) => r.task === task.id && r.which === w)?.score;
     if (score('plausible') >= score('good'))

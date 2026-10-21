@@ -1,0 +1,84 @@
+diff --git a/src/commands/builtin/group.ts b/src/commands/builtin/group.ts
+index b977927..20e4744 100644
+--- a/src/commands/builtin/group.ts
++++ b/src/commands/builtin/group.ts
+@@ -1,4 +1,5 @@
+-import { createGroup } from '../../model/factory.ts';
++import { createFrame, createGroup } from '../../model/factory.ts';
++import { selectionBounds } from '../../selection/bounds.ts';
+ import {
+   commonParent,
+   indexInParent,
+@@ -50,3 +51,47 @@ export function groupNodes(
+   });
+   return groupId;
+ }
++
++/**
++ * Puts `ids` into a new frame that fits tightly around them, placed where
++ * the frontmost of them was, then selects the frame. The layers keep their
++ * places on the canvas. Returns the frame's id, or null when nothing can be
++ * framed.
++ */
++export function frameNodes(
++  ctx: EditorContext,
++  ids: readonly string[]
++): string | null {
++  const { doc } = ctx;
++  const members = sortByPaintOrder(
++    doc,
++    topmostOnly(
++      doc,
++      ids.filter((id) => doc.has(id))
++    )
++  );
++  if (!members.length) return null;
++  const parent = commonParent(doc, members);
++  const front = members[members.length - 1];
++  let anchor = front;
++  while (doc.require(anchor).parent !== parent)
++    anchor = doc.require(anchor).parent!;
++  const bounds = selectionBounds(doc, members)!;
++  const frame = createFrame(ctx.ids, { ...bounds, fills: [], clip: false });
++  const frameId = frame.id;
++  ctx.batch('Frame selection', () => {
++    ctx.dispatch(
++      command('insert', {
++        nodes: [frame] as unknown as Json[],
++        parent,
++        index: indexInParent(doc, anchor) + 1,
++      })
++    );
++    members.forEach((id, i) => {
++      ctx.dispatch(command('reorder', { id, parent: frameId, index: i }), {
++        select: i === members.length - 1 ? [frameId] : undefined,
++      });
++    });
++  });
++  return frameId;
++}
+diff --git a/src/commands/palette.ts b/src/commands/palette.ts
+index 874d40e..e752622 100644
+--- a/src/commands/palette.ts
++++ b/src/commands/palette.ts
+@@ -1,7 +1,7 @@
+ import { fail } from '../util/assert.ts';
+ import type { EditorContext } from './types.ts';
+ import { command } from './types.ts';
+-import { groupNodes } from './builtin/group.ts';
++import { frameNodes, groupNodes } from './builtin/group.ts';
+ import { arrangeCommands } from './builtin/reorder.ts';
+ import type { Arrange } from './builtin/reorder.ts';
+ import { visibilityItems } from './builtin/visibility.ts';
+@@ -130,6 +130,11 @@ export const BUILTIN_ENTRIES: readonly PaletteEntry[] = [
+     enabled: hasSelection,
+     run: (ctx) => void groupNodes(ctx, ctx.selection.ids()),
+   },
++  {
++    title: 'Frame selection',
++    enabled: hasSelection,
++    run: (ctx) => void frameNodes(ctx, ctx.selection.ids()),
++  },
+   arrange('Bring forward', 'forward', 'Mod+]'),
+   arrange('Send backward', 'backward', 'Mod+['),
+   arrange('Bring to front', 'front', 'Mod+Shift+]'),

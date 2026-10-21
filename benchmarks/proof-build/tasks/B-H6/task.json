@@ -1,0 +1,26 @@
+{
+  "id": "B-H6",
+  "kind": "build",
+  "category": "proof-only-hard",
+  "rules": ["U6"],
+  "records": [
+    "units.iss-whole-pixels",
+    "units.fnd-pixel-fit-seams",
+    "units.dec-round-edges"
+  ],
+  "prompt": "Add Round to pixels to the palette, so icons come out crisp: afterwards the selected layers' X, Y, W and H are all whole numbers. It works on everything selected, including the layers inside selected groups and frames, and one Undo puts them all back.",
+  "featureWords": ["round to pixels"],
+  "leakWords": [
+    "abutting",
+    "pixel fit",
+    "seams",
+    "rounds edges",
+    "whole-pixel"
+  ],
+  "visibleIn": [],
+  "reference": "Rounds each layer's left, top, right and bottom edges and takes width and height from the rounded edges, in one resize command, so layers that touched still touch.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Rounds x, y, width and height each on its own, which opens a 1 px gap between shapes that met at a half pixel."
+  }
+}

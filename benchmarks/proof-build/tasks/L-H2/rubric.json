@@ -1,0 +1,12 @@
+{
+  "include": [
+    "SVG export is built as an exporter plugin that reads the saved file through the export capability (api.export.document()) and converts it; core gains no SVG export code.",
+    "No layer name appears in the SVG: no element id, class, title, desc or comment is made from a layer name.",
+    "Elements that need an id get generated ones (such as l1, l2), never ids derived from layer names.",
+    "Plugin API v1 stays as it is: the plan adds no member such as an export-to-SVG method."
+  ],
+  "avoid": [
+    "Adding an SVG export module or an export method to core or to the editor object, instead of a plugin.",
+    "Writing layer names into the SVG as ids, class names, titles or comments."
+  ]
+}

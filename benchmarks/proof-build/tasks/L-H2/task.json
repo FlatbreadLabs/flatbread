@@ -1,0 +1,23 @@
+{
+  "id": "L-H2",
+  "kind": "plan",
+  "category": "proof-only-hard",
+  "rules": ["U8", "U1", "V4"],
+  "records": [
+    "plugin.dec-exporters",
+    "plugin.con-exports-no-names",
+    "plugin.con-content-export"
+  ],
+  "prompt": "People want to export a frame as SVG to hand to developers: pick a frame and get the SVG text for it. Plan how to build this.",
+  "featureWords": ["hand to developers", "svg text for it"],
+  "leakWords": [
+    "exporter plugin",
+    "export module",
+    "working names",
+    "client sites",
+    "northwind"
+  ],
+  "visibleIn": [],
+  "skipArms": ["dump10x"],
+  "skipArmsWhy": "The 10x filler has Efforts on comments and on export (fx-comments, fx-export) whose records would conflict with this task, so dump10x would measure the conflict, not scale."
+}

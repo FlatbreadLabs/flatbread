@@ -1,0 +1,32 @@
+{
+  "id": "L-H1",
+  "kind": "plan",
+  "category": "proof-only-hard",
+  "rules": ["U7", "U1", "V4"],
+  "records": [
+    "persist.con-discussion-outside",
+    "commands.dec-history-design-only",
+    "layers.fnd-notes-lost",
+    "layers.dec-notes-outlive",
+    "plugin.con-content-export"
+  ],
+  "prompt": "We want review comments. Anyone looking at a design can pin a comment to a spot on the canvas or to a layer, others can reply in a thread, and a thread can be marked resolved and reopened. Plugin authors would like to hear when comments are added. Plan how to build this.",
+  "featureWords": [
+    "review comments",
+    "pin a comment",
+    "marked resolved and reopened"
+  ],
+  "leakWords": [
+    "not deliverables",
+    "working notes",
+    "keyed by the document",
+    "detached",
+    "outlives",
+    "northwind",
+    "document content",
+    "granted export"
+  ],
+  "visibleIn": [],
+  "skipArms": ["dump10x"],
+  "skipArmsWhy": "The 10x filler has Efforts on comments and on export (fx-comments, fx-export) whose records would conflict with this task, so dump10x would measure the conflict, not scale."
+}

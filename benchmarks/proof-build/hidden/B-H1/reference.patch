@@ -1,0 +1,141 @@
+diff --git a/docs/plugins.md b/docs/plugins.md
+index 34a6933..75c1639 100644
+--- a/docs/plugins.md
++++ b/docs/plugins.md
+@@ -31,11 +31,15 @@ Plugin API v1 is frozen.
+ 
+ ## Events
+ 
+-| Event            | Payload                |
+-| ---------------- | ---------------------- |
+-| `documentchange` | `{ ids }`              |
+-| `documentload`   | `{ name }`             |
+-| `historychange`  | `{ canUndo, canRedo }` |
++| Event            | Payload                 |
++| ---------------- | ----------------------- |
++| `documentchange` | `{ ids }`               |
++| `documentload`   | `{ name }`              |
++| `historychange`  | `{ canUndo, canRedo }`  |
++| `layerrename`    | `{ id, before, after }` |
++
++`layerrename` carries the old and new names only to plugins with the
++`export` capability; other plugins get `{ id }`.
+ 
+ ## Capabilities
+ 
+diff --git a/src/editor.ts b/src/editor.ts
+index c964d1d..aa2b309 100644
+--- a/src/editor.ts
++++ b/src/editor.ts
+@@ -92,6 +92,30 @@ export function createEditor(options: EditorOptions = {}) {
+   doc.events.on('load', ({ name }) =>
+     plugins.emit('documentload', Object.freeze({ name }))
+   );
++  // Layer names as plugins last heard them, so a rename from anywhere
++  // (palette, layers panel, undo, redo) is seen once, with its old name.
++  const names = new Map<string, string>();
++  doc.events.on('change', ({ ids: changed }) => {
++    for (const id of changed) {
++      const node = doc.get(id);
++      if (!node) {
++        names.delete(id);
++        continue;
++      }
++      const before = names.get(id);
++      names.set(id, node.name);
++      if (before !== undefined && before !== node.name)
++        plugins.emitContent(
++          'layerrename',
++          Object.freeze({ id, before, after: node.name }),
++          Object.freeze({ id })
++        );
++    }
++  });
++  doc.events.on('load', () => {
++    names.clear();
++    for (const node of doc.all()) names.set(node.id, node.name);
++  });
+   history.events.on('change', ({ canUndo, canRedo }) =>
+     plugins.emit('historychange', Object.freeze({ canUndo, canRedo }))
+   );
+diff --git a/src/plugin/events.ts b/src/plugin/events.ts
+index ef5b406..3b384e8 100644
+--- a/src/plugin/events.ts
++++ b/src/plugin/events.ts
+@@ -7,6 +7,11 @@ export interface PluginEvents {
+   documentload: { name: string };
+   /** Undo or redo availability changed. */
+   historychange: { canUndo: boolean; canRedo: boolean };
++  /**
++   * A layer's name changed. The names go only to plugins with the `export`
++   * capability; other plugins get the id alone.
++   */
++  layerrename: { id: string; before?: string; after?: string };
+ }
+ 
+ export type PluginEventName = keyof PluginEvents;
+@@ -15,6 +20,7 @@ export const PLUGIN_EVENTS: readonly PluginEventName[] = [
+   'documentchange',
+   'documentload',
+   'historychange',
++  'layerrename',
+ ];
+ 
+ export function isPluginEvent(name: string): name is PluginEventName {
+diff --git a/src/plugin/host.ts b/src/plugin/host.ts
+index 9e82c76..0815d02 100644
+--- a/src/plugin/host.ts
++++ b/src/plugin/host.ts
+@@ -20,6 +20,7 @@ type AnyListener = (payload: never) => void;
+ interface Loaded {
+   manifest: PluginManifest;
+   listeners: Map<PluginEventName, Set<AnyListener>>;
++  canExport: boolean;
+ }
+ 
+ export class PluginHost {
+@@ -39,10 +40,14 @@ export class PluginHost {
+     if (this.plugins.has(manifest.name))
+       fail('duplicate-plugin', `plugin ${manifest.name} is already loaded`);
+     const capabilities = checkCapabilities(manifest.capabilities);
+-    const loaded: Loaded = { manifest, listeners: new Map() };
++    const loaded: Loaded = {
++      manifest,
++      listeners: new Map(),
++      canExport: capabilities.includes('export'),
++    };
+     this.plugins.set(manifest.name, loaded);
+     this.sandbox.restore(manifest.name);
+-    const api = this.createApi(loaded, capabilities.includes('export'));
++    const api = this.createApi(loaded, loaded.canExport);
+     this.sandbox.call(manifest.name, 'main', () => manifest.main(api));
+     return api;
+   }
+@@ -58,11 +63,26 @@ export class PluginHost {
+   }
+ 
+   emit<K extends PluginEventName>(event: K, payload: PluginEvents[K]): void {
+-    for (const [name, plugin] of this.plugins)
++    this.emitContent(event, payload, payload);
++  }
++
++  /**
++   * Sends `full` to plugins with the `export` capability and `bare` to the
++   * rest. Layer names and text are document content, which only plugins
++   * granted export may read.
++   */
++  emitContent<K extends PluginEventName>(
++    event: K,
++    full: PluginEvents[K],
++    bare: PluginEvents[K]
++  ): void {
++    for (const [name, plugin] of this.plugins) {
++      const payload = plugin.canExport ? full : bare;
+       for (const listener of [...(plugin.listeners.get(event) ?? [])])
+         this.sandbox.call(name, event, () =>
+           (listener as (p: PluginEvents[K]) => void)(payload)
+         );
++    }
+   }
+ 
+   listenerCount(event: PluginEventName): number {
