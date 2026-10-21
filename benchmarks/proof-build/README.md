@@ -262,6 +262,76 @@ teaches a builder most of them. The changes this points to are a read that
 marks a Decision itself as suspect when the code it rests on has moved, and
 proof-only tasks whose rules the code does not hint at.
 
+## Results: v2 (2026-10-21)
+
+Two runs on bed v2. Per-session rows and `compare.mjs` output are in
+`results/` (`sonnet-hard-*`, `haiku-suspect-*`).
+
+### Proof-only-hard tasks on Sonnet 5.5
+
+6 build tasks × 3 runs and 2 plan tasks × 2 runs in the six primary arms,
+`dump10x` once per build task except B-H1, plus a 12-session pilot: 149
+sessions on `claude-sonnet-5-5`. No session timed out; one `none` session
+was flagged and its pair dropped.
+
+| Arm        | B-H1 | B-H2 | B-H3 | B-H4 | B-H5 | B-H6 | builds all-green | plans (L-H1, L-H2) | context tokens |
+| ---------- | ---- | ---- | ---- | ---- | ---- | ---- | ---------------- | ------------------ | -------------- |
+| `none`     | 0/3  | 0/3  | 2/3  | 0/3  | 0/3  | 1/3  | **3 of 18**      | 0.25, 0.25         | 20k            |
+| `skill`    | 3/3  | 3/3  | 3/3  | 2/3  | 1/3  | 3/3  | 15 of 18         | 0.88, 1.00         | 24k            |
+| `find`     | 3/3  | 3/3  | 3/3  | 3/3  | 0/3  | 3/3  | 15 of 18         | 1.00, 1.00         | 26k            |
+| `findcode` | 3/3  | 0/3  | 2/3  | 3/3  | 0/3  | 3/3  | 11 of 18         | 1.00, 1.00         | 26k            |
+| `brief`    | 1/3  | 2/3  | 1/3  | 2/3  | 2/3  | 3/3  | 11 of 18         | 1.00, 1.00         | 34k            |
+| `dump`     | 3/3  | 3/3  | 3/3  | 3/3  | 3/3  | 3/3  | **18 of 18**     | 0.94, 1.00         | 59k            |
+| `dump10x`  | -    | 1/1  | 1/1  | 1/1  | 1/1  | 1/1  | 5 of 5           | -                  | 239k           |
+
+- **When the rule lives only in Proof, Proof decides the outcome.** Without it
+  Sonnet built the feature and broke the recorded rule (names sent to every
+  plugin, 1 px font steps, locked layers recoloured, a page-wide search).
+  Every Proof arm beats `none` on the pre-registered primary test after Holm
+  correction: `dump` p = 0.0005, `skill` and `find` 0.002, `brief` and
+  `findcode` 0.043. Counted per task, `skill` and `dump` win 6 tasks to 0
+  (p = 0.031).
+- **Pasting every record wins here** (18 of 18), the reverse of the stale
+  tasks, where it did worst. Search arms miss when the query does not reach
+  the record: `findcode` searched "increase decrease font size palette" and
+  never met the type-scale Issue (0 of 3 on B-H2, where `find` got 3 of 3), and
+  B-H5's frame rule was found by few arms.
+- **Plans:** every Proof arm scores 0.88 to 1.00 against 0.25 for `none`
+  (Wilcoxon p = 0.25 with four pairs).
+
+### The suspect warning on Haiku
+
+The stale and code-visible tasks (9 build × 3 runs, 3 plan × 2 runs) in the
+six primary arms on bed v2 with the suspect reads: 216 sessions on
+`claude-haiku-5-5`, set against v1 (old reads, bed v1). Build all-green of
+27:
+
+| Arm        | v1 (old reads) | v2 (suspect reads) | B-S3 v1 → v2 |
+| ---------- | -------------- | ------------------ | ------------ |
+| `none`     | 24             | 23                 | 3/3 → 3/3    |
+| `skill`    | 17             | 17                 | 0/3 → 1/3    |
+| `find`     | 16             | 16                 | 0/3 → 1/3    |
+| `findcode` | 17             | **20**             | 0/3 → 3/3    |
+| `brief`    | 13             | **18**             | 0/3 → 2/3    |
+| `dump`     | 12             | 12                 | 0/3 → 0/3    |
+
+- **It works when the agent reads the record.** `findcode` sessions on B-S3
+  opened the stale Decision, read the warning, followed the code and passed
+  all three runs; `findcode` stale tasks went from 9 to 12 of 12.
+- **It does not when the record is peripheral.** On B-V4, where the shortcut
+  is a side detail, sessions saw only the summary line of `find` and still
+  edited the frozen table (0 of 3).
+- **Pasted in full, it is lost.** One warning inside 89k characters of
+  records changed nothing for `dump`, and one stale plan got worse (L-S1
+  `dump` 0.64 to 0.29).
+- Bed v2 carries 18 more records than v1, so brief and dump are slightly
+  larger; the none bed is the same.
+
+So Proof's value turns on whether its record is right. Where it holds a rule
+the code cannot teach, any way of reading it lifts builds from 3 to 11–18 of
+18; where it is out of date, the more of it is pasted in, the worse builds
+get. The warning recovers the cost only for agents that open the record.
+
 ## Layout
 
 | Path                    | What it holds                                                                 |
