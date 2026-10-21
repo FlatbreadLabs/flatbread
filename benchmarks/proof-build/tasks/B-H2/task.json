@@ -1,0 +1,16 @@
+{
+  "id": "B-H2",
+  "kind": "build",
+  "category": "proof-only-hard",
+  "rules": ["U2"],
+  "records": ["panel.iss-size-steps", "panel.dec-size-steps"],
+  "prompt": "I'd like Increase font size and Decrease font size in the palette, so I can make the selected text bigger or smaller a step at a time without typing a number. They change every text layer in the selection, each from its own size, and leave other layers alone. They're offered only when the selection includes a text layer. The text box should grow or shrink to fit, as it does when I type a size, and one Undo takes a whole step back.",
+  "featureWords": ["increase font size", "decrease font size"],
+  "leakWords": ["type scale", "halden", "token check", "next size on"],
+  "visibleIn": [],
+  "reference": "Steps each selected text layer to the next size on the type scale (8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 64, 72, 96; 1 px below it, 8 px above), setting the height as a typed size does, in one batch.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Adds or takes away 1 px per step, as the prototype did, so 16 goes to 17."
+  }
+}

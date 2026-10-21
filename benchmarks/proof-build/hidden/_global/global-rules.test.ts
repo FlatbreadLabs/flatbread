@@ -1,7 +1,7 @@
 // Invariants that hold rules only Proof states: a shipped migration step
 // never changes its output (R3), and one palette command run is at most
-// one history entry (R1). grade.mjs runs this file only with proof-only
-// and stale tasks (see globals.json). The expected values were computed
+// one history entry (R1). grade.mjs runs this file only with proof-only,
+// proof-only-hard and stale tasks (see globals.json). The expected values were computed
 // from the editor as it was before any task.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

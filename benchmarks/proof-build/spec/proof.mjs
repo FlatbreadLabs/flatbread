@@ -1921,8 +1921,226 @@ export const PROOF = {
   },
 };
 
+// Product decisions about work that was not built yet: requests deferred
+// with their agreed behaviour, Decisions accepted for planned work, and
+// Constraints from customers. They sit beside the events above at the
+// commits their authors were working on when they wrote them. Nothing in the
+// code, tests, docs or commit messages says any of it (the proof-only-hard
+// tasks, DESIGN.md §3). Only c34, which made export the one way for a plugin
+// to read the document, implements one of them and carries a trailer.
+const defer = (issueId, resolvedBy) => ({
+  type: 'ResolveIssue',
+  issueId,
+  resolution: 'deferred',
+  resolvedBy,
+});
+
+const PLANNED = {
+  c11: {
+    events: [
+      finding(
+        'model.fnd-wrap-hid-layers',
+        'feedback',
+        INES,
+        'Wrapping layers in a white frame made people think layers were gone',
+        "From the 12 February usability sessions (five people: two agencies, three in-house teams), on the prototype editor's Wrap in frame. The new frame took the default white fill and clipping. It goes where the frontmost wrapped layer was, so its white fill painted over every layer behind it in that area; four of five said the layers they had not wrapped were deleted. Two then moved a wrapped layer past the frame's edge, lost half of it to clipping, and reported it as a bug."
+      ),
+      decision(
+        'model.dec-wrap-plain-frame',
+        INES,
+        'A frame made around existing layers starts with no fill and no clipping',
+        'When core gains a way to put existing layers into a new frame, that frame is created with an empty fills list and clip off, so the canvas looks exactly as it did before. People add a fill or turn clipping on when they want them. A frame drawn on an empty canvas keeps the white fill and clipping that createFrame gives, since nothing is under it yet.\n\nRejected: the createFrame defaults, for the finding; a fill matching the page, since the page colour belongs to the shell and any fill still hides the layers behind.',
+        { derives_from: ['model.fnd-wrap-hid-layers'] }
+      ),
+      accept('model.dec-wrap-plain-frame'),
+    ],
+  },
+
+  c34: {
+    trailers: ['plugin.con-content-export'],
+    events: [
+      constraint(
+        'plugin.con-content-export',
+        'hard',
+        MATEO,
+        'Layer names and text reach only plugins granted export',
+        "Northwind's security review of plugin API v1 (they run Tessera for bank clients) counts layer names and the words in text layers as document content: their designers name layers after client projects and draft copy in text layers. A plugin they have not cleared for export must not read either, by any route. So anything that hands a plugin a layer name or text, an event payload or a return value, carries it only to plugins whose manifest has export; every other plugin gets the ids alone, in the same event. The same holds for anything else people write in a document later. documentload's document name was reviewed and stays for every plugin, since the shell already shows it in the window title. Agreed with Northwind on 19 March; their next review is in September.",
+        { derives_from: ['plugin.dec-capabilities'] }
+      ),
+    ],
+  },
+
+  c39: {
+    events: [
+      finding(
+        'layers.fnd-offscreen-picks',
+        'feedback',
+        MATEO,
+        'People did not see what a page-wide pick added on other screens',
+        "Six sessions on 25 March with people who keep a whole app in one file, one top-level frame per screen (40 to 120 screens). The prototype's pick-similar commands, which start from one selected layer and add the layers that resemble it, searched the whole page. The layers they added on other screens were off-screen at the time; four of six went on to edit the selection and changed screens they never looked at."
+      ),
+      decision(
+        'layers.dec-likeness-scope',
+        MATEO,
+        'Picking similar layers stays inside the top-level frame of the starting layer',
+        "Commands that grow a selection from one layer to the layers that resemble it (the same fill colour, font, size or anything else; none in core yet) look only inside the top-level frame that holds the starting layer, at any depth. A starting layer that sits on the page outside every frame looks only at the other layers outside frames.\n\nRejected: the whole page, for the finding; the starting layer's own parent, which is too narrow, since one screen's buttons sit in different groups.",
+        { derives_from: ['layers.fnd-offscreen-picks'] }
+      ),
+      accept('layers.dec-likeness-scope'),
+    ],
+  },
+
+  c45: {
+    events: [
+      issue(
+        'panel.iss-size-steps',
+        'request',
+        PRIYA,
+        'Halden wants text sizes to step up and down without typing',
+        "Halden's design-system team asked on the February call for a quick way to make text one step bigger or smaller. In the prototype a step was one pixel, and their token check flagged 340 text layers at sizes such as 15 and 17 that came from people stepping past the sizes they use."
+      ),
+      decision(
+        'panel.dec-size-steps',
+        PRIYA,
+        'A text size step moves to the next size on the type scale',
+        'When we add stepping, one step up or down goes to the next size on this scale: 8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 64, 72, 96. A size between two scale sizes goes to the next one in the direction of the step, so 13 goes up to 14 and down to 12. Below 8 a step is 1 pixel and above 96 it is 8 pixels, within the 1 to 1,000 bounds. The text box height follows, as for a typed size.\n\nRejected: one pixel per step (the prototype, and the issue); a percentage per step, which leaves the scale at once.',
+        { derives_from: ['panel.iss-size-steps'] }
+      ),
+      accept('panel.dec-size-steps'),
+      defer('panel.iss-size-steps', ['panel.dec-size-steps']),
+    ],
+  },
+
+  c46: {
+    events: [
+      issue(
+        'commands.iss-recolour-request',
+        'request',
+        TOMAS,
+        'Teams want to replace one colour across a document at once',
+        "Brightline and Halden both asked for it in April: a brand colour changes and every layer that uses it has to follow. In Brightline's trial of the prototype's recolour command it rewrote their locked, legal-approved logo, and a second pass that skipped hidden layers left the hover states of 30 buttons in the old colour."
+      ),
+      decision(
+        'commands.dec-sweeping-edits',
+        TOMAS,
+        'Edits that sweep the whole document leave locked layers alone and include hidden ones',
+        'Agreed with Brightline and Halden before any of it is built: a command that changes layers all over the document rather than in the selection (changing one colour everywhere is the first) skips locked layers and everything inside a locked group or frame. Their teams lock what has been signed off: logos, brand marks, approved screens. Hidden layers are changed like any other, since they are states that will be shown again.\n\nRejected: changing everything, which rewrote the locked logo; skipping hidden and locked alike, as the canvas does for clicks, which left the hover states stale.',
+        { derives_from: ['commands.iss-recolour-request'] }
+      ),
+      accept('commands.dec-sweeping-edits'),
+      defer('commands.iss-recolour-request', ['commands.dec-sweeping-edits']),
+    ],
+  },
+
+  c47: {
+    events: [
+      constraint(
+        'persist.con-discussion-outside',
+        'hard',
+        INES,
+        'What people write about a design never travels inside the document file',
+        "Agencies deliver the document file itself to their clients. In January a prototype file reached a Halden client with its layer notes still inside, one of them reading 'do not show legal yet', and Halden's contract now says working notes are not deliverables. So notes, comments, review threads and approvals are kept apart from the document, in a store of their own keyed by the document, and files.save() never writes them. The file changes only when the design does, as with view state.",
+        { derives_from: ['persist.dec-viewstate-sidecar'] }
+      ),
+    ],
+  },
+
+  c48: {
+    events: [
+      finding(
+        'layers.fnd-notes-lost',
+        'feedback',
+        MATEO,
+        'Deleting a layer took its review notes with it',
+        'In the prototype, notes hung off layers and went when the layer went. Designers often delete a layer and draw it again; in the March review sessions, reviewers lost the threads on 11 of 40 layers that way, answers included.'
+      ),
+      decision(
+        'layers.dec-notes-outlive',
+        MATEO,
+        'A note pinned to a layer outlives the layer',
+        'When review notes come to core, a note pinned to a layer stores the layer id and the point where it sits. Deleting the layer never deletes the note: it stays at its last point on the canvas, marked detached, until someone resolves or deletes it. Undoing the delete pins it back to the layer.',
+        { derives_from: ['layers.fnd-notes-lost'] }
+      ),
+      accept('layers.dec-notes-outlive'),
+    ],
+  },
+
+  c52: {
+    events: [
+      decision(
+        'plugin.dec-exporters',
+        MATEO,
+        'Formats other than our own are written by exporter plugins',
+        'Core reads and writes Tessera files and nothing else. SVG, PNG, PDF and any other format are produced by exporter plugins that take api.export.document() and convert it, ours included, so a format ships on its own schedule and a broken exporter cannot break saving.\n\nRejected: an export module in core, as in the prototype, where three formats lived in core and most model changes broke one of them.',
+        { derives_from: ['plugin.dec-export-capability'] }
+      ),
+      accept('plugin.dec-exporters'),
+      constraint(
+        'plugin.con-exports-no-names',
+        'hard',
+        MATEO,
+        'Exported artwork carries no layer names and no hidden layers',
+        'Exports leave Tessera for developers, client sites and app bundles, where nobody reviews them. Layer names are working names (for Northwind, client project names), so an exporter writes no layer name into its output: no element id, class, title or comment made from one. An element that needs an id gets a generated one (l1, l2 and so on). Hidden layers are left out, with everything inside them. Halden found both in a prototype SVG export that a client put on their site.',
+        {
+          derives_from: ['plugin.con-content-export', 'plugin.dec-exporters'],
+        }
+      ),
+    ],
+  },
+
+  c61: {
+    events: [
+      decision(
+        'commands.dec-history-design-only',
+        TOMAS,
+        'Undo covers the design, not what people say about it',
+        "History holds edits to the document only. Writing, answering, resolving or deleting a comment, note or review thread is never a history entry, and Undo never removes one: in the April sessions, an Undo after a reply in the prototype's notes panel took back a colleague's note that had arrived in between, and the colleague never knew. Those actions are undone by their own delete, by the person who wrote them.",
+        { derives_from: ['persist.con-discussion-outside'] }
+      ),
+      accept('commands.dec-history-design-only'),
+    ],
+  },
+
+  c75: {
+    events: [
+      issue(
+        'units.iss-whole-pixels',
+        'request',
+        PRIYA,
+        'Put layers on whole pixels when asked',
+        "Brightline's icon team asks for a command that moves and sizes layers onto whole pixels before they hand icons off, since fractional edges blur when the icons are drawn at 1x."
+      ),
+      finding(
+        'units.fnd-pixel-fit-seams',
+        'analysis',
+        PRIYA,
+        "The prototype's pixel fit opened seams between shapes that touched",
+        "The prototype rounded x, y, width and height each on its own. In Brightline's 212 icons built from abutting shapes, 61 came out with a 1 px gap or a 1 px overlap: where two shapes met at 10.5, the left one (x 0.4, width 10.1) ended at 10 and the right one started at 11.",
+        { derives_from: ['units.iss-whole-pixels'] }
+      ),
+      decision(
+        'units.dec-round-edges',
+        PRIYA,
+        'A whole-pixel fit rounds edges, not sizes',
+        "When core gets this command, it rounds each layer's left, top, right and bottom edge to the nearest whole pixel (halves up, as Math.round does) and takes width and height from the rounded edges, so shapes that touched still touch and the right edge of one stays the left edge of the next. A layer that would end up narrower or shorter than 1 px gets 1 px; a line keeps its zero height. Stored geometry is otherwise never rounded ({{id:units.con-never-round}}); this is an edit the person asks for, and it goes through resize like any other.",
+        { derives_from: ['units.fnd-pixel-fit-seams'] }
+      ),
+      accept('units.dec-round-edges'),
+      defer('units.iss-whole-pixels', ['units.dec-round-edges']),
+    ],
+  },
+};
+
+for (const [key, { trailers = [], events }] of Object.entries(PLANNED)) {
+  const at = (PROOF[key] ??= { events: [] });
+  if (trailers.length) at.trailers = [...(at.trailers ?? []), ...trailers];
+  at.events.push(...events);
+}
+
 // The rules the benchmark tasks lean on (DESIGN.md §2), by the records that
-// hold them. R rules live only in Proof; V rules are also visible in code.
+// hold them. R rules live only in Proof; V rules are also visible in code;
+// U rules are product decisions for work not built yet, which neither the
+// code nor its history hints at.
 export const RULES = {
   R1: {
     rule: 'One user gesture is one history entry, however many nodes it touches.',
@@ -1994,6 +2212,55 @@ export const RULES = {
     rule: 'Plugin API v1 is frozen.',
     visible: true,
     records: ['plugin.dec-api-frozen', 'plugin.con-v1-surface'],
+  },
+  U1: {
+    rule: 'Layer names and text reach only plugins with the export capability; other plugins get ids alone.',
+    visible: false,
+    records: ['plugin.con-content-export'],
+  },
+  U2: {
+    rule: 'A text size step goes to the next size on the type scale, not one pixel.',
+    visible: false,
+    records: ['panel.iss-size-steps', 'panel.dec-size-steps'],
+  },
+  U3: {
+    rule: 'A frame made around existing layers has no fill and does not clip.',
+    visible: false,
+    records: ['model.fnd-wrap-hid-layers', 'model.dec-wrap-plain-frame'],
+  },
+  U4: {
+    rule: 'Document-wide edits skip locked layers (and their contents) and include hidden ones.',
+    visible: false,
+    records: ['commands.iss-recolour-request', 'commands.dec-sweeping-edits'],
+  },
+  U5: {
+    rule: "Picking similar layers stays inside the starting layer's top-level frame.",
+    visible: false,
+    records: ['layers.fnd-offscreen-picks', 'layers.dec-likeness-scope'],
+  },
+  U6: {
+    rule: 'A whole-pixel fit rounds edges, not sizes, so touching shapes still touch.',
+    visible: false,
+    records: [
+      'units.iss-whole-pixels',
+      'units.fnd-pixel-fit-seams',
+      'units.dec-round-edges',
+    ],
+  },
+  U7: {
+    rule: 'Comments live outside the document file, are never history entries, and outlive the layers they are pinned to.',
+    visible: false,
+    records: [
+      'persist.con-discussion-outside',
+      'commands.dec-history-design-only',
+      'layers.fnd-notes-lost',
+      'layers.dec-notes-outlive',
+    ],
+  },
+  U8: {
+    rule: 'Other formats are written by exporter plugins; exports carry no layer names and no hidden layers.',
+    visible: false,
+    records: ['plugin.dec-exporters', 'plugin.con-exports-no-names'],
   },
 };
 

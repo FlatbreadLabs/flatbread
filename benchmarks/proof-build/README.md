@@ -14,15 +14,30 @@ alternatives, Constraints, Findings, Risks, code Citations) sit in the
 graph. The none variant has the same code and no Proof at all. The 10x
 variant adds 9 filler Efforts, about ten times the records.
 
-There are 26 tasks: 18 build tasks graded by hidden tests and 8 plan tasks
-scored by a blind rubric. Each task belongs to one category:
+There are 34 tasks: 24 build tasks graded by hidden tests and 10 plan
+tasks scored by a blind rubric. Each task belongs to one category:
 
-| Category     | What makes a solution right                           | Build | Plan |
-| ------------ | ----------------------------------------------------- | ----- | ---- |
-| proof-only   | a rule that only Proof states                         | 6     | 3    |
-| code-visible | a rule Proof states and the code also shows           | 5     | 1    |
-| stale        | the code, where Proof is out of date                  | 4     | 2    |
-| control      | nothing about Proof; measures the cost of carrying it | 3     | 2    |
+| Category        | What makes a solution right                                                       | Build | Plan |
+| --------------- | --------------------------------------------------------------------------------- | ----- | ---- |
+| proof-only      | a rule that only Proof states (the code's patterns turned out to teach it)        | 6     | 3    |
+| proof-only-hard | a product decision Proof recorded before the feature existed; nothing hints at it | 6     | 2    |
+| code-visible    | a rule Proof states and the code also shows                                       | 5     | 1    |
+| stale           | the code, where Proof is out of date                                              | 4     | 2    |
+| control         | nothing about Proof; measures the cost of carrying it                             | 3     | 2    |
+
+The proof-only-hard tasks were added for v2 of the bed, after the first full
+run showed that the proof-only rules can be copied from the code:
+
+| Id   | Kind  | Request (gist)                                                                         | The rule only Proof holds                                                                                                  |
+| ---- | ----- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| B-H1 | build | a `layerrename` plugin event with `{ id, before, after }`                              | layer names reach only plugins with the `export` capability; the others get `{ id }` (a customer's security review)        |
+| B-H2 | build | Increase font size and Decrease font size in the palette                               | a step goes to the next size on the type scale (16 to 18, 13 to 14), not 1 px (a deferred customer request)                |
+| B-H3 | build | Frame selection: wrap the selection in a new frame that fits it                        | the new frame has no fill and does not clip (a usability finding: the white fill hid layers)                               |
+| B-H4 | build | Replace colour: swap one colour for another across the document                        | locked layers and their contents keep their colour; hidden layers change (agreed with two customers)                       |
+| B-H5 | build | Select same fill: select the layers with the selected layer's fill colour              | the search stays inside the selected layer's top-level frame (a usability finding: edits on screens nobody saw)            |
+| B-H6 | build | Round to pixels: X, Y, W and H of the selection become whole numbers                   | edges are rounded, not sizes, so shapes that touched still touch (a finding on the prototype's seams)                      |
+| L-H1 | plan  | review comments pinned to points or layers, with threads, resolving and a plugin event | comments live outside the document file, are never undo steps, outlive their layer; comment text only for `export` plugins |
+| L-H2 | plan  | export a frame as SVG for developers                                                   | exporters are plugins on the export capability; no layer names and no hidden layers in the output                          |
 
 Every session gets the same code and the same request. The arms differ in
 how Proof reaches the agent:
@@ -150,6 +165,29 @@ done
 node scripts/compare.mjs $P4/runs --runs r1,r2,r3 --out $P4/runs/compare.json
 ```
 
+### v2: the proof-only-hard tasks on Sonnet
+
+Pre-registered in DESIGN.md §8: the eight proof-only-hard tasks on
+`claude-sonnet-5-5` in the six primary arms (build 3 runs, plan 2,
+`dump10x` once per build task), 138 sessions, about $170 with judging.
+L-H1 and L-H2 skip `dump10x` (`skipArms` in their task.json), since the
+10x filler has Efforts on comments and on export. Rebuild the beds
+first (the proof beds changed in v2; the none bed did not), pilot on B-H1
+and B-H4, then:
+
+```sh
+node scripts/run.mjs $P4/runs --name h1 --bed $P4/bed --only proof-only-hard \
+  --model claude-sonnet-5-5 --jobs 8
+node scripts/run.mjs $P4/runs --name h2 --bed $P4/bed --only proof-only-hard \
+  --model claude-sonnet-5-5 --jobs 8
+node scripts/run.mjs $P4/runs --name h3 --bed $P4/bed --only proof-only-hard \
+  --ids B-H1,B-H2,B-H3,B-H4,B-H5,B-H6 --model claude-sonnet-5-5 --jobs 8
+node scripts/run.mjs $P4/runs --name h1 --bed $P4/bed --only proof-only-hard \
+  --arms dump10x --model claude-sonnet-5-5 --jobs 4
+```
+
+then grade, judge and compare `h1,h2,h3` as above.
+
 ## Results: Haiku, full run (2026-10-21)
 
 18 build tasks × 3 runs and 8 plan tasks × 2 runs in each of the six primary
@@ -235,6 +273,7 @@ proof-only tasks whose rules the code does not hint at.
 | `spec/filler.mjs`       | the 9 filler Efforts of the 10x graph                                         |
 | `spec/banned.mjs`       | words no record or commit may hold, so Proof never names a task               |
 | `tasks/<id>/`           | `task.json`; plan tasks also `rubric.json` and `plans/`                       |
+| `hidden/<id>/`          | hidden tests and reference and naive patches; `hidden/_global/` invariants    |
 | `scripts/gen-bed.mjs`   | builds a bed                                                                  |
 | `scripts/check-bed.mjs` | checks built beds against each other and the design                           |
 | `scripts/gate.mjs`      | the offline gate                                                              |
@@ -243,6 +282,8 @@ proof-only tasks whose rules the code does not hint at.
 | `scripts/judge.mjs`     | blinds and judges plans; the rubric gate                                      |
 | `scripts/compare.mjs`   | compares each arm with `none`                                                 |
 
-Hidden tests and the reference and naive patches are in
-`<p4>/hidden/<id>/`, never in this repository. `FLATBREAD_PROOF_SERVER`
-must stay unset; Proof reads run locally against each clone's own graph.
+Hidden tests and the reference and naive patches are in `hidden/<id>/`
+(committed since the first full run) and are copied to `<p4>/hidden/<id>/`
+for a run, so no session needs a path into this repository.
+`FLATBREAD_PROOF_SERVER` must stay unset; Proof reads run locally against
+each clone's own graph.

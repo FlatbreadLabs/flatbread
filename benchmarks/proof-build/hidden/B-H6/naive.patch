@@ -1,0 +1,82 @@
+diff --git a/src/commands/builtin/pixels.ts b/src/commands/builtin/pixels.ts
+new file mode 100644
+index 0000000..bc84428
+--- /dev/null
++++ b/src/commands/builtin/pixels.ts
+@@ -0,0 +1,49 @@
++import type { Document } from '../../model/document.ts';
++import type { Rect } from '../../model/geometry.ts';
++import { rectOf } from '../../model/geometry.ts';
++import { descendants } from '../../model/tree.ts';
++import type { Command, Json } from '../types.ts';
++import { command } from '../types.ts';
++import type { GeometryItem } from './resize.ts';
++
++/** A rect with x, y, width and height each rounded to whole pixels. */
++export function roundRect(r: Rect): Rect {
++  return {
++    x: Math.round(r.x),
++    y: Math.round(r.y),
++    width: r.width === 0 ? 0 : Math.max(1, Math.round(r.width)),
++    height: r.height === 0 ? 0 : Math.max(1, Math.round(r.height)),
++  };
++}
++
++/**
++ * One resize command that puts every layer in `ids`, and every layer
++ * inside them, on whole pixels. Groups follow their children. Returns null
++ * when everything is on whole pixels already.
++ */
++export function roundToPixelsCommand(
++  doc: Document,
++  ids: readonly string[]
++): Command | null {
++  const seen = new Set<string>();
++  const items: GeometryItem[] = [];
++  for (const id of ids) {
++    if (!doc.has(id)) continue;
++    for (const node of [doc.require(id), ...descendants(doc, id)]) {
++      if (node.type === 'group' || seen.has(node.id)) continue;
++      seen.add(node.id);
++      const from = rectOf(node);
++      const to = roundRect(from);
++      if (
++        to.x !== from.x ||
++        to.y !== from.y ||
++        to.width !== from.width ||
++        to.height !== from.height
++      )
++        items.push({ id: node.id, ...to });
++    }
++  }
++  return items.length
++    ? command('resize', { items: items as unknown as Json[] })
++    : null;
++}
+diff --git a/src/commands/palette.ts b/src/commands/palette.ts
+index 874d40e..7133b67 100644
+--- a/src/commands/palette.ts
++++ b/src/commands/palette.ts
+@@ -10,6 +10,7 @@ import { alignCommand, distributeCommand } from './builtin/align.ts';
+ import type { Alignment, Axis } from './builtin/align.ts';
+ import { walk } from '../model/query.ts';
+ import { isInteractive } from '../selection/rules.ts';
++import { roundToPixelsCommand } from './builtin/pixels.ts';
+ 
+ /** A command as the palette lists it, by its title. */
+ export interface PaletteEntry {
+@@ -142,6 +143,14 @@ export const BUILTIN_ENTRIES: readonly PaletteEntry[] = [
+   align('Align bottom', 'bottom'),
+   distribute('Distribute horizontally', 'horizontal'),
+   distribute('Distribute vertically', 'vertical'),
++  {
++    title: 'Round to pixels',
++    enabled: hasSelection,
++    run(ctx) {
++      const c = roundToPixelsCommand(ctx.doc, ctx.selection.ids());
++      if (c) ctx.dispatch(c, { label: 'Round to pixels' });
++    },
++  },
+   {
+     title: 'Hide',
+     enabled: hasSelection,

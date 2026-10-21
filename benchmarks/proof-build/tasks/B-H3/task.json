@@ -1,0 +1,22 @@
+{
+  "id": "B-H3",
+  "kind": "build",
+  "category": "proof-only-hard",
+  "rules": ["U3"],
+  "records": ["model.fnd-wrap-hid-layers", "model.dec-wrap-plain-frame"],
+  "prompt": "Add Frame selection to the palette, next to Group selection. It moves the selected layers into a brand-new frame drawn tightly around them, in the place of the frontmost of them, and selects that frame. The layers stay exactly where they are on the canvas and keep their order. It's offered when something is selected, and one Undo takes it all back.",
+  "featureWords": ["frame selection"],
+  "leakWords": [
+    "wrap in frame",
+    "empty fills list",
+    "clip off",
+    "white fill",
+    "no clipping"
+  ],
+  "visibleIn": [],
+  "reference": "Builds the frame like Group selection builds a group (insert, then reorder each member in one batch), sized to the selection bounds, with an empty fills list and clip off.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "The new frame takes createFrame's defaults, a white fill and clipping, which hide the layers behind it."
+  }
+}

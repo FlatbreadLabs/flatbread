@@ -2,7 +2,10 @@
 
 Status: pre-registered on 2026-10-20, before any bed, task or paid session
 exists. Changes after the pilot are allowed only where this file says so,
-and each one is logged at the end with its reason.
+and each one is logged at the end with its reason. Version 2 (2026-10-21,
+after the first full run and before any v2 session) adds the
+proof-only-hard category, its records, H5 and its run; the v1 text is kept
+and the v2 additions are marked as such.
 
 ## Question
 
@@ -26,6 +29,16 @@ Pre-registered hypotheses:
   all-green. Proof only adds cost there.
 - **H3 (harm).** On stale tasks, `brief` and `dump` do worse than `none` on
   all-green. `skill`, `find` and `findcode` do no worse than `none`.
+- **H5 (help where the code cannot teach; v2).** On proof-only-hard tasks,
+  whose rule is a product decision recorded before the feature existed and
+  hinted at nowhere in the code or its history, `skill`, `find`,
+  `findcode`, `brief` and `dump` are all-green more often than `none`, and
+  `none` passes the constraint tests of at most a third of the sessions
+  that passed acceptance. Plans: on the two proof-only-hard plan tasks,
+  every Proof arm scores higher than `none`. If `find` and `findcode` gain
+  less than `brief` and `dump`, that is read as a retrieval miss (the
+  session did not find the record), which the transcripts' Proof reads
+  show.
 - **H4 (burden).** On control tasks, all-green is the same in every arm.
   Context tokens, processed tokens and wall time rise with the amount of
   Proof forced in (`none` ≤ `skill` < `find` ≤ `findcode` < `brief` <
@@ -78,7 +91,8 @@ as mutations replayed through the real `createProofWriter`, the way
   Ines Okafor (model, persistence), Tomas Lindqvist (commands, history),
   Priya Raman (panel, units) and Mateo Alves (layers, keys, plugins). A
   fifth author, Ren Ito, joins in May and makes the drift commits. About 36
-  commits implement a record and carry `Proof: <id>` trailers. The others
+  commits implement a record and carry `Proof: <id>` trailers (37 in v2,
+  where c34 also carries `plugin.con-content-export`). The others
   are fixes, tests and chores with ordinary subjects. Commit messages never
   state a rationale that only Proof holds.
 - **Variants.** `--variant proof` writes `.flatbread-proof/`,
@@ -128,18 +142,60 @@ as mutations replayed through the real `createProofWriter`, the way
   | V3  | undo restores the exact selection from before the change                                                                         | yes (the entry shape in `history.ts` and a test for `group`)             |
   | V4  | plugin API v1 is frozen                                                                                                          | yes (a header comment and a surface snapshot test)                       |
 
+- **Planned-work rules (v2, the U rules).** Product decisions recorded
+  before the feature existed: a request deferred with its agreed behaviour
+  (Issue resolved `deferred` by an accepted Decision), a Decision accepted
+  for planned work, a Constraint from a customer, or a Finding from a
+  usability session. 18 new live records, written at the commits their
+  authors were working on (all before the first drift commit, so the
+  drift checks hold), with names of customers (Northwind, Halden,
+  Brightline) and sessions that appear nowhere else. They may name the
+  feature's area, as a deferred Issue would; they never use a v2 prompt's
+  product names (palette titles, the event name), which are banned in
+  Proof. Only c34, which made `export` the one way for a plugin to read the
+  document, implements one of them and carries its trailer. Nothing in the
+  code, tests, docs or commit messages hints at any of them: their wording
+  is in `BANNED_IN_CODE`, and the gate and `check-bed.mjs` grep the none
+  bed's whole history for it. The code points the other way where it says
+  anything: `createFrame` gives a white fill and clipping (U3), the plugin
+  events go to every plugin alike (U1), `isInteractive` skips hidden and
+  locked layers together (U4), `walk` covers the whole page (U5). Two
+  parts are less hidden than the rest. U1: export is already the one way
+  for a plugin to read the document (`createApi(loaded, canExport)`), and
+  a commit subject says "Remove getNode from the plugin API — Events
+  already carry ids", so a careful builder could infer that names stay
+  behind export; B-H1 is read with that in mind. U8's hidden-layers half:
+  `walk` skips hidden subtrees, so a plan built from the code leaves them
+  out too; L-H2's rubric does not score it (see its rubric below).
+
+  | Key | Rule                                                                                                          | Records (commit)                                                                    |
+  | --- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+  | U1  | layer names and text reach only plugins with `export`; other plugins get the ids alone, in the same event     | Constraint from Northwind's security review (c34, trailer)                          |
+  | U2  | a text size step goes to the next size on the type scale (8 … 96), not 1 px                                   | Issue from Halden, deferred by an accepted Decision (c45)                           |
+  | U3  | a frame made around existing layers has no fill and does not clip                                             | Finding from the February usability sessions, accepted Decision (c11)               |
+  | U4  | an edit that sweeps the whole document skips locked layers and their contents, and changes hidden ones        | Issue from Brightline and Halden, deferred by an accepted Decision (c46)            |
+  | U5  | picking similar layers stays inside the starting layer's top-level frame                                      | Finding from the March sessions, accepted Decision (c39)                            |
+  | U6  | a whole-pixel fit rounds edges, not sizes, so shapes that touched still touch                                 | Issue, Finding (the prototype's seams), Decision deferring it (c75)                 |
+  | U7  | comments live outside the document file, are never history entries, and outlive the layers they are pinned to | Constraint from Halden's contract (c47), Decision (c61), Finding and Decision (c48) |
+  | U8  | other formats are written by exporter plugins; exports carry no layer names and no hidden layers              | Decision and Constraint (c52)                                                       |
+
 - **Filler at 10x** (`--scale 10`, used only by `dump10x`). Nine filler
   Efforts in look-alike areas (export, prototyping, comments, assets,
   colour management, collaboration cursors, onboarding, telemetry, fonts)
-  bring the graph to about 1,500 records. They are written in the same
+  bring the graph to about 1,500 records (1,565 in v2). They are written in the same
   voice and cite only filler paths that do not exist in the bed. They never
   state a rule about the seven real areas. The code is identical.
 - **No anticipation.** Records describe past work and standing rules. An
   offline check fails the build if any record body, title or commit message
   contains a task's feature phrases (for example "corner radius" or
   "marquee"). Area words such as "properties panel" or "undo" are allowed.
+  The proof-only-hard records are the deliberate exception (v2): they
+  anticipate their feature, as records of planned work do. What they may
+  not hold is the prompt's own product names, and the gate checks that no
+  prompt shares a run of four words with its records or holds a leak
+  word.
 
-## 3. Tasks (26: 18 build, 8 plan)
+## 3. Tasks (34: 24 build, 10 plan; v1 had 26: 18 build, 8 plan)
 
 Prompts describe intended behaviour in a user's words. They name no file,
 symbol, module, Effort or record id. They may name product surface: palette
@@ -176,6 +232,26 @@ says what changed from the pre-registered list and why.
 | B-K2 | control      | Fill and Stroke accept `#f80`, six-digit hex with or without `#`, and `rgb(r, g, b)`; shown as upper-case `#RRGGBB`              | none   | `parseColor` itself widened, which breaks an existing test                                       |
 | B-K3 | control      | Distribute horizontally or vertically with an optional typed gap                                                                 | none   | a missing gap read as 0, which breaks an existing test                                           |
 
+### Proof-only-hard build tasks (6, v2)
+
+Added after the first full run, which showed that the v1 proof-only rules
+are patterns the code already follows (`none` passed 17 of 18), so a
+careful builder copies them. Each of these rules is a U rule: a product
+decision recorded before the feature existed, which the code does not
+hint at and the natural implementation from the prompt breaks. The naive
+patch is that natural implementation; it passes acceptance and fails only
+constraints. `task.json` gains `records`, the qualified keys of the
+records that hold the rule.
+
+| Id   | Request (gist)                                                                                                       | Rule | Naive patch                                                           |
+| ---- | -------------------------------------------------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------- |
+| B-H1 | A `layerrename` plugin event, `{ id, before, after }`, from the palette, the layers panel, undo and redo             | U1   | the payload goes to every plugin, as the other events do              |
+| B-H2 | Increase font size and Decrease font size in the palette, a step at a time, for every selected text layer; undoable  | U2   | ±1 px per step                                                        |
+| B-H3 | Frame selection: a new frame drawn tightly around the selection, in the frontmost one's place, selected; one Undo    | U3   | the frame takes `createFrame`'s white fill and clipping               |
+| B-H4 | Replace colour: type two colours; every fill and stroke in the first gets the second, whatever is selected; one Undo | U4   | every layer changes, locked ones included                             |
+| B-H5 | Select same fill: from one layer, select the layers whose fill is the same colour, inside groups too                 | U5   | searches the whole page                                               |
+| B-H6 | Round to pixels: X, Y, W and H of the selection, and of what is inside selected groups and frames, become whole      | U6   | rounds x, y, width and height each on its own, which opens 1 px seams |
+
 ### Plan tasks (8)
 
 The agent writes `PLAN.md` and changes no code. Each plan task needs at
@@ -191,6 +267,23 @@ least two rules and is scored on a rubric (§5).
 | L-S2 | stale        | Users can rebind shortcuts in preferences                                                | D4 (rebinding goes through `bindings/` and the dispatcher; `DEFAULT_KEYMAP` stays frozen)                                 |
 | L-K1 | control      | Rulers along the top and left with nicely spaced labelled ticks for the current zoom     | none                                                                                                                      |
 | L-K2 | control      | A document swatches list built from the fills in use, sorted by frequency                | none                                                                                                                      |
+
+### Proof-only-hard plan tasks (2, v2)
+
+| Id   | Request (gist)                                                                                    | What it hinges on                                                                                                             |
+| ---- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| L-H1 | Review comments: pin to a point or a layer, threads, resolve and reopen; plugins hear of new ones | U7 (outside the document file, no history entries, pins outlive layers), U1 (comment text only for plugins with `export`), V4 |
+| L-H2 | Export a frame as SVG to hand to developers                                                       | U8 (an exporter plugin on the export capability, no layer names, generated ids), V4                                           |
+
+Their plausible plans (written from the code alone) store comments in the
+file through commands that Undo can remove and delete them with their
+layer, and put an SVG module in core that names elements after layers:
+they should score low on every U point. L-H2's rubric scores only what the
+code cannot teach: where the exporter lives, no layer names, generated
+ids, and V4. Leaving hidden layers out and placing layers relative to the
+frame follow from the code (`walk`, absolute positions), so they are not
+points; the plausible plan does both, and gets V4 (a visible rule) and no
+U point.
 
 ## 4. Grading build tasks
 
@@ -219,8 +312,8 @@ least two rules and is scored on a rubric (§5).
    - **Constraints:** `constraints.test.ts` plus the global invariants.
      `global.test.ts` runs on every task: a document saves, loads and saves
      the same text, and plugin API v1 keeps its members and shortcut table
-     (both stated in the code). `global-rules.test.ts` runs on proof-only
-     and stale tasks only: every shipped migration step returns what it
+     (both stated in the code). `global-rules.test.ts` runs on proof-only,
+     proof-only-hard and stale tasks only: every shipped migration step returns what it
      always returned, and every palette command makes at most one history
      entry per run. Those are R3 and R1, which only Proof states, so a
      control or code-visible task is never graded on them.
@@ -253,6 +346,10 @@ it must pass for every task):
 - `leakWords` for each R rule appear nowhere in the none variant's code,
   tests, docs or commit messages. The phrases for each V rule do appear.
 - `featureWords` appear nowhere in Proof.
+- Proof-only-hard (v2): the same two checks, plus: the task's `records`
+  are live in the proof bed; every leak word is in them (the rule is in
+  Proof); and the prompt holds no leak word and shares no run of four
+  words with them (it does not echo Proof).
 - The two variants' code trees are identical.
 
 ## 5. Grading plan tasks
@@ -320,7 +417,7 @@ clone's own graph.
 | `find`     | as `skill`                                                                                                                                                                                                                                                                             | "Before planning, run `./flatbread proof find <words from the request> --all`, then `proof get` any hit that bears on the request."                           |
 | `findcode` | as `skill`                                                                                                                                                                                                                                                                             | the `find` text plus: "Before editing a file, run `./flatbread proof find --path <file>`; before relying on a Decision, run `proof find <words> --refs all`." |
 | `dump`     | as `skill`                                                                                                                                                                                                                                                                             | every live record body (all kinds, compactions included), grouped by Effort                                                                                   |
-| `dump10x`  | as `skill`, on the 10x graph                                                                                                                                                                                                                                                           | as `dump`, 1,074 live records of 1,547 (the burden ceiling; an extra arm, not a primary comparison)                                                           |
+| `dump10x`  | as `skill`, on the 10x graph                                                                                                                                                                                                                                                           | as `dump`, 1,074 live records of 1,547 (1,092 of 1,565 in v2; the burden ceiling; an extra arm, not a primary comparison)                                     |
 
 `none` has no `CLAUDE.md` line about Proof, no skill, no wrapper, no
 config and no node_modules link. The proof arms link node_modules (for the
@@ -358,7 +455,12 @@ change code."
   α = 0.05 (`holm_primary` in `compare.mjs`). The stricter task-level sign
   test, which counts each task once as in `proof-recall/scripts/compare.mjs`,
   is reported beside each. `dump10x` is compared with `dump`, without
-  correction.
+  correction. v2 adds all-green on the proof-only-hard build tasks (H5,
+  6 × 3 = 18 pairs per arm) as a third primary category, so a v2 report
+  Holm-corrects fifteen tests; a run without proof-only-hard tasks keeps
+  the original ten. The H5 constraint share (`none` constraint passes among
+  its acceptance passes) and the plan scores on L-H1 and L-H2 are
+  secondary.
 - **Secondary.** All-green pooled over all 18 build tasks, Holm-corrected
   across the five arms (`holm_all_green`); it mixes categories whose
   predicted effects run in opposite directions, so it is read only with
@@ -434,6 +536,24 @@ tokens) for `dump10x`.
   sessions about $30 to $40. Judging covers 104 plans, twice each, for
   about $14. The total is about $65 to $85. At 8 parallel jobs and about
   8 minutes per session, that is about 7.5 hours of wall time.
+- **v2 run on Sonnet** (pre-registered before any v2 session). The eight
+  proof-only-hard tasks on `claude-sonnet-5-5`, rather than Haiku, in the
+  six primary arms: build tasks 3 runs, plan tasks 2, `dump10x` once per
+  build task (L-H1 and L-H2 skip it, see the change log). 6 × 6 × 3 = 108 build and
+  2 × 6 × 2 = 24 plan sessions, plus 6 `dump10x`, 138 in all. At about $0.90 for a `none` build session (as the
+  Sonnet subset estimate), $1.20 with `brief`, $1.50 with `dump`, $0.40 for
+  a plan and about $6 for `dump10x` (more if long-prompt rates apply), that
+  is about $120 for build, $10 for plan and $36 for `dump10x`, with about
+  $4 of judging (48 calls) and $1 for the rubric gate on the six new
+  plans: about $170. The 26 v1 tasks keep their Haiku results and are not
+  rerun; the v2 none bed is byte-identical to v1's (same tip, `bdb60f4`),
+  and the gate grades their patches as it did. The v2 pilot is B-H1 and
+  B-H4 in the six primary arms, once (12 sessions, about $13), with the
+  rubric gate on L-H1 and L-H2; it must clear the same gates as the v1
+  pilot, and in addition `find` and `findcode` must surface the task's
+  rule record in at least one of their two sessions, or the prompts and
+  records are revised (the only pilot change allowed for v2 besides the
+  v1 list).
 - **Sonnet subset** (the 8 build tasks P1, P3, P5, P7, V1, S1, S3 and K1;
   the arms `none`, `skill`, `find` and `brief`; 1 run). 32 sessions at
   about $0.90 each, for about $30. It is read only as a check on the
@@ -451,6 +571,9 @@ tokens) for `dump10x`.
 - `spec/filler.mjs`: the 10x filler.
 - `tasks/<id>/`: each task's `task.json`, and for plan tasks `rubric.json`
   and `plans/`.
+- `hidden/<id>/`: hidden tests and the reference and naive patches, and
+  `hidden/_global/` (committed since the first full run; copied to
+  `<p4>/hidden` before a run).
 - `scripts/` (`gen-bed.mjs`, `check-bed.mjs`, `gate.mjs`, `run.mjs`,
   `grade.mjs`, `judge.mjs`, `compare.mjs`, with `arms.mjs`, `inject.mjs` and
   `common.mjs`), reusing `proof-recall`'s `collect.mjs` and its sign test.
@@ -596,3 +719,60 @@ tokens) for `dump10x`.
     (B-P1, B-S3, B-V4, B-K1) in the six primary arms, 24 sessions; L-P1
     and `dump10x` are optional add-ons. The `dump10x` arm text gives its
     real size: 1,074 live records of the 1,547 record files.
+- 2026-10-21, v2, after the first full run (446 Haiku sessions) and before
+  any v2 session:
+  - **Why.** `none` passed 17 of 18 proof-only build sessions: one undo
+    step per gesture, untouched shipped migrations and frozen plugin
+    payloads are patterns the code already follows, so the benchmark could
+    not show a benefit even if Proof has one.
+  - **New category, proof-only-hard:** six build tasks (B-H1 to B-H6) and
+    two plan tasks (L-H1, L-H2) on the U rules (§2), with H5 and a third
+    primary category (§7). Counts are now build 6/5/4/3/6 and plan
+    3/1/2/2/2.
+  - **Records.** 18 live records in `spec/proof.mjs` (`PLANNED`), merged
+    into the commits c11, c34, c39, c45, c46, c47, c48, c52, c61 and c75;
+    one trailer (c34). The none bed is unchanged (tip `bdb60f4`); the proof
+    beds are rebuilt (bed `39c5772`, bed-x10 `56d814d`), the same hashes
+    on a second build, and `check-bed.mjs` passes its 33 checks.
+  - **Banned words.** The new prompts' product names are in
+    `BANNED_IN_PROOF` and the U rules' wording in `BANNED_IN_CODE`; the old
+    lists are unchanged.
+  - **Gate.** The proof-only-hard checks of §4 are new; the old
+    categories' checks are unchanged. On bed v2 the gate passes 193 static
+    checks and 72 graded patches, and the 54 graded v1 patches give the
+    same results, failing tests included, as on bed v1.
+  - **Grading.** `global-rules.test.ts` also runs with proof-only-hard
+    tasks; `judge.mjs --gate` reports plausible plans of proof-only-hard
+    tasks as it does for proof-only ones.
+  - **Model.** The v2 run is pre-registered on Sonnet (§8).
+- 2026-10-21, v2, after review and before any v2 session:
+  - **B-H4 prompt.** "Every fill and stroke in the first colour then gets
+    the second, wherever the layer sits" and "everywhere in a document"
+    told the agent to change locked layers too, so a Proof session that
+    found U4 had to overrule the person. It now reads "across a document"
+    and "Fills and strokes in the first colour then get the second, in
+    groups and frames too, whatever is selected".
+  - **B-H1 prompt.** The payload is now what plugin authors "have asked
+    for", not a fixed spec, for the same reason in a milder form; §2 notes
+    that the code half-teaches U1.
+  - **B-H2.** The prompt asks for one Undo per step ("one Undo takes a
+    whole step back") and the acceptance test checks one history entry,
+    so a step that is not one batch fails acceptance, not R1's global
+    test, and H5's constraint share counts only U2.
+  - **L-H2.** "with its layers drawn as they look on the canvas" is gone
+    from the prompt, and the rubric's hidden-layers and frame-relative
+    points (include) and hidden-layers point (avoid) are replaced by
+    "generated ids" (4 includes, 2 avoids): those points were reachable
+    from the code.
+  - **dump10x.** L-H1 and L-H2 skip `dump10x` (`skipArms` in task.json,
+    honoured by `run.mjs`): the 10x filler has Efforts on comments and on
+    export (`fx-comments`, `fx-export`), so on those two tasks `dump10x`
+    against `dump` would measure conflicting filler, not scale. The v2 run
+    is 138 sessions, about $170 (§8).
+  - **SUSPECT warning (bed v2).** After the suspect rule was revised, the
+    proof bed flags 5 records, none of them a v2 record. One rests on V4:
+    `dec-freeze-plugin-api-v1` reads "rests on records that are no longer
+    live" (its survey Finding was invalidated by the c55 recount). That is
+    the bed's own state since v1 and is left as it is; it tells the agent
+    to check what replaced the Finding, not to follow the code. The false
+    "the code wins" warning on `con-stored-geometry` (V2) is gone.

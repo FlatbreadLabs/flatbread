@@ -1,0 +1,54 @@
+diff --git a/src/commands/palette.ts b/src/commands/palette.ts
+index 874d40e..061721d 100644
+--- a/src/commands/palette.ts
++++ b/src/commands/palette.ts
+@@ -10,6 +10,8 @@ import { alignCommand, distributeCommand } from './builtin/align.ts';
+ import type { Alignment, Axis } from './builtin/align.ts';
+ import { walk } from '../model/query.ts';
+ import { isInteractive } from '../selection/rules.ts';
++import { sameFill } from '../selection/same.ts';
++import { firstFill } from '../model/style.ts';
+ 
+ /** A command as the palette lists it, by its title. */
+ export interface PaletteEntry {
+@@ -108,6 +110,18 @@ export const BUILTIN_ENTRIES: readonly PaletteEntry[] = [
+       ctx.selection.set(ids);
+     },
+   },
++  {
++    title: 'Select same fill',
++    enabled(ctx) {
++      if (ctx.selection.size !== 1) return false;
++      const node = ctx.doc.get(ctx.selection.ids()[0]);
++      return node !== undefined && firstFill(node) !== null;
++    },
++    run(ctx) {
++      const ids = sameFill(ctx.doc, ctx.selection.ids()[0]);
++      if (ids.length) ctx.selection.set(ids);
++    },
++  },
+   {
+     title: 'Deselect all',
+     hint: 'Escape',
+diff --git a/src/selection/same.ts b/src/selection/same.ts
+new file mode 100644
+index 0000000..ec1abbb
+--- /dev/null
++++ b/src/selection/same.ts
+@@ -0,0 +1,16 @@
++import type { Document } from '../model/document.ts';
++import { firstFill } from '../model/style.ts';
++import { walk } from '../model/query.ts';
++import { isInteractive } from './rules.ts';
++
++/** `id` and every other layer whose fill is the same colour as its fill. */
++export function sameFill(doc: Document, id: string): string[] {
++  const color = firstFill(doc.require(id))?.color;
++  if (!color) return [];
++  const matches: string[] = [];
++  walk(doc, (node) => {
++    if (node.id === id || firstFill(node)?.color !== color) return;
++    if (isInteractive(doc, node.id)) matches.push(node.id);
++  });
++  return [id, ...matches];
++}

@@ -199,8 +199,8 @@ const failed = (reason) => ({ pass: false, reason });
  * The _global files that apply to `task`. `_global/globals.json` maps a
  * file name to the categories it runs for; a file it does not list runs
  * for every task. Rules only Proof states (R1, R3) are graded on
- * proof-only and stale tasks only, so a control or code-visible task is
- * never scored on a rule its arm had no way to see.
+ * proof-only, proof-only-hard and stale tasks only, so a control or
+ * code-visible task is never scored on a rule its arm had no way to see.
  */
 export function globalFiles(tasksDir, task) {
   const dir = join(tasksDir, '_global');

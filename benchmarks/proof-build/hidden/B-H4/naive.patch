@@ -1,0 +1,88 @@
+diff --git a/src/commands/builtin/recolour.ts b/src/commands/builtin/recolour.ts
+new file mode 100644
+index 0000000..6ca229d
+--- /dev/null
++++ b/src/commands/builtin/recolour.ts
+@@ -0,0 +1,52 @@
++import type { Document } from '../../model/document.ts';
++import type { Paint, Stroke } from '../../model/types.ts';
++import { isStyled } from '../../model/types.ts';
++import { walk } from '../../model/query.ts';
++import { parseColor } from '../../model/style.ts';
++import type { Command, Json } from '../types.ts';
++import { command } from '../types.ts';
++
++/** Reads "#FF0000 #00AA00": the colour to find and the colour to use. */
++export function parseColourPair(
++  input: string | undefined
++): { from: string; to: string } | null {
++  const parts = (input ?? '').trim().split(/\s+/);
++  if (parts.length !== 2) return null;
++  const from = parseColor(parts[0]);
++  const to = parseColor(parts[1]);
++  return from && to ? { from, to } : null;
++}
++
++/**
++ * The set-prop commands that give every fill and stroke in `from` the
++ * colour `to`, across the whole document, wherever the layer sits.
++ */
++export function recolourCommands(
++  doc: Document,
++  from: string,
++  to: string
++): Command[] {
++  const out: Command[] = [];
++  walk(doc, (node) => {
++    if (!isStyled(node)) return;
++    const swap = <T extends Paint | Stroke>(paints: T[]): T[] =>
++      paints.map((p) => (p.color === from ? { ...p, color: to } : p));
++    if (node.fills.some((p) => p.color === from))
++      out.push(
++        command('set-prop', {
++          id: node.id,
++          key: 'fills',
++          value: swap(node.fills) as unknown as Json[],
++        })
++      );
++    if (node.strokes.some((s) => s.color === from))
++      out.push(
++        command('set-prop', {
++          id: node.id,
++          key: 'strokes',
++          value: swap(node.strokes) as unknown as Json[],
++        })
++      );
++  });
++  return out;
++}
+diff --git a/src/commands/palette.ts b/src/commands/palette.ts
+index 874d40e..ed76bad 100644
+--- a/src/commands/palette.ts
++++ b/src/commands/palette.ts
+@@ -10,6 +10,7 @@ import { alignCommand, distributeCommand } from './builtin/align.ts';
+ import type { Alignment, Axis } from './builtin/align.ts';
+ import { walk } from '../model/query.ts';
+ import { isInteractive } from '../selection/rules.ts';
++import { parseColourPair, recolourCommands } from './builtin/recolour.ts';
+ 
+ /** A command as the palette lists it, by its title. */
+ export interface PaletteEntry {
+@@ -191,6 +192,17 @@ export const BUILTIN_ENTRIES: readonly PaletteEntry[] = [
+       );
+     },
+   },
++  {
++    title: 'Replace colour',
++    run(ctx, input) {
++      const pair = parseColourPair(input);
++      if (!pair || pair.from === pair.to) return;
++      const commands = recolourCommands(ctx.doc, pair.from, pair.to);
++      ctx.batch('Replace colour', () => {
++        for (const c of commands) ctx.dispatch(c);
++      });
++    },
++  },
+   {
+     title: 'Rename layer',
+     enabled: (ctx) => ctx.selection.size === 1,

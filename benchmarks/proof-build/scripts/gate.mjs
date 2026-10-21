@@ -12,13 +12,21 @@
 //    repository), and <hidden>/_global/. The result goes to --out, which
 //    defaults to <hidden>/../tasks and is rebuilt from scratch.
 // 2. Static checks:
-//    - the categories hold the pre-registered counts (build 6/3/4/3, plan
-//      3/1/2/2), and each task has the files its kind needs;
+//    - the categories hold the pre-registered counts (build 6/3/4/3/6,
+//      plan 3/1/2/2/2 for proof-only, code-visible, stale, control and
+//      proof-only-hard), and each task has the files its kind needs;
 //    - a prompt names no file, path, symbol, Effort or record id;
 //    - no feature word of a task appears in Proof: any record file in the
 //      proof bed (and the 10x bed) or any commit message;
-//    - no leak word of a proof-only task appears anywhere in the none bed's
-//      history (every commit's code, tests, docs and message);
+//    - no leak word of a proof-only or proof-only-hard task appears
+//      anywhere in the none bed's history (every commit's code, tests, docs
+//      and message);
+//    - proof-only-hard only (its records name the feature's area on
+//      purpose, since they were written for planned work): the records in
+//      task.json's `records` are live in the proof bed, every leak word is
+//      in them (the rule is in Proof), and the prompt neither holds a leak
+//      word nor shares a run of four words with them (it does not echo
+//      Proof);
 //    - the phrase that states each code-visible rule is in the none bed's tip;
 //    - a plan rubric has 4 to 6 must-include and 2 to 4 must-avoid points,
 //      and the task has plans/good.md, trap.md and plausible.md for the
@@ -38,9 +46,25 @@ import { BENCH, git, loadTasks, parseArgs } from './common.mjs';
 import { gradeDiff } from './grade.mjs';
 
 const COUNTS = {
-  build: { 'proof-only': 6, 'code-visible': 5, stale: 4, control: 3 },
-  plan: { 'proof-only': 3, 'code-visible': 1, stale: 2, control: 2 },
+  build: {
+    'proof-only': 6,
+    'code-visible': 5,
+    stale: 4,
+    control: 3,
+    'proof-only-hard': 6,
+  },
+  plan: {
+    'proof-only': 3,
+    'code-visible': 1,
+    stale: 2,
+    control: 2,
+    'proof-only-hard': 2,
+  },
 };
+/** Categories whose rules only Proof states, checked for leaks into the none bed. */
+const PROOF_ONLY = ['proof-only', 'proof-only-hard'];
+/** A prompt shares no run of this many words with its rule's records. */
+const ECHO_WORDS = 4;
 const GROUPS = ['acceptance', 'constraints', 'regressions'];
 
 /** What a prompt may not hold: paths, file names, symbols, Proof words. */
@@ -129,6 +153,41 @@ function proofText(bed) {
   ).toLowerCase()}`;
 }
 
+/**
+ * The records of the proof bed by qualified key (`persist.con-…`), with
+ * their text and whether they are live, read through the bed's key map.
+ */
+function proofRecords(bed) {
+  const keymap = JSON.parse(readFileSync(`${bed}.keymap.json`, 'utf8'));
+  const graph = join(bed, '.flatbread-proof');
+  const files = new Map();
+  for (const sub of readdirSync(graph, { withFileTypes: true }))
+    if (sub.isDirectory())
+      for (const name of readdirSync(join(graph, sub.name)))
+        files.set(name.replace(/\.md$/, ''), join(graph, sub.name, name));
+  const out = new Map();
+  for (const [key, id] of Object.entries(keymap.records ?? {})) {
+    const file = files.get(id);
+    if (!file) continue;
+    const text = readFileSync(file, 'utf8');
+    const live =
+      !/^(superseded_by:|invalidated_by:|retracted: true|state: rejected)/m.test(
+        text
+      );
+    out.set(key, { id, text, live });
+  }
+  return out;
+}
+
+/** The runs of `n` words in `text`, lower case, punctuation dropped. */
+function shingles(text, n) {
+  const words = text.toLowerCase().match(/[a-z0-9#']+/g) ?? [];
+  const out = new Set();
+  for (let i = 0; i + n <= words.length; i++)
+    out.add(words.slice(i, i + n).join(' '));
+  return out;
+}
+
 /** Everything in the none bed's history: every patch and every message. */
 function noneHistory(bed) {
   return git(bed, 'log', '-p', '--format=%B', 'main').toLowerCase();
@@ -148,6 +207,7 @@ function staticChecks(o, tasks) {
   const proof = proofText(o.bed);
   const proof10 = o.x10 ? proofText(o.x10) : '';
   const history = noneHistory(o.none);
+  const records = proofRecords(o.bed);
   for (const t of tasks) {
     const bad = PROMPT_BANS.filter(([re]) => re.test(t.prompt)).map(
       ([re, what]) => `${what} (${t.prompt.match(re)[0]})`
@@ -163,7 +223,7 @@ function staticChecks(o, tasks) {
       return proof.includes(word) || proof10.includes(word);
     });
     check(t.id, 'no feature word in Proof', !hits.length, hits.join(', '));
-    if (t.category === 'proof-only') {
+    if (PROOF_ONLY.includes(t.category)) {
       const leaks = (t.leakWords ?? []).filter((w) =>
         history.includes(w.toLowerCase())
       );
@@ -174,6 +234,44 @@ function staticChecks(o, tasks) {
         } phrases)`,
         !leaks.length && (t.leakWords ?? []).length > 0,
         leaks.join(', ')
+      );
+    }
+    if (t.category === 'proof-only-hard') {
+      const keys = t.records ?? [];
+      const found = keys.map((k) => records.get(k));
+      const missing = keys.filter((k, i) => !found[i]?.live);
+      check(
+        t.id,
+        `its records are live in Proof (${keys.length})`,
+        keys.length > 0 && !missing.length,
+        missing.join(', ')
+      );
+      const said = found
+        .filter(Boolean)
+        .map((r) => r.text.toLowerCase())
+        .join('\n');
+      const unsaid = (t.leakWords ?? []).filter(
+        (w) => !said.includes(w.toLowerCase())
+      );
+      check(
+        t.id,
+        'every leak word is in its records (the rule is in Proof)',
+        !unsaid.length,
+        unsaid.join(', ')
+      );
+      const prompt = t.prompt.toLowerCase();
+      const inPrompt = (t.leakWords ?? []).filter((w) =>
+        prompt.includes(w.toLowerCase())
+      );
+      const recordRuns = shingles(said, ECHO_WORDS);
+      const echoes = [...shingles(t.prompt, ECHO_WORDS)].filter((run) =>
+        recordRuns.has(run)
+      );
+      check(
+        t.id,
+        `prompt does not echo its records (no leak word, no ${ECHO_WORDS}-word run)`,
+        !inPrompt.length && !echoes.length,
+        [...inPrompt, ...echoes.map((e) => `"${e}"`)].join(', ')
       );
     }
     if (t.category === 'code-visible') {

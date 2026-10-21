@@ -1,0 +1,94 @@
+diff --git a/src/commands/builtin/font-size.ts b/src/commands/builtin/font-size.ts
+new file mode 100644
+index 0000000..2d92818
+--- /dev/null
++++ b/src/commands/builtin/font-size.ts
+@@ -0,0 +1,40 @@
++import type { Document } from '../../model/document.ts';
++import type { TextNode } from '../../model/types.ts';
++import { isText } from '../../model/types.ts';
++import { autoHeight } from '../../model/text.ts';
++import { clamp } from '../../util/math.ts';
++import type { Command } from '../types.ts';
++import { command } from '../types.ts';
++
++export const MIN_FONT_SIZE = 1;
++export const MAX_FONT_SIZE = 1000;
++
++/** The size one step up or down from `size`: one pixel. */
++export function stepFontSize(size: number, up: boolean): number {
++  return up ? size + 1 : size - 1;
++}
++
++/** The commands that step every text layer in `ids` one size up or down, height included. */
++export function fontSizeCommands(
++  doc: Document,
++  ids: readonly string[],
++  up: boolean
++): Command[] {
++  const out: Command[] = [];
++  for (const id of ids) {
++    const node = doc.get(id);
++    if (!node || !isText(node)) continue;
++    const fontSize = clamp(
++      stepFontSize(node.fontSize, up),
++      MIN_FONT_SIZE,
++      MAX_FONT_SIZE
++    );
++    if (fontSize === node.fontSize) continue;
++    const next: TextNode = { ...node, fontSize };
++    out.push(
++      command('set-prop', { id, key: 'fontSize', value: fontSize }),
++      command('set-prop', { id, key: 'height', value: autoHeight(next) })
++    );
++  }
++  return out;
++}
+diff --git a/src/commands/palette.ts b/src/commands/palette.ts
+index 874d40e..0d45675 100644
+--- a/src/commands/palette.ts
++++ b/src/commands/palette.ts
+@@ -10,6 +10,8 @@ import { alignCommand, distributeCommand } from './builtin/align.ts';
+ import type { Alignment, Axis } from './builtin/align.ts';
+ import { walk } from '../model/query.ts';
+ import { isInteractive } from '../selection/rules.ts';
++import { fontSizeCommands } from './builtin/font-size.ts';
++import { isText } from '../model/types.ts';
+ 
+ /** A command as the palette lists it, by its title. */
+ export interface PaletteEntry {
+@@ -92,6 +94,25 @@ function arrange(title: string, how: Arrange, hint: string): PaletteEntry {
+   };
+ }
+ 
++const hasText = (ctx: EditorContext) =>
++  ctx.selection.ids().some((id) => {
++    const node = ctx.doc.get(id);
++    return node !== undefined && isText(node);
++  });
++
++function fontSize(title: string, up: boolean): PaletteEntry {
++  return {
++    title,
++    enabled: hasText,
++    run(ctx) {
++      const commands = fontSizeCommands(ctx.doc, ctx.selection.ids(), up);
++      ctx.batch(title, () => {
++        for (const c of commands) ctx.dispatch(c);
++      });
++    },
++  };
++}
++
+ export const BUILTIN_ENTRIES: readonly PaletteEntry[] = [
+   { title: 'Undo', hint: 'Mod+Z', run: (ctx) => void ctx.undo() },
+   { title: 'Redo', hint: 'Mod+Shift+Z', run: (ctx) => void ctx.redo() },
+@@ -191,6 +212,8 @@ export const BUILTIN_ENTRIES: readonly PaletteEntry[] = [
+       );
+     },
+   },
++  fontSize('Increase font size', true),
++  fontSize('Decrease font size', false),
+   {
+     title: 'Rename layer',
+     enabled: (ctx) => ctx.selection.size === 1,
