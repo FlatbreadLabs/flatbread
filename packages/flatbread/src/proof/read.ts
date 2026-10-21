@@ -83,6 +83,15 @@ import {
   restsOnDead,
   type EffortState,
 } from './state.js';
+import {
+  findSuspects,
+  SuspectMap,
+  suspectable,
+  suspectBanner,
+  suspectMarker,
+  suspectPartial,
+  type Suspect,
+} from './suspect.js';
 import { createHash } from 'node:crypto';
 import { readdir, realpath, stat } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
@@ -635,6 +644,14 @@ async function render(
      * worked out for the code Citations on the page.
      */
     codeNotes?: string[];
+    /**
+     * Suspect records, by id. Left out, they are worked out for the live
+     * Decisions and Constraints on the page, when `projection` is given.
+     */
+    suspect?: ReadonlyMap<string, Suspect>;
+    projection?: EngineProjection;
+    /** Lines printed under the digest's title, before the index. */
+    notices?: string[];
   } = {}
 ): Promise<ReadEnvelope> {
   const served = await servedGeneration(options.rootDir, options.consistency);
@@ -660,7 +677,30 @@ async function render(
     : 0;
   const selected = records.slice(offset, offset + limit);
   const hasMore = offset + selected.length < records.length;
-  const { codeNotes: given, ...digestExtra } = extra;
+  const {
+    codeNotes: given,
+    suspect: suspectGiven,
+    projection,
+    ...digestExtra
+  } = extra;
+  const primary = selected.filter((record) => !record.foreign_reference);
+  const suspect =
+    suspectGiven ??
+    (projection
+      ? await suspectsOn(projection, options, primary)
+      : new SuspectMap());
+  // A check that stopped short may have missed a suspect record.
+  const suspectCut = suspectPartial(suspect);
+  const flagged = primary.filter((record) => suspect.has(record.id));
+  const flags = Object.fromEntries(
+    flagged.map((record) => {
+      const one = suspect.get(record.id) as Suspect;
+      return [
+        record.id,
+        { banner: suspectBanner(one), marker: suspectMarker(one) },
+      ];
+    })
+  );
   let codeNotes = given;
   if (!codeNotes) {
     const citations = selected.filter(isCodeCitation);
@@ -709,6 +749,15 @@ async function render(
       : null,
     hints,
     ...digestExtra,
+    ...(suspectCut
+      ? {
+          capReasons: [
+            ...(digestExtra.capReasons ?? []),
+            'suspect_limit' as const,
+          ],
+        }
+      : {}),
+    ...(flagged.length ? { flags } : {}),
     sections: [
       ...(digestExtra.sections ?? []),
       ...(codeNotes.length
@@ -721,17 +770,72 @@ async function render(
         : []),
     ],
   });
-  if (!codeNotes.length) return envelope;
-  const summary = `${envelope.summary}; ${codeNotes.length} code ${
-    codeNotes.length === 1 ? 'note' : 'notes'
-  } (## Code anchors at HEAD): ${codeNotes[0]}`;
+  if (!codeNotes.length && !flagged.length && !suspectCut) return envelope;
+  // A lone suspect record's warning leads; on a list, a count and the first.
+  const lead =
+    flagged.length && primary.length === 1
+      ? `${flags[flagged[0].id].banner} | `
+      : '';
+  const summary = `${lead}${envelope.summary}${
+    flagged.length && !lead
+      ? `; ${flagged.length} suspect (${flagged
+          .slice(0, 3)
+          .map((record) => record.id)
+          .join(', ')}${
+          flagged.length > 3 ? `, +${flagged.length - 3} more` : ''
+        }): each rests on code that changed after it was recorded, or on dead evidence; each one's warning is under its heading`
+      : ''
+  }${
+    suspectCut
+      ? '; the suspect check stopped at its limit, so a record not flagged here may still be suspect (`proof get <id>` checks one record)'
+      : ''
+  }${
+    codeNotes.length
+      ? `; ${codeNotes.length} code ${
+          codeNotes.length === 1 ? 'note' : 'notes'
+        } (## Code anchors at HEAD): ${codeNotes[0]}`
+      : ''
+  }`;
   return {
     ...envelope,
     summary:
       [...summary].length <= 640
         ? summary
         : `${[...summary].slice(0, 639).join('')}…`,
+    ...(flagged.length
+      ? {
+          suspect: Object.fromEntries(
+            flagged.map((record) => [record.id, flags[record.id].banner])
+          ),
+        }
+      : {}),
   };
+}
+
+/**
+ * The suspect records among `records`: the live Decisions and
+ * Constraints whose code changed after they were recorded, or that rest
+ * on dead evidence. Reads the `find` index for links and git history at
+ * HEAD for code, with its own call budget.
+ */
+async function suspectsOn(
+  projection: EngineProjection,
+  options: EffortProjectionOptions,
+  records: readonly ReadRecord[],
+  history?: CodeHistory
+): Promise<SuspectMap> {
+  if (!records.some(suspectable)) return new SuspectMap();
+  const index = await projection.findIndex();
+  let check = history;
+  if (!check) {
+    const repo = await proofRepository(options.rootDir);
+    check = repo ? new CodeHistory(repo.top, repo.root) : undefined;
+  }
+  return findSuspects(
+    records.map((record) => index.records.get(record.id) ?? record),
+    index,
+    check
+  );
 }
 
 export async function getRecord(
@@ -860,6 +964,7 @@ export async function getRecord(
       fullBody: true,
       ...(sections ? { sections } : {}),
       codeNotes,
+      projection,
     }
   );
 }
@@ -964,6 +1069,12 @@ export async function effortRecords(
     standing?: string[];
     /** Keeps live records that rest on a record in one of these dead standings. */
     restsOn?: string[];
+    /**
+     * Keeps live Decisions and Constraints that are suspect: the code they
+     * rest on changed after they were recorded, or they rest on dead
+     * evidence.
+     */
+    suspect?: boolean;
     page?: { cursor?: string; limit?: number };
   }
 ): Promise<ReadEnvelope> {
@@ -1042,6 +1153,14 @@ export async function effortRecords(
       ...records.filter((record) => restsOnDead(record, get, restsOn).length)
     );
   }
+  let suspectOnly: SuspectMap | undefined;
+  if (options.suspect) {
+    suspectOnly = await suspectsOn(projection, options, records);
+    const kept = records.filter((record) =>
+      (suspectOnly as SuspectMap).has(record.id)
+    );
+    records.splice(0, records.length, ...kept);
+  }
   return render(
     options,
     {
@@ -1053,6 +1172,7 @@ export async function effortRecords(
       ...(retracted === 'exclude' ? {} : { retracted }),
       ...(standing ? { standing } : {}),
       ...(restsOn ? { rests_on: restsOn } : {}),
+      ...(options.suspect ? { suspect: true } : {}),
       page: options.page,
     },
     records,
@@ -1062,7 +1182,8 @@ export async function effortRecords(
       ...kinds
         .slice(0, 8)
         .map((kind) => `effortRecords("${effortId}", { kinds: ["${kind}"] })`),
-    ]
+    ],
+    suspectOnly ? { suspect: suspectOnly } : { projection }
   );
 }
 
@@ -1195,7 +1316,8 @@ export async function relations(
     },
     records,
     edges,
-    [`getRecord("${fromId}")`]
+    [`getRecord("${fromId}")`],
+    { projection }
   );
 }
 
@@ -1241,7 +1363,7 @@ export async function blockingDecisions(
             `effortRecords("${effortId}", { kinds: ["issue"], where: { kind: ["blocker"], status: ["open"] } })`
         ),
     ],
-    { relatedRecords: issues }
+    { relatedRecords: issues, projection }
   );
 }
 
@@ -1499,7 +1621,9 @@ export async function effortBrief(
   const changedIds = [...stale, ...changes]
     .filter((change) => change.to !== null)
     .map((change) => `getRecord("${change.id}")`);
-  return render(
+  const suspect = await suspectsOn(projection, options, records);
+  const notices = suspectNotices(effortId, [...suspect.values()], byId, head);
+  const envelope = await render(
     options,
     { type: 'effortBrief', effort_id: effortId },
     head ? [head] : [],
@@ -1516,8 +1640,77 @@ export async function effortBrief(
       fullBody: true,
       sections,
       compaction,
+      suspect,
+      notices,
     }
   );
+  if (!suspect.size) return envelope;
+  const summary = `${envelope.summary}; SUSPECT ${suspect.size}: ${[
+    ...suspect.keys(),
+  ]
+    .slice(0, 3)
+    .join(', ')}${
+    suspect.size > 3 ? `, +${suspect.size - 3} more` : ''
+  } (each rests on code that changed after it was recorded, or on dead evidence; listed above the body)`;
+  return {
+    ...envelope,
+    summary:
+      [...summary].length <= 640
+        ? summary
+        : `${[...summary].slice(0, 639).join('')}…`,
+    suspect: Object.fromEntries(
+      [...suspect].map(([id, one]) => [id, suspectBanner(one)])
+    ),
+  };
+}
+
+/** Suspect records `brief` lists, at most. */
+const BRIEF_SUSPECT_LIMIT = 10;
+
+/**
+ * The lines `brief` prints above the head compaction for an Effort's
+ * suspect records: one line each with why, and how many of them the head
+ * derives from, since its summary repeats what they say.
+ */
+function suspectNotices(
+  effortId: string,
+  suspects: readonly Suspect[],
+  byId: ReadonlyMap<string, ReadRecord>,
+  head: ReadRecord | undefined
+): string[] {
+  if (!suspects.length) return [];
+  const derived = new Set(head?.relations.derives_from ?? []);
+  const under = suspects.filter((one) => derived.has(one.id)).length;
+  const lines = [
+    `> **SUSPECT** — ${suspects.length} live ${
+      suspects.length === 1 ? 'record' : 'records'
+    } in this Effort may be out of date: the code ${
+      suspects.length === 1 ? 'it rests' : 'they rest'
+    } on changed after ${
+      suspects.length === 1 ? 'it was' : 'they were'
+    } recorded, or ${
+      suspects.length === 1 ? 'it rests' : 'they rest'
+    } on dead evidence.${
+      under
+        ? ` The head compaction derives from ${under} of them, so what it says about them may be out of date too.`
+        : ''
+    } Read the code first; where they disagree, the code is the current behaviour.`,
+    ...suspects
+      .slice(0, BRIEF_SUSPECT_LIMIT)
+      .map(
+        (one) =>
+          `> - ${one.id} "${String(
+            byId.get(one.id)?.frontmatter.title ?? ''
+          )}": ${one.reasons.map((reason) => reason.text).join('; ')}`
+      ),
+  ];
+  if (suspects.length > BRIEF_SUSPECT_LIMIT)
+    lines.push(
+      `> - … ${
+        suspects.length - BRIEF_SUSPECT_LIMIT
+      } more: \`proof records ${effortId} --suspect\``
+    );
+  return lines;
 }
 
 /** A `find` envelope: the usual read fields plus the hit cards inline. */
@@ -2032,12 +2225,26 @@ export async function effortFind(
           : () => false,
       })
     : new Map<string, string[]>();
+  // Live Decisions and Constraints whose code moved on, or that rest on
+  // dead evidence. Records only on a ref are not checked.
+  const suspect = await findSuspects(
+    found.hits
+      .map((hit) => hit.record)
+      .filter(
+        (record) =>
+          !overlay || !(overlay as Overlay).tag(record.id).startsWith('only on')
+      ),
+    index,
+    history ? new CodeHistory(history.top, history.proofRoot) : undefined
+  );
   const withNotes = (hits: readonly FindHit[]): FindHit[] =>
-    hits.map((hit) =>
-      staleLines.get(hit.record.id)?.length
+    hits.map((hit) => {
+      const one = suspect.get(hit.record.id);
+      const noted = staleLines.get(hit.record.id)?.length
         ? { ...hit, codeNotes: staleLines.get(hit.record.id) }
-        : hit
-    );
+        : hit;
+      return one ? { ...noted, suspect: suspectBanner(one) } : noted;
+    });
   const result: FindResult =
     codePath || overlay
       ? {
@@ -2083,6 +2290,7 @@ export async function effortFind(
     {
       sections: [{ heading: 'Find hits', lines: cards.split('\n') }],
       codeNotes: [],
+      suspect,
       // A ranked search that shows fewer records than matched is not complete.
       capReasons: result.matched > result.hits.length ? ['find_limit'] : [],
     }
@@ -2092,8 +2300,16 @@ export async function effortFind(
   } searched); matched: ${result.found.join(' ') || 'none'}; missing: ${
     result.missing.join(' ') || 'none'
   }${conflicts ? `; refs ${sides.length}; conflicts ${conflicts.total}` : ''}${
-    note ? `; ${note}` : ''
-  }`;
+    suspect.size
+      ? `; SUSPECT ${[...suspect.keys()].join(
+          ', '
+        )}: each rests on code that changed after it was recorded, or on dead evidence (see the card)`
+      : ''
+  }${
+    suspect.partial
+      ? '; the suspect check stopped at its limit, so a card without a warning may still be suspect (`proof get <id>` checks one record)'
+      : ''
+  }${note ? `; ${note}` : ''}`;
   return {
     ...envelope,
     summary:
@@ -2291,7 +2507,23 @@ export async function effortState(
       'PROOF_INVALID_ARGUMENT',
       `Effort ${effortId} does not exist`
     );
-  const { markdown, ...state } = buildEffortState(index, effortId);
+  const suspect = await suspectsOn(
+    projection,
+    options,
+    [...index.records.values()].filter(
+      (record) => record.frontmatter.effort === effortId
+    )
+  );
+  const { markdown, ...state } = buildEffortState(
+    index,
+    effortId,
+    new Map(
+      [...suspect].map(([id, one]) => [
+        id,
+        one.reasons.map((reason) => reason.text),
+      ])
+    )
+  );
   const envelope = await render(
     options,
     { type: 'effortState', effort_id: effortId },
@@ -2301,6 +2533,8 @@ export async function effortState(
     {
       sections: [{ heading: 'Effort state', lines: markdown.split('\n') }],
       capReasons: state.capped ? ['state_limit'] : [],
+      // Only for the cap: state lists its suspect records in its markdown.
+      suspect: suspect.partial ? suspect : new SuspectMap(),
     }
   );
   return {

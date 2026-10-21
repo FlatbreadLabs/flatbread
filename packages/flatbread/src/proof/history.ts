@@ -66,6 +66,25 @@ export interface ShortCommit {
   readonly subject: string;
 }
 
+/** A commit with its committer time. */
+export interface CommitAt {
+  readonly sha: string;
+  /** Committer time, in ms. */
+  readonly time: number;
+}
+
+/** Lines one commit added to and deleted from one file. */
+export interface LineChange {
+  readonly added: number;
+  readonly deleted: number;
+}
+
+/** A commit that touched files. */
+export interface FileCommit extends CommitAt {
+  readonly subject: string;
+  readonly files: readonly string[];
+}
+
 /** What HEAD says about one code anchor. */
 export interface AnchorStatus {
   readonly anchor: CodeAnchor;
@@ -89,6 +108,15 @@ export interface AnchorStatus {
 }
 
 export const HISTORY_GIT_CALLS = 60;
+/** Commits `recentCommits` reads, at most. */
+const RECENT_MAX = 200;
+/**
+ * A history read that may walk many commits is stopped after this long,
+ * and then says nothing; `timedOut` records that it was.
+ */
+export const SLOW_READ_MS = 5000;
+/** The same for a read whose result is only shown, never decides. */
+const SHOWN_READ_MS = 2000;
 const FOLLOW_RENAMES = 50;
 const FOLDER_ADDS = 100;
 const SINCE_MAX = 200;
@@ -109,7 +137,9 @@ interface GitOutput {
 function runGit(
   cwd: string,
   args: readonly string[],
-  input?: string
+  input?: string,
+  timeout?: number,
+  onTimeout?: () => void
 ): Promise<GitOutput | undefined> {
   return new Promise((resolveGit) => {
     const child = execFile(
@@ -120,9 +150,11 @@ function runGit(
         env: { ...process.env, ...NO_FETCH_ENV },
         maxBuffer: 64 * 1024 * 1024,
         encoding: 'utf8',
+        ...(timeout ? { timeout, killSignal: 'SIGKILL' as const } : {}),
       },
       (error, stdout) => {
         if (!error) return resolveGit({ code: 0, out: stdout });
+        if ((error as { killed?: unknown }).killed) onTimeout?.();
         const code = (error as { code?: unknown }).code;
         resolveGit(
           typeof code === 'number' ? { code, out: stdout ?? '' } : undefined
@@ -429,8 +461,12 @@ export class CodeHistory {
   private readonly texts = new Map<string, Promise<string | undefined>>();
   private headSha?: Promise<string | undefined>;
   private windowBase?: Promise<string | undefined>;
+  private fileList?: Promise<string[] | undefined>;
+  private recordAdds?: Promise<Map<string, CommitAt>>;
   /** Set once a read was skipped because the call budget ran out. */
   capped = false;
+  /** Set once a read was stopped after SLOW_READ_MS. */
+  timedOut = false;
 
   constructor(
     readonly top: string,
@@ -459,7 +495,8 @@ export class CodeHistory {
 
   private run(
     args: readonly string[],
-    input?: string
+    input?: string,
+    timeout?: number
   ): Promise<GitOutput | undefined> {
     const key = JSON.stringify([args, input ?? null]);
     let result = this.memo.get(key);
@@ -469,7 +506,9 @@ export class CodeHistory {
         return Promise.resolve(undefined);
       }
       this.calls++;
-      result = runGit(this.top, args, input);
+      result = runGit(this.top, args, input, timeout, () => {
+        this.timedOut = true;
+      });
       this.memo.set(key, result);
     }
     return result;
@@ -477,9 +516,10 @@ export class CodeHistory {
 
   private async ok(
     args: readonly string[],
-    input?: string
+    input?: string,
+    timeout?: number
   ): Promise<string | undefined> {
-    const result = await this.run(args, input);
+    const result = await this.run(args, input, timeout);
     return result?.code === 0 ? result.out : undefined;
   }
 
@@ -1240,6 +1280,163 @@ export class CodeHistory {
     return found;
   }
 
+  /** Every file in HEAD's tree, in one `ls-tree` call. */
+  headFiles(): Promise<string[] | undefined> {
+    return (this.fileList ??= this.head().then(async (head) =>
+      head
+        ? (await this.ok(['ls-tree', '-r', '-z', '--name-only', head]))
+            ?.split('\0')
+            .filter(Boolean)
+        : undefined
+    ));
+  }
+
+  /**
+   * The commit that first added each record file under the Proof folder,
+   * keyed by file name less `.md` (a record's id), in one `git log` call.
+   */
+  recordCommits(): Promise<Map<string, CommitAt>> {
+    return (this.recordAdds ??= this.head().then(async (head) => {
+      const found = new Map<string, CommitAt>();
+      if (!head) return found;
+      const out = await this.ok(
+        [
+          'log',
+          '--diff-filter=A',
+          '--no-renames',
+          '--format=%x1e%H%x1f%ct',
+          '--name-only',
+          head,
+          '--',
+          this.proofRoot || '.',
+        ],
+        undefined,
+        SLOW_READ_MS
+      );
+      // Newest first, so the last add of a file is its first.
+      for (const { sha, subject, files } of entries(out ?? '')) {
+        const time = Number(subject) * 1000;
+        if (!Number.isFinite(time)) continue;
+        for (const [file] of files) {
+          const name = file.slice(file.lastIndexOf('/') + 1);
+          if (name.endsWith('.md')) found.set(name.slice(0, -3), { sha, time });
+        }
+      }
+      return found;
+    }));
+  }
+
+  /**
+   * Lines added and deleted between `base` and HEAD's tree, by HEAD's path,
+   * for `paths`, in one `git diff --numstat` call (no history walk). A
+   * rename between them whose old and new paths are both in `paths` is
+   * followed, so a move counts only the lines it changed. Binary files are
+   * left out; undefined when git could not say.
+   */
+  async diffStat(
+    base: string,
+    paths: readonly string[]
+  ): Promise<Map<string, LineChange> | undefined> {
+    const head = await this.head();
+    const list = [...new Set(paths)].sort();
+    const found = new Map<string, LineChange>();
+    if (!head || !list.length) return found;
+    const out = await this.ok(
+      ['diff', '--numstat', '-z', '-M', base, head, '--', ...list],
+      undefined,
+      SLOW_READ_MS
+    );
+    if (out === undefined) return undefined;
+    const fields = out.split('\0');
+    for (let i = 0; i < fields.length; i++) {
+      const [added, deleted, path] = fields[i].split('\t');
+      if (added === undefined || deleted === undefined) continue;
+      let now = path;
+      // A rename: the old and new paths follow as their own fields.
+      if (path === '') {
+        now = fields[i + 2];
+        i += 2;
+      }
+      const change = { added: Number(added), deleted: Number(deleted) };
+      if (
+        now &&
+        Number.isFinite(change.added) &&
+        Number.isFinite(change.deleted)
+      )
+        found.set(now, change);
+    }
+    return found;
+  }
+
+  /**
+   * The newest commits in HEAD's history after `since` (ms) that touched
+   * any of `paths`, at most RECENT_MAX, with the files of `paths` each
+   * touched; one `git log` call stopped after SHOWN_READ_MS, since what it
+   * finds is only shown.
+   */
+  async recentCommits(
+    paths: readonly string[],
+    since: number
+  ): Promise<FileCommit[] | undefined> {
+    const head = await this.head();
+    const list = [...new Set(paths)].sort();
+    if (!head || !list.length || !Number.isFinite(since)) return [];
+    const out = await this.ok(
+      [
+        'log',
+        '--no-renames',
+        '--name-only',
+        `--max-count=${RECENT_MAX}`,
+        `--since=${new Date(since).toISOString()}`,
+        '--format=%x1e%H%x1f%ct%x1f%s',
+        head,
+        '--',
+        ...list,
+      ],
+      undefined,
+      SHOWN_READ_MS
+    );
+    if (out === undefined) return undefined;
+    return out
+      .split('\x1e')
+      .filter((entry) => entry.trim())
+      .flatMap((entry) => {
+        const [first, ...rest] = entry.split('\n');
+        const [sha, ct, subject = ''] = first.split('\x1f');
+        const time = Number(ct) * 1000;
+        if (!sha || !Number.isFinite(time)) return [];
+        return [
+          { sha: sha.trim(), time, subject, files: rest.filter(Boolean) },
+        ];
+      });
+  }
+
+  /** How many lines each text file has at HEAD, in one `git grep` call. */
+  async lineCounts(paths: readonly string[]): Promise<Map<string, number>> {
+    const counts = new Map<string, number>();
+    const head = await this.head();
+    const list = [...new Set(paths)].sort();
+    if (!head || !list.length) return counts;
+    const result = await this.run([
+      'grep',
+      '-I',
+      '-c',
+      '-e',
+      '',
+      head,
+      '--',
+      ...list,
+    ]);
+    for (const line of result?.out.split('\n') ?? []) {
+      if (!line.startsWith(`${head}:`)) continue;
+      const rest = line.slice(head.length + 1);
+      const cut = rest.lastIndexOf(':');
+      const n = Number(rest.slice(cut + 1));
+      if (cut > 0 && Number.isFinite(n)) counts.set(rest.slice(0, cut), n);
+    }
+    return counts;
+  }
+
   /**
    * Where each path HEAD and the working tree lack went, for paths history
    * knows; at most `max`.
@@ -1264,6 +1461,41 @@ export class CodeHistory {
       if (fate && (fate.moves.length || fate.deleted)) fates.set(path, fate);
     });
     return fates;
+  }
+
+  /**
+   * For bare file names such as `legacy.ts`, the paths with that name that
+   * a commit in HEAD's history deleted, in one `git log` call stopped after
+   * SLOW_READ_MS. Keys are the names.
+   */
+  async deletedPaths(names: readonly string[]): Promise<Map<string, string[]>> {
+    const found = new Map<string, string[]>();
+    const list = [...new Set(names)].filter((name) =>
+      /^[\w@+-][\w.@+-]*$/.test(name)
+    );
+    const head = await this.head();
+    if (!head || !list.length) return found;
+    const out = await this.ok(
+      [
+        'log',
+        '--diff-filter=D',
+        '--no-renames',
+        '--name-only',
+        '--format=',
+        head,
+        '--',
+        ...list.map((name) => `:(glob)**/${name}`),
+      ],
+      undefined,
+      SLOW_READ_MS
+    );
+    for (const path of new Set((out ?? '').split('\n').filter(Boolean)))
+      for (const name of list)
+        if (path === name || path.endsWith(`/${name}`)) {
+          if (!found.has(name)) found.set(name, []);
+          (found.get(name) as string[]).push(path);
+        }
+    return found;
   }
 }
 

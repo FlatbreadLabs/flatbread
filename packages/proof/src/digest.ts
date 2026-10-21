@@ -35,14 +35,17 @@ export interface ReadEdge {
  * Why a read is not complete. `find_limit` means `proof find` matched more
  * records than it shows; it pages no further, so narrow the query instead.
  * `state_limit` means `proof state` cut at least one list short; each cut
- * list says how many entries it left out.
+ * list says how many entries it left out. `suspect_limit` means the check
+ * for suspect records stopped at a cap or its git budget, so a record it
+ * did not flag may still be suspect; `proof get` checks one record.
  */
 export type ReadCapReason =
   | 'primary_records'
   | 'displayed_edges'
   | 'bytes'
   | 'find_limit'
-  | 'state_limit';
+  | 'state_limit'
+  | 'suspect_limit';
 
 /** Machine-readable state of an Effort's head compaction (`brief` only). */
 export interface CompactionStatus {
@@ -73,6 +76,17 @@ export interface ReadEnvelope {
   page: { returned: number; has_more: boolean; next_cursor: string | null };
   hints: string[];
   compaction?: CompactionStatus;
+  /**
+   * Records on the page a read flagged, by id, with the warning printed
+   * before each one's body.
+   */
+  suspect?: Record<string, string>;
+}
+
+/** A warning printed before a record's body, and its short index marker. */
+export interface RecordFlag {
+  readonly banner: string;
+  readonly marker: string;
 }
 
 export interface DigestInput {
@@ -98,6 +112,10 @@ export interface DigestInput {
   compaction?: CompactionStatus;
   /** Caps the caller applied before the digest, such as `find_limit`. */
   capReasons?: readonly ReadCapReason[];
+  /** Warnings for records, by id, printed under the heading before the body. */
+  flags?: Readonly<Record<string, RecordFlag>>;
+  /** Lines printed under the title, before the index. */
+  notices?: readonly string[];
 }
 
 const CAP_RECORDS = 25;
@@ -246,15 +264,15 @@ function retractedBanner(record: ReadRecord): string {
   ].join(' ');
 }
 
-function indexLine(record: ReadRecord): string {
+function indexLine(record: ReadRecord, flag?: RecordFlag): string {
   return `- [\`${record.id}\`](#${record.id})${
     isRetracted(record) ? ' (retracted)' : ''
-  }`;
+  }${flag ? ` (${flag.marker})` : ''}`;
 }
 
 function renderRecord(
   record: ReadRecord,
-  options: { bodyMode?: RecordBodyMode } = {}
+  options: { bodyMode?: RecordBodyMode; flag?: RecordFlag } = {}
 ): string {
   if (record.foreign_reference) {
     const state = record.frontmatter.retracted
@@ -282,6 +300,7 @@ function renderRecord(
   return [
     `### ${record.id}`,
     ...(isRetracted(record) ? [retractedBanner(record), ''] : []),
+    ...(options.flag ? [`> ${options.flag.banner}`, ''] : []),
     '```yaml',
     ...Object.keys(frontmatter)
       .sort()
@@ -374,16 +393,23 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
   const renderPrimary = (
     record: ReadRecord,
     bodyMode: RecordBodyMode = primaryBodyMode
-  ) => renderRecord(record, { bodyMode });
+  ) => renderRecord(record, { bodyMode, flag: input.flags?.[record.id] });
   // Related / browse neighbors stay excerpted even when primary bodies are full.
   const renderRelated = (record: ReadRecord) =>
-    renderRecord(record, { bodyMode: 'excerpt' });
+    renderRecord(record, {
+      bodyMode: 'excerpt',
+      flag: input.flags?.[record.id],
+    });
+  const index = (record: ReadRecord) =>
+    indexLine(record, input.flags?.[record.id]);
+  const notices = input.notices?.length ? [...input.notices, ''] : [];
   let markdown = [
     yamlHeader(input, completeness, hasMore),
     ...(input.anomaly ? [`> anomaly: ${input.anomaly}`, ''] : []),
     '# Proof read',
+    ...notices,
     '## Index',
-    ...visible.filter((record) => !record.foreign_reference).map(indexLine),
+    ...visible.filter((record) => !record.foreign_reference).map(index),
     '## Records',
     ...visible.map((record) => renderPrimary(record)),
     ...(input.relatedRecords?.length
@@ -417,8 +443,9 @@ export async function renderDigest(input: DigestInput): Promise<ReadEnvelope> {
       yamlHeader(input, completeness, hasMore),
       ...(anomaly ? [`> anomaly: ${anomaly}`, ''] : []),
       '# Proof read',
+      ...notices,
       '## Index',
-      ...visible.filter((record) => !record.foreign_reference).map(indexLine),
+      ...visible.filter((record) => !record.foreign_reference).map(index),
       ...checkpoints,
       '## Records',
     ];

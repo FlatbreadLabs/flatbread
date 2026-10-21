@@ -1,7 +1,10 @@
 // The text that the `brief` and `dump` arms paste into the task: the
 // output of `proof brief` for every Effort, or every live record in full.
 // Both are made once per bed commit and cached, since every session on
-// that bed gets the same text.
+// that bed gets the same text. The dump reads record files directly, so
+// it asks the CLI which records are suspect (`proof records --suspect`)
+// and prints the same warning before each one's body that `proof get`
+// prints.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -60,9 +63,10 @@ const fieldValue = (value) =>
 
 /**
  * Every live record's full text, grouped by Effort, compactions included.
- * Dead means retracted, superseded, invalidated, or rejected.
+ * Dead means retracted, superseded, invalidated, or rejected. `suspect`
+ * maps a record id to the warning the CLI prints before its body.
  */
-export function dumpText(proofRoot) {
+export function dumpText(proofRoot, suspect = {}) {
   const records = readRecords(proofRoot);
   const efforts = records.filter((r) => r.kind === 'effort').sort(byDate);
   const parts = [];
@@ -94,7 +98,7 @@ export function dumpText(proofRoot) {
           f.created_at ?? ''
         ).slice(0, 10)} · ${f.created_by ?? ''}${
           fields.length ? `\n${fields.join('\n')}` : ''
-        }\n\n${r.body.trim()}\n`
+        }\n\n${suspect[r.id] ? `> ${suspect[r.id]}\n\n` : ''}${r.body.trim()}\n`
       );
     }
   }
@@ -102,12 +106,12 @@ export function dumpText(proofRoot) {
 }
 
 /**
- * `proof brief <effort>` for every Effort, run by the real CLI in a
- * throwaway clone of `bed` under `scratch` (so the bed's own folder gains
- * no read cache). The clone's path is replaced with `.` in the output.
+ * Runs `use(clone, efforts)` in a throwaway clone of `bed` under `scratch`
+ * (so the bed's own folder gains no read cache), with the clone's Efforts
+ * oldest first.
  */
-export async function briefText(bed, scratch) {
-  const clone = join(scratch, `brief-clone-${process.pid}`);
+async function inClone(bed, scratch, name, use) {
+  const clone = join(scratch, `${name}-clone-${process.pid}`);
   await rm(clone, { recursive: true, force: true });
   await mkdir(dirname(clone), { recursive: true });
   git(dirname(clone), 'clone', '--quiet', '--no-hardlinks', bed, clone);
@@ -116,18 +120,78 @@ export async function briefText(bed, scratch) {
     const efforts = readRecords(join(clone, '.flatbread-proof'))
       .filter((r) => r.kind === 'effort')
       .sort(byDate);
+    return await use(clone, efforts);
+  } finally {
+    await rm(clone, { recursive: true, force: true });
+  }
+}
+
+/** One `proof` CLI read in `cwd`, as its JSON envelope. */
+async function proofRead(cwd, args) {
+  const run = await runCommand(
+    process.execPath,
+    [FLATBREAD_BIN, 'proof', ...args],
+    { cwd, env: cleanEnv(), timeout: 120e3 }
+  );
+  if (run.code !== 0)
+    throw new Error(
+      `proof ${args.join(' ')} failed: ${run.stderr || run.stdout}`
+    );
+  return JSON.parse(run.stdout);
+}
+
+/**
+ * The CLI's warning for each suspect record in `bed`, by id, from
+ * `proof records <effort> --suspect` for every Effort, every page. When a
+ * listing's check stopped at a cap (`suspect_limit`), each live Decision
+ * and Constraint of that Effort is checked on its own with `proof get`, as
+ * the arms that read through `get` see it.
+ */
+export async function suspectBanners(bed, scratch) {
+  return inClone(bed, scratch, 'suspect', async (clone, efforts) => {
+    const banners = {};
+    const records = readRecords(join(clone, '.flatbread-proof'));
+    for (const effort of efforts) {
+      let cursor;
+      let partial = false;
+      do {
+        const envelope = await proofRead(clone, [
+          'records',
+          effort.id,
+          '--suspect',
+          '--limit',
+          '25',
+          ...(cursor ? ['--cursor', cursor] : []),
+        ]);
+        Object.assign(banners, envelope.suspect ?? {});
+        if (envelope.cap_reasons?.includes('suspect_limit')) partial = true;
+        cursor = envelope.page.next_cursor;
+      } while (cursor);
+      if (!partial) continue;
+      for (const r of records.filter(
+        (r) =>
+          r.frontmatter.effort === effort.id &&
+          ['decision', 'constraint'].includes(r.kind) &&
+          !DEAD.has(r.standing)
+      )) {
+        const envelope = await proofRead(clone, ['get', r.id]);
+        if (envelope.suspect?.[r.id]) banners[r.id] = envelope.suspect[r.id];
+      }
+    }
+    return banners;
+  });
+}
+
+/**
+ * `proof brief <effort>` for every Effort, run by the real CLI in a
+ * throwaway clone of `bed` under `scratch`. The clone's path is replaced
+ * with `.` in the output.
+ */
+export async function briefText(bed, scratch) {
+  return inClone(bed, scratch, 'brief', async (clone, efforts) => {
     const parts = [];
     for (const effort of efforts) {
-      const run = await runCommand(
-        process.execPath,
-        [FLATBREAD_BIN, 'proof', 'brief', effort.id],
-        { cwd: clone, env: cleanEnv(), timeout: 120e3 }
-      );
-      if (run.code !== 0)
-        throw new Error(
-          `proof brief ${effort.id} failed: ${run.stderr || run.stdout}`
-        );
-      const envelope = JSON.parse(run.stdout);
+      const envelope = await proofRead(clone, ['brief', effort.id]);
       // The digest opens with the read's query metadata (hashes, cursor,
       // caps), which is plumbing, not memory; the Markdown after it stays.
       const digest = (await readFile(envelope.artifact_path, 'utf8')).replace(
@@ -142,9 +206,7 @@ export async function briefText(bed, scratch) {
       );
     }
     return { text: parts.join('\n'), efforts: efforts.length };
-  } finally {
-    await rm(clone, { recursive: true, force: true });
-  }
+  });
 }
 
 /**
@@ -159,7 +221,7 @@ export async function injectText(kind, bed, cache) {
   await mkdir(dir, { recursive: true });
   const made =
     kind === 'dump'
-      ? dumpText(join(bed, '.flatbread-proof'))
+      ? dumpText(join(bed, '.flatbread-proof'), await suspectBanners(bed, dir))
       : await briefText(bed, dir);
   const { text, ...about } = made;
   await writeFile(file, text);

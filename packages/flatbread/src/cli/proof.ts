@@ -51,6 +51,7 @@ export interface EffortCliOptions {
   retracted?: RetractedMode;
   standing?: string[];
   restsOn?: string[];
+  suspect?: boolean;
   effort?: string;
   all?: boolean;
   asOf?: string;
@@ -94,6 +95,10 @@ export function mapEffortCliOptions(
           : undefined,
       standing: split(options.standing),
       restsOn: split(options['rests-on']),
+      suspect:
+        options.suspect === true || options.suspect === 'true'
+          ? true
+          : undefined,
       effort: typeof options.effort === 'string' ? options.effort : undefined,
       all: options.all === true || options.all === 'true' ? true : undefined,
       // The option parser turns `--as-of 2026` into a number; keep it as
@@ -249,6 +254,7 @@ export async function handleEffortRecords(
     retracted: options.retracted,
     standing: options.standing,
     restsOn: options.restsOn,
+    suspect: options.suspect,
     page: { limit: options.limit, cursor: options.cursor },
   });
 }
@@ -671,6 +677,10 @@ export function registerProofCommands(prog: any): void {
         .option(
           '--rests-on <values>',
           'Live records that derive from, cite, or give as evidence a record in these dead standings: superseded, invalidated, rejected, retracted'
+        )
+        .option(
+          '--suspect',
+          'Live Decisions and Constraints whose code changed after they were recorded, or that rest on dead evidence'
         )
     );
   recordsOptions(
