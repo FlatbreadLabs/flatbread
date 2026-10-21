@@ -1,0 +1,20 @@
+{
+  "id": "B-V2",
+  "kind": "build",
+  "category": "code-visible",
+  "rules": ["V2"],
+  "prompt": "Add Scale selection to the command palette. I type a percentage, like 50 or 150%, and the selected layers grow or shrink by that much about the centre of the selection: their sizes and their positions both scale, and everything inside a selected group or frame scales with it. It is one step to undo. Anything other than a positive number is refused and changes nothing. It is only offered when something is selected.",
+  "featureWords": ["Scale selection"],
+  "leakWords": [],
+  "visibleIn": [
+    {
+      "path": "src/units/precision.ts",
+      "text": "Stored geometry is never rounded"
+    }
+  ],
+  "reference": "One resize command with the exact scaled geometry for every selected layer and everything inside it.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Rounds every scaled x, y, width and height to two decimals before storing it."
+  }
+}

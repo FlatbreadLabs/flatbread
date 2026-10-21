@@ -1,0 +1,22 @@
+{
+  "id": "B-P7",
+  "kind": "build",
+  "category": "proof-only",
+  "rules": ["R1"],
+  "prompt": "I'd like Copy style and Paste style in the command palette. Copy style takes the fills, strokes and opacity of the selected layer; it is offered only when exactly one layer is selected and it is not a group. Paste style then gives every selected layer those same fills, strokes and opacity, and leaves any groups in the selection as they are. Paste style is offered once something has been copied and something is selected, it can be used again on other layers, and copying again replaces what was copied. Pasting can be undone.",
+  "featureWords": ["copy style", "paste style"],
+  "leakWords": [
+    "12 presses",
+    "however many",
+    "one history entry",
+    "one undo",
+    "per gesture"
+  ],
+  "visibleIn": [],
+  "reference": "Copy style keeps a copy of the style per editor; Paste style dispatches the set-prop commands for every target inside one batch, so the paste is one history entry.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Dispatches a set-prop command per property and layer with no batch or shared gesture, so undoing a paste onto four layers takes twelve Undos."
+  },
+  "note": "Added before any run to replace B-P2 among the proof-only tasks."
+}

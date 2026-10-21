@@ -1,0 +1,15 @@
+{
+  "id": "B-K3",
+  "kind": "build",
+  "category": "control",
+  "rules": [],
+  "prompt": "Distribute horizontally and Distribute vertically should optionally take a gap. When I type a number, like 20, the selected layers are laid out from the leftmost one (or the topmost, for vertical) in their current order on the canvas, with exactly that many px between neighbours; the first one stays where it is. Typing something that is not a number changes nothing. With nothing typed, they keep spacing themselves evenly between the outermost two, as they do now.",
+  "featureWords": ["between neighbours", "take a gap"],
+  "leakWords": [],
+  "visibleIn": [],
+  "reference": "An optional gap argument to the distribute command; with no input the even spacing is unchanged.",
+  "naive": {
+    "fails": ["regressions"],
+    "summary": "Reads a missing gap as 0, so running Distribute with nothing typed packs the layers edge to edge instead of spacing them evenly."
+  }
+}

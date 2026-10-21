@@ -1,0 +1,10 @@
+{
+  "id": "L-K1",
+  "kind": "plan",
+  "category": "control",
+  "rules": [],
+  "prompt": "Add rulers along the top and left edges of the canvas. They show tick marks with labels in px for the current zoom and pan, choosing a tick spacing so labels never crowd (for example 10, 50, 100 or 500 px apart depending on zoom), and they highlight the extent of the current selection. Plan how to build this.",
+  "featureWords": ["ruler", "tick mark", "ticks"],
+  "leakWords": [],
+  "visibleIn": []
+}

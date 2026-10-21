@@ -1,0 +1,13 @@
+{
+  "include": [
+    "The plan uses the layers panel order as the code has it: rows list layers frontmost first, so the layers stacked above a mask come after it in its parent's child list (paint order) and before it in the rows.",
+    "Which layers a mask clips is worked out from the parent's child list in paint order (back to front: later children paint above), and the plan converts between rows and paint order where the panel is involved.",
+    "Groups have an opacity of their own that multiplies into their children when they render; the plan treats the opacity of the group a mask sits in that way.",
+    "Making a shape a mask, and undoing that, is one undoable command, and the mask flag is saved with the document.",
+    "The plan says how hit testing treats the parts of clipped layers that the mask hides."
+  ],
+  "avoid": [
+    "Treating the layers list as back to front (row 0 the backmost layer), for example taking the rows below the mask in the panel as the layers above it.",
+    "Saying groups have no opacity of their own, or pushing a group's opacity onto the layers inside it."
+  ]
+}

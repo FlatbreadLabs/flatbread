@@ -1,0 +1,16 @@
+{
+  "id": "L-S2",
+  "kind": "plan",
+  "category": "stale",
+  "rules": ["D4", "V4"],
+  "drift": ["D4"],
+  "prompt": "People should be able to change keyboard shortcuts in preferences: pick a command, press a new key combination, and from then on that key runs the command; they can also reset everything to the defaults. Their choices are kept between sessions. Plugins should keep working as they do. Plan how to build this.",
+  "featureWords": [
+    "preferences",
+    "rebind",
+    "custom shortcut",
+    "change keyboard shortcuts"
+  ],
+  "leakWords": [],
+  "visibleIn": []
+}

@@ -1,0 +1,14 @@
+{
+  "include": [
+    "Versions are kept as saved file text (or as logs of plain-data commands that name nodes by id), never as references to live node objects.",
+    "View state (zoom, collapsed panel sections, which layers are expanded) is not stored in the versions or in the document file, and looking at an old version does not change the current document's file.",
+    "An old version saved under an older schema version is opened through the existing step-by-step migrations; any new file data goes in a new migration step and shipped steps are not edited.",
+    "Restoring a version is one undoable command through the command bus, and undoing it brings back the document and the selection exactly as they were.",
+    "Viewing a version read-only does not create history entries in the current document."
+  ],
+  "avoid": [
+    "Saving zoom or other view state inside the document file or inside version snapshots.",
+    "Keeping versions as references to live nodes, closures or other objects that later edits can change.",
+    "Editing an existing migration step to add version metadata."
+  ]
+}

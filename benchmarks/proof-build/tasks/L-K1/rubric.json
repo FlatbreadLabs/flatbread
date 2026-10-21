@@ -1,0 +1,13 @@
+{
+  "include": [
+    "Tick spacing is picked from a set of round steps (such as 1, 2 and 5 times a power of ten) so labelled ticks stay at least a minimum number of screen pixels apart.",
+    "Tick positions come from mapping document coordinates to the screen with the viewport's zoom and pan.",
+    "The rulers update when the zoom, the pan or the selection changes.",
+    "The highlighted extent comes from the selection bounds, with rotation included.",
+    "The plan includes tests of the spacing at several zoom levels."
+  ],
+  "avoid": [
+    "A fixed tick step in document units, so the labels crowd or spread apart as the zoom changes.",
+    "Highlighting the extent of only the first selected layer, or ignoring rotation."
+  ]
+}

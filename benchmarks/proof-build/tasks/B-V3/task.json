@@ -1,0 +1,24 @@
+{
+  "id": "B-V3",
+  "kind": "build",
+  "category": "code-visible",
+  "rules": ["V3"],
+  "prompt": "Add Ungroup to the command palette, and make Mod+Shift+G do it on the canvas. For each selected group, it moves the group's layers out into the group's parent, in the group's place in the stacking order and in the same order among themselves, without moving them on the canvas, and removes the empty group. Afterwards the freed layers are selected, along with anything else that was selected. It is only offered when a group is selected, and one Undo puts the groups back exactly as they were.",
+  "featureWords": ["Ungroup", "Mod+Shift+G"],
+  "leakWords": [],
+  "visibleIn": [
+    {
+      "path": "src/commands/history.ts",
+      "text": "The selection on each side is restored exactly"
+    },
+    {
+      "path": "test/group.test.ts",
+      "text": "undo of a group restores the exact selection"
+    }
+  ],
+  "reference": "Reorders the children out and deletes each emptied group in one batch whose last command selects the freed layers.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Selects the freed layers before running the batch, so the entry records them as the selection before the change and Undo does not reselect the groups."
+  }
+}

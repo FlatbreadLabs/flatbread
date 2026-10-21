@@ -1,0 +1,21 @@
+{
+  "id": "B-P6",
+  "kind": "build",
+  "category": "proof-only",
+  "rules": ["R6"],
+  "prompt": "When I reopen a document, the layers panel should show the same groups and frames expanded as when I last saved it. At the moment everything comes back collapsed and I have to open my groups again every time.",
+  "featureWords": ["reopen", "comes back collapsed"],
+  "leakWords": [
+    "dirty",
+    "marked it changed",
+    "never goes into",
+    "out of the document",
+    "sidecar"
+  ],
+  "visibleIn": [],
+  "reference": "Keeps the expanded ids in the view state that is saved beside the document, and the layers panel reads them from there.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Stores an expanded flag on group and frame nodes (written to the document file) and restores the panel from it on load."
+  }
+}

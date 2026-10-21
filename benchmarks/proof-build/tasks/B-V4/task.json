@@ -1,0 +1,25 @@
+{
+  "id": "B-V4",
+  "kind": "build",
+  "category": "code-visible",
+  "rules": ["R2", "V3"],
+  "prompt": "Add Duplicate to the command palette, and make Mod+D do it on the canvas. It copies every selected layer, with everything inside it, and places each copy 10 px to the right of and 10 px below its original, directly in front of the original in the same parent. The copies keep their originals' names and become the selection, so pressing Mod+D again copies the copies another 10 px along. Undo removes the copies and selects the originals again, and Redo brings the copies back. It is only offered when something is selected.",
+  "featureWords": ["Duplicate", "Mod+D"],
+  "leakWords": [],
+  "visibleIn": [
+    {
+      "path": "src/commands/types.ts",
+      "text": "payload: { [key: string]: Json }"
+    },
+    {
+      "path": "src/commands/history.ts",
+      "text": "The selection on each side is restored exactly"
+    }
+  ],
+  "reference": "Mints the copies (with their new ids) when the command runs and dispatches existing insert commands that carry the copied node data, in one batch that selects the copies.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Inserts the copies in one batch, then sets the selection to the copies after the batch instead of through the last command, so the entry records the originals as the selection on both sides and Redo brings the copies back unselected."
+  },
+  "note": "Was B-P2 (proof-only, R2). Reclassified before any run: the Json payload type, commands.replay on the facade and the batch in group.ts show the pattern, so R2 is visible in the code."
+}

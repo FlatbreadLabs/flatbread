@@ -1,0 +1,14 @@
+{
+  "include": [
+    "The live bindings are the per-scope bindings the dispatcher registers (the bindings modules and registerBinding in the dispatcher); user shortcuts change what the dispatcher resolves.",
+    "DEFAULT_KEYMAP stays the frozen v1 table that api.shortcuts() returns to plugins; user changes do not modify it.",
+    "Chords are normalised to their one spelling before user bindings are stored or compared.",
+    "A conflict with an existing binding in the same scope is detected and resolved, since a chord has one binding per scope.",
+    "User shortcut choices are stored with the user's settings, not in the document file."
+  ],
+  "avoid": [
+    "Writing user bindings into DEFAULT_KEYMAP, or making api.shortcuts() return the user's current table.",
+    "Assuming the dispatcher looks key presses up in DEFAULT_KEYMAP, so that changing that table changes what keys do.",
+    "Storing shortcut choices in the document file."
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "B-S4",
+  "kind": "build",
+  "category": "stale",
+  "rules": ["D5"],
+  "drift": "D5",
+  "prompt": "The W and H fields should accept units: in, pt and px, and % of the frame the layer is in (W takes the frame's width, H its height). For example 2in is 192 px and 18pt is 24 px. Arithmetic keeps working and can mix units, so 1in + 4 gives 100. A % value on a layer that is not inside a frame is refused and changes nothing. The other fields keep working as they do now.",
+  "featureWords": ["2in", "18pt", "1in + 4"],
+  "leakWords": [],
+  "visibleIn": [],
+  "reference": "Adds a unit-aware mode to the expression parser the panel uses, reads typed text once per node with the nearest frame as the % reference, and leaves parseLength as it was.",
+  "naive": {
+    "fails": ["acceptance"],
+    "summary": "Follows Proof: teaches parseLength (which Proof names as the panel parser) to read units and tries it before the expression parser, so a unit inside arithmetic is refused."
+  }
+}

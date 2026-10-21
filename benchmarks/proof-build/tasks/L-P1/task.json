@@ -1,0 +1,31 @@
+{
+  "id": "L-P1",
+  "kind": "plan",
+  "category": "proof-only",
+  "rules": ["R1", "R2", "R3", "R5", "V4"],
+  "prompt": "We want components. I can turn a frame into a main component and place instances of it anywhere, and editing the main component updates every instance. In an instance I can override the text of its text layers and the fill of its shapes, and those overrides survive later edits to the main component. Plugin authors have asked to be able to tell which layers are instances, and of which component. Plan how to build this.",
+  "featureWords": ["component", "instance", "override"],
+  "leakWords": [
+    "12 presses",
+    "bypass",
+    "deep-frozen",
+    "diverge",
+    "frozen cop",
+    "frozen snapshot",
+    "however many",
+    "live node",
+    "macro",
+    "never edit",
+    "never edited",
+    "never node",
+    "new step",
+    "node objects",
+    "one history entry",
+    "one undo",
+    "per gesture",
+    "plain json",
+    "shipped",
+    "survive json"
+  ],
+  "visibleIn": []
+}

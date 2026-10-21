@@ -1,0 +1,14 @@
+{
+  "include": [
+    "Creating a component, placing an instance and editing an override are each one undo step, including an edit to the main component that updates many instances: the updates land in the same history entry as the edit.",
+    "Commands that create or edit components and instances carry plain data that names nodes by id (no node object references), so they can be undone, redone and replayed.",
+    "Component and instance data in the saved file come with a new migration step from the current schema version to the next; shipped migration steps are not edited.",
+    "Plugins get component and instance information as ids or frozen copies made at the time, never as live node objects.",
+    "Plugin API v1 gains no new members; plugins learn about instances through a new event or a future v2 API."
+  ],
+  "avoid": [
+    "Editing a migration step that has already shipped (for example adding component fields inside the version 4 to 5 step).",
+    "Adding a member to the v1 plugin API object (for example api.getInstances or api.getNode).",
+    "Applying a main-component edit to its instances as separate history entries, one per instance, or by writing nodes outside the command bus."
+  ]
+}

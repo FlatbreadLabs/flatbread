@@ -1,0 +1,200 @@
+{
+  "version": 5,
+  "name": "Landing page",
+  "top": ["frame-1", "rect-9"],
+  "nodes": {
+    "frame-1": {
+      "children": ["text-2", "text-3", "group-4", "ellipse-7", "line-8"],
+      "clip": true,
+      "fills": [
+        {
+          "color": "#F4F1EA"
+        }
+      ],
+      "height": 640,
+      "id": "frame-1",
+      "locked": false,
+      "name": "Hero",
+      "opacity": 1,
+      "parent": null,
+      "rotation": 0,
+      "strokes": [],
+      "type": "frame",
+      "visible": true,
+      "width": 1200,
+      "x": 0,
+      "y": 0
+    },
+    "text-2": {
+      "align": "left",
+      "fills": [
+        {
+          "color": "#000000"
+        }
+      ],
+      "fontSize": 48,
+      "height": 60,
+      "id": "text-2",
+      "lineHeight": 1.2,
+      "locked": false,
+      "name": "Headline",
+      "opacity": 1,
+      "parent": "frame-1",
+      "rotation": 0,
+      "strokes": [],
+      "text": "Make something people want",
+      "type": "text",
+      "visible": true,
+      "width": 640,
+      "x": 80,
+      "y": 120
+    },
+    "text-3": {
+      "align": "left",
+      "fills": [
+        {
+          "color": "#000000"
+        }
+      ],
+      "fontSize": 20,
+      "height": 48,
+      "id": "text-3",
+      "lineHeight": 1.25,
+      "locked": false,
+      "name": "Subhead",
+      "opacity": 1,
+      "parent": "frame-1",
+      "rotation": 0,
+      "strokes": [],
+      "text": "A short line under the headline.",
+      "type": "text",
+      "visible": true,
+      "width": 520,
+      "x": 80,
+      "y": 200
+    },
+    "group-4": {
+      "children": ["rect-5", "rect-6"],
+      "height": 48,
+      "id": "group-4",
+      "locked": false,
+      "name": "Buttons",
+      "opacity": 0.9,
+      "parent": "frame-1",
+      "rotation": 0,
+      "type": "group",
+      "visible": true,
+      "width": 340,
+      "x": 80,
+      "y": 300
+    },
+    "rect-5": {
+      "fills": [
+        {
+          "color": "#1F4FFF"
+        }
+      ],
+      "height": 48,
+      "id": "rect-5",
+      "locked": false,
+      "name": "Primary",
+      "opacity": 1,
+      "parent": "group-4",
+      "rotation": 0,
+      "strokes": [],
+      "type": "rect",
+      "visible": true,
+      "width": 160,
+      "x": 80,
+      "y": 300
+    },
+    "rect-6": {
+      "fills": [
+        {
+          "color": "#FFFFFF"
+        }
+      ],
+      "height": 48,
+      "id": "rect-6",
+      "locked": false,
+      "name": "Secondary",
+      "opacity": 1,
+      "parent": "group-4",
+      "rotation": 0,
+      "strokes": [
+        {
+          "color": "#1F4FFF",
+          "width": 2,
+          "align": "inside"
+        }
+      ],
+      "type": "rect",
+      "visible": true,
+      "width": 160,
+      "x": 260,
+      "y": 300
+    },
+    "ellipse-7": {
+      "fills": [
+        {
+          "color": "#FFB340"
+        }
+      ],
+      "height": 300,
+      "id": "ellipse-7",
+      "locked": false,
+      "name": "Blob",
+      "opacity": 0.6,
+      "parent": "frame-1",
+      "rotation": 0.5235987755982988,
+      "strokes": [],
+      "type": "ellipse",
+      "visible": true,
+      "width": 300,
+      "x": 820,
+      "y": 140
+    },
+    "line-8": {
+      "fills": [],
+      "height": 0,
+      "id": "line-8",
+      "locked": true,
+      "name": "Divider",
+      "opacity": 1,
+      "parent": "frame-1",
+      "rotation": 0,
+      "strokes": [
+        {
+          "color": "#000000",
+          "width": 1,
+          "align": "center"
+        }
+      ],
+      "type": "line",
+      "visible": true,
+      "width": 1040,
+      "x": 80,
+      "y": 400
+    },
+    "rect-9": {
+      "fills": [
+        {
+          "color": "#D9D9D9"
+        }
+      ],
+      "height": 80,
+      "id": "rect-9",
+      "locked": false,
+      "name": "Hidden note",
+      "opacity": 1,
+      "parent": null,
+      "rotation": 0,
+      "strokes": [],
+      "type": "rect",
+      "visible": false,
+      "width": 200,
+      "x": 0,
+      "y": 700
+    }
+  }
+}

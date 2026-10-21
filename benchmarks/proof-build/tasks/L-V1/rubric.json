@@ -1,0 +1,13 @@
+{
+  "include": [
+    "Hidden and locked layers, and anything inside hidden or locked containers, are not snap targets.",
+    "Snapped positions are stored exactly as computed; only displayed values are rounded.",
+    "The snap distance is in screen pixels and is converted to document units with the zoom.",
+    "A snapped drag is still one history entry: its moves share the drag's gesture id.",
+    "The layers being dragged, and everything inside them, are not snap targets."
+  ],
+  "avoid": [
+    "Snapping to hidden or locked layers.",
+    "Rounding the stored position to whole pixels or to display precision as part of snapping."
+  ]
+}

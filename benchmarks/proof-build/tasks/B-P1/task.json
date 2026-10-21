@@ -1,0 +1,21 @@
+{
+  "id": "B-P1",
+  "kind": "build",
+  "category": "proof-only",
+  "rules": ["R1"],
+  "prompt": "I'd like a command in the palette, Rename layers, for naming a batch of layers in one go. With two or more layers selected, I run it and type a base name such as Card, and the layers become Card 1, Card 2, Card 3 and so on, numbered in the order I selected them. If what I type contains a #, the number goes there instead, so Item # gives Item 1, Item 2. It should only be offered when at least two layers are selected, typing nothing should change nothing, and the renaming should be undoable.",
+  "featureWords": ["base name", "batch of layers", "Item #"],
+  "leakWords": [
+    "12 presses",
+    "however many",
+    "one history entry",
+    "one undo",
+    "per gesture"
+  ],
+  "visibleIn": [],
+  "reference": "Runs the renames inside one batch, so the whole rename is one history entry.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "One rename command per layer with no batch or shared gesture, so undoing the rename takes one Undo per layer."
+  }
+}

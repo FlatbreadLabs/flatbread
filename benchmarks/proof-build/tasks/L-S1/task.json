@@ -1,0 +1,11 @@
+{
+  "id": "L-S1",
+  "kind": "plan",
+  "category": "stale",
+  "rules": ["D3", "D1"],
+  "drift": ["D3", "D1"],
+  "prompt": "Add masks: a shape can be made into a mask, and then it clips the layers stacked above it within the same group, so only the parts inside the mask's shape show. In the layers panel, the layers a mask clips are shown indented under it. The mask's own opacity and the opacity of the group it sits in should behave sensibly. Plan how to build this.",
+  "featureWords": ["mask", "clips the layers"],
+  "leakWords": [],
+  "visibleIn": []
+}

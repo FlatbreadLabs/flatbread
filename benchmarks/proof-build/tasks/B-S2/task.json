@@ -1,0 +1,16 @@
+{
+  "id": "B-S2",
+  "kind": "build",
+  "category": "stale",
+  "rules": ["D2"],
+  "drift": "D2",
+  "prompt": "When I rotate layers with the rotation handle while holding Shift, the angle should snap to 15° steps: each layer's rotation lands on the nearest multiple of 15°, and the Rotation field shows the snapped angle, like 45° or -30°. Without Shift, rotating stays free, as it is now. A snapped rotation is still one step to undo.",
+  "featureWords": ["15°", "snaps to", "snap to", "snapped"],
+  "leakWords": [],
+  "visibleIn": [],
+  "reference": "Snaps the radian angle to multiples of pi/12 in the rotate gesture when Shift is held.",
+  "naive": {
+    "fails": ["acceptance", "constraints"],
+    "summary": "Follows Proof: rotation is stored in degrees, so the snapped angle is computed and stored in degrees; the Rotation field then shows the stored number read as radians."
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "id": "L-V1",
+  "kind": "plan",
+  "category": "code-visible",
+  "rules": ["V1", "V2"],
+  "prompt": "While I drag layers on the canvas, they should snap to the edges and centres of nearby layers when they come within a few screen pixels, and a guide line should show where they snapped. Holding Alt turns snapping off for that drag. Plan how to build this.",
+  "featureWords": ["snapping", "snaps to", "guide line"],
+  "leakWords": [],
+  "visibleIn": [
+    {
+      "path": "src/selection/hit.ts",
+      "text": "Hidden and locked nodes are never hit"
+    },
+    {
+      "path": "src/units/precision.ts",
+      "text": "Stored geometry is never rounded"
+    }
+  ]
+}

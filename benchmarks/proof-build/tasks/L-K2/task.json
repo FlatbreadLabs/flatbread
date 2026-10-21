@@ -1,0 +1,10 @@
+{
+  "id": "L-K2",
+  "kind": "plan",
+  "category": "control",
+  "rules": [],
+  "prompt": "Add a document swatches list: it shows every fill colour used in the document, most used first, with how many layers use each one. Clicking a swatch applies that fill to the selected layers. The list keeps up as the document changes. Plan how to build this.",
+  "featureWords": ["swatch", "colours in use", "colors in use"],
+  "leakWords": [],
+  "visibleIn": []
+}
