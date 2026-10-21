@@ -1,0 +1,16 @@
+{
+  "id": "B-S3",
+  "kind": "build",
+  "category": "stale",
+  "rules": ["D4"],
+  "drift": "D4",
+  "prompt": "Mod+Shift+H on the canvas should hide the selected layers, or show them again when all of them are already hidden. Any spelling of the chord should work, as for other shortcuts. It is one step to undo, and the step is labelled Hide or Show, like the palette commands. With nothing selected it does nothing.",
+  "featureWords": ["Mod+Shift+H"],
+  "leakWords": [],
+  "visibleIn": [],
+  "reference": "Adds the binding to the canvas bindings only; DEFAULT_KEYMAP is untouched.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Follows Proof: registers the chord in DEFAULT_KEYMAP (the table Proof says the dispatcher and plugins read) as well as adding the live canvas binding, which changes the frozen v1 table that plugins get."
+  }
+}

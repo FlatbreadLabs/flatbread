@@ -1,0 +1,79 @@
+diff --git a/src/commands/builtin/ungroup.ts b/src/commands/builtin/ungroup.ts
+new file mode 100644
+index 0000000..850590d
+--- /dev/null
++++ b/src/commands/builtin/ungroup.ts
+@@ -0,0 +1,35 @@
++import { indexInParent } from '../../model/tree.ts';
++import type { EditorContext } from '../types.ts';
++import { command } from '../types.ts';
++
++/**
++ * Moves the children of every selected group into the group's parent, in
++ * the group's place, and deletes the emptied groups, as one history entry.
++ * The freed children are selected first, so they stay selected. Returns
++ * false when no group is selected.
++ */
++export function ungroupSelection(ctx: EditorContext): boolean {
++  const { doc } = ctx;
++  const selected = ctx.selection.ids().filter((id) => doc.has(id));
++  const groups = selected.filter((id) => doc.require(id).type === 'group');
++  if (!groups.length) return false;
++  const after = selected.flatMap((id) =>
++    groups.includes(id) ? [...doc.children(id)] : [id]
++  );
++  ctx.selection.set(after);
++  ctx.batch('Ungroup', () => {
++    groups.forEach((group) => {
++      const parent = doc.require(group).parent;
++      for (const child of [...doc.children(group)])
++        ctx.dispatch(
++          command('reorder', {
++            id: child,
++            parent,
++            index: indexInParent(doc, group),
++          })
++        );
++      ctx.dispatch(command('delete', { ids: [group] }));
++    });
++  });
++  return true;
++}
+diff --git a/src/commands/palette.ts b/src/commands/palette.ts
+index 874d40e..1b5495e 100644
+--- a/src/commands/palette.ts
++++ b/src/commands/palette.ts
+@@ -2,6 +2,7 @@ import { fail } from '../util/assert.ts';
+ import type { EditorContext } from './types.ts';
+ import { command } from './types.ts';
+ import { groupNodes } from './builtin/group.ts';
++import { ungroupSelection } from './builtin/ungroup.ts';
+ import { arrangeCommands } from './builtin/reorder.ts';
+ import type { Arrange } from './builtin/reorder.ts';
+ import { visibilityItems } from './builtin/visibility.ts';
+@@ -130,6 +131,13 @@ export const BUILTIN_ENTRIES: readonly PaletteEntry[] = [
+     enabled: hasSelection,
+     run: (ctx) => void groupNodes(ctx, ctx.selection.ids()),
+   },
++  {
++    title: 'Ungroup',
++    hint: 'Mod+Shift+G',
++    enabled: (ctx) =>
++      ctx.selection.ids().some((id) => ctx.doc.get(id)?.type === 'group'),
++    run: (ctx) => void ungroupSelection(ctx),
++  },
+   arrange('Bring forward', 'forward', 'Mod+]'),
+   arrange('Send backward', 'backward', 'Mod+['),
+   arrange('Bring to front', 'front', 'Mod+Shift+]'),
+diff --git a/src/keys/bindings/canvas.ts b/src/keys/bindings/canvas.ts
+index d550730..e368343 100644
+--- a/src/keys/bindings/canvas.ts
++++ b/src/keys/bindings/canvas.ts
+@@ -25,6 +25,7 @@ export const canvasBindings: readonly Binding[] = [
+   palette('Escape', 'Deselect all'),
+   palette('Mod+A', 'Select all'),
+   palette('Mod+G', 'Group selection'),
++  palette('Mod+Shift+G', 'Ungroup'),
+   palette('Mod+]', 'Bring forward'),
+   palette('Mod+[', 'Send backward'),
+   palette('Mod+Shift+]', 'Bring to front'),

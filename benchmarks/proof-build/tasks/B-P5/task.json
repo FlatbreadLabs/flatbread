@@ -1,0 +1,25 @@
+{
+  "id": "B-P5",
+  "kind": "build",
+  "category": "proof-only",
+  "rules": ["R5"],
+  "prompt": "Plugins should be able to follow the selection. Add a selectionchange plugin event. Its payload is { layers }: the selected layers in the order they were selected, each with its id, name, type, x, y, width and height. It fires once each time the selection changes, from the canvas, the layers panel or anywhere else, and when the selection is cleared the list is empty. Add it to the plugin reference with the other events.",
+  "featureWords": [
+    "selectionchange",
+    "selection change",
+    "follow the selection"
+  ],
+  "leakWords": [
+    "bypass",
+    "deep-frozen",
+    "frozen cop",
+    "frozen snapshot",
+    "live node"
+  ],
+  "visibleIn": [],
+  "reference": "Emits a deep-frozen payload of plain copies made when the selection changed.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Emits the live node objects from the document as the layers list."
+  }
+}

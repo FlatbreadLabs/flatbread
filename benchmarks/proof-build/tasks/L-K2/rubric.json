@@ -1,0 +1,13 @@
+{
+  "include": [
+    "Colours are collected by walking the document and counting fills by their normalised upper-case #RRGGBB.",
+    "Colours used equally often are ordered in a stable, stated way.",
+    "Clicking a swatch gives every selected layer that takes a fill that colour, and the change can be undone.",
+    "The list is recomputed or invalidated on the document's change events.",
+    "Groups, which have no fills, and layers without fills are skipped."
+  ],
+  "avoid": [
+    "Counting one colour written in different cases, or with and without #, as separate swatches.",
+    "Counting only top-level layers, so layers inside groups and frames are missed."
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "id": "L-P3",
+  "kind": "plan",
+  "category": "proof-only",
+  "rules": ["R1", "R3", "R4", "V2"],
+  "prompt": "Frames should support auto layout: a frame can stack its children in a row or a column, with a gap between them and padding inside the frame. When I add, remove, resize or reorder a child, the others move to keep the stack, and the frame can grow to fit its content. Typing gap and padding values in the properties panel, and dragging children around, should feel like any other edit. Plan how to build this.",
+  "featureWords": ["auto layout", "auto-layout", "padding"],
+  "leakWords": [
+    "12 presses",
+    "500 ms",
+    "by time",
+    "debounce",
+    "diverge",
+    "however many",
+    "never edit",
+    "never edited",
+    "new step",
+    "one history entry",
+    "one undo",
+    "per gesture",
+    "shipped",
+    "time window",
+    "timer"
+  ],
+  "visibleIn": []
+}

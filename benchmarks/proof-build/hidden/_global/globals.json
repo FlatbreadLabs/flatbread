@@ -1,0 +1,1 @@
+{ "global-rules.test.ts": ["proof-only", "stale"] }

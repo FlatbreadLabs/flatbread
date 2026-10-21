@@ -1,0 +1,26 @@
+{
+  "id": "L-P2",
+  "kind": "plan",
+  "category": "proof-only",
+  "rules": ["R2", "R3", "R6"],
+  "prompt": "People should be able to browse earlier versions of a document and restore one. The editor keeps a list of versions: one is saved automatically every so often, and I can save one with a name whenever I like. I can open an older version read-only to look at it, and restore it, which makes it the current document; restoring can itself be undone. Plan how to build this.",
+  "featureWords": ["version history", "earlier version", "restore an earlier"],
+  "leakWords": [
+    "dirty",
+    "diverge",
+    "macro",
+    "marked it changed",
+    "never edit",
+    "never edited",
+    "never goes into",
+    "never node",
+    "new step",
+    "node objects",
+    "out of the document",
+    "plain json",
+    "shipped",
+    "sidecar",
+    "survive json"
+  ],
+  "visibleIn": []
+}

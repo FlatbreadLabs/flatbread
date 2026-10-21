@@ -1,0 +1,84 @@
+diff --git a/src/model/colour-names.ts b/src/model/colour-names.ts
+new file mode 100644
+index 0000000..347cc26
+--- /dev/null
++++ b/src/model/colour-names.ts
+@@ -0,0 +1,24 @@
++/** The basic colour names early files could hold, as upper-case hex. */
++export const BASIC_COLOURS: Readonly<Record<string, string>> = {
++  BLACK: '#000000',
++  SILVER: '#C0C0C0',
++  GRAY: '#808080',
++  WHITE: '#FFFFFF',
++  MAROON: '#800000',
++  RED: '#FF0000',
++  PURPLE: '#800080',
++  FUCHSIA: '#FF00FF',
++  GREEN: '#008000',
++  LIME: '#00FF00',
++  OLIVE: '#808000',
++  YELLOW: '#FFFF00',
++  NAVY: '#000080',
++  BLUE: '#0000FF',
++  TEAL: '#008080',
++  AQUA: '#00FFFF',
++};
++
++/** `color` as hex when it is a basic colour name, in any case; else as it is. */
++export function namedToHex(color: string): string {
++  return BASIC_COLOURS[color.toUpperCase()] ?? color;
++}
+diff --git a/src/persist/migrations/v2-v3.ts b/src/persist/migrations/v2-v3.ts
+index 60a0ff5..6a3fa3b 100644
+--- a/src/persist/migrations/v2-v3.ts
++++ b/src/persist/migrations/v2-v3.ts
+@@ -1,4 +1,5 @@
+ import type { RawFile } from './index.ts';
++import { namedToHex } from '../../model/colour-names.ts';
+ 
+ /** Version 2 had one `fill` and one `stroke` per node. Version 3 has lists. */
+ export function v2ToV3(file: RawFile): RawFile {
+@@ -8,12 +9,14 @@ export function v2ToV3(file: RawFile): RawFile {
+     return {
+       ...rest,
+       fills:
+-        typeof fill === 'string' ? [{ color: String(fill).toUpperCase() }] : [],
++        typeof fill === 'string'
++          ? [{ color: namedToHex(String(fill)).toUpperCase() }]
++          : [],
+       strokes:
+         typeof stroke === 'string'
+           ? [
+               {
+-                color: String(stroke).toUpperCase(),
++                color: namedToHex(String(stroke)).toUpperCase(),
+                 width: Number(strokeWidth ?? 1),
+                 align: 'inside',
+               },
+diff --git a/src/persist/schema.ts b/src/persist/schema.ts
+index 9223a6e..3b8388c 100644
+--- a/src/persist/schema.ts
++++ b/src/persist/schema.ts
+@@ -1,6 +1,7 @@
+ import type { DocumentData, SceneNode } from '../model/types.ts';
+ import { NODE_TYPES, isContainer } from '../model/types.ts';
+ import { fail } from '../util/assert.ts';
++import { namedToHex } from '../model/colour-names.ts';
+ 
+ /** The version `files.save()` writes. Older files are migrated up to it. */
+ export const SCHEMA_VERSION = 5;
+@@ -38,6 +39,14 @@ export function withDefaults(node: Record<string, unknown>): SceneNode {
+   if (node.type === 'text') Object.assign(out, { ...TEXT_DEFAULTS, ...out });
+   if (node.type === 'frame' || node.type === 'group') out.children ??= [];
+   out.parent ??= null;
++  // Files saved before names were mapped still hold them, upper-cased.
++  for (const key of ['fills', 'strokes'])
++    if (Array.isArray(out[key]))
++      out[key] = (out[key] as { color?: unknown }[]).map((paint) =>
++        typeof paint?.color === 'string'
++          ? { ...paint, color: namedToHex(paint.color) }
++          : paint
++      );
+   return out as unknown as SceneNode;
+ }
+ 

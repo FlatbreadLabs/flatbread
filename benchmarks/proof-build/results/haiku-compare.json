@@ -1,0 +1,4650 @@
+{
+  "work": "<work-dir>",
+  "runs": ["r1", "r2", "r3"],
+  "split": "all",
+  "base": "none",
+  "flags": {
+    "brief": {
+      "sessions": 70,
+      "excluded": 1,
+      "left_folder": 1,
+      "hidden_read": 0,
+      "none_found_proof": 0,
+      "timed_out": 0,
+      "api_error": 0,
+      "apply_failed": 0,
+      "edited_existing_tests": 44,
+      "edited_test_support": 0
+    },
+    "dump": {
+      "sessions": 70,
+      "excluded": 5,
+      "left_folder": 5,
+      "hidden_read": 0,
+      "none_found_proof": 0,
+      "timed_out": 0,
+      "api_error": 0,
+      "apply_failed": 0,
+      "edited_existing_tests": 42,
+      "edited_test_support": 0
+    },
+    "dump10x": {
+      "sessions": 26,
+      "excluded": 2,
+      "left_folder": 2,
+      "hidden_read": 0,
+      "none_found_proof": 0,
+      "timed_out": 0,
+      "api_error": 0,
+      "apply_failed": 0,
+      "edited_existing_tests": 16,
+      "edited_test_support": 0
+    },
+    "find": {
+      "sessions": 70,
+      "excluded": 4,
+      "left_folder": 4,
+      "hidden_read": 0,
+      "none_found_proof": 0,
+      "timed_out": 0,
+      "api_error": 0,
+      "apply_failed": 0,
+      "edited_existing_tests": 44,
+      "edited_test_support": 0
+    },
+    "findcode": {
+      "sessions": 70,
+      "excluded": 5,
+      "left_folder": 5,
+      "hidden_read": 0,
+      "none_found_proof": 0,
+      "timed_out": 0,
+      "api_error": 0,
+      "apply_failed": 0,
+      "edited_existing_tests": 44,
+      "edited_test_support": 0
+    },
+    "none": {
+      "sessions": 70,
+      "excluded": 4,
+      "left_folder": 4,
+      "hidden_read": 0,
+      "none_found_proof": 0,
+      "timed_out": 0,
+      "api_error": 0,
+      "apply_failed": 0,
+      "edited_existing_tests": 43,
+      "edited_test_support": 0
+    },
+    "skill": {
+      "sessions": 70,
+      "excluded": 1,
+      "left_folder": 1,
+      "hidden_read": 0,
+      "none_found_proof": 0,
+      "timed_out": 0,
+      "api_error": 0,
+      "apply_failed": 0,
+      "edited_existing_tests": 46,
+      "edited_test_support": 0
+    }
+  },
+  "droppedPairs": [
+    "B-P3#r1",
+    "B-P3#r2",
+    "B-P3#r3",
+    "B-P5#r3",
+    "B-S2#r1",
+    "B-S2#r3",
+    "B-S4#r1",
+    "B-S4#r3",
+    "B-V1#r2",
+    "B-V2#r1",
+    "B-V3#r3",
+    "B-V4#r3",
+    "B-V5#r1",
+    "L-P1#r1",
+    "L-S1#r1",
+    "L-V1#r1"
+  ],
+  "holm_primary": {
+    "stale:dump": 0.313,
+    "stale:brief": 0.5625,
+    "stale:skill": 1,
+    "stale:find": 1,
+    "stale:findcode": 1,
+    "proof-only:skill": 1,
+    "proof-only:brief": 1,
+    "proof-only:find": 1,
+    "proof-only:findcode": 1,
+    "proof-only:dump": 1
+  },
+  "holm_all_green": {
+    "dump": 0.0585,
+    "brief": 0.086,
+    "skill": 0.2109,
+    "find": 0.2109,
+    "findcode": 0.2891
+  },
+  "comparisons": [
+    {
+      "arm": "skill",
+      "base": "none",
+      "build": {
+        "pairs": 41,
+        "all_green": {
+          "arm": 29,
+          "base": 35,
+          "wins": ["B-P8#r1"],
+          "losses": [
+            "B-S3#r1",
+            "B-V4#r1",
+            "B-S1#r2",
+            "B-S3#r2",
+            "B-V3#r2",
+            "B-V4#r2",
+            "B-S3#r3"
+          ],
+          "p": 0.0703,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 4,
+            "p": 0.375
+          }
+        },
+        "acceptance": {
+          "arm": 40,
+          "base": 40,
+          "wins": [],
+          "losses": [],
+          "p": 1,
+          "taskSignTest": {
+            "arm": 0,
+            "base": 0,
+            "p": 1
+          }
+        },
+        "constraints": {
+          "arm": 32,
+          "base": 38,
+          "wins": ["B-P8#r1"],
+          "losses": [
+            "B-S3#r1",
+            "B-V4#r1",
+            "B-S1#r2",
+            "B-S3#r2",
+            "B-V3#r2",
+            "B-V4#r2",
+            "B-S3#r3"
+          ],
+          "p": 0.0703,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 4,
+            "p": 0.375
+          }
+        },
+        "constraints_raw": {
+          "arm": 33,
+          "base": 38,
+          "wins": ["B-P8#r1", "B-V2#r2"],
+          "losses": [
+            "B-S3#r1",
+            "B-V4#r1",
+            "B-S1#r2",
+            "B-S3#r2",
+            "B-V3#r2",
+            "B-V4#r2",
+            "B-S3#r3"
+          ],
+          "p": 0.1797,
+          "taskSignTest": {
+            "arm": 2,
+            "base": 4,
+            "p": 0.6875
+          }
+        },
+        "regressions": {
+          "arm": 38,
+          "base": 38,
+          "wins": [],
+          "losses": [],
+          "p": 1,
+          "taskSignTest": {
+            "arm": 0,
+            "base": 0,
+            "p": 1
+          }
+        }
+      },
+      "plan": {
+        "pairs": 13,
+        "unjudged": 0,
+        "score": {
+          "arm": 0.898,
+          "base": 0.919
+        },
+        "wins": 3,
+        "losses": 4,
+        "wilcoxon": {
+          "n": 7,
+          "w_plus": 11,
+          "p": 0.6875
+        },
+        "avoid_violations": {
+          "arm": 2,
+          "base": 1
+        },
+        "plan_changed_code": {
+          "arm": 0,
+          "base": 0
+        }
+      },
+      "cost": {
+        "build": {
+          "first_turn_tokens": {
+            "arm": 3904,
+            "base": 3705,
+            "ratio": 1.053,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 44303,
+            "base": 36748,
+            "ratio": 1.232,
+            "armCheaper": 7
+          },
+          "read_tokens": {
+            "arm": 40483,
+            "base": 33065,
+            "ratio": 1.256,
+            "armCheaper": 7
+          },
+          "processed_tokens": {
+            "arm": 597670,
+            "base": 485129,
+            "ratio": 1.263,
+            "armCheaper": 11
+          },
+          "tool_calls": {
+            "arm": 17,
+            "base": 16
+          },
+          "turns": {
+            "arm": 16,
+            "base": 14
+          },
+          "wall_ms": {
+            "arm": 105534,
+            "base": 92063,
+            "ratio": 1.038,
+            "armCheaper": 19
+          },
+          "proof_reads": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_files_read": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_search_exposure": {
+            "arm": 2,
+            "base": 0
+          }
+        },
+        "plan": {
+          "first_turn_tokens": {
+            "arm": 3868,
+            "base": 3667,
+            "ratio": 1.053,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 64750,
+            "base": 41785,
+            "ratio": 1.384,
+            "armCheaper": 0
+          },
+          "read_tokens": {
+            "arm": 60882,
+            "base": 38142,
+            "ratio": 1.414,
+            "armCheaper": 0
+          },
+          "processed_tokens": {
+            "arm": 406937,
+            "base": 239226,
+            "ratio": 1.7,
+            "armCheaper": 0
+          },
+          "tool_calls": {
+            "arm": 12,
+            "base": 9
+          },
+          "turns": {
+            "arm": 9,
+            "base": 8
+          },
+          "wall_ms": {
+            "arm": 112533,
+            "base": 82972,
+            "ratio": 1.334,
+            "armCheaper": 4
+          },
+          "proof_reads": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_files_read": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_search_exposure": {
+            "arm": 2,
+            "base": 0
+          }
+        }
+      },
+      "byCategory": {
+        "code-visible": {
+          "build": {
+            "pairs": 10,
+            "all_green": {
+              "arm": 5,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-V4#r1", "B-V3#r2", "B-V4#r2"],
+              "p": 0.25,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "acceptance": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 5,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-V4#r1", "B-V3#r2", "B-V4#r2"],
+              "p": 0.25,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "constraints_raw": {
+              "arm": 6,
+              "base": 8,
+              "wins": ["B-V2#r2"],
+              "losses": ["B-V4#r1", "B-V3#r2", "B-V4#r2"],
+              "p": 0.625,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 2,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 1,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.714,
+              "base": 0.571
+            },
+            "wins": 1,
+            "losses": 0,
+            "wilcoxon": {
+              "n": 1,
+              "w_plus": 1,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 1,
+              "base": 1
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 3904,
+              "base": 3715,
+              "ratio": 1.053,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 60087,
+              "base": 50224,
+              "ratio": 1.257,
+              "armCheaper": 1
+            },
+            "read_tokens": {
+              "arm": 56155,
+              "base": 46531,
+              "ratio": 1.27,
+              "armCheaper": 1
+            },
+            "processed_tokens": {
+              "arm": 937336,
+              "base": 549351,
+              "ratio": 1.418,
+              "armCheaper": 1
+            },
+            "wall_ms": {
+              "arm": 134648,
+              "base": 112090,
+              "ratio": 1.074,
+              "armCheaper": 4
+            }
+          }
+        },
+        "control": {
+          "build": {
+            "pairs": 9,
+            "all_green": {
+              "arm": 6,
+              "base": 6,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "acceptance": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints_raw": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 4,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.929,
+              "base": 1
+            },
+            "wins": 0,
+            "losses": 1,
+            "wilcoxon": {
+              "n": 1,
+              "w_plus": 0,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 1,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 3892,
+              "base": 3705,
+              "ratio": 1.053,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 34803,
+              "base": 29322,
+              "ratio": 1.222,
+              "armCheaper": 1
+            },
+            "read_tokens": {
+              "arm": 30890,
+              "base": 25629,
+              "ratio": 1.265,
+              "armCheaper": 1
+            },
+            "processed_tokens": {
+              "arm": 365852,
+              "base": 310276,
+              "ratio": 1.188,
+              "armCheaper": 3
+            },
+            "wall_ms": {
+              "arm": 73564,
+              "base": 72450,
+              "ratio": 0.966,
+              "armCheaper": 8
+            }
+          }
+        },
+        "proof-only": {
+          "build": {
+            "pairs": 14,
+            "all_green": {
+              "arm": 14,
+              "base": 13,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "acceptance": {
+              "arm": 14,
+              "base": 14,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 14,
+              "base": 13,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints_raw": {
+              "arm": 14,
+              "base": 13,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 5,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.887,
+              "base": 0.875
+            },
+            "wins": 2,
+            "losses": 1,
+            "wilcoxon": {
+              "n": 3,
+              "w_plus": 3,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 0,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 3892,
+              "base": 3695,
+              "ratio": 1.053,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 45248,
+              "base": 38074,
+              "ratio": 1.229,
+              "armCheaper": 3
+            },
+            "read_tokens": {
+              "arm": 41430,
+              "base": 34348,
+              "ratio": 1.245,
+              "armCheaper": 3
+            },
+            "processed_tokens": {
+              "arm": 597670,
+              "base": 397396,
+              "ratio": 1.288,
+              "armCheaper": 5
+            },
+            "wall_ms": {
+              "arm": 111427,
+              "base": 95008,
+              "ratio": 1.234,
+              "armCheaper": 7
+            }
+          }
+        },
+        "stale": {
+          "build": {
+            "pairs": 8,
+            "all_green": {
+              "arm": 4,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-S3#r1", "B-S1#r2", "B-S3#r2", "B-S3#r3"],
+              "p": 0.125,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "acceptance": {
+              "arm": 8,
+              "base": 8,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 4,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-S3#r1", "B-S1#r2", "B-S3#r2", "B-S3#r3"],
+              "p": 0.125,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "constraints_raw": {
+              "arm": 4,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-S3#r1", "B-S1#r2", "B-S3#r2", "B-S3#r3"],
+              "p": 0.125,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            }
+          },
+          "plan": {
+            "pairs": 3,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.938,
+              "base": 1
+            },
+            "wins": 0,
+            "losses": 2,
+            "wilcoxon": {
+              "n": 2,
+              "w_plus": 0,
+              "p": 0.5
+            },
+            "avoid_violations": {
+              "arm": 0,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 3868,
+              "base": 3674,
+              "ratio": 1.052,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 50866,
+              "base": 37744,
+              "ratio": 1.384,
+              "armCheaper": 2
+            },
+            "read_tokens": {
+              "arm": 46985,
+              "base": 34077,
+              "ratio": 1.415,
+              "armCheaper": 2
+            },
+            "processed_tokens": {
+              "arm": 619977,
+              "base": 340326,
+              "ratio": 1.564,
+              "armCheaper": 2
+            },
+            "wall_ms": {
+              "arm": 112533,
+              "base": 92063,
+              "ratio": 1.073,
+              "armCheaper": 4
+            }
+          }
+        }
+      }
+    },
+    {
+      "arm": "brief",
+      "base": "none",
+      "build": {
+        "pairs": 41,
+        "all_green": {
+          "arm": 27,
+          "base": 35,
+          "wins": ["B-P8#r1"],
+          "losses": [
+            "B-S1#r1",
+            "B-S3#r1",
+            "B-V3#r1",
+            "B-V4#r1",
+            "B-S1#r2",
+            "B-S3#r2",
+            "B-V3#r2",
+            "B-V4#r2",
+            "B-S3#r3"
+          ],
+          "p": 0.0215,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 4,
+            "p": 0.375
+          }
+        },
+        "acceptance": {
+          "arm": 41,
+          "base": 40,
+          "wins": ["B-V2#r2"],
+          "losses": [],
+          "p": 1,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 0,
+            "p": 1
+          }
+        },
+        "constraints": {
+          "arm": 30,
+          "base": 38,
+          "wins": ["B-P8#r1"],
+          "losses": [
+            "B-S1#r1",
+            "B-S3#r1",
+            "B-V3#r1",
+            "B-V4#r1",
+            "B-S1#r2",
+            "B-S3#r2",
+            "B-V3#r2",
+            "B-V4#r2",
+            "B-S3#r3"
+          ],
+          "p": 0.0215,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 4,
+            "p": 0.375
+          }
+        },
+        "constraints_raw": {
+          "arm": 30,
+          "base": 38,
+          "wins": ["B-P8#r1"],
+          "losses": [
+            "B-S1#r1",
+            "B-S3#r1",
+            "B-V3#r1",
+            "B-V4#r1",
+            "B-S1#r2",
+            "B-S3#r2",
+            "B-V3#r2",
+            "B-V4#r2",
+            "B-S3#r3"
+          ],
+          "p": 0.0215,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 4,
+            "p": 0.375
+          }
+        },
+        "regressions": {
+          "arm": 38,
+          "base": 38,
+          "wins": [],
+          "losses": [],
+          "p": 1,
+          "taskSignTest": {
+            "arm": 0,
+            "base": 0,
+            "p": 1
+          }
+        }
+      },
+      "plan": {
+        "pairs": 13,
+        "unjudged": 0,
+        "score": {
+          "arm": 0.963,
+          "base": 0.919
+        },
+        "wins": 5,
+        "losses": 2,
+        "wilcoxon": {
+          "n": 7,
+          "w_plus": 21,
+          "p": 0.2969
+        },
+        "avoid_violations": {
+          "arm": 0,
+          "base": 1
+        },
+        "plan_changed_code": {
+          "arm": 0,
+          "base": 0
+        }
+      },
+      "cost": {
+        "build": {
+          "first_turn_tokens": {
+            "arm": 15514,
+            "base": 3705,
+            "ratio": 4.184,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 56774,
+            "base": 36748,
+            "ratio": 1.504,
+            "armCheaper": 0
+          },
+          "read_tokens": {
+            "arm": 41300,
+            "base": 33065,
+            "ratio": 1.226,
+            "armCheaper": 8
+          },
+          "processed_tokens": {
+            "arm": 678151,
+            "base": 485129,
+            "ratio": 1.552,
+            "armCheaper": 7
+          },
+          "tool_calls": {
+            "arm": 17,
+            "base": 16
+          },
+          "turns": {
+            "arm": 14,
+            "base": 14
+          },
+          "wall_ms": {
+            "arm": 97507,
+            "base": 92063,
+            "ratio": 1.05,
+            "armCheaper": 17
+          },
+          "proof_reads": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_files_read": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_search_exposure": {
+            "arm": 1,
+            "base": 0
+          }
+        },
+        "plan": {
+          "first_turn_tokens": {
+            "arm": 15476,
+            "base": 3667,
+            "ratio": 4.216,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 62583,
+            "base": 41785,
+            "ratio": 1.376,
+            "armCheaper": 0
+          },
+          "read_tokens": {
+            "arm": 47104,
+            "base": 38142,
+            "ratio": 1.131,
+            "armCheaper": 2
+          },
+          "processed_tokens": {
+            "arm": 377600,
+            "base": 239226,
+            "ratio": 1.71,
+            "armCheaper": 1
+          },
+          "tool_calls": {
+            "arm": 10,
+            "base": 9
+          },
+          "turns": {
+            "arm": 8,
+            "base": 8
+          },
+          "wall_ms": {
+            "arm": 85485,
+            "base": 82972,
+            "ratio": 1.157,
+            "armCheaper": 5
+          },
+          "proof_reads": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_files_read": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_search_exposure": {
+            "arm": 1,
+            "base": 0
+          }
+        }
+      },
+      "byCategory": {
+        "code-visible": {
+          "build": {
+            "pairs": 10,
+            "all_green": {
+              "arm": 4,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-V3#r1", "B-V4#r1", "B-V3#r2", "B-V4#r2"],
+              "p": 0.125,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "acceptance": {
+              "arm": 10,
+              "base": 9,
+              "wins": ["B-V2#r2"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 4,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-V3#r1", "B-V4#r1", "B-V3#r2", "B-V4#r2"],
+              "p": 0.125,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "constraints_raw": {
+              "arm": 4,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-V3#r1", "B-V4#r1", "B-V3#r2", "B-V4#r2"],
+              "p": 0.125,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            }
+          },
+          "plan": {
+            "pairs": 1,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.857,
+              "base": 0.571
+            },
+            "wins": 1,
+            "losses": 0,
+            "wilcoxon": {
+              "n": 1,
+              "w_plus": 1,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 0,
+              "base": 1
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 15522,
+              "base": 3715,
+              "ratio": 4.179,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 70530,
+              "base": 50224,
+              "ratio": 1.462,
+              "armCheaper": 0
+            },
+            "read_tokens": {
+              "arm": 54996,
+              "base": 46531,
+              "ratio": 1.267,
+              "armCheaper": 1
+            },
+            "processed_tokens": {
+              "arm": 1175257,
+              "base": 549351,
+              "ratio": 1.71,
+              "armCheaper": 0
+            },
+            "wall_ms": {
+              "arm": 144194,
+              "base": 112090,
+              "ratio": 1.286,
+              "armCheaper": 4
+            }
+          }
+        },
+        "control": {
+          "build": {
+            "pairs": 9,
+            "all_green": {
+              "arm": 6,
+              "base": 6,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "acceptance": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints_raw": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 4,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.964,
+              "base": 1
+            },
+            "wins": 0,
+            "losses": 1,
+            "wilcoxon": {
+              "n": 1,
+              "w_plus": 0,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 0,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 15501,
+              "base": 3705,
+              "ratio": 4.187,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 42025,
+              "base": 29322,
+              "ratio": 1.638,
+              "armCheaper": 0
+            },
+            "read_tokens": {
+              "arm": 26576,
+              "base": 25629,
+              "ratio": 1.251,
+              "armCheaper": 4
+            },
+            "processed_tokens": {
+              "arm": 400876,
+              "base": 310276,
+              "ratio": 1.481,
+              "armCheaper": 3
+            },
+            "wall_ms": {
+              "arm": 73675,
+              "base": 72450,
+              "ratio": 1.032,
+              "armCheaper": 6
+            }
+          }
+        },
+        "proof-only": {
+          "build": {
+            "pairs": 14,
+            "all_green": {
+              "arm": 14,
+              "base": 13,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "acceptance": {
+              "arm": 14,
+              "base": 14,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 14,
+              "base": 13,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints_raw": {
+              "arm": 14,
+              "base": 13,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 5,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.975,
+              "base": 0.875
+            },
+            "wins": 4,
+            "losses": 0,
+            "wilcoxon": {
+              "n": 4,
+              "w_plus": 10,
+              "p": 0.125
+            },
+            "avoid_violations": {
+              "arm": 0,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 15512,
+              "base": 3695,
+              "ratio": 4.197,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 57202,
+              "base": 38074,
+              "ratio": 1.412,
+              "armCheaper": 0
+            },
+            "read_tokens": {
+              "arm": 41771,
+              "base": 34348,
+              "ratio": 1.131,
+              "armCheaper": 3
+            },
+            "processed_tokens": {
+              "arm": 623797,
+              "base": 397396,
+              "ratio": 1.642,
+              "armCheaper": 2
+            },
+            "wall_ms": {
+              "arm": 100484,
+              "base": 95008,
+              "ratio": 1.094,
+              "armCheaper": 7
+            }
+          }
+        },
+        "stale": {
+          "build": {
+            "pairs": 8,
+            "all_green": {
+              "arm": 3,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-S1#r1", "B-S3#r1", "B-S1#r2", "B-S3#r2", "B-S3#r3"],
+              "p": 0.0625,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "acceptance": {
+              "arm": 8,
+              "base": 8,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 3,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-S1#r1", "B-S3#r1", "B-S1#r2", "B-S3#r2", "B-S3#r3"],
+              "p": 0.0625,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "constraints_raw": {
+              "arm": 3,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-S1#r1", "B-S3#r1", "B-S1#r2", "B-S3#r2", "B-S3#r3"],
+              "p": 0.0625,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            }
+          },
+          "plan": {
+            "pairs": 3,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.976,
+              "base": 1
+            },
+            "wins": 0,
+            "losses": 1,
+            "wilcoxon": {
+              "n": 1,
+              "w_plus": 0,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 0,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 15473,
+              "base": 3674,
+              "ratio": 4.213,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 59212,
+              "base": 37744,
+              "ratio": 1.504,
+              "armCheaper": 0
+            },
+            "read_tokens": {
+              "arm": 43697,
+              "base": 34077,
+              "ratio": 1.215,
+              "armCheaper": 2
+            },
+            "processed_tokens": {
+              "arm": 620543,
+              "base": 340326,
+              "ratio": 1.361,
+              "armCheaper": 3
+            },
+            "wall_ms": {
+              "arm": 95457,
+              "base": 92063,
+              "ratio": 1.087,
+              "armCheaper": 5
+            }
+          }
+        }
+      }
+    },
+    {
+      "arm": "find",
+      "base": "none",
+      "build": {
+        "pairs": 41,
+        "all_green": {
+          "arm": 29,
+          "base": 35,
+          "wins": ["B-P8#r1"],
+          "losses": [
+            "B-S3#r1",
+            "B-V3#r1",
+            "B-V4#r1",
+            "B-S3#r2",
+            "B-V3#r2",
+            "B-V4#r2",
+            "B-S3#r3"
+          ],
+          "p": 0.0703,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 3,
+            "p": 0.625
+          }
+        },
+        "acceptance": {
+          "arm": 41,
+          "base": 40,
+          "wins": ["B-V2#r2"],
+          "losses": [],
+          "p": 1,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 0,
+            "p": 1
+          }
+        },
+        "constraints": {
+          "arm": 32,
+          "base": 38,
+          "wins": ["B-P8#r1"],
+          "losses": [
+            "B-S3#r1",
+            "B-V3#r1",
+            "B-V4#r1",
+            "B-S3#r2",
+            "B-V3#r2",
+            "B-V4#r2",
+            "B-S3#r3"
+          ],
+          "p": 0.0703,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 3,
+            "p": 0.625
+          }
+        },
+        "constraints_raw": {
+          "arm": 32,
+          "base": 38,
+          "wins": ["B-P8#r1"],
+          "losses": [
+            "B-S3#r1",
+            "B-V3#r1",
+            "B-V4#r1",
+            "B-S3#r2",
+            "B-V3#r2",
+            "B-V4#r2",
+            "B-S3#r3"
+          ],
+          "p": 0.0703,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 3,
+            "p": 0.625
+          }
+        },
+        "regressions": {
+          "arm": 38,
+          "base": 38,
+          "wins": [],
+          "losses": [],
+          "p": 1,
+          "taskSignTest": {
+            "arm": 0,
+            "base": 0,
+            "p": 1
+          }
+        }
+      },
+      "plan": {
+        "pairs": 13,
+        "unjudged": 0,
+        "score": {
+          "arm": 0.892,
+          "base": 0.919
+        },
+        "wins": 2,
+        "losses": 3,
+        "wilcoxon": {
+          "n": 5,
+          "w_plus": 4,
+          "p": 0.5
+        },
+        "avoid_violations": {
+          "arm": 2,
+          "base": 1
+        },
+        "plan_changed_code": {
+          "arm": 0,
+          "base": 0
+        }
+      },
+      "cost": {
+        "build": {
+          "first_turn_tokens": {
+            "arm": 3950,
+            "base": 3705,
+            "ratio": 1.067,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 40223,
+            "base": 36748,
+            "ratio": 1.092,
+            "armCheaper": 13
+          },
+          "read_tokens": {
+            "arm": 36301,
+            "base": 33065,
+            "ratio": 1.094,
+            "armCheaper": 15
+          },
+          "processed_tokens": {
+            "arm": 486985,
+            "base": 485129,
+            "ratio": 1.149,
+            "armCheaper": 14
+          },
+          "tool_calls": {
+            "arm": 18,
+            "base": 16
+          },
+          "turns": {
+            "arm": 15,
+            "base": 14
+          },
+          "wall_ms": {
+            "arm": 96435,
+            "base": 92063,
+            "ratio": 1.137,
+            "armCheaper": 15
+          },
+          "proof_reads": {
+            "arm": 4,
+            "base": 0
+          },
+          "proof_files_read": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_search_exposure": {
+            "arm": 0,
+            "base": 0
+          }
+        },
+        "plan": {
+          "first_turn_tokens": {
+            "arm": 3920,
+            "base": 3667,
+            "ratio": 1.07,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 53928,
+            "base": 41785,
+            "ratio": 1.15,
+            "armCheaper": 3
+          },
+          "read_tokens": {
+            "arm": 49979,
+            "base": 38142,
+            "ratio": 1.157,
+            "armCheaper": 3
+          },
+          "processed_tokens": {
+            "arm": 315326,
+            "base": 239226,
+            "ratio": 1.218,
+            "armCheaper": 4
+          },
+          "tool_calls": {
+            "arm": 11,
+            "base": 9
+          },
+          "turns": {
+            "arm": 9,
+            "base": 8
+          },
+          "wall_ms": {
+            "arm": 96774,
+            "base": 82972,
+            "ratio": 1.195,
+            "armCheaper": 4
+          },
+          "proof_reads": {
+            "arm": 3,
+            "base": 0
+          },
+          "proof_files_read": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_search_exposure": {
+            "arm": 1,
+            "base": 0
+          }
+        }
+      },
+      "byCategory": {
+        "code-visible": {
+          "build": {
+            "pairs": 10,
+            "all_green": {
+              "arm": 4,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-V3#r1", "B-V4#r1", "B-V3#r2", "B-V4#r2"],
+              "p": 0.125,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "acceptance": {
+              "arm": 10,
+              "base": 9,
+              "wins": ["B-V2#r2"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 4,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-V3#r1", "B-V4#r1", "B-V3#r2", "B-V4#r2"],
+              "p": 0.125,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "constraints_raw": {
+              "arm": 4,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-V3#r1", "B-V4#r1", "B-V3#r2", "B-V4#r2"],
+              "p": 0.125,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            }
+          },
+          "plan": {
+            "pairs": 1,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.571,
+              "base": 0.571
+            },
+            "wins": 0,
+            "losses": 0,
+            "wilcoxon": {
+              "n": 0,
+              "w_plus": 0,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 1,
+              "base": 1
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 3958,
+              "base": 3715,
+              "ratio": 1.067,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 58223,
+              "base": 50224,
+              "ratio": 1.101,
+              "armCheaper": 2
+            },
+            "read_tokens": {
+              "arm": 54242,
+              "base": 46531,
+              "ratio": 1.104,
+              "armCheaper": 2
+            },
+            "processed_tokens": {
+              "arm": 809882,
+              "base": 549351,
+              "ratio": 1.225,
+              "armCheaper": 3
+            },
+            "wall_ms": {
+              "arm": 136846,
+              "base": 112090,
+              "ratio": 1.184,
+              "armCheaper": 4
+            }
+          }
+        },
+        "control": {
+          "build": {
+            "pairs": 9,
+            "all_green": {
+              "arm": 6,
+              "base": 6,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "acceptance": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints_raw": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 4,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.929,
+              "base": 1
+            },
+            "wins": 0,
+            "losses": 1,
+            "wilcoxon": {
+              "n": 1,
+              "w_plus": 0,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 1,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 3941,
+              "base": 3705,
+              "ratio": 1.067,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 30179,
+              "base": 29322,
+              "ratio": 1.192,
+              "armCheaper": 5
+            },
+            "read_tokens": {
+              "arm": 26245,
+              "base": 25629,
+              "ratio": 1.204,
+              "armCheaper": 5
+            },
+            "processed_tokens": {
+              "arm": 344171,
+              "base": 310276,
+              "ratio": 1.233,
+              "armCheaper": 3
+            },
+            "wall_ms": {
+              "arm": 77675,
+              "base": 72450,
+              "ratio": 1.144,
+              "armCheaper": 4
+            }
+          }
+        },
+        "proof-only": {
+          "build": {
+            "pairs": 14,
+            "all_green": {
+              "arm": 14,
+              "base": 13,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "acceptance": {
+              "arm": 14,
+              "base": 14,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 14,
+              "base": 13,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints_raw": {
+              "arm": 14,
+              "base": 13,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 5,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.863,
+              "base": 0.875
+            },
+            "wins": 2,
+            "losses": 2,
+            "wilcoxon": {
+              "n": 4,
+              "w_plus": 4,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 0,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 3950,
+              "base": 3695,
+              "ratio": 1.069,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 44033,
+              "base": 38074,
+              "ratio": 1.054,
+              "armCheaper": 5
+            },
+            "read_tokens": {
+              "arm": 40055,
+              "base": 34348,
+              "ratio": 1.053,
+              "armCheaper": 7
+            },
+            "processed_tokens": {
+              "arm": 429222,
+              "base": 397396,
+              "ratio": 1.031,
+              "armCheaper": 8
+            },
+            "wall_ms": {
+              "arm": 100202,
+              "base": 95008,
+              "ratio": 1.137,
+              "armCheaper": 7
+            }
+          }
+        },
+        "stale": {
+          "build": {
+            "pairs": 8,
+            "all_green": {
+              "arm": 5,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-S3#r1", "B-S3#r2", "B-S3#r3"],
+              "p": 0.25,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 1,
+                "p": 1
+              }
+            },
+            "acceptance": {
+              "arm": 8,
+              "base": 8,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 5,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-S3#r1", "B-S3#r2", "B-S3#r3"],
+              "p": 0.25,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 1,
+                "p": 1
+              }
+            },
+            "constraints_raw": {
+              "arm": 5,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-S3#r1", "B-S3#r2", "B-S3#r3"],
+              "p": 0.25,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 1,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 3,
+            "unjudged": 0,
+            "score": {
+              "arm": 1,
+              "base": 1
+            },
+            "wins": 0,
+            "losses": 0,
+            "wilcoxon": {
+              "n": 0,
+              "w_plus": 0,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 0,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 3927,
+              "base": 3674,
+              "ratio": 1.068,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 42505,
+              "base": 37744,
+              "ratio": 1.112,
+              "armCheaper": 4
+            },
+            "read_tokens": {
+              "arm": 38580,
+              "base": 34077,
+              "ratio": 1.118,
+              "armCheaper": 4
+            },
+            "processed_tokens": {
+              "arm": 457071,
+              "base": 340326,
+              "ratio": 1.118,
+              "armCheaper": 4
+            },
+            "wall_ms": {
+              "arm": 96435,
+              "base": 92063,
+              "ratio": 1.182,
+              "armCheaper": 4
+            }
+          }
+        }
+      }
+    },
+    {
+      "arm": "findcode",
+      "base": "none",
+      "build": {
+        "pairs": 41,
+        "all_green": {
+          "arm": 31,
+          "base": 35,
+          "wins": ["B-P8#r1", "B-V2#r2"],
+          "losses": [
+            "B-S3#r1",
+            "B-V4#r1",
+            "B-S3#r2",
+            "B-V3#r2",
+            "B-V4#r2",
+            "B-S3#r3"
+          ],
+          "p": 0.2891,
+          "taskSignTest": {
+            "arm": 2,
+            "base": 3,
+            "p": 1
+          }
+        },
+        "acceptance": {
+          "arm": 40,
+          "base": 40,
+          "wins": ["B-V2#r2"],
+          "losses": ["B-V2#r3"],
+          "p": 1,
+          "taskSignTest": {
+            "arm": 0,
+            "base": 0,
+            "p": 1
+          }
+        },
+        "constraints": {
+          "arm": 34,
+          "base": 38,
+          "wins": ["B-P8#r1", "B-V2#r2"],
+          "losses": [
+            "B-S3#r1",
+            "B-V4#r1",
+            "B-S3#r2",
+            "B-V3#r2",
+            "B-V4#r2",
+            "B-S3#r3"
+          ],
+          "p": 0.2891,
+          "taskSignTest": {
+            "arm": 2,
+            "base": 3,
+            "p": 1
+          }
+        },
+        "constraints_raw": {
+          "arm": 34,
+          "base": 38,
+          "wins": ["B-P8#r1", "B-V2#r2"],
+          "losses": [
+            "B-S3#r1",
+            "B-V4#r1",
+            "B-S3#r2",
+            "B-V3#r2",
+            "B-V4#r2",
+            "B-S3#r3"
+          ],
+          "p": 0.2891,
+          "taskSignTest": {
+            "arm": 2,
+            "base": 3,
+            "p": 1
+          }
+        },
+        "regressions": {
+          "arm": 38,
+          "base": 38,
+          "wins": [],
+          "losses": [],
+          "p": 1,
+          "taskSignTest": {
+            "arm": 0,
+            "base": 0,
+            "p": 1
+          }
+        }
+      },
+      "plan": {
+        "pairs": 13,
+        "unjudged": 0,
+        "score": {
+          "arm": 0.957,
+          "base": 0.919
+        },
+        "wins": 2,
+        "losses": 1,
+        "wilcoxon": {
+          "n": 3,
+          "w_plus": 5,
+          "p": 0.5
+        },
+        "avoid_violations": {
+          "arm": 1,
+          "base": 1
+        },
+        "plan_changed_code": {
+          "arm": 0,
+          "base": 0
+        }
+      },
+      "cost": {
+        "build": {
+          "first_turn_tokens": {
+            "arm": 4017,
+            "base": 3705,
+            "ratio": 1.082,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 47280,
+            "base": 36748,
+            "ratio": 1.233,
+            "armCheaper": 4
+          },
+          "read_tokens": {
+            "arm": 43179,
+            "base": 33065,
+            "ratio": 1.246,
+            "armCheaper": 4
+          },
+          "processed_tokens": {
+            "arm": 667359,
+            "base": 485129,
+            "ratio": 1.244,
+            "armCheaper": 11
+          },
+          "tool_calls": {
+            "arm": 19,
+            "base": 16
+          },
+          "turns": {
+            "arm": 16,
+            "base": 14
+          },
+          "wall_ms": {
+            "arm": 112091,
+            "base": 92063,
+            "ratio": 1.315,
+            "armCheaper": 8
+          },
+          "proof_reads": {
+            "arm": 9,
+            "base": 0
+          },
+          "proof_files_read": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_search_exposure": {
+            "arm": 0,
+            "base": 0
+          }
+        },
+        "plan": {
+          "first_turn_tokens": {
+            "arm": 3974,
+            "base": 3667,
+            "ratio": 1.085,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 62075,
+            "base": 41785,
+            "ratio": 1.308,
+            "armCheaper": 0
+          },
+          "read_tokens": {
+            "arm": 58105,
+            "base": 38142,
+            "ratio": 1.335,
+            "armCheaper": 0
+          },
+          "processed_tokens": {
+            "arm": 431903,
+            "base": 239226,
+            "ratio": 1.732,
+            "armCheaper": 0
+          },
+          "tool_calls": {
+            "arm": 13,
+            "base": 9
+          },
+          "turns": {
+            "arm": 10,
+            "base": 8
+          },
+          "wall_ms": {
+            "arm": 121556,
+            "base": 82972,
+            "ratio": 1.442,
+            "armCheaper": 1
+          },
+          "proof_reads": {
+            "arm": 13,
+            "base": 0
+          },
+          "proof_files_read": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_search_exposure": {
+            "arm": 1,
+            "base": 0
+          }
+        }
+      },
+      "byCategory": {
+        "code-visible": {
+          "build": {
+            "pairs": 10,
+            "all_green": {
+              "arm": 6,
+              "base": 8,
+              "wins": ["B-V2#r2"],
+              "losses": ["B-V4#r1", "B-V3#r2", "B-V4#r2"],
+              "p": 0.625,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 2,
+                "p": 1
+              }
+            },
+            "acceptance": {
+              "arm": 9,
+              "base": 9,
+              "wins": ["B-V2#r2"],
+              "losses": ["B-V2#r3"],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 6,
+              "base": 8,
+              "wins": ["B-V2#r2"],
+              "losses": ["B-V4#r1", "B-V3#r2", "B-V4#r2"],
+              "p": 0.625,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 2,
+                "p": 1
+              }
+            },
+            "constraints_raw": {
+              "arm": 6,
+              "base": 8,
+              "wins": ["B-V2#r2"],
+              "losses": ["B-V4#r1", "B-V3#r2", "B-V4#r2"],
+              "p": 0.625,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 2,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 1,
+            "unjudged": 0,
+            "score": {
+              "arm": 1,
+              "base": 0.571
+            },
+            "wins": 1,
+            "losses": 0,
+            "wilcoxon": {
+              "n": 1,
+              "w_plus": 1,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 0,
+              "base": 1
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 4028,
+              "base": 3715,
+              "ratio": 1.082,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 58051,
+              "base": 50224,
+              "ratio": 1.224,
+              "armCheaper": 0
+            },
+            "read_tokens": {
+              "arm": 54013,
+              "base": 46531,
+              "ratio": 1.236,
+              "armCheaper": 0
+            },
+            "processed_tokens": {
+              "arm": 939461,
+              "base": 549351,
+              "ratio": 1.365,
+              "armCheaper": 2
+            },
+            "wall_ms": {
+              "arm": 151965,
+              "base": 112090,
+              "ratio": 1.37,
+              "armCheaper": 2
+            }
+          }
+        },
+        "control": {
+          "build": {
+            "pairs": 9,
+            "all_green": {
+              "arm": 6,
+              "base": 6,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "acceptance": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints_raw": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 4,
+            "unjudged": 0,
+            "score": {
+              "arm": 1,
+              "base": 1
+            },
+            "wins": 0,
+            "losses": 0,
+            "wilcoxon": {
+              "n": 0,
+              "w_plus": 0,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 0,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 4007,
+              "base": 3705,
+              "ratio": 1.083,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 35076,
+              "base": 29322,
+              "ratio": 1.276,
+              "armCheaper": 1
+            },
+            "read_tokens": {
+              "arm": 31074,
+              "base": 25629,
+              "ratio": 1.303,
+              "armCheaper": 1
+            },
+            "processed_tokens": {
+              "arm": 391938,
+              "base": 310276,
+              "ratio": 1.41,
+              "armCheaper": 2
+            },
+            "wall_ms": {
+              "arm": 84811,
+              "base": 72450,
+              "ratio": 1.234,
+              "armCheaper": 2
+            }
+          }
+        },
+        "proof-only": {
+          "build": {
+            "pairs": 14,
+            "all_green": {
+              "arm": 14,
+              "base": 13,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "acceptance": {
+              "arm": 14,
+              "base": 14,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 14,
+              "base": 13,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints_raw": {
+              "arm": 14,
+              "base": 13,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 5,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.912,
+              "base": 0.875
+            },
+            "wins": 1,
+            "losses": 0,
+            "wilcoxon": {
+              "n": 1,
+              "w_plus": 1,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 0,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 4003,
+              "base": 3695,
+              "ratio": 1.083,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 53459,
+              "base": 38074,
+              "ratio": 1.312,
+              "armCheaper": 2
+            },
+            "read_tokens": {
+              "arm": 49424,
+              "base": 34348,
+              "ratio": 1.332,
+              "armCheaper": 2
+            },
+            "processed_tokens": {
+              "arm": 667359,
+              "base": 397396,
+              "ratio": 1.424,
+              "armCheaper": 4
+            },
+            "wall_ms": {
+              "arm": 125416,
+              "base": 95008,
+              "ratio": 1.38,
+              "armCheaper": 4
+            }
+          }
+        },
+        "stale": {
+          "build": {
+            "pairs": 8,
+            "all_green": {
+              "arm": 5,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-S3#r1", "B-S3#r2", "B-S3#r3"],
+              "p": 0.25,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 1,
+                "p": 1
+              }
+            },
+            "acceptance": {
+              "arm": 8,
+              "base": 8,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 5,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-S3#r1", "B-S3#r2", "B-S3#r3"],
+              "p": 0.25,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 1,
+                "p": 1
+              }
+            },
+            "constraints_raw": {
+              "arm": 5,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-S3#r1", "B-S3#r2", "B-S3#r3"],
+              "p": 0.25,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 1,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 3,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.958,
+              "base": 1
+            },
+            "wins": 0,
+            "losses": 1,
+            "wilcoxon": {
+              "n": 1,
+              "w_plus": 0,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 1,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 3982,
+              "base": 3674,
+              "ratio": 1.082,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 55457,
+              "base": 37744,
+              "ratio": 1.303,
+              "armCheaper": 1
+            },
+            "read_tokens": {
+              "arm": 51489,
+              "base": 34077,
+              "ratio": 1.318,
+              "armCheaper": 1
+            },
+            "processed_tokens": {
+              "arm": 557179,
+              "base": 340326,
+              "ratio": 1.548,
+              "armCheaper": 3
+            },
+            "wall_ms": {
+              "arm": 112096,
+              "base": 92063,
+              "ratio": 1.281,
+              "armCheaper": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "arm": "dump",
+      "base": "none",
+      "build": {
+        "pairs": 41,
+        "all_green": {
+          "arm": 26,
+          "base": 35,
+          "wins": ["B-P8#r1"],
+          "losses": [
+            "B-S1#r1",
+            "B-S3#r1",
+            "B-V3#r1",
+            "B-V4#r1",
+            "B-S1#r2",
+            "B-S3#r2",
+            "B-V3#r2",
+            "B-V4#r2",
+            "B-S1#r3",
+            "B-S3#r3"
+          ],
+          "p": 0.0117,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 4,
+            "p": 0.375
+          }
+        },
+        "acceptance": {
+          "arm": 41,
+          "base": 40,
+          "wins": ["B-V2#r2"],
+          "losses": [],
+          "p": 1,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 0,
+            "p": 1
+          }
+        },
+        "constraints": {
+          "arm": 29,
+          "base": 38,
+          "wins": ["B-P8#r1"],
+          "losses": [
+            "B-S1#r1",
+            "B-S3#r1",
+            "B-V3#r1",
+            "B-V4#r1",
+            "B-S1#r2",
+            "B-S3#r2",
+            "B-V3#r2",
+            "B-V4#r2",
+            "B-S1#r3",
+            "B-S3#r3"
+          ],
+          "p": 0.0117,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 4,
+            "p": 0.375
+          }
+        },
+        "constraints_raw": {
+          "arm": 29,
+          "base": 38,
+          "wins": ["B-P8#r1"],
+          "losses": [
+            "B-S1#r1",
+            "B-S3#r1",
+            "B-V3#r1",
+            "B-V4#r1",
+            "B-S1#r2",
+            "B-S3#r2",
+            "B-V3#r2",
+            "B-V4#r2",
+            "B-S1#r3",
+            "B-S3#r3"
+          ],
+          "p": 0.0117,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 4,
+            "p": 0.375
+          }
+        },
+        "regressions": {
+          "arm": 38,
+          "base": 38,
+          "wins": [],
+          "losses": [],
+          "p": 1,
+          "taskSignTest": {
+            "arm": 0,
+            "base": 0,
+            "p": 1
+          }
+        }
+      },
+      "plan": {
+        "pairs": 13,
+        "unjudged": 0,
+        "score": {
+          "arm": 0.915,
+          "base": 0.919
+        },
+        "wins": 5,
+        "losses": 3,
+        "wilcoxon": {
+          "n": 8,
+          "w_plus": 17,
+          "p": 0.9375
+        },
+        "avoid_violations": {
+          "arm": 3,
+          "base": 1
+        },
+        "plan_changed_code": {
+          "arm": 0,
+          "base": 0
+        }
+      },
+      "cost": {
+        "build": {
+          "first_turn_tokens": {
+            "arm": 36279,
+            "base": 3705,
+            "ratio": 9.787,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 72118,
+            "base": 36748,
+            "ratio": 1.984,
+            "armCheaper": 0
+          },
+          "read_tokens": {
+            "arm": 35761,
+            "base": 33065,
+            "ratio": 1.063,
+            "armCheaper": 14
+          },
+          "processed_tokens": {
+            "arm": 962674,
+            "base": 485129,
+            "ratio": 1.956,
+            "armCheaper": 0
+          },
+          "tool_calls": {
+            "arm": 19,
+            "base": 16
+          },
+          "turns": {
+            "arm": 14,
+            "base": 14
+          },
+          "wall_ms": {
+            "arm": 95548,
+            "base": 92063,
+            "ratio": 1.126,
+            "armCheaper": 15
+          },
+          "proof_reads": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_files_read": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_search_exposure": {
+            "arm": 1,
+            "base": 0
+          }
+        },
+        "plan": {
+          "first_turn_tokens": {
+            "arm": 36241,
+            "base": 3667,
+            "ratio": 9.878,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 79425,
+            "base": 41785,
+            "ratio": 1.928,
+            "armCheaper": 0
+          },
+          "read_tokens": {
+            "arm": 43212,
+            "base": 38142,
+            "ratio": 1.2,
+            "armCheaper": 3
+          },
+          "processed_tokens": {
+            "arm": 599378,
+            "base": 239226,
+            "ratio": 2.466,
+            "armCheaper": 0
+          },
+          "tool_calls": {
+            "arm": 12,
+            "base": 9
+          },
+          "turns": {
+            "arm": 8,
+            "base": 8
+          },
+          "wall_ms": {
+            "arm": 105421,
+            "base": 82972,
+            "ratio": 1.292,
+            "armCheaper": 0
+          },
+          "proof_reads": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_files_read": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_search_exposure": {
+            "arm": 1,
+            "base": 0
+          }
+        }
+      },
+      "byCategory": {
+        "code-visible": {
+          "build": {
+            "pairs": 10,
+            "all_green": {
+              "arm": 4,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-V3#r1", "B-V4#r1", "B-V3#r2", "B-V4#r2"],
+              "p": 0.125,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "acceptance": {
+              "arm": 10,
+              "base": 9,
+              "wins": ["B-V2#r2"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 4,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-V3#r1", "B-V4#r1", "B-V3#r2", "B-V4#r2"],
+              "p": 0.125,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "constraints_raw": {
+              "arm": 4,
+              "base": 8,
+              "wins": [],
+              "losses": ["B-V3#r1", "B-V4#r1", "B-V3#r2", "B-V4#r2"],
+              "p": 0.125,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            }
+          },
+          "plan": {
+            "pairs": 1,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.714,
+              "base": 0.571
+            },
+            "wins": 1,
+            "losses": 0,
+            "wilcoxon": {
+              "n": 1,
+              "w_plus": 1,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 1,
+              "base": 1
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 36285,
+              "base": 3715,
+              "ratio": 9.769,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 89125,
+              "base": 50224,
+              "ratio": 1.76,
+              "armCheaper": 0
+            },
+            "read_tokens": {
+              "arm": 52826,
+              "base": 46531,
+              "ratio": 1.126,
+              "armCheaper": 3
+            },
+            "processed_tokens": {
+              "arm": 1432041,
+              "base": 549351,
+              "ratio": 1.957,
+              "armCheaper": 0
+            },
+            "wall_ms": {
+              "arm": 138871,
+              "base": 112090,
+              "ratio": 1.171,
+              "armCheaper": 3
+            }
+          }
+        },
+        "control": {
+          "build": {
+            "pairs": 9,
+            "all_green": {
+              "arm": 6,
+              "base": 6,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "acceptance": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints_raw": {
+              "arm": 9,
+              "base": 9,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 4,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.964,
+              "base": 1
+            },
+            "wins": 0,
+            "losses": 1,
+            "wilcoxon": {
+              "n": 1,
+              "w_plus": 0,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 0,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 36259,
+              "base": 3705,
+              "ratio": 9.795,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 62350,
+              "base": 29322,
+              "ratio": 2.137,
+              "armCheaper": 0
+            },
+            "read_tokens": {
+              "arm": 26060,
+              "base": 25629,
+              "ratio": 1.057,
+              "armCheaper": 4
+            },
+            "processed_tokens": {
+              "arm": 692277,
+              "base": 310276,
+              "ratio": 2.188,
+              "armCheaper": 0
+            },
+            "wall_ms": {
+              "arm": 87399,
+              "base": 72450,
+              "ratio": 1.136,
+              "armCheaper": 4
+            }
+          }
+        },
+        "proof-only": {
+          "build": {
+            "pairs": 14,
+            "all_green": {
+              "arm": 14,
+              "base": 13,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "acceptance": {
+              "arm": 14,
+              "base": 14,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 14,
+              "base": 13,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints_raw": {
+              "arm": 14,
+              "base": 13,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 5,
+            "unjudged": 0,
+            "score": {
+              "arm": 1,
+              "base": 0.875
+            },
+            "wins": 4,
+            "losses": 0,
+            "wilcoxon": {
+              "n": 4,
+              "w_plus": 10,
+              "p": 0.125
+            },
+            "avoid_violations": {
+              "arm": 0,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 36265,
+              "base": 3695,
+              "ratio": 9.814,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 70271,
+              "base": 38074,
+              "ratio": 1.768,
+              "armCheaper": 0
+            },
+            "read_tokens": {
+              "arm": 34025,
+              "base": 34348,
+              "ratio": 1.011,
+              "armCheaper": 8
+            },
+            "processed_tokens": {
+              "arm": 822252,
+              "base": 397396,
+              "ratio": 1.807,
+              "armCheaper": 0
+            },
+            "wall_ms": {
+              "arm": 99221,
+              "base": 95008,
+              "ratio": 1.141,
+              "armCheaper": 6
+            }
+          }
+        },
+        "stale": {
+          "build": {
+            "pairs": 8,
+            "all_green": {
+              "arm": 2,
+              "base": 8,
+              "wins": [],
+              "losses": [
+                "B-S1#r1",
+                "B-S3#r1",
+                "B-S1#r2",
+                "B-S3#r2",
+                "B-S1#r3",
+                "B-S3#r3"
+              ],
+              "p": 0.0313,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "acceptance": {
+              "arm": 8,
+              "base": 8,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 2,
+              "base": 8,
+              "wins": [],
+              "losses": [
+                "B-S1#r1",
+                "B-S3#r1",
+                "B-S1#r2",
+                "B-S3#r2",
+                "B-S1#r3",
+                "B-S3#r3"
+              ],
+              "p": 0.0313,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "constraints_raw": {
+              "arm": 2,
+              "base": 8,
+              "wins": [],
+              "losses": [
+                "B-S1#r1",
+                "B-S3#r1",
+                "B-S1#r2",
+                "B-S3#r2",
+                "B-S1#r3",
+                "B-S3#r3"
+              ],
+              "p": 0.0313,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            }
+          },
+          "plan": {
+            "pairs": 3,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.774,
+              "base": 1
+            },
+            "wins": 0,
+            "losses": 2,
+            "wilcoxon": {
+              "n": 2,
+              "w_plus": 0,
+              "p": 0.5
+            },
+            "avoid_violations": {
+              "arm": 2,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 36244,
+              "base": 3674,
+              "ratio": 9.862,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 85216,
+              "base": 37744,
+              "ratio": 2.003,
+              "armCheaper": 0
+            },
+            "read_tokens": {
+              "arm": 48975,
+              "base": 34077,
+              "ratio": 1.214,
+              "armCheaper": 2
+            },
+            "processed_tokens": {
+              "arm": 1098169,
+              "base": 340326,
+              "ratio": 2.061,
+              "armCheaper": 0
+            },
+            "wall_ms": {
+              "arm": 107042,
+              "base": 92063,
+              "ratio": 1.195,
+              "armCheaper": 2
+            }
+          }
+        }
+      }
+    },
+    {
+      "arm": "dump10x",
+      "base": "none",
+      "build": {
+        "pairs": 13,
+        "all_green": {
+          "arm": 8,
+          "base": 11,
+          "wins": ["B-P8#r1"],
+          "losses": ["B-S1#r1", "B-S3#r1", "B-V3#r1", "B-V4#r1"],
+          "p": 0.375,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 4,
+            "p": 0.375
+          }
+        },
+        "acceptance": {
+          "arm": 13,
+          "base": 13,
+          "wins": [],
+          "losses": [],
+          "p": 1,
+          "taskSignTest": {
+            "arm": 0,
+            "base": 0,
+            "p": 1
+          }
+        },
+        "constraints": {
+          "arm": 9,
+          "base": 12,
+          "wins": ["B-P8#r1"],
+          "losses": ["B-S1#r1", "B-S3#r1", "B-V3#r1", "B-V4#r1"],
+          "p": 0.375,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 4,
+            "p": 0.375
+          }
+        },
+        "constraints_raw": {
+          "arm": 9,
+          "base": 12,
+          "wins": ["B-P8#r1"],
+          "losses": ["B-S1#r1", "B-S3#r1", "B-V3#r1", "B-V4#r1"],
+          "p": 0.375,
+          "taskSignTest": {
+            "arm": 1,
+            "base": 4,
+            "p": 0.375
+          }
+        },
+        "regressions": {
+          "arm": 12,
+          "base": 12,
+          "wins": [],
+          "losses": [],
+          "p": 1,
+          "taskSignTest": {
+            "arm": 0,
+            "base": 0,
+            "p": 1
+          }
+        }
+      },
+      "plan": {
+        "pairs": 5,
+        "unjudged": 0,
+        "score": {
+          "arm": 0.896,
+          "base": 0.975
+        },
+        "wins": 0,
+        "losses": 2,
+        "wilcoxon": {
+          "n": 2,
+          "w_plus": 0,
+          "p": 0.5
+        },
+        "avoid_violations": {
+          "arm": 1,
+          "base": 0
+        },
+        "plan_changed_code": {
+          "arm": 0,
+          "base": 0
+        }
+      },
+      "cost": {
+        "build": {
+          "first_turn_tokens": {
+            "arm": 218715,
+            "base": 3718,
+            "ratio": 58.829,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 250096,
+            "base": 37744,
+            "ratio": 7.013,
+            "armCheaper": 0
+          },
+          "read_tokens": {
+            "arm": 31419,
+            "base": 34077,
+            "ratio": 0.982,
+            "armCheaper": 7
+          },
+          "processed_tokens": {
+            "arm": 3411292,
+            "base": 524955,
+            "ratio": 7.805,
+            "armCheaper": 0
+          },
+          "tool_calls": {
+            "arm": 15,
+            "base": 17
+          },
+          "turns": {
+            "arm": 14,
+            "base": 14
+          },
+          "wall_ms": {
+            "arm": 95716,
+            "base": 89467,
+            "ratio": 1.012,
+            "armCheaper": 6
+          },
+          "proof_reads": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_files_read": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_search_exposure": {
+            "arm": 1,
+            "base": 0
+          }
+        },
+        "plan": {
+          "first_turn_tokens": {
+            "arm": 218660,
+            "base": 3666,
+            "ratio": 59.645,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 262343,
+            "base": 39071,
+            "ratio": 6.723,
+            "armCheaper": 0
+          },
+          "read_tokens": {
+            "arm": 43683,
+            "base": 35425,
+            "ratio": 1.077,
+            "armCheaper": 1
+          },
+          "processed_tokens": {
+            "arm": 1752955,
+            "base": 226247,
+            "ratio": 7.564,
+            "armCheaper": 0
+          },
+          "tool_calls": {
+            "arm": 11,
+            "base": 9
+          },
+          "turns": {
+            "arm": 7,
+            "base": 8
+          },
+          "wall_ms": {
+            "arm": 103961,
+            "base": 80862,
+            "ratio": 1.353,
+            "armCheaper": 1
+          },
+          "proof_reads": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_files_read": {
+            "arm": 0,
+            "base": 0
+          },
+          "proof_search_exposure": {
+            "arm": 1,
+            "base": 0
+          }
+        }
+      },
+      "byCategory": {
+        "code-visible": {
+          "build": {
+            "pairs": 3,
+            "all_green": {
+              "arm": 1,
+              "base": 3,
+              "wins": [],
+              "losses": ["B-V3#r1", "B-V4#r1"],
+              "p": 0.5,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "acceptance": {
+              "arm": 3,
+              "base": 3,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 1,
+              "base": 3,
+              "wins": [],
+              "losses": ["B-V3#r1", "B-V4#r1"],
+              "p": 0.5,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "constraints_raw": {
+              "arm": 1,
+              "base": 3,
+              "wins": [],
+              "losses": ["B-V3#r1", "B-V4#r1"],
+              "p": 0.5,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            }
+          },
+          "plan": null,
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 218723,
+              "base": 3724,
+              "ratio": 58.733,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 268314,
+              "base": 55484,
+              "ratio": 4.968,
+              "armCheaper": 0
+            },
+            "read_tokens": {
+              "arm": 49599,
+              "base": 51760,
+              "ratio": 0.936,
+              "armCheaper": 2
+            },
+            "processed_tokens": {
+              "arm": 4857989,
+              "base": 549351,
+              "ratio": 7.805,
+              "armCheaper": 0
+            },
+            "wall_ms": {
+              "arm": 152710,
+              "base": 112090,
+              "ratio": 1.362,
+              "armCheaper": 1
+            }
+          }
+        },
+        "control": {
+          "build": {
+            "pairs": 3,
+            "all_green": {
+              "arm": 2,
+              "base": 2,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "acceptance": {
+              "arm": 3,
+              "base": 3,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 3,
+              "base": 3,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints_raw": {
+              "arm": 3,
+              "base": 3,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 2,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.929,
+              "base": 1
+            },
+            "wins": 0,
+            "losses": 1,
+            "wilcoxon": {
+              "n": 1,
+              "w_plus": 0,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 0,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 218685,
+              "base": 3705,
+              "ratio": 59.024,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 247045,
+              "base": 30455,
+              "ratio": 7.813,
+              "armCheaper": 0
+            },
+            "read_tokens": {
+              "arm": 28360,
+              "base": 26735,
+              "ratio": 1.217,
+              "armCheaper": 1
+            },
+            "processed_tokens": {
+              "arm": 2712375,
+              "base": 310276,
+              "ratio": 8.742,
+              "armCheaper": 0
+            },
+            "wall_ms": {
+              "arm": 80483,
+              "base": 80862,
+              "ratio": 0.996,
+              "armCheaper": 3
+            }
+          }
+        },
+        "proof-only": {
+          "build": {
+            "pairs": 5,
+            "all_green": {
+              "arm": 5,
+              "base": 4,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "acceptance": {
+              "arm": 5,
+              "base": 5,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 5,
+              "base": 4,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints_raw": {
+              "arm": 5,
+              "base": 4,
+              "wins": ["B-P8#r1"],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 1,
+                "base": 0,
+                "p": 1
+              }
+            }
+          },
+          "plan": {
+            "pairs": 2,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.938,
+              "base": 0.938
+            },
+            "wins": 0,
+            "losses": 0,
+            "wilcoxon": {
+              "n": 0,
+              "w_plus": 0,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 0,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 218692,
+              "base": 3695,
+              "ratio": 59.186,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 259650,
+              "base": 38074,
+              "ratio": 7.037,
+              "armCheaper": 0
+            },
+            "read_tokens": {
+              "arm": 40924,
+              "base": 34348,
+              "ratio": 1.049,
+              "armCheaper": 3
+            },
+            "processed_tokens": {
+              "arm": 2653573,
+              "base": 397396,
+              "ratio": 6.999,
+              "armCheaper": 0
+            },
+            "wall_ms": {
+              "arm": 106840,
+              "base": 92127,
+              "ratio": 1.353,
+              "armCheaper": 3
+            }
+          }
+        },
+        "stale": {
+          "build": {
+            "pairs": 2,
+            "all_green": {
+              "arm": 0,
+              "base": 2,
+              "wins": [],
+              "losses": ["B-S1#r1", "B-S3#r1"],
+              "p": 0.5,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "acceptance": {
+              "arm": 2,
+              "base": 2,
+              "wins": [],
+              "losses": [],
+              "p": 1,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 0,
+                "p": 1
+              }
+            },
+            "constraints": {
+              "arm": 0,
+              "base": 2,
+              "wins": [],
+              "losses": ["B-S1#r1", "B-S3#r1"],
+              "p": 0.5,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            },
+            "constraints_raw": {
+              "arm": 0,
+              "base": 2,
+              "wins": [],
+              "losses": ["B-S1#r1", "B-S3#r1"],
+              "p": 0.5,
+              "taskSignTest": {
+                "arm": 0,
+                "base": 2,
+                "p": 0.5
+              }
+            }
+          },
+          "plan": {
+            "pairs": 1,
+            "unjudged": 0,
+            "score": {
+              "arm": 0.75,
+              "base": 1
+            },
+            "wins": 0,
+            "losses": 1,
+            "wilcoxon": {
+              "n": 1,
+              "w_plus": 0,
+              "p": 1
+            },
+            "avoid_violations": {
+              "arm": 1,
+              "base": 0
+            },
+            "plan_changed_code": {
+              "arm": 0,
+              "base": 0
+            }
+          },
+          "cost": {
+            "first_turn_tokens": {
+              "arm": 218675,
+              "base": 3667,
+              "ratio": 59.633,
+              "armCheaper": 0
+            },
+            "context_tokens": {
+              "arm": 256458,
+              "base": 37744,
+              "ratio": 6.795,
+              "armCheaper": 0
+            },
+            "read_tokens": {
+              "arm": 37783,
+              "base": 34077,
+              "ratio": 0.982,
+              "armCheaper": 2
+            },
+            "processed_tokens": {
+              "arm": 2953178,
+              "base": 340326,
+              "ratio": 5.561,
+              "armCheaper": 0
+            },
+            "wall_ms": {
+              "arm": 95716,
+              "base": 85151,
+              "ratio": 1.123,
+              "armCheaper": 0
+            }
+          }
+        }
+      }
+    }
+  ],
+  "dump10x_vs_dump": {
+    "arm": "dump10x",
+    "base": "dump",
+    "build": {
+      "pairs": 13,
+      "all_green": {
+        "arm": 8,
+        "base": 8,
+        "wins": [],
+        "losses": [],
+        "p": 1,
+        "taskSignTest": {
+          "arm": 0,
+          "base": 0,
+          "p": 1
+        }
+      },
+      "acceptance": {
+        "arm": 13,
+        "base": 13,
+        "wins": [],
+        "losses": [],
+        "p": 1,
+        "taskSignTest": {
+          "arm": 0,
+          "base": 0,
+          "p": 1
+        }
+      },
+      "constraints": {
+        "arm": 9,
+        "base": 9,
+        "wins": [],
+        "losses": [],
+        "p": 1,
+        "taskSignTest": {
+          "arm": 0,
+          "base": 0,
+          "p": 1
+        }
+      },
+      "constraints_raw": {
+        "arm": 9,
+        "base": 9,
+        "wins": [],
+        "losses": [],
+        "p": 1,
+        "taskSignTest": {
+          "arm": 0,
+          "base": 0,
+          "p": 1
+        }
+      },
+      "regressions": {
+        "arm": 12,
+        "base": 12,
+        "wins": [],
+        "losses": [],
+        "p": 1,
+        "taskSignTest": {
+          "arm": 0,
+          "base": 0,
+          "p": 1
+        }
+      }
+    },
+    "plan": {
+      "pairs": 5,
+      "unjudged": 0,
+      "score": {
+        "arm": 0.896,
+        "base": 0.971
+      },
+      "wins": 0,
+      "losses": 2,
+      "wilcoxon": {
+        "n": 2,
+        "w_plus": 0,
+        "p": 0.5
+      },
+      "avoid_violations": {
+        "arm": 1,
+        "base": 0
+      },
+      "plan_changed_code": {
+        "arm": 0,
+        "base": 0
+      }
+    },
+    "cost": {
+      "build": {
+        "first_turn_tokens": {
+          "arm": 218715,
+          "base": 36285,
+          "ratio": 6.028,
+          "armCheaper": 0
+        },
+        "context_tokens": {
+          "arm": 250096,
+          "base": 69452,
+          "ratio": 3.569,
+          "armCheaper": 0
+        },
+        "read_tokens": {
+          "arm": 31419,
+          "base": 33187,
+          "ratio": 0.88,
+          "armCheaper": 9
+        },
+        "processed_tokens": {
+          "arm": 3411292,
+          "base": 1123238,
+          "ratio": 3.476,
+          "armCheaper": 0
+        },
+        "tool_calls": {
+          "arm": 15,
+          "base": 19
+        },
+        "turns": {
+          "arm": 14,
+          "base": 16
+        },
+        "wall_ms": {
+          "arm": 95716,
+          "base": 101759,
+          "ratio": 0.88,
+          "armCheaper": 9
+        },
+        "proof_reads": {
+          "arm": 0,
+          "base": 0
+        },
+        "proof_files_read": {
+          "arm": 0,
+          "base": 0
+        },
+        "proof_search_exposure": {
+          "arm": 1,
+          "base": 1
+        }
+      },
+      "plan": {
+        "first_turn_tokens": {
+          "arm": 218660,
+          "base": 36237,
+          "ratio": 6.034,
+          "armCheaper": 0
+        },
+        "context_tokens": {
+          "arm": 262343,
+          "base": 77948,
+          "ratio": 3.343,
+          "armCheaper": 0
+        },
+        "read_tokens": {
+          "arm": 43683,
+          "base": 41722,
+          "ratio": 1.02,
+          "armCheaper": 1
+        },
+        "processed_tokens": {
+          "arm": 1752955,
+          "base": 611014,
+          "ratio": 3.529,
+          "armCheaper": 0
+        },
+        "tool_calls": {
+          "arm": 11,
+          "base": 12
+        },
+        "turns": {
+          "arm": 7,
+          "base": 9
+        },
+        "wall_ms": {
+          "arm": 103961,
+          "base": 93518,
+          "ratio": 1.112,
+          "armCheaper": 2
+        },
+        "proof_reads": {
+          "arm": 0,
+          "base": 0
+        },
+        "proof_files_read": {
+          "arm": 0,
+          "base": 0
+        },
+        "proof_search_exposure": {
+          "arm": 1,
+          "base": 1
+        }
+      }
+    },
+    "byCategory": {
+      "code-visible": {
+        "build": {
+          "pairs": 3,
+          "all_green": {
+            "arm": 1,
+            "base": 1,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          },
+          "acceptance": {
+            "arm": 3,
+            "base": 3,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          },
+          "constraints": {
+            "arm": 1,
+            "base": 1,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          },
+          "constraints_raw": {
+            "arm": 1,
+            "base": 1,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          }
+        },
+        "plan": null,
+        "cost": {
+          "first_turn_tokens": {
+            "arm": 218723,
+            "base": 36292,
+            "ratio": 6.027,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 268314,
+            "base": 105315,
+            "ratio": 2.548,
+            "armCheaper": 0
+          },
+          "read_tokens": {
+            "arm": 49599,
+            "base": 69023,
+            "ratio": 0.719,
+            "armCheaper": 3
+          },
+          "processed_tokens": {
+            "arm": 4857989,
+            "base": 1867079,
+            "ratio": 2.297,
+            "armCheaper": 0
+          },
+          "wall_ms": {
+            "arm": 152710,
+            "base": 178511,
+            "ratio": 0.855,
+            "armCheaper": 3
+          }
+        }
+      },
+      "control": {
+        "build": {
+          "pairs": 3,
+          "all_green": {
+            "arm": 2,
+            "base": 2,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          },
+          "acceptance": {
+            "arm": 3,
+            "base": 3,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          },
+          "constraints": {
+            "arm": 3,
+            "base": 3,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          },
+          "constraints_raw": {
+            "arm": 3,
+            "base": 3,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          }
+        },
+        "plan": {
+          "pairs": 2,
+          "unjudged": 0,
+          "score": {
+            "arm": 0.929,
+            "base": 0.929
+          },
+          "wins": 0,
+          "losses": 0,
+          "wilcoxon": {
+            "n": 0,
+            "w_plus": 0,
+            "p": 1
+          },
+          "avoid_violations": {
+            "arm": 0,
+            "base": 0
+          },
+          "plan_changed_code": {
+            "arm": 0,
+            "base": 0
+          }
+        },
+        "cost": {
+          "first_turn_tokens": {
+            "arm": 218685,
+            "base": 36259,
+            "ratio": 6.031,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 247045,
+            "base": 63910,
+            "ratio": 3.818,
+            "armCheaper": 0
+          },
+          "read_tokens": {
+            "arm": 28360,
+            "base": 27615,
+            "ratio": 0.915,
+            "armCheaper": 3
+          },
+          "processed_tokens": {
+            "arm": 2712375,
+            "base": 637520,
+            "ratio": 3.491,
+            "armCheaper": 0
+          },
+          "wall_ms": {
+            "arm": 80483,
+            "base": 91259,
+            "ratio": 0.882,
+            "armCheaper": 3
+          }
+        }
+      },
+      "proof-only": {
+        "build": {
+          "pairs": 5,
+          "all_green": {
+            "arm": 5,
+            "base": 5,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          },
+          "acceptance": {
+            "arm": 5,
+            "base": 5,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          },
+          "constraints": {
+            "arm": 5,
+            "base": 5,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          },
+          "constraints_raw": {
+            "arm": 5,
+            "base": 5,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          }
+        },
+        "plan": {
+          "pairs": 2,
+          "unjudged": 0,
+          "score": {
+            "arm": 0.938,
+            "base": 1
+          },
+          "wins": 0,
+          "losses": 1,
+          "wilcoxon": {
+            "n": 1,
+            "w_plus": 0,
+            "p": 1
+          },
+          "avoid_violations": {
+            "arm": 0,
+            "base": 0
+          },
+          "plan_changed_code": {
+            "arm": 0,
+            "base": 0
+          }
+        },
+        "cost": {
+          "first_turn_tokens": {
+            "arm": 218692,
+            "base": 36265,
+            "ratio": 6.03,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 259650,
+            "base": 69452,
+            "ratio": 3.591,
+            "armCheaper": 0
+          },
+          "read_tokens": {
+            "arm": 40924,
+            "base": 33187,
+            "ratio": 1.145,
+            "armCheaper": 2
+          },
+          "processed_tokens": {
+            "arm": 2653573,
+            "base": 763432,
+            "ratio": 3.854,
+            "armCheaper": 0
+          },
+          "wall_ms": {
+            "arm": 106840,
+            "base": 105752,
+            "ratio": 1.154,
+            "armCheaper": 3
+          }
+        }
+      },
+      "stale": {
+        "build": {
+          "pairs": 2,
+          "all_green": {
+            "arm": 0,
+            "base": 0,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          },
+          "acceptance": {
+            "arm": 2,
+            "base": 2,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          },
+          "constraints": {
+            "arm": 0,
+            "base": 0,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          },
+          "constraints_raw": {
+            "arm": 0,
+            "base": 0,
+            "wins": [],
+            "losses": [],
+            "p": 1,
+            "taskSignTest": {
+              "arm": 0,
+              "base": 0,
+              "p": 1
+            }
+          }
+        },
+        "plan": {
+          "pairs": 1,
+          "unjudged": 0,
+          "score": {
+            "arm": 0.75,
+            "base": 1
+          },
+          "wins": 0,
+          "losses": 1,
+          "wilcoxon": {
+            "n": 1,
+            "w_plus": 0,
+            "p": 1
+          },
+          "avoid_violations": {
+            "arm": 1,
+            "base": 0
+          },
+          "plan_changed_code": {
+            "arm": 0,
+            "base": 0
+          }
+        },
+        "cost": {
+          "first_turn_tokens": {
+            "arm": 218675,
+            "base": 36246,
+            "ratio": 6.033,
+            "armCheaper": 0
+          },
+          "context_tokens": {
+            "arm": 256458,
+            "base": 77948,
+            "ratio": 3.351,
+            "armCheaper": 0
+          },
+          "read_tokens": {
+            "arm": 37783,
+            "base": 41722,
+            "ratio": 0.947,
+            "armCheaper": 2
+          },
+          "processed_tokens": {
+            "arm": 2953178,
+            "base": 1234022,
+            "ratio": 2.485,
+            "armCheaper": 0
+          },
+          "wall_ms": {
+            "arm": 95716,
+            "base": 101759,
+            "ratio": 0.847,
+            "armCheaper": 2
+          }
+        }
+      }
+    }
+  }
+}

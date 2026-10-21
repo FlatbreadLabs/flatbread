@@ -1,0 +1,120 @@
+diff --git a/src/commands/palette.ts b/src/commands/palette.ts
+index 874d40e..7ba46c0 100644
+--- a/src/commands/palette.ts
++++ b/src/commands/palette.ts
+@@ -1,5 +1,5 @@
+ import { fail } from '../util/assert.ts';
+-import type { EditorContext } from './types.ts';
++import type { EditorContext, Json } from './types.ts';
+ import { command } from './types.ts';
+ import { groupNodes } from './builtin/group.ts';
+ import { arrangeCommands } from './builtin/reorder.ts';
+@@ -9,6 +9,14 @@ import { lockItems } from './builtin/lock.ts';
+ import { alignCommand, distributeCommand } from './builtin/align.ts';
+ import type { Alignment, Axis } from './builtin/align.ts';
+ import { walk } from '../model/query.ts';
++import {
++  descendants,
++  indexInParent,
++  sortByPaintOrder,
++  topmostOnly,
++} from '../model/tree.ts';
++import type { SceneNode } from '../model/types.ts';
++import { isContainer } from '../model/types.ts';
+ import { isInteractive } from '../selection/rules.ts';
+ 
+ /** A command as the palette lists it, by its title. */
+@@ -57,6 +65,68 @@ export class Palette {
+ 
+ const hasSelection = (ctx: EditorContext) => !ctx.selection.isEmpty();
+ 
++/** How far Duplicate moves each copy from its original. */
++export const DUPLICATE_OFFSET = 10;
++
++/** `id` and everything inside it, root first, with new ids, moved by (dx, dy). */
++function copySubtree(
++  ctx: EditorContext,
++  id: string,
++  dx: number,
++  dy: number
++): SceneNode[] {
++  const nodes = [ctx.doc.require(id), ...descendants(ctx.doc, id)];
++  const fresh = new Map(nodes.map((n) => [n.id, ctx.ids.next(n.type)]));
++  return nodes.map((n) => {
++    const copy = structuredClone(n);
++    copy.id = fresh.get(n.id)!;
++    copy.parent =
++      n.parent !== null && fresh.has(n.parent)
++        ? fresh.get(n.parent)!
++        : n.parent;
++    copy.x += dx;
++    copy.y += dy;
++    if (isContainer(copy))
++      copy.children = copy.children.map((c) => fresh.get(c)!);
++    return copy;
++  });
++}
++
++/**
++ * Copies every selected layer (and what is inside it) in front of its
++ * original, offset by DUPLICATE_OFFSET, and selects the copies. Each copy
++ * is an insert command that carries the copied nodes with their new ids.
++ */
++function duplicate(ctx: EditorContext): void {
++  const { doc } = ctx;
++  const originals = sortByPaintOrder(
++    doc,
++    topmostOnly(
++      doc,
++      ctx.selection.ids().filter((id) => doc.has(id))
++    )
++  );
++  if (!originals.length) return;
++  const copies = originals.map((id) => ({
++    id,
++    nodes: copySubtree(ctx, id, DUPLICATE_OFFSET, DUPLICATE_OFFSET),
++  }));
++  const select = copies.map((c) => c.nodes[0].id);
++  ctx.batch('Duplicate', () => {
++    // Front to back, so the indexes of the originals still to copy hold.
++    [...copies].reverse().forEach(({ id, nodes }) => {
++      ctx.dispatch(
++        command('insert', {
++          nodes: nodes as unknown as Json[],
++          parent: doc.require(id).parent,
++          index: indexInParent(doc, id) + 1,
++        })
++      );
++    });
++  });
++  ctx.selection.set(select);
++}
++
+ function align(title: string, how: Alignment): PaletteEntry {
+   return {
+     title,
+@@ -124,6 +194,12 @@ export const BUILTIN_ENTRIES: readonly PaletteEntry[] = [
+       });
+     },
+   },
++  {
++    title: 'Duplicate',
++    hint: 'Mod+D',
++    enabled: hasSelection,
++    run: (ctx) => duplicate(ctx),
++  },
+   {
+     title: 'Group selection',
+     hint: 'Mod+G',
+diff --git a/src/keys/bindings/canvas.ts b/src/keys/bindings/canvas.ts
+index d550730..c6e8fa3 100644
+--- a/src/keys/bindings/canvas.ts
++++ b/src/keys/bindings/canvas.ts
+@@ -25,6 +25,7 @@ export const canvasBindings: readonly Binding[] = [
+   palette('Escape', 'Deselect all'),
+   palette('Mod+A', 'Select all'),
+   palette('Mod+G', 'Group selection'),
++  palette('Mod+D', 'Duplicate'),
+   palette('Mod+]', 'Bring forward'),
+   palette('Mod+[', 'Send backward'),
+   palette('Mod+Shift+]', 'Bring to front'),

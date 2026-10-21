@@ -1,0 +1,41 @@
+{
+  "version": 4,
+  "name": "Rotated",
+  "top": ["frame-1"],
+  "nodes": {
+    "frame-1": {
+      "id": "frame-1",
+      "type": "frame",
+      "name": "Board",
+      "parent": null,
+      "children": ["rect-2"],
+      "x": 0,
+      "y": 0,
+      "width": 400,
+      "height": 300,
+      "rotation": 0,
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "clip": true,
+      "fills": [{ "color": "#FFFFFF" }],
+      "strokes": []
+    },
+    "rect-2": {
+      "id": "rect-2",
+      "type": "rect",
+      "name": "Tilted",
+      "parent": "frame-1",
+      "x": 100,
+      "y": 100,
+      "width": 80,
+      "height": 40,
+      "rotation": 45,
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "fills": [{ "color": "#FF0000" }],
+      "strokes": []
+    }
+  }
+}

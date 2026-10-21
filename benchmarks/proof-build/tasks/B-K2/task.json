@@ -1,0 +1,15 @@
+{
+  "id": "B-K2",
+  "kind": "build",
+  "category": "control",
+  "rules": [],
+  "prompt": "The Fill and Stroke fields should accept more ways of writing a colour: the three-digit shorthand, with or without the #, like #f80 for #FF8800; six digits with or without the #; and rgb(255, 136, 0) with whole numbers from 0 to 255. Whatever I type, the field shows the colour back as upper-case #RRGGBB. Anything else, such as rgb(300, 0, 0), a colour name or a hex code of the wrong length, is refused and changes nothing.",
+  "featureWords": ["#f80", "rgb(", "shorthand"],
+  "leakWords": [],
+  "visibleIn": [],
+  "reference": "A separate parser for typed colours that the colour fields use; parseColor is unchanged.",
+  "naive": {
+    "fails": ["regressions"],
+    "summary": "Widens parseColor itself, which other code and tests rely on to accept only six-digit hex."
+  }
+}

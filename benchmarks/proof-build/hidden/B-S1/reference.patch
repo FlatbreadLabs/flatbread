@@ -1,0 +1,38 @@
+diff --git a/src/keys/bindings/canvas.ts b/src/keys/bindings/canvas.ts
+index d550730..e73532e 100644
+--- a/src/keys/bindings/canvas.ts
++++ b/src/keys/bindings/canvas.ts
+@@ -3,6 +3,8 @@ import { command } from '../../commands/types.ts';
+ import type { Direction } from '../../commands/builtin/nudge.ts';
+ import { nudgeDelta } from '../../commands/builtin/nudge.ts';
+ import { lockItems } from '../../commands/builtin/lock.ts';
++import { commitField } from '../../panel/commit.ts';
++import { appearanceSection } from '../../panel/sections/appearance.ts';
+ 
+ function palette(chord: string, title: string): Binding {
+   return { chord, run: (ctx) => void ctx.palette.run(title) };
+@@ -19,7 +21,24 @@ function nudge(chord: string, direction: Direction, large: boolean): Binding {
+   };
+ }
+ 
++/**
++ * Number keys set the selection's opacity: 1 is 10%, 9 is 90% and 0 is 100%.
++ * A key types the percentage into the Opacity field, so it does exactly what
++ * the field does.
++ */
++function opacityKey(digit: number): Binding {
++  const opacity = appearanceSection.fields.find((f) => f.label === 'Opacity')!;
++  return {
++    chord: String(digit),
++    run(ctx: KeyContext) {
++      if (ctx.selection.isEmpty()) return;
++      commitField(ctx, opacity, `${digit === 0 ? 100 : digit * 10}%`);
++    },
++  };
++}
++
+ export const canvasBindings: readonly Binding[] = [
++  ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(opacityKey),
+   palette('Delete', 'Delete'),
+   palette('Backspace', 'Delete'),
+   palette('Escape', 'Deselect all'),

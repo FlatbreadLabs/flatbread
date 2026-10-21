@@ -1,0 +1,51 @@
+diff --git a/src/keys/bindings/canvas.ts b/src/keys/bindings/canvas.ts
+index d550730..bdf6462 100644
+--- a/src/keys/bindings/canvas.ts
++++ b/src/keys/bindings/canvas.ts
+@@ -3,6 +3,8 @@ import { command } from '../../commands/types.ts';
+ import type { Direction } from '../../commands/builtin/nudge.ts';
+ import { nudgeDelta } from '../../commands/builtin/nudge.ts';
+ import { lockItems } from '../../commands/builtin/lock.ts';
++import { descendants } from '../../model/tree.ts';
++import { clampOpacity } from '../../model/style.ts';
+ 
+ function palette(chord: string, title: string): Binding {
+   return { chord, run: (ctx) => void ctx.palette.run(title) };
+@@ -19,7 +21,37 @@ function nudge(chord: string, direction: Direction, large: boolean): Binding {
+   };
+ }
+ 
++/**
++ * Number keys set the selection's opacity: 1 is 10%, 9 is 90% and 0 is 100%.
++ * Groups carry no opacity of their own, so a group's value goes to every
++ * styled layer inside it, as the Opacity field does.
++ */
++function opacityKey(digit: number): Binding {
++  const value = clampOpacity(digit === 0 ? 1 : digit / 10);
++  return {
++    chord: String(digit),
++    run(ctx: KeyContext) {
++      const targets = new Set<string>();
++      for (const id of ctx.selection.ids()) {
++        const node = ctx.doc.require(id);
++        if (node.type !== 'group') targets.add(id);
++        else
++          for (const inner of descendants(ctx.doc, id))
++            if (inner.type !== 'group') targets.add(inner.id);
++      }
++      if (!targets.size) return;
++      const gesture = ctx.newGesture();
++      for (const id of targets)
++        ctx.dispatch(command('set-prop', { id, key: 'opacity', value }), {
++          label: 'Set Opacity',
++          gesture,
++        });
++    },
++  };
++}
++
+ export const canvasBindings: readonly Binding[] = [
++  ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(opacityKey),
+   palette('Delete', 'Delete'),
+   palette('Backspace', 'Delete'),
+   palette('Escape', 'Deselect all'),

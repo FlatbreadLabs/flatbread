@@ -1,0 +1,20 @@
+{
+  "id": "B-V1",
+  "kind": "build",
+  "category": "code-visible",
+  "rules": ["V1"],
+  "prompt": "Dragging on an empty part of the canvas, starting where there is no layer, should draw a selection box. When I let go, every layer that lies fully inside the box is selected. A group or frame that the box covers completely is selected as a whole; for a group or frame it covers only partly, the layers inside it that the box covers fully are selected instead. Holding Shift adds the boxed layers to the current selection instead of replacing it. The box never moves anything and is not an edit, and a plain click on empty canvas still just clears the selection.",
+  "featureWords": ["selection box", "boxed layers"],
+  "leakWords": [],
+  "visibleIn": [
+    {
+      "path": "src/selection/hit.ts",
+      "text": "Hidden and locked nodes are never hit"
+    }
+  ],
+  "reference": "A box walk that skips anything that is not interactive (hidden or locked, or inside such a container), taking covered containers whole.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Walks the tree for layers inside the box without the hit filter, so hidden and locked layers, and layers inside hidden or locked containers, are selected."
+  }
+}

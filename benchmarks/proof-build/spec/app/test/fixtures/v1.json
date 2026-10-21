@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "name": "Pricing card",
+  "nodes": [
+    {
+      "id": "frame-1",
+      "type": "frame",
+      "name": "Card",
+      "parent": null,
+      "children": ["rect-2", "text-3"],
+      "x": "0px",
+      "y": "0px",
+      "width": "320px",
+      "height": "200px",
+      "fill": "#ffffff"
+    },
+    {
+      "id": "rect-2",
+      "type": "rect",
+      "name": "Badge",
+      "parent": "frame-1",
+      "x": "16px",
+      "y": "16",
+      "width": "48px",
+      "height": "24px",
+      "fill": "#3366ff",
+      "stroke": "#000000",
+      "strokeWidth": "2px"
+    },
+    {
+      "id": "text-3",
+      "type": "text",
+      "name": "Label",
+      "parent": "frame-1",
+      "x": "16px",
+      "y": "56px",
+      "width": "200px",
+      "height": "18px",
+      "fontSize": "14px",
+      "text": "Most popular",
+      "fill": "#111111",
+      "hidden": true
+    }
+  ]
+}

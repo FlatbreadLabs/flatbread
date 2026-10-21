@@ -1,0 +1,15 @@
+{
+  "id": "B-K1",
+  "kind": "build",
+  "category": "control",
+  "rules": [],
+  "prompt": "When a text layer is selected, the Text section of the properties panel should also show how long its text is, in two read-only fields: Characters and Words. Characters counts every character, spaces included, but not line breaks. Words counts runs of characters between spaces or line breaks. With several text layers selected, each field shows Mixed when the counts differ, like other fields. Other layers do not show these fields.",
+  "featureWords": ["character count", "word count"],
+  "leakWords": [],
+  "visibleIn": [],
+  "reference": "Two read-only fields at the end of the Text section.",
+  "naive": {
+    "fails": ["regressions"],
+    "summary": "Puts the two fields in a new Text info section instead of the Text section, which changes the sections a text layer shows."
+  }
+}

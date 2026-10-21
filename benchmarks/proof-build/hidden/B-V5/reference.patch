@@ -1,0 +1,36 @@
+diff --git a/src/keys/bindings/canvas.ts b/src/keys/bindings/canvas.ts
+index d550730..4568aff 100644
+--- a/src/keys/bindings/canvas.ts
++++ b/src/keys/bindings/canvas.ts
+@@ -8,13 +8,29 @@ function palette(chord: string, title: string): Binding {
+   return { chord, run: (ctx) => void ctx.palette.run(title) };
+ }
+ 
++/** The gesture of each arrow key being held, per editor. */
++const holds = new WeakMap<KeyContext, Map<string, string>>();
++
++/**
++ * A nudge binding. A press starts a gesture and the key's repeats join it,
++ * so a whole hold is one history entry; releasing the key ends it.
++ */
+ function nudge(chord: string, direction: Direction, large: boolean): Binding {
+   return {
+     chord,
+-    run(ctx: KeyContext) {
++    run(ctx: KeyContext, event) {
+       const ids = ctx.selection.ids();
+       if (!ids.length) return;
+-      ctx.dispatch(command('nudge', { ids, ...nudgeDelta(direction, large) }));
++      let held = holds.get(ctx);
++      if (!held) holds.set(ctx, (held = new Map()));
++      let gesture = event.repeat ? held.get(event.chord) : undefined;
++      if (!gesture) held.set(event.chord, (gesture = ctx.newGesture()));
++      ctx.dispatch(command('nudge', { ids, ...nudgeDelta(direction, large) }), {
++        gesture,
++      });
++    },
++    release(ctx: KeyContext, event) {
++      holds.get(ctx)?.delete(event.chord);
+     },
+   };
+ }

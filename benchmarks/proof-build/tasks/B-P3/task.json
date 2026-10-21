@@ -1,0 +1,15 @@
+{
+  "id": "B-P3",
+  "kind": "build",
+  "category": "proof-only",
+  "rules": ["R3"],
+  "prompt": "Frames should be able to show a layout grid. When a frame is selected, the properties panel gets a Layout grid field. It shows Off when the grid is hidden, or the grid size in px when it is shown. Typing a size such as 8 shows the grid at that size; typing off or 0 hides it. With several frames selected it shows Mixed if they differ, like other fields, and changes can be undone. The grid is saved with the document. Files saved before this change, of any version the editor can open, open with the grid off, and you can then turn it on and save. Other kinds of layers do not get the field.",
+  "featureWords": ["layout grid", "grid"],
+  "leakWords": ["diverge", "never edit", "never edited", "new step", "shipped"],
+  "visibleIn": [],
+  "reference": "A new version 5 to 6 migration step gives frames layoutGrid 0; schema version 6; a Layout grid section and field kind; the version 5 fixture updated to version 6.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Adds the grid default for frames inside the shipped version 4 to 5 migration step (plus load defaults for version 5 files) instead of a new step."
+  }
+}

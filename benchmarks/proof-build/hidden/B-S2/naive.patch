@@ -1,0 +1,64 @@
+diff --git a/src/canvas/gestures.ts b/src/canvas/gestures.ts
+index 13b0785..7a2080f 100644
+--- a/src/canvas/gestures.ts
++++ b/src/canvas/gestures.ts
+@@ -9,6 +9,18 @@ import { hitTarget } from '../selection/hit.ts';
+ import { selectionBounds } from '../selection/bounds.ts';
+ import type { Viewport } from './viewport.ts';
+ import { handleAt } from './handles.ts';
++import { radToDeg } from '../util/math.ts';
++
++/** With Shift, the rotation handle snaps to this many degrees. */
++export const ROTATE_SNAP_DEGREES = 15;
++
++/** Maps an angle in degrees into (-180, 180]. */
++function normalizeDegrees(degrees: number): number {
++  let a = degrees % 360;
++  if (a <= -180) a += 360;
++  if (a > 180) a -= 360;
++  return a;
++}
+ 
+ export interface Modifiers {
+   shift?: boolean;
+@@ -96,7 +108,7 @@ export class CanvasGestures {
+     this.drag = { kind: 'move', gesture: this.ctx.newGesture(), last: p };
+   }
+ 
+-  move(screen: Point, _mods: Modifiers = {}): void {
++  move(screen: Point, mods: Modifiers = {}): void {
+     const p = this.viewport.toDocument(screen);
+     const drag = this.drag;
+     if (drag.kind === 'move') {
+@@ -122,18 +134,19 @@ export class CanvasGestures {
+       );
+     } else if (drag.kind === 'rotate') {
+       const delta = angleAround(drag.centre, p) - drag.startAngle;
+-      for (const [id, start] of drag.from)
+-        this.ctx.dispatch(
+-          command('set-prop', {
+-            id,
+-            key: 'rotation',
+-            value: normalizeAngle(start + delta),
+-          }),
+-          {
+-            label: 'Rotate',
+-            gesture: drag.gesture,
+-          }
+-        );
++      for (const [id, start] of drag.from) {
++        // Rotation is stored in degrees; the pointer angle is in radians.
++        const value = mods.shift
++          ? normalizeDegrees(
++              Math.round((start + radToDeg(delta)) / ROTATE_SNAP_DEGREES) *
++                ROTATE_SNAP_DEGREES
++            )
++          : normalizeAngle(start + delta);
++        this.ctx.dispatch(command('set-prop', { id, key: 'rotation', value }), {
++          label: 'Rotate',
++          gesture: drag.gesture,
++        });
++      }
+     }
+   }
+ 

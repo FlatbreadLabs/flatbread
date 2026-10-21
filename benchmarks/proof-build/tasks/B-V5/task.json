@@ -1,0 +1,25 @@
+{
+  "id": "B-V5",
+  "kind": "build",
+  "category": "code-visible",
+  "rules": ["R4"],
+  "prompt": "Holding an arrow key on the canvas should keep nudging the selection for as long as the key is held, by the usual 1 px a step, or 10 px with Shift. However long I hold the key, one Undo should take the whole hold back and put the layers where they were before I pressed it. Letting go of the key ends that step, and pressing it again starts a new one.",
+  "featureWords": ["key repeat", "hold the key", "holding an arrow"],
+  "leakWords": [],
+  "visibleIn": [
+    {
+      "path": "test/history.test.ts",
+      "text": "commands without a gesture id stay apart however close in time"
+    },
+    {
+      "path": "src/keys/dispatcher.ts",
+      "text": "True for the auto-repeat presses while a key is held"
+    }
+  ],
+  "reference": "The first press of an arrow key takes a gesture id, its repeats reuse it, and releasing the key drops it.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Merges a key repeat into the previous nudge when it comes within 400 ms by the editor clock, so a hold whose repeats pause becomes several entries."
+  },
+  "note": "Was B-P4 (proof-only, R4). Reclassified before any run: KeyEvent.repeat, the unused release() hook, ctx.newGesture() and a test that states gesture-id merging make R4 visible in the code. Its naive patch (a 400 ms window by the editor clock) stays as the check that the constraint catches a time window."
+}

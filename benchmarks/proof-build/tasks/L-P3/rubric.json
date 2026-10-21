@@ -1,0 +1,14 @@
+{
+  "include": [
+    "The relayout an edit causes is part of that edit's history entry: one Undo takes back both the edit and the relayout.",
+    "During a drag, the relayout commands share the drag's gesture id, so the drag and its relayouts are one entry; entries are never merged by time.",
+    "Computed child positions and sizes are stored unrounded; rounding happens only when values are displayed.",
+    "The new frame properties (direction, gap, padding) come with a new schema version and migration step, and older files open with auto layout off.",
+    "Relayout changes the document through commands on the bus, not by editing nodes directly."
+  ],
+  "avoid": [
+    "Recording the relayout as history entries separate from the edit that caused it.",
+    "Merging relayout or drag entries with a timer, debounce or time window.",
+    "Rounding computed child positions or sizes to whole pixels or display precision when storing them."
+  ]
+}

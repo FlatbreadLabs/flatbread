@@ -1,0 +1,16 @@
+{
+  "id": "B-P8",
+  "kind": "build",
+  "category": "proof-only",
+  "rules": ["R3"],
+  "prompt": "Some old documents open with broken colours. Very early files could name a colour, like red or navy, instead of giving its hex code, and those layers now show the name in capitals in the Fill and Stroke fields instead of a colour. Opening such a file should turn each of the 16 basic colour names (black, silver, gray, white, maroon, red, purple, fuchsia, green, lime, olive, yellow, navy, blue, teal and aqua) into its hex code, such as #FF0000 for red or #000080 for navy, in fills and strokes. Files that were opened and saved again since then, and still hold the name, should be fixed when they are opened too. Everything else in old files should open as it does now.",
+  "featureWords": ["colour name", "named colour", "fuchsia", "maroon", "navy"],
+  "leakWords": ["diverge", "never edit", "never edited", "new step", "shipped"],
+  "visibleIn": [],
+  "reference": "A new version 5 to 6 migration step that turns the basic colour names, in any case, into upper-case hex in every fill and stroke; schema version 6. The shipped steps are unchanged.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Maps the names to hex inside the shipped version 2 to 3 step, where colours are already upper-cased (as an earlier commit did for case), and fixes files saved since with the same map when they load, without a new version."
+  },
+  "note": "Added before any run to replace B-P4 among the proof-only tasks."
+}

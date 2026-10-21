@@ -1,0 +1,16 @@
+{
+  "id": "B-S1",
+  "kind": "build",
+  "category": "stale",
+  "rules": ["D1"],
+  "drift": "D1",
+  "prompt": "On the canvas, the number keys should set the opacity of the selected layers: 1 sets 10%, 2 sets 20% and so on up to 9 for 90%, and 0 sets 100%. Each press is one step to undo. The keys only work while the canvas has focus, and do nothing when nothing is selected.",
+  "featureWords": ["number key"],
+  "leakWords": [],
+  "visibleIn": [],
+  "reference": "Each key commits the percentage through the Opacity field, which sets a group's own opacity.",
+  "naive": {
+    "fails": ["constraints"],
+    "summary": "Follows Proof: groups carry no opacity, so a group's value is written to every styled layer inside it and the group itself is left alone."
+  }
+}
